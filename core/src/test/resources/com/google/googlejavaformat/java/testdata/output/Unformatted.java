@@ -39,6 +39,7 @@ import java.util.List;
  */
 public final class Unformatted extends TestCase {
   private static final int MAX_WIDTH = 100;
+
   public void testFormatter() throws Exception {
     Path inputPath = FileSystems.getDefault().getPath(TestPath.getDir(), "input");
     Path outputPath = FileSystems.getDefault().getPath(TestPath.getDir(), "output");

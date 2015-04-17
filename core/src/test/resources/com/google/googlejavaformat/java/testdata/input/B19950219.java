@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc.
+ * Copyright 2015 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com . google . googlejavaformat ;
-
-class Unformatted3 {
-    /**
-     * This comment is not reflowed
-     * because it contains <pre>preformatted</pre>
-     * content.
-     */
-}
+class B19950219 {
+  @Override
+  String normalizeWord(String word) {
+    return Ascii.toLowerCase(word);
+  }
+  @Override
+  String convert(CaseFormat format, String s) {
+  }}

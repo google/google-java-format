@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc.
+ * Copyright 2015 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package com . google . googlejavaformat ;
+class B19950468 {
+  int code() {}
 
-class Unformatted3 {
-    /**
-     * This comment is not reflowed
-     * because it contains <pre>preformatted</pre>
-     * content.
-     */
+  // comment
 }

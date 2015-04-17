@@ -51,20 +51,27 @@ public final class JavaOutput extends Output {
   }
 
   /**
-   * A line in the merged result.
+   * A non-empty half-open run of lines in the merged result.
    */
-  static final class LineInfo {
-    final From from; // Where is the line from?
-    final int ij; // What is the line's index in its source?
+  static final class RunInfo {
+    final From from; // Where is the run from?
+    final int ij0; // The run's (included) lower bound.
+    final int ij1; // The run's (non-included) upper bound.
 
-    /** LineInfo constructor. */
-    LineInfo(From from, int ij) {
+    /** LinesInfo constructor. */
+    RunInfo(From from, int ij0, int ij1) {
       this.from = from;
-      this.ij = ij;
+      this.ij0 = ij0;
+      this.ij1 = ij1;
     }
 
+    @Override
     public String toString() {
-      return MoreObjects.toStringHelper(this).add("from", from).add("ij", ij).toString();
+      return MoreObjects.toStringHelper(this)
+          .add("from", from)
+          .add("ij0", ij0)
+          .add("ij1", ij1)
+          .toString();
     }
   }
 
@@ -135,12 +142,12 @@ public final class JavaOutput extends Output {
         ++iLine;
       }
       /*
-       * Output blank line if we've called {@link OpsBuilder#blankLine}{@code true} at this point,
-       * or if there's a blank line at this point in the input and we haven't called
-       * {@link OpsBuilder#blankLine}{@code false} at this point.
+       * Output blank line if we've called {@link OpsBuilder#blankLine}{@code (true)} here, or if
+       * there's a blank line here and we haven't called {@link OpsBuilder#blankLine}{@code (false)}
+       * here, OR if it's a comment.
        */
       Boolean wanted = blankLines.get(lastK);
-      if (wanted == null ? sawNewlines : wanted) {
+      if (wanted == null || isComment(text) ? sawNewlines : wanted) {
         ++newlinesPending;
       }
     }
@@ -261,20 +268,23 @@ public final class JavaOutput extends Output {
   public void writeMerged(
       Appendable writer, RangeSet<Integer> iRangeSet0, int maxWidth, List<String> errors)
       throws IOException {
-    int ij = 0;
-    for (LineInfo lineInfo : pickLines(iRangeSet0)) {
-      String line = (lineInfo.from == From.INPUT ? javaInput : this).getLine(lineInfo.ij);
-      if (lineInfo.from == From.OUTPUT && line.length() > maxWidth
-          && !(line.startsWith("package ") || line.startsWith("import "))) {
-        if (addWarnings) {
-          writer.append("// ").append(LINE_TOO_LONG_WARNING).append('\n');
-          line = line.trim();
-        } else {
-          errors.add(String.format("output line %d: line too long", ij));
+    int mergedLineNumber = 0;
+    for (RunInfo runInfo : pickRuns(iRangeSet0)) {
+      From from = runInfo.from;
+      for (int ij = runInfo.ij0; ij < runInfo.ij1; ij++) {
+        String line = (from == From.INPUT ? javaInput : this).getLine(ij);
+        if (from == From.OUTPUT && line.length() > maxWidth
+            && !(line.startsWith("package ") || line.startsWith("import "))) {
+          if (addWarnings) {
+            writer.append("// ").append(LINE_TOO_LONG_WARNING).append('\n');
+            line = line.trim();
+          } else {
+            errors.add(String.format("output line %d: line too long", mergedLineNumber));
+          }
         }
+        writer.append(line).append('\n');
+        mergedLineNumber++;
       }
-      writer.append(line).append('\n');
-      ij++;
     }
     if (addWarnings) {
       for (String error : errors) {
@@ -285,14 +295,15 @@ public final class JavaOutput extends Output {
 
   /**
    * Pick how to merge the (un-reformatted) input lines and the (reformatted) output lines. The
-   * result will contain all of the toks from the input and output, combining whole lines from the
-   * input and output, will contain the specified lines from the output, and will contain as few
-   * extra output lines as possible.
+   * merge will contain all of the toks from the input and output, combining whole lines from each,
+   * the specified lines from the output, and as few extra output lines as possible. The
+   * {@link RunInfo} elements of the result will alternate {@link From#INPUT} and
+   * {@link From#OUTPUT}.
    * @param iRangeSet0 the empty or canonical {@link Range} of input lines to reformat
-   * @return the list of {@link LineInfo} defining the output
+   * @return the list of {@link RunInfo} defining the output
    */
-  public ImmutableList<LineInfo> pickLines(RangeSet<Integer> iRangeSet0) {
-    ImmutableList.Builder<LineInfo> lineInfos = ImmutableList.builder();
+  public ImmutableList<RunInfo> pickRuns(RangeSet<Integer> iRangeSet0) {
+    ImmutableList.Builder<RunInfo> runInfos = ImmutableList.builder();
     int iN = javaInput.getLineCount(); // Number of input lines.
     int jN = getLineCount(); // Number of output lines.
     if (iN > 0 && getLineCount() > 0) {
@@ -310,19 +321,19 @@ public final class JavaOutput extends Output {
         int kLo = kRange.lowerEndpoint();
         int kHi = kRange.upperEndpoint() - 1;
         if (k <= kLo - 1) {
-          lineInfos.addAll(pickLines(javaInput, kToI, k, kLo - 1, iN, From.INPUT));
+          runInfos.addAll(pickRuns(javaInput, kToI, k, kLo - 1, iN, From.INPUT));
           k = kLo;
         }
         if (k <= kHi) {
-          lineInfos.addAll(pickLines(this, kToJ, k, kHi, jN, From.OUTPUT));
+          runInfos.addAll(pickRuns(this, kToJ, k, kHi, jN, From.OUTPUT));
           k = Math.max(k, kHi + 1);
         }
       }
       if (k <= kN) {
-        lineInfos.addAll(pickLines(javaInput, kToI, k, kN, iN, From.INPUT));
+        runInfos.addAll(pickRuns(javaInput, kToI, k, kN, iN, From.INPUT));
       }
     }
-    return lineInfos.build();
+    return runInfos.build();
   }
 
   //TODO(jdd): Fix.
@@ -455,9 +466,9 @@ public final class JavaOutput extends Output {
    * @param ijN the number of lines in the {@link InputOutput}
    * @param from whether we are picking input lines or output lines
    */
-  private List<LineInfo> pickLines(
+  private List<RunInfo> pickRuns(
       InputOutput put, Map<Integer, Range<Integer>> kTiIJ, int kLo, int kHi0, int ijN, From from) {
-    List<LineInfo> lineInfos = new ArrayList<>();
+    List<RunInfo> result = new ArrayList<>();
     if (kLo <= kHi0) {
       int kHi = Math.min(kHi0, kN - 1);
       if (kLo <= kHi) {
@@ -472,12 +483,19 @@ public final class JavaOutput extends Output {
             ++ijHi;
           }
         }
-        for (int ij = ijLo; ij <= ijHi && ij < ijN; ij++) {
-          lineInfos.add(new LineInfo(from, ij));
+        if (ijHi > ijN) {
+          ijHi = ijN;
+        }
+        if (ijLo <= ijHi) {
+          result.add(new RunInfo(from, ijLo, ijHi + 1));
         }
       }
     }
-    return lineInfos;
+    return result;
+  }
+
+  private boolean isComment(String text) {
+    return text.startsWith("//") || text.startsWith("/*");
   }
 
   private static Range<Integer> union(Range<Integer> x, Range<Integer> y) {

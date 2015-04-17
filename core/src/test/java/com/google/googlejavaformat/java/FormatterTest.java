@@ -14,6 +14,10 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
@@ -22,7 +26,10 @@ import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.CharStreams;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ResourceInfo;
-import junit.framework.TestCase;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +48,9 @@ import java.util.TreeMap;
  * Integration test for google-java-format. Format each file in the input directory, and confirm
  * that the result is the same as the file in the output directory.
  */
-public final class FormatterTest extends TestCase {
+@RunWith(JUnit4.class)
+public final class FormatterTest {
+  @Test
   public void testFormatter() throws Exception {
     Path testDataPath = Paths.get("com/google/googlejavaformat/java/testdata");
     ClassLoader classLoader = getClass().getClassLoader();
@@ -55,7 +64,7 @@ public final class FormatterTest extends TestCase {
         assertEquals("bad testdata file names", 2, subPath.getNameCount());
         String dirName = subPath.getName(0).toString();
         String fileName = subPath.getName(1).toString();
-        assertTrue("testdata files must be .java files.", fileName.endsWith(".java"));
+        assertThat(fileName).endsWith(".java");
         final String stringFromStream;
         try (InputStream stream = classLoader.getResourceAsStream(resourceName)) {
           stringFromStream =
@@ -79,10 +88,11 @@ public final class FormatterTest extends TestCase {
       assertTrue("unmatched input", outputs.containsKey(fileName));
       String expectedOutput = outputs.get(fileName);
       String output = new Formatter().formatSource(input);
-      assertEquals("bad output", expectedOutput, output);
+      assertEquals("bad output for " + fileName, expectedOutput, output);
     }
   }
 
+  @Test
   public void testNoReflowInitialComment() throws Exception {
     String inputPath =
         "com/google/googlejavaformat/java/testdata/input-other/NoReflowInitialComment.java";
@@ -116,6 +126,7 @@ public final class FormatterTest extends TestCase {
     assertEquals("bad output", expectedOutput, output);
   }
 
+  @Test
   public void testGetFormatReplacements0() throws Exception {
     String input =
         ""
@@ -134,6 +145,7 @@ public final class FormatterTest extends TestCase {
     assertEquals("bad output", expectedOutput, output);
   }
 
+  @Test
   public void testGetFormatReplacements1() throws Exception {
     String input =
         ""

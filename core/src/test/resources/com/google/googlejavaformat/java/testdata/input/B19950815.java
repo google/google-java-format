@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc.
+ * Copyright 2015 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com . google . googlejavaformat ;
+class B19950815 {
+  void m() {
+    checkArgument(
+        truncationLength >= 0, "maxLength (%s) must be >= length of the truncation indicator (%s)",
+        maxLength, truncationIndicator.length());
+  }
 
-class Unformatted3 {
-    /**
-     * This comment is not reflowed
-     * because it contains <pre>preformatted</pre>
-     * content.
-     */
+  private String finishCollapseFrom(
+      CharSequence sequence, int start, int end, char replacement, StringBuilder builder,
+      boolean inMatchingGroup) {
+  }
 }

@@ -25,6 +25,7 @@ import com.google.googlejavaformat.DocBuilder;
 import com.google.googlejavaformat.InputOutput;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
+
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -168,7 +169,7 @@ public final class Formatter {
       throw new FormatterException(errors.get(0));
     }
     RangeSet<Integer> inputLineRangeSet = characterRangesToLineRangeSet(javaInput, characterRanges);
-    List<JavaOutput.LineInfo> lineInfos = javaOutput.pickLines(inputLineRangeSet);
+    List<JavaOutput.RunInfo> lineInfos = javaOutput.pickRuns(inputLineRangeSet);
     /*
      * There is one {@code lineInfo} for each line of the merged output: an unformatted
      * {@link From#INPUT} line or a formatted {@link From#OUTPUT} line. Each {@link Replacement}
@@ -182,25 +183,25 @@ public final class Formatter {
     int outputLineJ = 0; // Up to this line in the formatted output, during From.OUTPUT.
     int outputLineJ0 = 0; // When did we switch to output?
     for (int ij = 0; ij < lineInfos.size(); ij++) {
-      JavaOutput.LineInfo lineInfo = lineInfos.get(ij);
+      JavaOutput.RunInfo lineInfo = lineInfos.get(ij);
       if (trackingFrom == JavaOutput.From.INPUT) {
         if (lineInfo.from == JavaOutput.From.INPUT) {
           // Continue tracking input.
-          while (inputLineI <= lineInfo.ij) {
+          while (inputLineI <= lineInfo.ij0) {
             inputCharacterI += javaInput.getLine(inputLineI++).length() + 1; // Include '\n'.
           }
         } else {
           // Done tracking input; switch to output.
           trackingFrom = JavaOutput.From.OUTPUT;
-          outputLineJ0 = lineInfo.ij;
-          outputLineJ = lineInfo.ij + 1;
+          outputLineJ0 = lineInfo.ij0;
+          outputLineJ = lineInfo.ij0 + 1;
         }
       } else {
         if (lineInfo.from == JavaOutput.From.INPUT) {
           // Done tracking output; switch to input and emit a Replacement.
           int inputRange0 = inputCharacterI; // Where we switched to output.
           trackingFrom = JavaOutput.From.INPUT;
-          while (inputLineI < lineInfo.ij) {
+          while (inputLineI < lineInfo.ij0) {
             inputCharacterI += javaInput.getLine(inputLineI++).length() + 1; // Include '\n'.
           }
           int inputRange1 = inputCharacterI;
@@ -213,7 +214,7 @@ public final class Formatter {
           }
         } else {
           // Continue tracking output.
-          outputLineJ = lineInfo.ij + 1;
+          outputLineJ = lineInfo.ij0 + 1;
         }
       }
     }

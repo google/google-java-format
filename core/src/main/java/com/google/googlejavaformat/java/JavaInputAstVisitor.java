@@ -223,7 +223,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private static final ImmutableList<Op> EMPTY_LIST = ImmutableList.of();
   private static final int MAX_LINES_FOR_ENUM_CONSTANTS = 3;
   private static final Map<String, Integer> PRECEDENCE = new HashMap<>();
-  private static final int MAX_LINES_FOR_ARGUMENTS = 2;
+  private static final int MAX_LINES_FOR_ARGUMENTS = 1;
   private static final int MAX_LINES_FOR_ARRAY_INITIALIZERS = 3;
 
   static {
@@ -249,7 +249,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   }
 
   private static final int MAX_FILLED_INFIX_LINES = 3;
-  private static final int MAX_LINES_FOR_FORMAL_LIST = 2;
+  private static final int MAX_LINES_FOR_FORMAL_LIST = 1;
 
   /**
    * The {@code Visitor} constructor.
@@ -2670,8 +2670,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       for (BodyDeclaration bodyDeclaration : bodyDeclarations) {
         builder.forcedBreak();
         boolean thisOneGetsBlankLineBefore =
-            bodyDeclaration.getNodeType() == ASTNode.FIELD_DECLARATION
-                && (hasJavaDoc(bodyDeclaration) || hasAnnotations(bodyDeclaration.modifiers()));
+            bodyDeclaration.getNodeType() != ASTNode.FIELD_DECLARATION
+                || hasJavaDoc(bodyDeclaration) || hasAnnotations(bodyDeclaration.modifiers());
         if (!first && (thisOneGetsBlankLineBefore || lastOneGotBlankLineBefore)) {
           builder.blankLineWanted(true);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc.
+ * Copyright 2015 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,19 +12,8 @@
  * the License.
  */
 
-package com.google.googlejavaformat;
+class B19950468 {
+  int code() {}
 
-/**
- * Rewrite comments. This interface is implemented by
- * {@link com.google.googlejavaformat.java.JavaCommentsHelper JavaCommentsHelper}.
- */
-public interface CommentsHelper {
-  /**
-   * Try to rewrite comments, returning rewritten text.
-   * @param tok the comment's tok
-   * @param maxWidth the line length for the output
-   * @param column0 the current column
-   * @return the rewritten comment
-   */
-  String rewrite(Input.Tok tok, int maxWidth, int column0);
+  // comment
 }

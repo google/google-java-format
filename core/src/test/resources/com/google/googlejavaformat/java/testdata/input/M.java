@@ -316,9 +316,6 @@ class M {
         "two", 1 + 1,
         "three", 1 + 1 + 1);
     method999(
-        "xxxxxxxxxxxxxx", "xxxxxxxxxxxxxx", "xxxxxxxxxxxxxx", "xxxxxxxxxxxxxx", "xxxxxxxxxxxxxx",
-        "xxxxxxxxxxxxxx", "xxxxxxxxxxxxxx", "xxxxxxxxxxxxxx", "xxxxxxxxxxxxxx", "xxxxxxxxxxxxxx");
-    method999(
         "xxxxxxxxxxxxxx",
         "xxxxxxxxxxxxxx",
         "xxxxxxxxxxxxxx",
