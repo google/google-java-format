@@ -34,6 +34,7 @@ import org.junit.runners.JUnit4;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -162,6 +163,21 @@ public final class FormatterTest {
     // Claim to have modified everything after the parentheses.
     String output = doGetFormatReplacements(input, 20, 21);
     assertEquals("bad output", expectedOutput, output);
+  }
+
+  @Test
+  public void testFormatNonJavaFiles() throws Exception {
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+
+    // should succeed because non-Java files are skipped
+    assertThat(main.format("foo.go")).isEqualTo(0);
+    assertThat(err.toString()).contains("Skipping non-Java file: " + "foo.go");
+
+    // should fail because the file does not exist
+    assertThat(main.format("Foo.java")).isNotEqualTo(0);
+    assertThat(err.toString()).contains("could not read file: " + "Foo.java");
   }
 
   private static String doGetFormatReplacements(String input, int characterILo, int characterIHi)

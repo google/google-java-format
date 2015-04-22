@@ -155,22 +155,18 @@ public final class Main {
     } catch (ParameterException ignored) {
       throwUsage(jCommander);
     }
-    final Multimap<String, String> filesByBasename = TreeMultimap.create();
-    for (String fileName : parameters.fileNamesFlag) {
-      filesByBasename.put(new File(fileName).getName(), fileName);
-    }
-    if (parameters.iFlag && filesByBasename.isEmpty()) {
+    if (parameters.iFlag && parameters.fileNamesFlag.isEmpty()) {
       throwUsage(jCommander);
     }
     if (!(parameters.linesFlags.isEmpty() && parameters.offsetFlags.isEmpty()
             && parameters.lengthFlags.isEmpty()
-        || filesByBasename.size() == 1)) {
+        || parameters.fileNamesFlag.size() == 1)) {
       throwUsage(jCommander);
     }
     if (parameters.offsetFlags.size() != parameters.lengthFlags.size()) {
       throwUsage(jCommander);
     }
-    if (filesByBasename.isEmpty() && !parameters.versionFlag && !parameters.helpFlag) {
+    if (parameters.fileNamesFlag.isEmpty() && !parameters.versionFlag && !parameters.helpFlag) {
       throwUsage(jCommander);
     }
     if (parameters.versionFlag) {
@@ -178,6 +174,14 @@ public final class Main {
     }
     if (parameters.helpFlag) {
       throwUsage(jCommander);
+    }
+    final Multimap<String, String> filesByBasename = TreeMultimap.create();
+    for (String fileName : parameters.fileNamesFlag) {
+      if (fileName.endsWith(".java")) {
+        filesByBasename.put(new File(fileName).getName(), fileName);
+      } else {
+        errWriter.println("Skipping non-Java file: " + fileName);
+      }
     }
     if (parameters.stdinStdoutFlag) {
       filesByBasename.put("-", "-");
