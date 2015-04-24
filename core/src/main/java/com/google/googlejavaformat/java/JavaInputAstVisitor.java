@@ -2648,15 +2648,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.blankLineWanted(false);
         token("}", plusTwo);
       }
-    } else if (braces.isYes() && bodyDeclarations.size() == 1
-        && bodyDeclarations.get(0).getNodeType() == ASTNode.INITIALIZER
-        && bodyDeclarations.get(0).modifiers().isEmpty()) {
-      builder.space();
-      token("{");
-      builder.blankLineWanted(false);
-      bodyDeclarations.get(0).accept(this);
-      builder.blankLineWanted(false);
-      token("}", plusTwo);
     } else {
       if (braces.isYes()) {
         builder.space();
