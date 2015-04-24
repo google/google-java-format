@@ -225,6 +225,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private static final Map<String, Integer> PRECEDENCE = new HashMap<>();
   private static final int MAX_LINES_FOR_ARGUMENTS = 1;
   private static final int MAX_LINES_FOR_ARRAY_INITIALIZERS = 3;
+  private static final int MAX_LINES_FOR_ANNOTATION_ELEMENT_VALUE_PAIRS = 1;
 
   static {
     PRECEDENCE.put("*", 10);
@@ -1239,7 +1240,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     node.getTypeName().accept(this);
     token("(");
     builder.breakOp();
-    builder.open(ZERO);
+    builder.open(ZERO, MAX_LINES_FOR_ANNOTATION_ELEMENT_VALUE_PAIRS);
     boolean first = true;
     for (MemberValuePair value : (List<MemberValuePair>) node.values()) {
       if (!first) {
