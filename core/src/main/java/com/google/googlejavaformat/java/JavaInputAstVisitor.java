@@ -166,6 +166,15 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
   }
 
+  /** Whether to allow trailing blank lines in blocks. */
+  enum AllowTrailingBlankLine {
+    YES, NO;
+
+    static AllowTrailingBlankLine valueOf(boolean b) {
+      return b ? YES : NO;
+    }
+  }
+
   /** Whether to include braces. */
   enum BracesOrNot {
     YES, NO;
@@ -485,7 +494,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   /** Visitor method for {@link Block}s. */
   @Override
   public boolean visit(Block node) {
-    visitBlock(node, CollapseEmptyOrNot.YES);
+    visitBlock(node, CollapseEmptyOrNot.YES, AllowTrailingBlankLine.NO);
     return false;
   }
 
@@ -523,26 +532,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.breakOp(" ");
     node.getExpression().accept(this);
     builder.close();
-    return false;
-  }
-
-  /** Visitor method for {@link CatchClause}s. */
-  @Override
-  public boolean visit(CatchClause node) {
-    sync(node);
-    builder.space();
-    token("catch");
-    builder.space();
-    token("(");
-    builder.open(plusFour);
-    builder.breakOp();
-    builder.open(ZERO);
-    visit(node.getException());
-    builder.close();
-    builder.close();
-    token(")");
-    builder.space();
-    visitBlock(node.getBody(), CollapseEmptyOrNot.NO);
     return false;
   }
 
@@ -659,7 +648,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     sync(node);
     token("do");
     builder.space();
-    visitStatement(node.getBody(), CollapseEmptyOrNot.YES);
+    visitStatement(node.getBody(), CollapseEmptyOrNot.YES, AllowTrailingBlankLine.YES);
     if (node.getBody().getNodeType() == ASTNode.BLOCK) {
       builder.space();
     } else {
@@ -697,7 +686,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     token(")");
     builder.space();
     builder.close();
-    visitStatement(node.getBody(), CollapseEmptyOrNot.YES);
+    visitStatement(node.getBody(), CollapseEmptyOrNot.YES, AllowTrailingBlankLine.NO);
     return false;
   }
 
@@ -896,7 +885,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.close();
     token(")");
     builder.space();
-    visitStatement(node.getBody(), CollapseEmptyOrNot.YES);
+    visitStatement(node.getBody(), CollapseEmptyOrNot.YES, AllowTrailingBlankLine.NO);
     return false;
   }
 
@@ -937,10 +926,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       expressions.get(i).accept(this);
       token(")");
       builder.space();
-      // An empty block can collapse to "{}" if the second arg is true;
+      // An empty block can collapse to "{}" if there are no if/else or else clauses
+      boolean onlyClause = expressionsN == 1 && node.getElseStatement() == null;
+      // Trailing blank lines are permitted if this isn't the last clause
+      boolean trailingClauses = i < expressionsN - 1 || node.getElseStatement() != null;
       visitStatement(
           statements.get(i),
-          CollapseEmptyOrNot.valueOf(expressionsN == 1 && node.getElseStatement() == null));
+          CollapseEmptyOrNot.valueOf(onlyClause),
+          AllowTrailingBlankLine.valueOf(trailingClauses));
       followingBlock = statements.get(i).getNodeType() == ASTNode.BLOCK;
       first = false;
     }
@@ -952,7 +945,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       }
       token("else");
       builder.space();
-      visitStatement(node.getElseStatement(), CollapseEmptyOrNot.NO);
+      visitStatement(node.getElseStatement(), CollapseEmptyOrNot.NO, AllowTrailingBlankLine.NO);
     }
     builder.close();
     return false;
@@ -1649,18 +1642,23 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.close();
       builder.space();
     }
-    // An empty block can collapse to "{}" if the second arg is true;
+    // An empty try-with-resources body can collapse to "{}" if there are no trailing catch or 
+    // finally blocks.
+    boolean trailingClauses = !node.catchClauses().isEmpty() || node.getFinally() != null;
     visitBlock(
         node.getBody(),
-        CollapseEmptyOrNot.valueOf(node.catchClauses().isEmpty() && node.getFinally() == null));
-    for (CatchClause catchClause : (List<CatchClause>) node.catchClauses()) {
-      visit(catchClause);
+        CollapseEmptyOrNot.valueOf(!trailingClauses),
+        AllowTrailingBlankLine.valueOf(trailingClauses));
+    for (int i = 0; i < node.catchClauses().size(); i++) {
+      CatchClause catchClause = (CatchClause) node.catchClauses().get(i);
+      trailingClauses = i < node.catchClauses().size() - 1 || node.getFinally() != null;
+      visitCatchClause(catchClause, AllowTrailingBlankLine.valueOf(trailingClauses));
     }
     if (node.getFinally() != null) {
       builder.space();
       token("finally");
       builder.space();
-      visitBlock(node.getFinally(), CollapseEmptyOrNot.NO);
+      visitBlock(node.getFinally(), CollapseEmptyOrNot.NO, AllowTrailingBlankLine.NO);
     }
     builder.close();
     return false;
@@ -1886,7 +1884,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     node.getExpression().accept(this);
     token(")");
     builder.space();
-    visitStatement(node.getBody(), CollapseEmptyOrNot.YES);
+    visitStatement(node.getBody(), CollapseEmptyOrNot.YES, AllowTrailingBlankLine.NO);
     return false;
   }
 
@@ -1948,7 +1946,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * Helper method for {@link Block}s, {@link CatchClause}s, {@link Statement}s,
    * {@link TryStatement}s, and {@link WhileStatement}s.
    */
-  private void visitBlock(Block node, CollapseEmptyOrNot collapseEmptyOrNot) {
+  private void visitBlock(
+      Block node,
+      CollapseEmptyOrNot collapseEmptyOrNot,
+      AllowTrailingBlankLine allowTrailingBlankLine) {
     sync(node);
     if (collapseEmptyOrNot.isYes() && node.statements().isEmpty()) {
       token("{");
@@ -1966,7 +1967,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.close();
       builder.forcedBreak();
       builder.close();
-      builder.blankLineWanted(false);
+      if (allowTrailingBlankLine == AllowTrailingBlankLine.NO) {
+        builder.blankLineWanted(false);
+      }
       token("}", plusTwo);
     }
   }
@@ -1975,11 +1978,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * Helper method for {@link DoStatement}s, {@link EnhancedForStatement}s, {@link ForStatement}s,
    * {@link IfStatement}s, and WhileStatements.
    */
-  private void visitStatement(Statement node, CollapseEmptyOrNot collapseEmptyOrNot) {
+  private void visitStatement(
+      Statement node,
+      CollapseEmptyOrNot collapseEmptyOrNot,
+      AllowTrailingBlankLine allowTrailingBlank) {
     sync(node);
     switch (node.getNodeType()) {
       case ASTNode.BLOCK:
-        visitBlock((Block) node, collapseEmptyOrNot);
+        visitBlock((Block) node, collapseEmptyOrNot, allowTrailingBlank);
         break;
       default:
         builder.space();
@@ -2047,6 +2053,24 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     builder.close();
     return lastWasAnnotation && annotationsDirection.isVertical() ? FORCE_BREAK_LIST : BREAK_LIST;
+  }
+
+  /** Helper method for {@link CatchClause}s. */
+  private void visitCatchClause(CatchClause node, AllowTrailingBlankLine allowTrailingBlankLine) {
+    sync(node);
+    builder.space();
+    token("catch");
+    builder.space();
+    token("(");
+    builder.open(plusFour);
+    builder.breakOp();
+    builder.open(ZERO);
+    visit(node.getException());
+    builder.close();
+    builder.close();
+    token(")");
+    builder.space();
+    visitBlock(node.getBody(), CollapseEmptyOrNot.NO, allowTrailingBlankLine);
   }
 
   /**
