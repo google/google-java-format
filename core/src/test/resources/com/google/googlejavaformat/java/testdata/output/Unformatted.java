@@ -20,8 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Integration test for google-java-format. Format each file in the input directory, and confirm
- * that the result is the same as the file in the output directory.
+ * Integration test for google-java-format. Format each file
+ * in the input directory, and confirm that the result is
+ * the same as the file in the output directory.
  */
 public final class Unformatted extends TestCase {
   private static final int MAX_WIDTH = 100;

@@ -106,7 +106,7 @@ public final class Formatter {
    */
   public String formatSource(String input) throws FormatterException {
     JavaInput javaInput = new JavaInput(input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(false), false);
+    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(), false);
     List<String> errors = new ArrayList<>();
     format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
     if (!errors.isEmpty()) {
@@ -134,7 +134,7 @@ public final class Formatter {
   public String formatSource(String input, List<Range<Integer>> characterRanges)
       throws FormatterException {
     JavaInput javaInput = new JavaInput(input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(false), false);
+    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(), false);
     List<String> errors = new ArrayList<>();
     format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
     if (!errors.isEmpty()) {
@@ -162,7 +162,7 @@ public final class Formatter {
       String input, List<Range<Integer>> characterRanges) throws FormatterException {
     List<Replacement> replacements = new ArrayList<>();
     JavaInput javaInput = new JavaInput(input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(false), false);
+    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(), false);
     List<String> errors = new ArrayList<>();
     format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
     if (!errors.isEmpty()) {

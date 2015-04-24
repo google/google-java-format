@@ -83,11 +83,6 @@ public final class Main {
     Integer indentFlag = 2;
 
     @Parameter(
-        names = {"--noReflowInitialComment", "-noReflowInitialComment"},
-        description = "Do not reflow a block comment at the very beginning of a file.")
-    boolean noReflowInitialCommentFlag = false;
-
-    @Parameter(
         names = {"--addComments", "-addComments"},
         description = "Insert diagnostics as comments in output.")
     boolean addCommentsFlag = false;
@@ -189,7 +184,6 @@ public final class Main {
     List<Future<Boolean>> results = new ArrayList<>();
     ExecutorService executorService = Executors.newFixedThreadPool(MAX_THREADS);
     final boolean iFlagFinal = parameters.iFlag;
-    final boolean noReflowInitialCommentFlagFinal = parameters.noReflowInitialCommentFlag;
     final boolean addCommentsFlagFinal = parameters.addCommentsFlag;
     final int indentMultiplierFlagFinal = parameters.indentFlag / 2;
     final List<String> linesFlagsFinal = parameters.linesFlags;
@@ -211,7 +205,7 @@ public final class Main {
                       JavaInput javaInput = new JavaInput(stringFromStream);
                       JavaOutput javaOutput =
                           new JavaOutput(
-                              javaInput, new JavaCommentsHelper(noReflowInitialCommentFlagFinal),
+                              javaInput, new JavaCommentsHelper(),
                               addCommentsFlagFinal);
                       RangeSet<Integer> lines = TreeRangeSet.create();
                       for (String line : linesFlagsFinal) {

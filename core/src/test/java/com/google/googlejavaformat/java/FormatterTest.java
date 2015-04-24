@@ -21,8 +21,6 @@ import static org.junit.Assert.assertTrue;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
-import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.CharStreams;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ResourceInfo;
@@ -31,16 +29,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -91,40 +86,6 @@ public final class FormatterTest {
       String output = new Formatter().formatSource(input);
       assertEquals("bad output for " + fileName, expectedOutput, output);
     }
-  }
-
-  @Test
-  public void testNoReflowInitialComment() throws Exception {
-    String inputPath =
-        "com/google/googlejavaformat/java/testdata/input-other/NoReflowInitialComment.java";
-    String outputPath =
-        "com/google/googlejavaformat/java/testdata/output-other/NoReflowInitialComment.java";
-    ClassLoader classLoader = getClass().getClassLoader();
-    final String input;
-    try (InputStream stream = classLoader.getResourceAsStream(inputPath)) {
-      input = CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
-    }
-    final String expectedOutput;
-    try (InputStream stream = classLoader.getResourceAsStream(outputPath)) {
-      expectedOutput = CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
-    }
-    JavaInput javaInput = new JavaInput(input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(true), false);
-    List<String> errors = new ArrayList<>();
-    Formatter.format(javaInput, javaOutput, Formatter.MAX_WIDTH, errors, 1);
-    if (!errors.isEmpty()) {
-      throw new FormatterException(errors.get(0));
-    }
-    Writer stringWriter = new StringWriter();
-    RangeSet<Integer> lines = TreeRangeSet.create();
-    lines.add(Range.<Integer>all());
-    try {
-      javaOutput.writeMerged(stringWriter, lines, Formatter.MAX_WIDTH, errors);
-    } catch (IOException ignored) {
-      throw new AssertionError("IOException impossible for StringWriter");
-    }
-    String output = stringWriter.toString();
-    assertEquals("bad output", expectedOutput, output);
   }
 
   @Test

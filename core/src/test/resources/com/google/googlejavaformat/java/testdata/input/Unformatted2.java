@@ -1,8 +1,9 @@
 package com . google . googlejavaformat ;
 
 /**
- * Rewrite comments.  This interface is implemented by {@link com.google.googlejavaformat.java.JavaCommentsHelper JavaCommentsHelper}.
- */
+* Rewrite comments. This interface is implemented by
+* {@link com.google.googlejavaformat.java.JavaCommentsHelper JavaCommentsHelper}.
+*/
 public interface CommentsHelper {
   /**
    * Try to rewrite comments, returning rewritten text.
