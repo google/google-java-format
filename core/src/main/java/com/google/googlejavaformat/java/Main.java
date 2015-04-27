@@ -101,7 +101,8 @@ public final class Main {
     final List<String> fileNamesFlag = new ArrayList<>();
   }
 
-  private static final String[] VERSION = {"google-java-format: Version 0.9."};
+  private static final String[] VERSION =
+      {"google-java-format: Version " + GoogleJavaFormatVersion.VERSION};
 
   private static final String[] ADDITIONAL_USAGE = {
       "The --indent value must be a positive multiple of 2.",
