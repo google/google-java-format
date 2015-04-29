@@ -1,0 +1,23 @@
+class B20128174 {
+  enum Suit {
+    DIAMONDS,
+    HEARTS,
+    CLUBS,
+    SPADES
+  };
+
+  enum Suit {
+    DIAMONDS,
+    HEARTS,
+    CLUBS,
+    SPADES;
+  };
+
+  enum Suit {
+    DIAMONDS,
+    HEARTS,
+    CLUBS,
+    SPADES,
+    ;
+  };
+}

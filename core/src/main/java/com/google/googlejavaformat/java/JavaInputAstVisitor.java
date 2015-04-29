@@ -230,7 +230,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private static final ImmutableList<Op> FORCE_BREAK_LIST =
       ImmutableList.<Op>of(Doc.Break.makeForced());
   private static final ImmutableList<Op> EMPTY_LIST = ImmutableList.of();
-  private static final int MAX_LINES_FOR_ENUM_CONSTANTS = 3;
   private static final Map<String, Integer> PRECEDENCE = new HashMap<>();
   private static final int MAX_LINES_FOR_ARGUMENTS = 1;
   private static final int MAX_LINES_FOR_ARRAY_INITIALIZERS = 3;
@@ -749,38 +748,33 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     builder.space();
     tokenBreakTrailingComment("{", plusTwo);
-    if (node.enumConstants().isEmpty() && !builder.peekToken().or("").equals(";")) {
+    if (node.enumConstants().isEmpty()) {
       builder.open(ZERO);
       builder.blankLineWanted(false);
       token("}");
       builder.close();
     } else {
-      boolean hasTrailingComma = hasTrailingToken(builder.getInput(), node.enumConstants(), ",");
       builder.open(plusTwo);
       builder.blankLineWanted(false);
       builder.forcedBreak();
-      builder.open(ZERO, MAX_LINES_FOR_ENUM_CONSTANTS);
+      builder.open(ZERO);
       boolean first = true;
       for (EnumConstantDeclaration enumConstant :
           (List<EnumConstantDeclaration>) node.enumConstants()) {
         if (!first) {
           token(",");
-          if (hasTrailingComma) {
-            builder.forcedBreak();
-          } else {
-            builder.breakToFill(" ");
-          }
+          builder.forcedBreak();
         }
         visit(enumConstant);
         first = false;
       }
-      builder.guessToken(",");
+      if (builder.peekToken().or("").equals(",")) {
+        token(",");
+        builder.forcedBreak(); // The ";" goes on its own line.
+      }
       builder.close();
       builder.close();
       builder.open(ZERO);
-      if (hasTrailingComma && builder.peekToken().or("").equals(";")) {
-        builder.forcedBreak(plusTwo); // The ";" goes on its own line.
-      }
       if (node.bodyDeclarations().isEmpty()) {
         builder.guessToken(";");
       } else {

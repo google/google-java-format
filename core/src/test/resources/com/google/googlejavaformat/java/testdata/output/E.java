@@ -12,7 +12,10 @@ class E<T> {
   // TODO(jdd): Test higher language-level features.
 
   enum Enum1 {
-    A, B, C, D;
+    A,
+    B,
+    C,
+    D;
 
     Enum1() {}
   }
