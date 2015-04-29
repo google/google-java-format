@@ -1959,7 +1959,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.open(ZERO);
       builder.open(plusTwo);
       token("{");
-      builder.blankLineWanted(false);
       for (Statement statement : (List<Statement>) node.statements()) {
         builder.forcedBreak();
         statement.accept(this);

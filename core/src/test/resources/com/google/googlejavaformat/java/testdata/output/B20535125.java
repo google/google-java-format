@@ -15,12 +15,14 @@ class Test {
 
     Set<Short> shorts = new HashSet<>();
     for (short i = 0; i < 99; ++i) {
+
       shorts.add(i);
       shorts.remove(i - 1);
     }
 
     short i = 0;
     do {
+
       shorts.add(i);
       shorts.remove(i - 1);
       i++;
@@ -28,60 +30,77 @@ class Test {
     } while (i < 99);
 
     if (true) {
+
       System.err.println("Hi");
     }
 
     if (true) {
+
       System.err.println("Hi");
 
     } else {
+
       System.err.println("Hi");
     }
 
     if (true) {
+
       System.err.println("Hi");
 
     } else if (true) {
+
       System.err.println("Hi");
 
     } else {
+
       System.err.println("Hi");
     }
 
     try {
+
       throw new Exception();
 
     } catch (Exception e) {
+
       System.err.println("Hi");
     }
 
     try {
+
       throw new Exception();
 
     } finally {
+
       System.err.println("Hi");
     }
 
     try {
+
       throw new Exception();
 
     } catch (Exception e) {
+
       System.err.println("Hi");
 
     } finally {
+
       System.err.println("Hi");
     }
 
     try {
+
       throw new Exception();
 
     } catch (Exception e) {
+
       System.err.println("Hi");
 
     } catch (Exception e) {
+
       System.err.println("Hi");
 
     } finally {
+
       System.err.println("Hi");
     }
 
