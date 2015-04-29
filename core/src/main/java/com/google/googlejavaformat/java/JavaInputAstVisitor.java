@@ -307,7 +307,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(AnnotationTypeDeclaration node) {
     sync(node);
     builder.open(ZERO);
-    visitAndBreak(node.modifiers(), Direction.VERTICAL);
+    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL);
     builder.open(ZERO);
     token("@");
     token("interface");
@@ -719,7 +719,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(EnumDeclaration node) {
     sync(node);
     builder.open(ZERO);
-    visitAndBreak(node.modifiers(), Direction.VERTICAL);
+    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL);
     builder.open(plusFour);
     token("enum");
     builder.breakOp(" ");
@@ -993,7 +993,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(Initializer node) {
     sync(node);
-    visitAndBreak(node.modifiers(), Direction.VERTICAL);
+    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL);
     visit(node.getBody());
     builder.guessToken(";");
     return false;
@@ -1126,7 +1126,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(MethodDeclaration node) {
     sync(node);
-    visitAndBreak(node.modifiers(), Direction.VERTICAL);
+    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL);
     builder.open(ZERO);
     boolean first = true;
     if (!node.typeParameters().isEmpty()) {
@@ -1263,7 +1263,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(PackageDeclaration node) {
     sync(node);
-    visitAndBreak(node.annotations(), Direction.VERTICAL);
+    visitAndBreakModifiers(node.annotations(), Direction.VERTICAL);
     builder.open(plusFour);
     token("package");
     builder.space();
@@ -1757,7 +1757,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(TypeParameter node) {
     sync(node);
     builder.open(ZERO);
-    visitAndBreak(node.modifiers(), Direction.HORIZONTAL);
+    visitAndBreakModifiers(node.modifiers(), Direction.HORIZONTAL);
     visit(node.getName());
     if (!node.typeBounds().isEmpty()) {
       builder.space();
@@ -2015,14 +2015,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * @param modifiers a list of {@link IExtendedModifier}s, which can include annotations
    * @param annotationDirection direction of annotations
    */
-  void visitAndBreak(List<IExtendedModifier> modifiers, Direction annotationDirection) {
+  void visitAndBreakModifiers(List<IExtendedModifier> modifiers, Direction annotationDirection) {
     builder.addAll(visitModifiers(modifiers, annotationDirection));
   }
 
   /**
    * Helper method for {@link EnumConstantDeclaration}s, {@link TypeDeclaration}s, and
-   * {@code visitAndBreak}. Output combined modifiers and annotations and returns the trailing
-   * break.
+   * {@code visitAndBreakModifiers}. Output combined modifiers and annotations and returns the
+   * trailing break.
    * @param modifiers a list of {@link IExtendedModifier}s, which can include annotations
    * @param annotationsDirection {@link Direction#VERTICAL} or {@link Direction#HORIZONTAL}
    * @return the list of {@link Doc.Break}s following the modifiers and annotations
@@ -2035,14 +2035,32 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.open(ZERO);
     boolean first = true;
     boolean lastWasAnnotation = false;
-    for (IExtendedModifier modifier : modifiers) {
+    int idx = 0;
+    for (; idx < modifiers.size(); idx++) {
+      IExtendedModifier modifier = modifiers.get(idx);
+      if (modifier.isModifier()) {
+        break;
+      }
       if (!first) {
-        builder.addAll(
-            lastWasAnnotation && annotationsDirection.isVertical() ? FORCE_BREAK_LIST : BREAK_LIST);
+        builder.addAll(annotationsDirection.isVertical() ? FORCE_BREAK_LIST : BREAK_LIST);
       }
       ((ASTNode) modifier).accept(this);
-      lastWasAnnotation = modifier.isAnnotation();
       first = false;
+      lastWasAnnotation = true;
+    }
+    builder.close();
+    builder.open(ZERO);
+    first = true;
+    for (; idx < modifiers.size(); idx++) {
+      IExtendedModifier modifier = modifiers.get(idx);
+      if (!first) {
+        builder.addAll(BREAK_LIST);
+      } else if (lastWasAnnotation) {
+        builder.addAll(annotationsDirection.isVertical() ? FORCE_BREAK_LIST : BREAK_LIST);
+      }
+      ((ASTNode) modifier).accept(this);
+      first = false;
+      lastWasAnnotation = false;
     }
     builder.close();
     return lastWasAnnotation && annotationsDirection.isVertical() ? FORCE_BREAK_LIST : BREAK_LIST;
@@ -2523,7 +2541,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       String equals,
       Optional<Expression> initializer) {
     builder.open(ZERO);
-    visitAndBreak(modifiers, annotationsDirection);
+    visitAndBreakModifiers(modifiers, annotationsDirection);
     builder.open(ZERO);
     builder.open(plusFour);
     type.accept(this);
@@ -2569,7 +2587,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       Direction annotationsDirection, List<IExtendedModifier> modifiers, Type type,
       List<VariableDeclarationFragment> fragments) {
     builder.open(ZERO);
-    visitAndBreak(modifiers, annotationsDirection);
+    visitAndBreakModifiers(modifiers, annotationsDirection);
     builder.open(plusFour);
     type.accept(this);
     // TODO(jdd): Open another time?
