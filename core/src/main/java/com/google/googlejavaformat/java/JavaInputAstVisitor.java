@@ -402,11 +402,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       token("]");
     }
     builder.close();
+    builder.close();
     if (node.getInitializer() != null) {
       builder.space();
       visit(node.getInitializer());
     }
-    builder.close();
     return false;
   }
 
@@ -442,8 +442,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.close();
       builder.breakOp(minusTwo);
       builder.blankLineWanted(false);
-      token("}", plusTwo);
       builder.close();
+      token("}", plusTwo);
     }
     return false;
   }
