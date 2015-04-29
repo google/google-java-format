@@ -415,12 +415,12 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(ArrayInitializer node) {
     sync(node);
     if (node.expressions().isEmpty()) {
-      token("{");
+      tokenBreakTrailingComment("{", plusTwo);
       builder.blankLineWanted(false);
       token("}", plusTwo);
     } else {
       builder.open(plusTwo);
-      token("{");
+      tokenBreakTrailingComment("{", plusTwo);
       builder.blankLineWanted(false);
       builder.breakOp();
       builder.open(ZERO, MAX_LINES_FOR_ARRAY_INITIALIZERS);
@@ -748,7 +748,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.close();
     }
     builder.space();
-    token("{");
+    tokenBreakTrailingComment("{", plusTwo);
     if (node.enumConstants().isEmpty() && !builder.peekToken().or("").equals(";")) {
       builder.open(ZERO);
       builder.blankLineWanted(false);
@@ -1554,7 +1554,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     node.getExpression().accept(this);
     token(")");
     builder.space();
-    token("{");
+    tokenBreakTrailingComment("{", plusTwo);
     builder.blankLineWanted(false);
     builder.open(plusFour);
     for (ASTNode statement : (List<ASTNode>) node.statements()) {
@@ -1952,13 +1952,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       AllowTrailingBlankLine allowTrailingBlankLine) {
     sync(node);
     if (collapseEmptyOrNot.isYes() && node.statements().isEmpty()) {
-      token("{");
+      tokenBreakTrailingComment("{", plusTwo);
       builder.blankLineWanted(false);
-      token("}", plusTwo);
+      token("}");
     } else {
       builder.open(ZERO);
       builder.open(plusTwo);
-      token("{");
+      tokenBreakTrailingComment("{", plusTwo);
       for (Statement statement : (List<Statement>) node.statements()) {
         builder.forcedBreak();
         statement.accept(this);
@@ -2668,14 +2668,16 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     if (bodyDeclarations.isEmpty()) {
       if (braces.isYes()) {
         builder.space();
-        token("{");
+        tokenBreakTrailingComment("{", plusTwo);
         builder.blankLineWanted(false);
+        builder.open(ZERO);
         token("}", plusTwo);
+        builder.close();
       }
     } else {
       if (braces.isYes()) {
         builder.space();
-        token("{");
+        tokenBreakTrailingComment("{", plusTwo);
         builder.blankLineWanted(false);
         builder.open(ZERO);
       }
@@ -2792,7 +2794,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * @param token the {@link String} to wrap in a {@link Doc.Token}
    */
   final void token(String token) {
-    builder.token(token, Doc.Token.RealOrImaginary.REAL, ZERO);
+    builder.token(token, Doc.Token.RealOrImaginary.REAL, ZERO, Optional.<Indent>absent());
   }
 
   /**
@@ -2801,7 +2803,19 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * @param plusIndentCommentsBefore extra indent for comments before this token
    */
   final void token(String token, Indent plusIndentCommentsBefore) {
-    builder.token(token, Doc.Token.RealOrImaginary.REAL, plusIndentCommentsBefore);
+    builder.token(
+        token, Doc.Token.RealOrImaginary.REAL, plusIndentCommentsBefore, Optional.<Indent>absent());
+  }
+
+  /**
+   * Emit a {@link Doc.Token}, and breaks and indents trailing javadoc or block comments.
+   */
+  final void tokenBreakTrailingComment(String token, Indent breakAndIndentTrailingComment) {
+    builder.token(
+        token,
+        Doc.Token.RealOrImaginary.REAL,
+        ZERO,
+        Optional.<Indent>of(breakAndIndentTrailingComment));
   }
 
   /**
@@ -2819,8 +2833,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   @Override
   public final String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("builder", builder)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("builder", builder).toString();
   }
 }

@@ -430,12 +430,17 @@ public abstract class Doc {
     private final Input.Token token;
     private final RealOrImaginary realOrImaginary;
     private final Indent plusIndentCommentsBefore;
+    private final Optional<Indent> breakAndIndentTrailingComment;
 
     private Token(
-        Input.Token token, RealOrImaginary realOrImaginary, Indent plusIndentCommentsBefore) {
+        Input.Token token,
+        RealOrImaginary realOrImaginary,
+        Indent plusIndentCommentsBefore,
+        Optional<Indent> breakAndIndentTrailingComment) {
       this.token = token;
       this.realOrImaginary = realOrImaginary;
       this.plusIndentCommentsBefore = plusIndentCommentsBefore;
+      this.breakAndIndentTrailingComment = breakAndIndentTrailingComment;
     }
 
     /**
@@ -447,6 +452,13 @@ public abstract class Doc {
     }
 
     /**
+     * Force a line break and indent trailing javadoc or block comments.
+     */
+    Optional<Indent> breakAndIndentTrailingComment() {
+      return breakAndIndentTrailingComment;
+    }
+
+    /**
      * Make a {@code Token}.
      * @param token the {@link Input.Token} to wrap
      * @param realOrImaginary did this {@link Input.Token} appear in the input, or was it generated
@@ -455,9 +467,12 @@ public abstract class Doc {
      * @return the new {@code Token}
      */
     static Op make(
-        Input.Token token, Doc.Token.RealOrImaginary realOrImaginary,
-        Indent plusIndentCommentsBefore) {
-      return new Token(token, realOrImaginary, plusIndentCommentsBefore);
+        Input.Token token,
+        Doc.Token.RealOrImaginary realOrImaginary,
+        Indent plusIndentCommentsBefore,
+        Optional<Indent> breakAndIndentTrailingComment) {
+      return new Token(
+          token, realOrImaginary, plusIndentCommentsBefore, breakAndIndentTrailingComment);
     }
 
     /**

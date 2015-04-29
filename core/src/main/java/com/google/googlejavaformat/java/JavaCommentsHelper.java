@@ -30,7 +30,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
     List<String> rawLines = NEWLINE_SPLITTER.splitToList(tok.getOriginalText());
     StringBuilder builder = new StringBuilder();
     String firstLine = rawLines.get(0);
-    builder.append(firstLine).append("\n");
+    builder.append(firstLine);
     int indent = column0;
     if (firstLine.startsWith("/*")) {
       // For block and javadoc comments, add an extra space to trailing lines
@@ -39,7 +39,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
     }
     String indentString = Strings.repeat(" ", indent);
     for (int i = 1; i < rawLines.size(); ++i) {
-      builder.append(indentString).append(rawLines.get(i)).append("\n");
+      builder.append("\n").append(indentString).append(rawLines.get(i));
     }
     return builder.toString();
   }

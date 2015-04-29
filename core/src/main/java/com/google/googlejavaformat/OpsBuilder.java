@@ -74,7 +74,9 @@ public final class OpsBuilder {
                   "input position %d: did not generate token \"%s\"", inputPosition,
                   token.getTok().getText()));
         }
-        ops.add(Doc.Token.make(token, Doc.Token.RealOrImaginary.IMAGINARY, ZERO));
+        ops.add(
+            Doc.Token.make(
+                token, Doc.Token.RealOrImaginary.IMAGINARY, ZERO, Optional.<Indent>absent()));
       }
       this.inputPosition = inputPosition;
     }
@@ -116,16 +118,22 @@ public final class OpsBuilder {
    * @param token the optional token
    */
   public final void guessToken(String token) {
-    token(token, Doc.Token.RealOrImaginary.IMAGINARY, ZERO);
+    token(token, Doc.Token.RealOrImaginary.IMAGINARY, ZERO, Optional.<Indent>absent());
   }
 
   public final void token(
-      String token, Doc.Token.RealOrImaginary realOrImaginary, Indent plusIndentCommentsBefore) {
+      String token,
+      Doc.Token.RealOrImaginary realOrImaginary,
+      Indent plusIndentCommentsBefore,
+      Optional<Indent> breakAndIndentTrailingComment) {
     ImmutableList<? extends Input.Token> tokens = input.getTokens();
     if (token.equals(peekToken().orNull())) { // Found the input token. Output it.
       ops.add(
           Doc.Token.make(
-              tokens.get(tokenI++), Doc.Token.RealOrImaginary.REAL, plusIndentCommentsBefore));
+              tokens.get(tokenI++),
+              Doc.Token.RealOrImaginary.REAL,
+              plusIndentCommentsBefore,
+              breakAndIndentTrailingComment));
     } else {
       /*
        * Generated a "bad" token, which doesn't exist on the input. Drop it, and complain unless
@@ -145,7 +153,8 @@ public final class OpsBuilder {
   public final void op(String op) {
     int opN = op.length();
     for (int i = 0; i < opN; i++) {
-      token(op.substring(i, i + 1), Doc.Token.RealOrImaginary.REAL, ZERO);
+      token(
+          op.substring(i, i + 1), Doc.Token.RealOrImaginary.REAL, ZERO, Optional.<Indent>absent());
     }
   }
 
@@ -329,8 +338,21 @@ public final class OpsBuilder {
           first = false;
           for (Input.Tok tokAfter : token.getToksAfter()) {
             if (tokAfter.isComment()) {
-              tokOps.put(k + 1, SPACE);
+              boolean breakAfter =
+                  tokAfter.isSlashStarComment()
+                      && tokenOp.breakAndIndentTrailingComment().isPresent();
+              if (breakAfter) {
+                tokOps.put(
+                    k + 1,
+                    Doc.Break.make(
+                        Doc.FillMode.FORCED, "", tokenOp.breakAndIndentTrailingComment().get()));
+              } else {
+                tokOps.put(k + 1, SPACE);
+              }
               tokOps.putAll(k + 1, makeComment(tokAfter));
+              if (breakAfter) {
+                tokOps.put(k + 1, Doc.Break.make(Doc.FillMode.FORCED, "", ZERO));
+              }
             }
           }
         } else {
