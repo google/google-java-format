@@ -134,6 +134,7 @@ import java.util.Map;
  * An extension of {@link OpsBuilder}, implementing a visit pattern for Eclipse AST nodes to build a
  * sequence of {@link Op}s.
  */
+@SuppressWarnings({"unchecked", "rawtypes"}) // jdt uses rawtypes extensively
 public final class JavaInputAstVisitor extends ASTVisitor {
   /** Direction for Annotations (usually VERTICAL). */
   enum Direction {
