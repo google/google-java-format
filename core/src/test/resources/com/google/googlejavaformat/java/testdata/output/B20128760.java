@@ -59,15 +59,11 @@ class B20128760 {
   }
 
   private static class GenerateDashboardRowFn
-      extends
-          XX.XxXx<
-              Xxxx<
-                  Xxxx,
-                  Xxxxx2.XxxXxxxXxxxxxxxxxx<XxxxxxxxXxxx, Xxxx<XxxxxxxxXxxx, XxxxxxxXxxxxxxxx>>>,
-              Xxxx<Xxxx, XxxxxxxXxxxxxxxxxxXxxxxxxxx>> {}
+      extends XX.XxXx<
+          Xxxx<Xxxx, Xxxxx2.XxxXxxxXxxxxxxxxxx<XxxxxxxxXxxx, Xxxx<XxxxxxxxXxxx, XxxxxxxXxxxxxxxx>>>,
+          Xxxx<Xxxx, XxxxxxxXxxxxxxxxxxXxxxxxxxx>> {}
 
   public class XxxxxxxXxxxxxxxXxxxXxxxxXxxxxxx<X>
-      extends
-          XxxxxxxXxxxxxxxXxxxXxxxxXxxxxxx<
-              XxxxxxxXxxxxxxxXxxxXxxxxXxxxxxx<X>, XxxxXxxxxxxXxxxxxxxx<? extends Xxxxxxxx<X>>> {}
+      extends XxxxxxxXxxxxxxxXxxxXxxxxXxxxxxx<
+          XxxxxxxXxxxxxxxXxxxXxxxxXxxxxxx<X>, XxxxXxxxxxxXxxxxxxxx<? extends Xxxxxxxx<X>>> {}
 }

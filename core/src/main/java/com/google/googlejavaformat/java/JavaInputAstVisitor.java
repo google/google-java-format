@@ -1680,19 +1680,16 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.open(plusFour);
       builder.breakOp(" ");
       if (hasSuperclassType) {
-        builder.open(plusFour);
         token("extends");
-        builder.breakToFill(" ");
+        builder.space();
         node.getSuperclassType().accept(this);
-        builder.close();
       }
       if (hasSuperInterfaceTypes) {
         if (hasSuperclassType) {
           builder.breakOp(" ");
         }
-        builder.open(plusFour);
         token(node.isInterface() ? "extends" : "implements");
-        builder.breakToFill(" ");
+        builder.space();
         boolean first = true;
         for (Type superInterfaceType : (List<Type>) node.superInterfaceTypes()) {
           if (!first) {
@@ -1702,7 +1699,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           superInterfaceType.accept(this);
           first = false;
         }
-        builder.close();
       }
       builder.close();
     }
