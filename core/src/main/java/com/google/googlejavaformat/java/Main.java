@@ -47,8 +47,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import javax.annotation.CheckReturnValue;
-
 /**
  * The main class for the Java formatter CLI.
  */
@@ -145,60 +143,34 @@ public final class Main {
    * @param args the command-line arguments
    */
   public int format(String... args) throws UsageException {
-    FormatterParameters parameters = new FormatterParameters();
-    JCommander jCommander = new JCommander(parameters);
-    jCommander.setProgramName("google-java-format");
-    try {
-      jCommander.parse(args);
-    } catch (ParameterException ignored) {
-      throwUsage(jCommander);
-    }
+    ArgInfo argInfo = ArgInfo.processArgs(args);
 
-    int filesToFormat = parameters.fileNamesFlag.size();
-    if (parameters.stdinStdoutFlag) {
-      filesToFormat++;
-    }
-
-    if (parameters.iFlag && parameters.fileNamesFlag.isEmpty()) {
-      throwUsage(jCommander);
-    }
-    if (!(parameters.linesFlags.isEmpty()
-        && parameters.offsetFlags.isEmpty()
-        && parameters.lengthFlags.isEmpty()
-        || filesToFormat == 1)) {
-      throwUsage(jCommander);
-    }
-    if (parameters.offsetFlags.size() != parameters.lengthFlags.size()) {
-      throwUsage(jCommander);
-    }
-    if (filesToFormat <= 0 && !parameters.versionFlag && !parameters.helpFlag) {
-      throwUsage(jCommander);
-    }
-    if (parameters.versionFlag) {
+    if (argInfo.parameters.versionFlag) {
       version();
     }
-    if (parameters.helpFlag) {
-      throwUsage(jCommander);
+    if (argInfo.parameters.helpFlag) {
+      argInfo.throwUsage();
     }
+
     final Multimap<String, String> filesByBasename = TreeMultimap.create();
-    for (String fileName : parameters.fileNamesFlag) {
+    for (String fileName : argInfo.parameters.fileNamesFlag) {
       if (fileName.endsWith(".java")) {
         filesByBasename.put(new File(fileName).getName(), fileName);
       } else {
         errWriter.println("Skipping non-Java file: " + fileName);
       }
     }
-    if (parameters.stdinStdoutFlag) {
+    if (argInfo.parameters.stdinStdoutFlag) {
       filesByBasename.put("-", "-");
     }
     List<Future<Boolean>> results = new ArrayList<>();
     ExecutorService executorService = Executors.newFixedThreadPool(MAX_THREADS);
-    final boolean iFlagFinal = parameters.iFlag;
-    final boolean addCommentsFlagFinal = parameters.addCommentsFlag;
-    final int indentMultiplierFlagFinal = parameters.indentFlag / 2;
-    final List<String> linesFlagsFinal = parameters.linesFlags;
-    final List<Integer> offsetFlagsFinal = parameters.offsetFlags;
-    final List<Integer> lengthFlagsFinal = parameters.lengthFlags;
+    final boolean iFlagFinal = argInfo.parameters.iFlag;
+    final boolean addCommentsFlagFinal = argInfo.parameters.addCommentsFlag;
+    final int indentMultiplierFlagFinal = argInfo.parameters.indentFlag / 2;
+    final List<String> linesFlagsFinal = argInfo.parameters.linesFlags;
+    final List<Integer> offsetFlagsFinal = argInfo.parameters.offsetFlags;
+    final List<Integer> lengthFlagsFinal = argInfo.parameters.lengthFlags;
     final Object mutex = new Object();
     for (final String baseName : filesByBasename.keySet()) {
       results.add(
@@ -350,25 +322,65 @@ public final class Main {
     }
   }
 
+  static class ArgInfo {
+    public final FormatterParameters parameters;
+    private final JCommander jCommander;
+
+    public static ArgInfo processArgs(String... args) throws UsageException {
+      FormatterParameters parameters = new FormatterParameters();
+      JCommander jCommander = new JCommander(parameters);
+      ArgInfo argInfo = new ArgInfo(parameters, jCommander);
+
+      jCommander.setProgramName("google-java-format");
+      try {
+        jCommander.parse(args);
+      } catch (ParameterException ignored) {
+        argInfo.throwUsage();
+      }
+
+      int filesToFormat = parameters.fileNamesFlag.size();
+      if (parameters.stdinStdoutFlag) {
+        filesToFormat++;
+      }
+
+      if (parameters.iFlag && parameters.fileNamesFlag.isEmpty()) {
+        argInfo.throwUsage();
+      }
+      if (!(parameters.linesFlags.isEmpty()
+          && parameters.offsetFlags.isEmpty()
+          && parameters.lengthFlags.isEmpty()
+          || filesToFormat == 1)) {
+        argInfo.throwUsage();
+      }
+      if (parameters.offsetFlags.size() != parameters.lengthFlags.size()) {
+        argInfo.throwUsage();
+      }
+      if (filesToFormat <= 0 && !parameters.versionFlag && !parameters.helpFlag) {
+        argInfo.throwUsage();
+      }
+
+      return argInfo;
+    }
+
+    private ArgInfo(FormatterParameters parameters, JCommander jCommander) {
+      this.parameters = parameters;
+      this.jCommander = jCommander;
+    }
+
+    public void throwUsage() throws UsageException {
+      StringBuilder builder = new StringBuilder();
+      jCommander.usage(builder);
+      for (String line : ADDITIONAL_USAGE) {
+        builder.append(line).append(System.lineSeparator());
+      }
+
+      throw new UsageException(builder.toString());
+    }
+  }
+
   private void version() {
     for (String line : VERSION) {
       errWriter.println(line);
     }
-  }
-
-  /** Throws a {@link UsageException} containing a usage message. */
-  private void throwUsage(JCommander jCommander) throws UsageException {
-    throw new UsageException(usage(jCommander));
-  }
-
-  /** Returns a usage message. */
-  @CheckReturnValue
-  private String usage(JCommander jCommander) {
-    StringBuilder builder = new StringBuilder();
-    jCommander.usage(builder);
-    for (String line : ADDITIONAL_USAGE) {
-      builder.append(line).append(System.lineSeparator());
-    }
-    return builder.toString();
   }
 }
