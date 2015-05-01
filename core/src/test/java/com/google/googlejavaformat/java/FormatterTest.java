@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -139,6 +140,33 @@ public final class FormatterTest {
     // should fail because the file does not exist
     assertThat(main.format("Foo.java")).isNotEqualTo(0);
     assertThat(err.toString()).contains("could not read file: " + "Foo.java");
+  }
+
+  @Test
+  public void testFormatStdinStdoutWithDashFlag() throws Exception {
+    String input =
+        "class Foo{\n"
+        + "void f\n"
+        + "() {\n"
+        + "}\n"
+        + "}\n";
+    String expectedOutput =
+        "class Foo {\n"
+        + "  void f() {}\n"
+        + "}\n";
+
+    InputStream in = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    InputStream oldIn = System.in;
+    System.setIn(in);
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    assertThat(main.format("-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expectedOutput);
+
+    System.setIn(oldIn);
   }
 
   private static String doGetFormatReplacements(String input, int characterILo, int characterIHi)

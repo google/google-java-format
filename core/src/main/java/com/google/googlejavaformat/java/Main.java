@@ -94,6 +94,8 @@ public final class Main {
         names = {"--help", "-help", "-h"}, description = "Print an extended usage statement.")
     boolean helpFlag = false;
 
+    // TODO(eaftan): clang-format formats stdin -> stdout when no options are passed.  We should
+    // match that behavior.
     @Parameter(names = "-", description = "Format stdin -> stdout.")
     boolean stdinStdoutFlag = false;
 
@@ -151,18 +153,25 @@ public final class Main {
     } catch (ParameterException ignored) {
       throwUsage(jCommander);
     }
+
+    int filesToFormat = parameters.fileNamesFlag.size();
+    if (parameters.stdinStdoutFlag) {
+      filesToFormat++;
+    }
+
     if (parameters.iFlag && parameters.fileNamesFlag.isEmpty()) {
       throwUsage(jCommander);
     }
-    if (!(parameters.linesFlags.isEmpty() && parameters.offsetFlags.isEmpty()
-            && parameters.lengthFlags.isEmpty()
-        || parameters.fileNamesFlag.size() == 1)) {
+    if (!(parameters.linesFlags.isEmpty()
+        && parameters.offsetFlags.isEmpty()
+        && parameters.lengthFlags.isEmpty()
+        || filesToFormat == 1)) {
       throwUsage(jCommander);
     }
     if (parameters.offsetFlags.size() != parameters.lengthFlags.size()) {
       throwUsage(jCommander);
     }
-    if (parameters.fileNamesFlag.isEmpty() && !parameters.versionFlag && !parameters.helpFlag) {
+    if (filesToFormat <= 0 && !parameters.versionFlag && !parameters.helpFlag) {
       throwUsage(jCommander);
     }
     if (parameters.versionFlag) {
