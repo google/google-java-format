@@ -1681,6 +1681,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.breakOp(" ");
       if (hasSuperclassType) {
         token("extends");
+        // TODO(b/20761216): using a non-breaking space here could cause >100 char lines
         builder.space();
         node.getSuperclassType().accept(this);
       }
@@ -1688,6 +1689,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         if (hasSuperclassType) {
           builder.breakOp(" ");
         }
+        builder.open(plusFour);
         token(node.isInterface() ? "extends" : "implements");
         builder.space();
         boolean first = true;
@@ -1699,6 +1701,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           superInterfaceType.accept(this);
           first = false;
         }
+        builder.close();
       }
       builder.close();
     }

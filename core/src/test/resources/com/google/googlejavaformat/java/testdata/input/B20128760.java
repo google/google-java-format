@@ -70,4 +70,22 @@ class B20128760 {
       extends
           XxxxxxxXxxxxxxxXxxxXxxxxXxxxxxx<
               XxxxxxxXxxxxxxxXxxxXxxxxXxxxxxx<X>, XxxxXxxxxxxXxxxxxxxx<? extends Xxxxxxxx<X>>> {}
+  
+  public class Foo
+      extends 
+          Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx {}
+  
+  public class Foo
+      extends 
+          Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      implements 
+          Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,
+          Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx {}
+  
+  public class Foo
+      extends 
+          Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      implements 
+          Xxxxxxxxxxxxx<Xxxxxxxxxxxxxxxxxxxxxxxxxxxxx, Xxxxxxxxxxxxxxxxxxxxxxxxxxxxx, Xxxxxxxxxxxxxxxxxxxxxxxxxxxxx>,
+          Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx {}
 }
