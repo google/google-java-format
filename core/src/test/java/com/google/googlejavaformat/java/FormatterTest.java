@@ -79,6 +79,7 @@ public final class FormatterTest {
       }
     }
     assertEquals("unmatched inputs and outputs", inputs.size(), outputs.size());
+    
     for (Map.Entry<String, String> entry : inputs.entrySet()) {
       String fileName = entry.getKey();
       String input = inputs.get(fileName);

@@ -16,11 +16,13 @@ package com.google.googlejavaformat.java;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
+import com.google.common.base.Verify;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.googlejavaformat.CloseOp;
 import com.google.googlejavaformat.Doc;
+import com.google.googlejavaformat.Doc.FillMode;
 import com.google.googlejavaformat.Indent;
 import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Op;
@@ -220,6 +222,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   private static final Indent.Const ZERO = Indent.Const.ZERO;
   private final Indent.Const minusTwo;
+  private final Indent.Const minusFour;
   private final Indent.Const plusTwo;
   private final Indent.Const plusFour;
   private final Indent.Const plusEight;
@@ -235,6 +238,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private static final int MAX_LINES_FOR_ARGUMENTS = 1;
   private static final int MAX_LINES_FOR_ARRAY_INITIALIZERS = 3;
   private static final int MAX_LINES_FOR_ANNOTATION_ELEMENT_VALUE_PAIRS = 1;
+  private static final int MAX_LINES_FOR_CHAINED_ACCESSES = 1;
+  private static final int MAX_DEREFERENCES_BEFORE_BUILDER_STYLE = 3;
 
   static {
     PRECEDENCE.put("*", 10);
@@ -268,6 +273,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public JavaInputAstVisitor(OpsBuilder builder, int indentMultiplier) {
     this.builder = builder;
     minusTwo = Indent.Const.make(-2, indentMultiplier);
+    minusFour = Indent.Const.make(-4, indentMultiplier);
     plusTwo = Indent.Const.make(+2, indentMultiplier);
     plusFour = Indent.Const.make(+4, indentMultiplier);
     plusEight = Indent.Const.make(+8, indentMultiplier);
@@ -2250,7 +2256,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     ArrayDeque<Expression> stack = new ArrayDeque<>();
     LOOP:
     do {
-      stack.addLast(node);
+      stack.addFirst(node);
       switch (node.getNodeType()) {
         case ASTNode.FIELD_ACCESS:
           node = ((FieldAccess) node).getExpression();
@@ -2258,31 +2264,92 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         case ASTNode.METHOD_INVOCATION:
           node = ((MethodInvocation) node).getExpression();
           break;
+        case ASTNode.QUALIFIED_NAME:
+          node = ((QualifiedName) node).getQualifier();
+          break;
         default:
-          stack.removeLast();
           break LOOP;
       }
     } while (node != null);
-    if (stack.isEmpty()) {
-      node.accept(this);
-      return;
+    Verify.verify(!stack.isEmpty());
+
+    int prefixIndex = TypeNameClassifier.typePrefixLength(simpleNames(stack));
+    // record the number of 'dots' for determining whether to use builder-style
+    int dereferences = stack.size() - 1;
+    if (prefixIndex >= 0) {
+      // adjust the builder-style threshold to ignore dereferences in the prefix, if there is one
+      dereferences -= prefixIndex;
     }
-    boolean fillNextBreak = isBaseName(Optional.fromNullable(node));
-    boolean needDot = node != null;
-    builder.open(plusFour);
-    if (node != null) {
-      node.accept(this);
-    }
+
+    builder.open(plusFour, MAX_LINES_FOR_CHAINED_ACCESSES);
     Expression expression = null;
-    // TODO(jdd): Stack must be non-empty!
     Optional<BreakTag> optionalTag = Optional.absent();
+    boolean needDot = false;
+    boolean endedOnMethod = false;
+    
+    // Output the prefix of the dereference chain.
+    // e.g. the "ImmutableList" before ".builder().add()..."
+    if (prefixIndex >= 0) {
+      builder.open(ZERO);
+      boolean closed = false;
+      while (prefixIndex >= 0) {
+        expression = stack.removeFirst();
+        endedOnMethod |= expression.getNodeType() == ASTNode.METHOD_INVOCATION;
+        if (needDot) {
+          builder.breakToFill();
+          builder.guessToken(".");
+        }
+        dotExpressionUpToArgs(expression);
+        if (endedOnMethod) {
+          builder.close();
+          closed = true;
+        }
+        if (!stack.isEmpty()) {
+          dotExpressionArgsAndParen(expression);
+        } else {
+          optionalTag = Optional.of(genSym());
+        }
+        needDot = true;
+        prefixIndex--;
+      }
+      
+      // Try to output the first dereference after the prefix on the same line,
+      // unless the prefix included a method.
+      if (!stack.isEmpty() && !endedOnMethod) {
+        expression = stack.removeFirst();
+        if (needDot) {
+          builder.breakToFill();
+          builder.guessToken(".");
+        }
+        dotExpressionUpToArgs(expression);
+        builder.close();
+        closed = true;
+
+        if (!stack.isEmpty()) {
+          dotExpressionArgsAndParen(expression);
+        } else {
+          optionalTag = Optional.of(genSym());
+        }
+        needDot = true;
+      }
+      if (!closed) {
+        builder.close();
+      }
+    }
+
+    // Output the rest of the dereferences, possibly in builder-style.
     while (!stack.isEmpty()) {
-      expression = stack.removeLast();
-      optionalTag = Optional.fromNullable(stack.isEmpty() ? genSym() : null);
+      expression = stack.removeFirst();
+      if (stack.isEmpty()) {
+        optionalTag = Optional.of(genSym());
+      }
       if (needDot) {
+        FillMode fillMode =
+            (dereferences >= MAX_DEREFERENCES_BEFORE_BUILDER_STYLE)
+                ? FillMode.FORCED
+                : FillMode.UNIFIED;
         builder.breakOp(
-            fillNextBreak ? Doc.FillMode.INDEPENDENT : Doc.FillMode.UNIFIED, "", ZERO,
-            Optional.of(Doc.ProgressiveIndent.make(ZERO, ZERO)), optionalTag);
+            fillMode, "", ZERO, Optional.of(Doc.ProgressiveIndent.make(ZERO, ZERO)), optionalTag);
         token(".");
       }
       dotExpressionUpToArgs(expression);
@@ -2290,26 +2357,41 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         break;
       }
       dotExpressionArgsAndParen(expression);
-      fillNextBreak = false;
       needDot = true;
     }
-    builder.close();
-    // TODO(jdd): Is this possible?
-    if (expression != null) {
-      if (optionalTag.isPresent()) {
-        builder.open(Indent.If.make(optionalTag.get(), plusFour, ZERO));
-      } else {
-        builder.open(ZERO);
-      }
-      dotExpressionArgsAndParen(expression);
+    if (optionalTag.isPresent()) {
+      builder.open(Indent.If.make(optionalTag.get(), ZERO, minusFour));
+    }
+    dotExpressionArgsAndParen(expression);
+    if (optionalTag.isPresent()) {
       builder.close();
     }
+    builder.close();
   }
 
-  private static boolean isBaseName(Optional<Expression> optionalNode) {
-    return optionalNode.isPresent()
-        && (optionalNode.get().getNodeType() == ASTNode.SIMPLE_NAME
-            || optionalNode.get().getNodeType() == ASTNode.QUALIFIED_NAME);
+  /** Returns the simple names of expressions in a "." chain. */
+  private List<String> simpleNames(ArrayDeque<Expression> stack) {
+    ImmutableList.Builder<String> simpleNames = ImmutableList.builder();
+    OUTER:
+    for (Expression expression : stack) {
+      switch (expression.getNodeType()) {
+        case ASTNode.FIELD_ACCESS:
+          simpleNames.add(((FieldAccess) expression).getName().getIdentifier());
+          break;
+        case ASTNode.QUALIFIED_NAME:
+          simpleNames.add(((QualifiedName) expression).getName().getIdentifier());
+          break;
+        case ASTNode.SIMPLE_NAME:
+          simpleNames.add(((SimpleName) expression).getIdentifier());
+          break;
+        case ASTNode.METHOD_INVOCATION:
+          simpleNames.add(((MethodInvocation) expression).getName().getIdentifier());
+          break OUTER;
+        default:
+          break OUTER;
+      }
+    }
+    return simpleNames.build();
   }
 
   private void dotExpressionUpToArgs(Expression expression) {
@@ -2330,8 +2412,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         visit(methodInvocation.getName());
         token("(");
         break;
+      case ASTNode.QUALIFIED_NAME:
+        visit(((QualifiedName) expression).getName());
+        break;
+      case ASTNode.SIMPLE_NAME:
+        visit(((SimpleName) expression));
+        break;
       default:
-        throw new IllegalArgumentException("bad expression type");
+        expression.accept(this);
     }
   }
 
@@ -2344,8 +2432,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         addArguments(methodInvocation.arguments(), plusFour);
         token(")");
         break;
+      case ASTNode.SIMPLE_NAME:
+      case ASTNode.QUALIFIED_NAME:
+        break;
       default:
-        throw new IllegalArgumentException("bad expression type");
+        break;
     }
   }
 
@@ -2469,14 +2560,18 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private void visitQualifiedName(QualifiedName node0, BreakOrNot breaks) {
     QualifiedName node = node0;
     sync(node);
+
+    // defer to visitDot for builder-style wrapping if breaks are enabled
     if (breaks.isYes()) {
-      builder.open(plusFour);
+      visitDot(node0);
+      return;
     }
+
     // Collapse chains of "." operators.
     ArrayDeque<SimpleName> stack = new ArrayDeque<>();
     Name qualifier;
     while (true) {
-      stack.addLast(node.getName());
+      stack.addFirst(node.getName());
       qualifier = node.getQualifier();
       if (qualifier == null || qualifier.getNodeType() != ASTNode.QUALIFIED_NAME) {
         break;
@@ -2485,24 +2580,15 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     if (qualifier != null) {
       visitName(qualifier, breaks);
-      if (breaks.isYes()) {
-        builder.breakToFill();
-      }
       token(".");
     }
     boolean needDot = false;
-    while (!stack.isEmpty()) {
+    for (SimpleName name : stack) {
       if (needDot) {
-        if (breaks.isYes()) {
-          builder.breakToFill();
-        }
         token(".");
       }
-      visit(stack.removeLast());
+      visit(name);
       needDot = true;
-    }
-    if (breaks.isYes()) {
-      builder.close();
     }
   }
 

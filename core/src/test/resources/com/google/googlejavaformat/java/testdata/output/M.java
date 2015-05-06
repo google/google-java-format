@@ -491,13 +491,15 @@ class M {
                         Pair<Pair<Integer, Integer>, Pair<Integer, Integer>>>>
                     of(null);
     Pair<Integer, Integer> pair1 =
-        ImmutableList.<Pair<Integer, Integer>>of(null).get(
-            0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0
-                + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0);
+        ImmutableList.<Pair<Integer, Integer>>of(null)
+            .get(
+                0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0
+                    + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0);
     Pair<Pair<Integer, Integer>, Pair<Integer, Integer>> pair2 =
-        ImmutableList.<Pair<Pair<Integer, Integer>, Pair<Integer, Integer>>>of(null).get(
-            0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0
-                + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0);
+        ImmutableList.<Pair<Pair<Integer, Integer>, Pair<Integer, Integer>>>of(null)
+            .get(
+                0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0
+                    + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0);
     Pair<
             Pair<Pair<Integer, Integer>, Pair<Integer, Integer>>,
             Pair<Pair<Integer, Integer>, Pair<Integer, Integer>>>
@@ -514,7 +516,15 @@ class M {
 
   void f(int... x) {
     M m = null;
-    ((m.identity().identity().identity().identity()).identity().identity().identity().identity())
+    ((m
+                .identity()
+                .identity()
+                .identity()
+                .identity())
+            .identity()
+            .identity()
+            .identity()
+            .identity())
         .identity()
         .identity()
         .identity()
@@ -587,10 +597,9 @@ class M {
     Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
         .ffffffffff(0);
     Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.fff(0).fff(0);
-    Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.fff(0 + 0).fff(
-        0);
-    Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-        .fff(
+    Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.fff(0 + 0)
+        .fff(0);
+    Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.fff(
             0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0
                 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0)
         .fff(0);
@@ -605,8 +614,9 @@ class M {
   }
 
   M ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(int x) {
-    new M().ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(
-        0 + 0 + 0 + 0);
+    new M()
+        .ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(
+            0 + 0 + 0 + 0);
     ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(0);
     ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(
         0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0
@@ -616,8 +626,8 @@ class M {
         .fff(0)
         .fff(0)
         .f(0);
-    ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(0).ffffffffff(
-        0);
+    ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(0)
+        .ffffffffff(0);
     return this;
   }
 }

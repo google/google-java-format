@@ -37,9 +37,15 @@ class B20128760 {
 
     xxXxxxxxxxXxxxXxxx =
         (XxxxXxxx)
-            xxxxxxxxXxxxxxxxxx.xxx()
+            xxxxxxxxXxxxxxxxxx
+                .xxx()
                 .xxxxxXxxxxxx
-                .xxxXxxxxxxx(xxxxxxxxXxxxxxxxxx.xxx().xxxxXxxxx.xxxXxxxxxxXxxx() - 1)
+                .xxxXxxxxxxx(
+                    xxxxxxxxXxxxxxxxxx
+                            .xxx()
+                            .xxxxXxxxx
+                            .xxxXxxxxxxXxxx()
+                        - 1)
                 .xxxXxxx()
                 .xxxxXxxxXxXx(X.xx.xxxxxxxxxxxxxxxxxxxxxxxxxxx);
 
