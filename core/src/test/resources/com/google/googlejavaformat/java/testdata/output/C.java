@@ -69,10 +69,8 @@ class C<T> {
                   : i == 2 ? 2 : i == 3 ? 3 : i == 4 ? 4 : i == 5 ? 5 : i == 6 ? 6 : i == 7 ? 7 : i;
       LABEL:
       while (true != false) {
-        if (false == true)
-          continue;
-        if (false == false)
-          continue LABEL;
+        if (false == true) continue;
+        if (false == false) continue LABEL;
         // Comment indented +2
       // Comment indented +0
       }

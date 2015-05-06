@@ -647,7 +647,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(DoStatement node) {
     sync(node);
     token("do");
-    builder.space();
     visitStatement(node.getBody(), CollapseEmptyOrNot.YES, AllowTrailingBlankLine.YES);
     if (node.getBody().getNodeType() == ASTNode.BLOCK) {
       builder.space();
@@ -684,7 +683,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         Direction.HORIZONTAL, node.getParameter(), Optional.of(node.getExpression()), ":");
     builder.close();
     token(")");
-    builder.space();
     builder.close();
     visitStatement(node.getBody(), CollapseEmptyOrNot.YES, AllowTrailingBlankLine.NO);
     return false;
@@ -879,7 +877,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     builder.close();
     token(")");
-    builder.space();
     visitStatement(node.getBody(), CollapseEmptyOrNot.YES, AllowTrailingBlankLine.NO);
     return false;
   }
@@ -920,7 +917,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       token("(");
       expressions.get(i).accept(this);
       token(")");
-      builder.space();
       // An empty block can collapse to "{}" if there are no if/else or else clauses
       boolean onlyClause = expressionsN == 1 && node.getElseStatement() == null;
       // Trailing blank lines are permitted if this isn't the last clause
@@ -939,7 +935,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.forcedBreak();
       }
       token("else");
-      builder.space();
       visitStatement(node.getElseStatement(), CollapseEmptyOrNot.NO, AllowTrailingBlankLine.NO);
     }
     builder.close();
@@ -1877,7 +1872,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     token("(");
     node.getExpression().accept(this);
     token(")");
-    builder.space();
     visitStatement(node.getBody(), CollapseEmptyOrNot.YES, AllowTrailingBlankLine.NO);
     return false;
   }
@@ -1978,13 +1972,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     sync(node);
     switch (node.getNodeType()) {
       case ASTNode.BLOCK:
+        builder.space();
         visitBlock((Block) node, collapseEmptyOrNot, allowTrailingBlank);
         break;
       default:
-        builder.space();
         // TODO(jdd): Fix.
         builder.open(plusTwo);
-        builder.forcedBreak();
+        builder.breakOp(" ");
         node.accept(this);
         builder.close();
     }

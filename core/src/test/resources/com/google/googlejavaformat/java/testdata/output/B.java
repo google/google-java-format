@@ -9,10 +9,8 @@ class B {
   void f() {
     LABEL:
     while (true != false) {
-      if (false == true)
-        break;
-      if (false == false)
-        break LABEL;
+      if (false == true) break;
+      if (false == false) break LABEL;
     }
   }
 }
