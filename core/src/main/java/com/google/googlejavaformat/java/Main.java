@@ -256,7 +256,7 @@ public final class Main {
                     } catch (FormatterException e) {
                       synchronized (mutex) {
                         errWriter.append(fileName)
-                            .append(": lexing error: ")
+                            .append(": error: ")
                             .append(e.getMessage())
                             .append('\n')
                             .flush();

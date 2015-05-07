@@ -231,7 +231,7 @@ public final class Formatter {
   }
 
   private static RangeSet<Integer> characterRangesToLineRangeSet(
-      JavaInput javaInput, List<Range<Integer>> characterRanges) {
+      JavaInput javaInput, List<Range<Integer>> characterRanges) throws FormatterException {
     RangeSet<Integer> lineRangeSet = TreeRangeSet.create();
     for (Range<Integer> characterRange0 : characterRanges) {
       Range<Integer> characterRange = characterRange0.canonical(DiscreteDomain.integers());

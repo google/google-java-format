@@ -25,7 +25,9 @@ import com.google.common.io.CharStreams;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ResourceInfo;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -35,6 +37,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -47,6 +50,9 @@ import java.util.TreeMap;
  */
 @RunWith(JUnit4.class)
 public final class FormatterTest {
+  @Rule
+  public TemporaryFolder testFolder = new TemporaryFolder();
+
   @Test
   public void testFormatter() throws Exception {
     Path testDataPath = Paths.get("com/google/googlejavaformat/java/testdata");
@@ -79,7 +85,7 @@ public final class FormatterTest {
       }
     }
     assertEquals("unmatched inputs and outputs", inputs.size(), outputs.size());
-    
+
     for (Map.Entry<String, String> entry : inputs.entrySet()) {
       String fileName = entry.getKey();
       String input = inputs.get(fileName);
@@ -145,15 +151,15 @@ public final class FormatterTest {
 
   @Test
   public void testFormatStdinStdoutWithDashFlag() throws Exception {
-    String input =
-        "class Foo{\n"
-        + "void f\n"
-        + "() {\n"
-        + "}\n"
+    String input = 
+        "class Foo{\n" 
+        + "void f\n" 
+        + "() {\n" 
+        + "}\n" 
         + "}\n";
-    String expectedOutput =
-        "class Foo {\n"
-        + "  void f() {}\n"
+    String expectedOutput = 
+        "class Foo {\n" 
+        + "  void f() {}\n" 
         + "}\n";
 
     InputStream in = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
@@ -170,11 +176,56 @@ public final class FormatterTest {
     System.setIn(oldIn);
   }
 
+  @Test
+  public void testFormatLengthUpToEOF() throws Exception {
+    String input = 
+        "class Foo{\n"
+        + "void f\n"
+        + "() {\n"
+        + "}\n"
+        + "}\n\n\n\n\n\n";
+    String expectedOutput = 
+        "class Foo {\n"
+        + "  void f() {}\n"
+        + "}\n";
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    String[] args = {"--offset", "0", "--length", String.valueOf(input.length()), path.toString()};
+    assertThat(main.format(args)).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void testFormatLengthOutOfRange() throws Exception {
+    String input = "class Foo{}\n";
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    String[] args = {"--offset", "0", "--length", "9999", path.toString()};
+    assertThat(main.format(args)).isEqualTo(1);
+    assertThat(err.toString())
+        .contains("error: invalid length 9999, offset + length (9999) is outside the file");
+  }
+
   private static String doGetFormatReplacements(String input, int characterILo, int characterIHi)
       throws Exception {
     List<Replacement> replacements =
-        new Formatter().getFormatReplacements(
-            input, ImmutableList.of(Range.closedOpen(characterILo, characterIHi + 1)));
+        new Formatter()
+            .getFormatReplacements(
+                input, ImmutableList.of(Range.closedOpen(characterILo, characterIHi + 1)));
     // Reformat the source.
     String source = input;
     for (Replacement replacement : replacements) {

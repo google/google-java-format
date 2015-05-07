@@ -224,10 +224,6 @@ public final class JavaInput extends Input {
     this.text = text;
     char[] chars = text.toCharArray();
     List<String> lines = NEWLINE_SPLITTER.splitToList(text);
-    // Remove blank line at end, an unfortunate side-effect of the splitter.
-    if (!lines.isEmpty() && lines.get(lines.size() - 1).isEmpty()) {
-      lines = lines.subList(0, lines.size() - 1);
-    }
     setLines(ImmutableList.copyOf(lines));
     ImmutableList<Tok> toks = buildToks(text, chars);
     positionToColumnMap = makePositionToColumnMap(toks);
@@ -447,8 +443,17 @@ public final class JavaInput extends Input {
    * @param offset the {@code 0}-based offset in characters
    * @param length the length in characters
    * @return the {@code 0}-based {@link Range} of line numbers
+   * @throws FormatterException 
    */
-  Range<Integer> characterRangeToLineRange(int offset, int length) {
+  Range<Integer> characterRangeToLineRange(int offset, int length) throws FormatterException {
+    int requiredLength = offset + length;
+    if (requiredLength > text.length()) {
+      throw new FormatterException(
+          String.format(
+              "invalid length %d, offset + length (%d) is outside the file", 
+              requiredLength,
+              requiredLength));
+    }
     if (length <= 0) {
       return Formatter.EMPTY_RANGE;
     }
