@@ -56,6 +56,11 @@ class B20128760 {
             xxxx(
                 xxxx(
                     xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx))));
+    
+    assertThat(
+            main
+                .format("--offset", "0", "--length", String.valueOf(input.length()), path.toString()))
+        .isEqualTo(0);
   }
 
   private static class GenerateDashboardRowFn

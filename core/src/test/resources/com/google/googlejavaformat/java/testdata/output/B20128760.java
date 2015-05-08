@@ -40,12 +40,7 @@ class B20128760 {
             xxxxxxxxXxxxxxxxxx
                 .xxx()
                 .xxxxxXxxxxxx
-                .xxxXxxxxxxx(
-                    xxxxxxxxXxxxxxxxxx
-                            .xxx()
-                            .xxxxXxxxx
-                            .xxxXxxxxxxXxxx()
-                        - 1)
+                .xxxXxxxxxxx(xxxxxxxxXxxxxxxxxx.xxx().xxxxXxxxx.xxxXxxxxxxXxxx() - 1)
                 .xxxXxxx()
                 .xxxxXxxxXxXx(X.xx.xxxxxxxxxxxxxxxxxxxxxxxxxxx);
 
@@ -62,6 +57,11 @@ class B20128760 {
             xxxx(
                 xxxx(
                     xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx))));
+
+    assertThat(
+            main.format(
+                "--offset", "0", "--length", String.valueOf(input.length()), path.toString()))
+        .isEqualTo(0);
   }
 
   private static class GenerateDashboardRowFn

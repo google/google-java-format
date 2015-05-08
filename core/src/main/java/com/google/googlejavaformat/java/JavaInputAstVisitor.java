@@ -16,7 +16,6 @@ package com.google.googlejavaformat.java;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
-import com.google.common.base.Verify;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
@@ -222,7 +221,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   private static final Indent.Const ZERO = Indent.Const.ZERO;
   private final Indent.Const minusTwo;
-  private final Indent.Const minusFour;
   private final Indent.Const plusTwo;
   private final Indent.Const plusFour;
   private final Indent.Const plusEight;
@@ -239,7 +237,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private static final int MAX_LINES_FOR_ARRAY_INITIALIZERS = 3;
   private static final int MAX_LINES_FOR_ANNOTATION_ELEMENT_VALUE_PAIRS = 1;
   private static final int MAX_LINES_FOR_CHAINED_ACCESSES = 1;
-  private static final int MAX_DEREFERENCES_BEFORE_BUILDER_STYLE = 3;
+  private static final int MAX_INVOCATIONS_BEFORE_BUILDER_STYLE = 3;
 
   static {
     PRECEDENCE.put("*", 10);
@@ -273,7 +271,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public JavaInputAstVisitor(OpsBuilder builder, int indentMultiplier) {
     this.builder = builder;
     minusTwo = Indent.Const.make(-2, indentMultiplier);
-    minusFour = Indent.Const.make(-4, indentMultiplier);
     plusTwo = Indent.Const.make(+2, indentMultiplier);
     plusFour = Indent.Const.make(+4, indentMultiplier);
     plusEight = Indent.Const.make(+8, indentMultiplier);
@@ -2253,6 +2250,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    */
   void visitDot(Expression node0) {
     Expression node = node0;
+
+    // collect a flattened list of "."-separated items
+    // e.g. ImmutableList.builder().add(1).build() -> [ImmutableList, builder(), add(1), build()]
     ArrayDeque<Expression> stack = new ArrayDeque<>();
     LOOP:
     do {
@@ -2267,105 +2267,163 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         case ASTNode.QUALIFIED_NAME:
           node = ((QualifiedName) node).getQualifier();
           break;
+        case ASTNode.SIMPLE_NAME:
+          node = null;
+          break LOOP;
         default:
+          // If the dot chain starts with a primary expression
+          // (e.g. a class instance creation, or a conditional expression)
+          // then remove it from the list and deal with it first.
+          stack.removeFirst();
           break LOOP;
       }
     } while (node != null);
-    Verify.verify(!stack.isEmpty());
+    List<Expression> items = new ArrayList<>(stack);
 
-    int prefixIndex = TypeNameClassifier.typePrefixLength(simpleNames(stack));
-    // record the number of 'dots' for determining whether to use builder-style
-    int dereferences = stack.size() - 1;
-    if (prefixIndex >= 0) {
-      // adjust the builder-style threshold to ignore dereferences in the prefix, if there is one
-      dereferences -= prefixIndex;
-    }
-
-    builder.open(plusFour, MAX_LINES_FOR_CHAINED_ACCESSES);
-    Expression expression = null;
-    Optional<BreakTag> optionalTag = Optional.absent();
     boolean needDot = false;
-    boolean endedOnMethod = false;
-    
-    // Output the prefix of the dereference chain.
-    // e.g. the "ImmutableList" before ".builder().add()..."
-    if (prefixIndex >= 0) {
-      builder.open(ZERO);
-      boolean closed = false;
-      while (prefixIndex >= 0) {
-        expression = stack.removeFirst();
-        endedOnMethod |= expression.getNodeType() == ASTNode.METHOD_INVOCATION;
-        if (needDot) {
-          builder.breakToFill();
-          builder.guessToken(".");
-        }
-        dotExpressionUpToArgs(expression);
-        if (endedOnMethod) {
-          builder.close();
-          closed = true;
-        }
-        if (!stack.isEmpty()) {
-          dotExpressionArgsAndParen(expression);
-        } else {
-          optionalTag = Optional.of(genSym());
-        }
-        needDot = true;
-        prefixIndex--;
-      }
-      
-      // Try to output the first dereference after the prefix on the same line,
-      // unless the prefix included a method.
-      if (!stack.isEmpty() && !endedOnMethod) {
-        expression = stack.removeFirst();
-        if (needDot) {
-          builder.breakToFill();
-          builder.guessToken(".");
-        }
-        dotExpressionUpToArgs(expression);
-        builder.close();
-        closed = true;
 
-        if (!stack.isEmpty()) {
-          dotExpressionArgsAndParen(expression);
-        } else {
-          optionalTag = Optional.of(genSym());
-        }
-        needDot = true;
-      }
-      if (!closed) {
-        builder.close();
-      }
-    }
-
-    // Output the rest of the dereferences, possibly in builder-style.
-    while (!stack.isEmpty()) {
-      expression = stack.removeFirst();
-      if (stack.isEmpty()) {
-        optionalTag = Optional.of(genSym());
-      }
-      if (needDot) {
-        FillMode fillMode =
-            (dereferences >= MAX_DEREFERENCES_BEFORE_BUILDER_STYLE)
-                ? FillMode.FORCED
-                : FillMode.UNIFIED;
-        builder.breakOp(
-            fillMode, "", ZERO, Optional.of(Doc.ProgressiveIndent.make(ZERO, ZERO)), optionalTag);
-        token(".");
-      }
-      dotExpressionUpToArgs(expression);
-      if (stack.isEmpty()) {
-        break;
-      }
-      dotExpressionArgsAndParen(expression);
+    // The dot chain started with a primary expression: output it normally, and indent
+    // the rest of the chain +4.
+    if (node != null) {
+      builder.open(plusFour);
+      node.accept(this);
+      builder.breakOp(ZERO);
       needDot = true;
     }
-    if (optionalTag.isPresent()) {
-      builder.open(Indent.If.make(optionalTag.get(), ZERO, minusFour));
+
+    // Check if the dot chain has a prefix that looks like a type name, so we can
+    // treat the type name-shaped part as a single syntactic unit.
+    int prefixIndex = TypeNameClassifier.typePrefixLength(simpleNames(stack));
+
+    int invocationCount = 0;
+    int firstInvocationIndex = -1;
+    {
+      for (int i = 0; i < items.size(); i++) {
+        Expression expression = items.get(i);
+        if (expression.getNodeType() == ASTNode.METHOD_INVOCATION) {
+          if (i > 0) {
+            // we only want dereference invocations
+            invocationCount++; 
+          }
+          if (firstInvocationIndex < 0) {
+            firstInvocationIndex = i;
+          }
+        }
+      }
     }
-    dotExpressionArgsAndParen(expression);
-    if (optionalTag.isPresent()) {
+
+    // If there's only one invocation, treat leading field accesses as a single
+    // unit. In the normal case we want to preserve the alignment of subsequent
+    // method calls, and would emit e.g.:
+    //
+    // myField
+    //     .foo()
+    //     .bar();
+    //
+    // But if there's no 'bar()' to worry about the alignment of we prefer:
+    //
+    // myField.foo();
+    //
+    // to:
+    //
+    // myField
+    //     .foo();
+    //
+    if (invocationCount == 1) {
+      prefixIndex = firstInvocationIndex;
+    }
+
+    boolean builderStyle = shouldUseBuilderStyle(items, invocationCount, prefixIndex);
+
+    if (prefixIndex > 0) {
+      visitDotWithPrefix(items, needDot, prefixIndex, builderStyle);
+    } else {
+      visitRegularDot(items, needDot, builderStyle);
+    }
+
+    if (node != null) {
       builder.close();
     }
+  }
+
+  private static boolean shouldUseBuilderStyle(
+      List<Expression> items, int invocations, int prefixIndex) {
+    if (prefixIndex >= 0 && items.get(prefixIndex).getNodeType() == ASTNode.METHOD_INVOCATION) {
+      // If the chain starts with a type name-shaped thing followed by a method invocation, that
+      // method doesn't count towards the threshold.
+      invocations--;
+    }
+    return invocations >= MAX_INVOCATIONS_BEFORE_BUILDER_STYLE;
+  }
+
+  /**
+   * Output a "regular" chain of dereferences, possibly in builder-style. Break before every dot.
+   *
+   * @param items        in the chain
+   * @param needDot      whether a leading dot is needed
+   * @param builderStyle whether builder-style should be used
+   */
+  private void visitRegularDot(List<Expression> items, boolean needDot, boolean builderStyle) {
+    boolean trailingDereferences = items.size() > 1;
+    builder.open(needDot ? ZERO : plusFour, MAX_LINES_FOR_CHAINED_ACCESSES);
+    for (Expression e : items) {
+      if (needDot) {
+        if (builderStyle) {
+          builder.forcedBreak();
+        } else {
+          builder.breakOp();
+        }
+        token(".");
+      }
+      dotExpressionUpToArgs(e);
+      dotExpressionArgsAndParen(e, (trailingDereferences || needDot) ? plusFour : ZERO);
+      needDot = true;
+    }
+    builder.close();
+  }
+
+  /**
+   * Output a chain of dereferences where some prefix should be treated as a single
+   * syntactic unit, either because it looks like a type name or because there
+   * is only a single method invocation in the chain.
+   *
+   * @param items        in the chain
+   * @param needDot      whether a leading dot is needed
+   * @param prefixIndex  the index of the last item in the prefix
+   * @param builderStyle whether builder-style should be used
+   */
+  private void visitDotWithPrefix(
+      List<Expression> items, boolean needDot, int prefixIndex, boolean builderStyle) {
+    // Are there method invocations or field accesses after the prefix?
+    boolean trailingDereferences = prefixIndex >= 0 && prefixIndex < items.size() - 1;
+
+    builder.open(plusFour, MAX_LINES_FOR_CHAINED_ACCESSES);
+    builder.open(trailingDereferences ? ZERO : ZERO);
+
+    for (int i = 0; i < items.size(); i++) {
+      Expression e = items.get(i);
+      if (needDot) {
+        FillMode fillMode;
+        if (prefixIndex >= 0 && i <= prefixIndex) {
+          fillMode = FillMode.INDEPENDENT;
+        } else if (builderStyle) {
+          fillMode = FillMode.FORCED;
+        } else {
+          fillMode = FillMode.UNIFIED;
+        }
+
+        builder.breakOp(
+            fillMode, "", ZERO, Optional.of(Doc.ProgressiveIndent.make(ZERO, ZERO)));
+        token(".");
+      }
+      dotExpressionUpToArgs(e);
+      if (prefixIndex >= 0 && i == prefixIndex) {
+        builder.close();
+      }
+      dotExpressionArgsAndParen(e, trailingDereferences ? plusFour : ZERO);
+      needDot = true;
+    }
+
     builder.close();
   }
 
@@ -2423,13 +2481,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
   }
 
-  private void dotExpressionArgsAndParen(Expression expression) {
+  private void dotExpressionArgsAndParen(Expression expression, Indent indent) {
     switch (expression.getNodeType()) {
       case ASTNode.FIELD_ACCESS:
         break;
       case ASTNode.METHOD_INVOCATION:
         MethodInvocation methodInvocation = (MethodInvocation) expression;
-        addArguments(methodInvocation.arguments(), plusFour);
+        addArguments(methodInvocation.arguments(), indent);
         token(")");
         break;
       case ASTNode.SIMPLE_NAME:
