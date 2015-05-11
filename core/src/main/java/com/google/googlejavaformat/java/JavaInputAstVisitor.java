@@ -234,10 +234,16 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private static final ImmutableList<Op> EMPTY_LIST = ImmutableList.of();
   private static final Map<String, Integer> PRECEDENCE = new HashMap<>();
   private static final int MAX_LINES_FOR_ARGUMENTS = 1;
-  private static final int MAX_LINES_FOR_ARRAY_INITIALIZERS = 3;
+  private static final int MAX_LINES_FOR_ARRAY_INITIALIZERS = 1;
   private static final int MAX_LINES_FOR_ANNOTATION_ELEMENT_VALUE_PAIRS = 1;
   private static final int MAX_LINES_FOR_CHAINED_ACCESSES = 1;
   private static final int MAX_INVOCATIONS_BEFORE_BUILDER_STYLE = 3;
+  
+  /** 
+   * A maxLinesFilled value for OpenOp.make that indicates one-per-line mode 
+   * should always be used. 
+   */
+  private static final int NEVER_FILL = 0;
 
   static {
     PRECEDENCE.put("*", 10);
@@ -426,7 +432,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       tokenBreakTrailingComment("{", plusTwo);
       builder.blankLineWanted(false);
       builder.breakOp();
-      builder.open(ZERO, MAX_LINES_FOR_ARRAY_INITIALIZERS);
+      builder.open(ZERO, maybeFillLines(node.expressions(), MAX_LINES_FOR_ARRAY_INITIALIZERS));
       boolean hasTrailingComma = hasTrailingToken(builder.getInput(), node.expressions(), ",");
       boolean first = true;
       for (Expression expression : (List<Expression>) node.expressions()) {
@@ -449,6 +455,37 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       token("}", plusTwo);
     }
     return false;
+  }
+
+  /**
+   * Returns {@code defaultThreshold} if bin-packing can be used for the given
+   * expression list, and {code NEVER_FILL} otherwise.
+   */
+  private static int maybeFillLines(List<Expression> expressions, int defaultThreshold) {
+    for (Expression expression : expressions) {
+      switch (expression.getNodeType()) {
+        case ASTNode.BOOLEAN_LITERAL:
+        case ASTNode.CHARACTER_LITERAL:
+        case ASTNode.NULL_LITERAL:
+        case ASTNode.NUMBER_LITERAL:
+          break;
+        case ASTNode.STRING_LITERAL:
+          StringLiteral stringLiteral = (StringLiteral) expression;
+          if (stringLiteral.getEscapedValue().length() >= 10) {
+            return defaultThreshold;
+          }
+          break;
+        case ASTNode.SIMPLE_NAME:
+          SimpleName name = (SimpleName) expression;
+          if (name.getIdentifier().length() >= 10) {
+            return defaultThreshold;
+          }
+          break;
+        default:
+          return defaultThreshold;
+      }
+    }
+    return NEVER_FILL;
   }
 
   /** Visitor method for {@link ArrayType}s. */
@@ -2552,7 +2589,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       } else {
         builder.open(plusIndent);
         builder.breakOp();
-        builder.open(ZERO, MAX_LINES_FOR_ARGUMENTS);
+        builder.open(ZERO, maybeFillLines(arguments, MAX_LINES_FOR_ARGUMENTS));
         boolean first = true;
         for (Expression argument : arguments) {
           if (!first) {
