@@ -2338,9 +2338,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       for (int i = 0; i < items.size(); i++) {
         Expression expression = items.get(i);
         if (expression.getNodeType() == ASTNode.METHOD_INVOCATION) {
-          if (i > 0) {
+          if (i > 0 || node != null) {
             // we only want dereference invocations
-            invocationCount++; 
+            invocationCount++;
           }
           if (firstInvocationIndex < 0) {
             firstInvocationIndex = i;
