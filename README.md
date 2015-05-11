@@ -1,4 +1,4 @@
-# Google Java Format
+# google-java-format
 
 `google-java-format` is a program that reformats Java source code to comply with
 [Google Java Style][].
