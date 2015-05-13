@@ -57,45 +57,6 @@ public abstract class Doc {
     FORCED
   }
 
-  /**
-   * A {@code ProgressiveIndent} represents an increment in the indent partway through a
-   * {@link Level}. A {@code ProgressiveIndent} is held inside a {@link Break}, and applies if that
-   * {@link Break} is taken.
-   */
-  public static final class ProgressiveIndent {
-    final Indent addIndent;
-    final Indent extraIndentTemp;
-
-    /**
-     * The {@code ProgressiveIndent} constructor.
-     * @param addIndent the increment to the indent
-     * @param extraIndentTemp a temporary additional increment to the indent, which lasts until the
-     *     next {@code ProgressiveIndent}
-     */
-    private ProgressiveIndent(Indent addIndent, Indent extraIndentTemp) {
-      this.addIndent = addIndent;
-      this.extraIndentTemp = extraIndentTemp;
-    }
-
-    /**
-     * The {@code ProgressiveIndent} factory method.
-     * @param addIndent the increment to the indent
-     * @param extraIndentTemp a temporary additional increment to the indent, which lasts until the
-     *     next {@code ProgressiveIndent}
-     */
-    public static ProgressiveIndent make(Indent addIndent, Indent extraIndentTemp) {
-      return new ProgressiveIndent(addIndent, extraIndentTemp);
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(this)
-          .add("addIndent", addIndent)
-          .add("extraIndentTemp", extraIndentTemp)
-          .toString();
-    }
-  }
-
   /** State for writing. */
   public static final class State {
     final int indent0;
@@ -339,20 +300,7 @@ public abstract class Doc {
         // Break.
         if (optBreakDoc.isPresent()) {
           Break breakDoc = optBreakDoc.get();
-          Optional<ProgressiveIndent> optProgressiveIndent = breakDoc.optProgressiveIndent;
-          int indent =
-              state.lastIndent
-                  + (optProgressiveIndent.isPresent()
-                      ? optProgressiveIndent.get().addIndent.eval(output)
-                      : +0);
-          state =
-              state.withLastIndent(indent)
-                  .withColumn(breakDoc.writeBroken(output, indent))
-                  .withIndent(
-                      indent
-                          + (optProgressiveIndent.isPresent()
-                              ? optProgressiveIndent.get().extraIndentTemp.eval(output)
-                              : +0));
+          state = state.withColumn(breakDoc.writeBroken(output, state.lastIndent));
         }
         state = state.withMustBreak(false);
         boolean enoughRoom = (float) state.column + splitWidth <= (float) maxWidth;
@@ -579,16 +527,14 @@ public abstract class Doc {
     private final FillMode fillMode;
     private final String flat;
     private final Indent plusIndent;
-    private final Optional<ProgressiveIndent> optProgressiveIndent;
     private final Optional<BreakTag> optTag;
 
     private Break(
         FillMode fillMode, String flat, Indent plusIndent,
-        Optional<ProgressiveIndent> optProgressiveIndent, Optional<BreakTag> optTag) {
+        Optional<BreakTag> optTag) {
       this.fillMode = fillMode;
       this.flat = flat;
       this.plusIndent = plusIndent;
-      this.optProgressiveIndent = optProgressiveIndent;
       this.optTag = optTag;
     }
 
@@ -601,8 +547,7 @@ public abstract class Doc {
      */
     public static Break make(FillMode fillMode, String flat, Indent plusIndent) {
       return new Break(
-          fillMode, flat, plusIndent, Optional.<ProgressiveIndent>absent(),
-          Optional.<BreakTag>absent());
+          fillMode, flat, plusIndent, Optional.<BreakTag>absent());
     }
 
     /**
@@ -610,15 +555,12 @@ public abstract class Doc {
      * @param fillMode the {@link FillMode}
      * @param flat the the text when not broken
      * @param plusIndent extra indent if taken
-     * @param optProgressiveIndent the optional {@link ProgressiveIndent} governing the progression
-     *     of indents on this level
      * @param optTag an optional tag for remembering whether the break was taken
      * @return the new {@code Break}
      */
     static Break make(
-        FillMode fillMode, String flat, Indent plusIndent,
-        Optional<ProgressiveIndent> optProgressiveIndent, Optional<BreakTag> optTag) {
-      return new Break(fillMode, flat, plusIndent, optProgressiveIndent, optTag);
+        FillMode fillMode, String flat, Indent plusIndent, Optional<BreakTag> optTag) {
+      return new Break(fillMode, flat, plusIndent, optTag);
     }
 
     /**
@@ -693,7 +635,6 @@ public abstract class Doc {
           .add("fillMode", fillMode)
           .add("flat", flat)
           .add("plusIndent", plusIndent)
-          .add("optProgressiveIndent", optProgressiveIndent)
           .add("optTag", optTag)
           .toString();
     }

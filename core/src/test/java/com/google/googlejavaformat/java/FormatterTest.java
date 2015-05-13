@@ -151,15 +151,15 @@ public final class FormatterTest {
 
   @Test
   public void testFormatStdinStdoutWithDashFlag() throws Exception {
-    String input = 
-        "class Foo{\n" 
-        + "void f\n" 
-        + "() {\n" 
-        + "}\n" 
+    String input =
+        "class Foo{\n"
+        + "void f\n"
+        + "() {\n"
+        + "}\n"
         + "}\n";
-    String expectedOutput = 
-        "class Foo {\n" 
-        + "  void f() {}\n" 
+    String expectedOutput =
+        "class Foo {\n"
+        + "  void f() {}\n"
         + "}\n";
 
     InputStream in = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
@@ -178,13 +178,13 @@ public final class FormatterTest {
 
   @Test
   public void testFormatLengthUpToEOF() throws Exception {
-    String input = 
+    String input =
         "class Foo{\n"
         + "void f\n"
         + "() {\n"
         + "}\n"
         + "}\n\n\n\n\n\n";
-    String expectedOutput = 
+    String expectedOutput =
         "class Foo {\n"
         + "  void f() {}\n"
         + "}\n";

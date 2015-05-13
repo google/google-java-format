@@ -221,6 +221,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   private static final Indent.Const ZERO = Indent.Const.ZERO;
   private final Indent.Const minusTwo;
+  private final Indent.Const minusFour;
   private final Indent.Const plusTwo;
   private final Indent.Const plusFour;
   private final Indent.Const plusEight;
@@ -238,10 +239,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private static final int MAX_LINES_FOR_ANNOTATION_ELEMENT_VALUE_PAIRS = 1;
   private static final int MAX_LINES_FOR_CHAINED_ACCESSES = 1;
   private static final int MAX_INVOCATIONS_BEFORE_BUILDER_STYLE = 3;
-  
-  /** 
-   * A maxLinesFilled value for OpenOp.make that indicates one-per-line mode 
-   * should always be used. 
+
+  /**
+   * A maxLinesFilled value for OpenOp.make that indicates one-per-line mode
+   * should always be used.
    */
   private static final int NEVER_FILL = 0;
 
@@ -277,6 +278,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public JavaInputAstVisitor(OpsBuilder builder, int indentMultiplier) {
     this.builder = builder;
     minusTwo = Indent.Const.make(-2, indentMultiplier);
+    minusFour = Indent.Const.make(-4, indentMultiplier);
     plusTwo = Indent.Const.make(+2, indentMultiplier);
     plusFour = Indent.Const.make(+4, indentMultiplier);
     plusEight = Indent.Const.make(+8, indentMultiplier);
@@ -1152,66 +1154,86 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return false;
   }
 
-  /*
-   * Method declarations are perhaps the most difficult part of implementing Google's Java Style
-   * Guide. They have too many optional slots for a simple break-from-the-top approach to apply
-   * directly, and so a slightly more complex approach is needed.
-   */
-
   /** Visitor method for {@link MethodDeclaration}s. */
   @Override
   public boolean visit(MethodDeclaration node) {
     sync(node);
     visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL);
-    builder.open(ZERO);
-    boolean first = true;
-    if (!node.typeParameters().isEmpty()) {
-      builder.breakToFill("");
-      visitTypeParameters(node.typeParameters(), plusFour, BreakOrNot.NO);
-      first = false;
-    }
-    if (!node.isConstructor()) {
-      if (!first) {
-        builder.breakOp(
-            Doc.FillMode.INDEPENDENT, " ", ZERO,
-            Optional.of(Doc.ProgressiveIndent.make(plusFour, ZERO)));
+
+    builder.open(node.typeParameters().isEmpty() ? ZERO : plusFour);
+    {
+      boolean first = true;
+      if (!node.typeParameters().isEmpty()) {
+        visitTypeParameters(node.typeParameters(), ZERO, BreakOrNot.NO);
+        first = false;
       }
-      if (node.getReturnType2() == null) {
-        token("void");
+
+      BreakTag breakBeforeType = genSym();
+      boolean openedNameAndTypeScope = false;
+      if (!node.isConstructor()) {
+        if (!first) {
+          builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO,
+              Optional.of(breakBeforeType));
+        } else {
+          first = false;
+        }
+        if (!openedNameAndTypeScope) {
+          builder.open(plusFour);
+          openedNameAndTypeScope = true;
+        }
+        if (node.getReturnType2() == null) {
+          token("void");
+        } else {
+          node.getReturnType2().accept(this);
+        }
+      }
+      BreakTag breakBeforeName = genSym();
+      if (!first) {
+        builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO,
+            Optional.of(breakBeforeName));
       } else {
-        builder.open(plusFour);
-        node.getReturnType2().accept(this);
+        first = false;
+      }
+      if (!openedNameAndTypeScope) {
+        builder.open(ZERO);
+        openedNameAndTypeScope = true;
+      }
+      visit(node.getName());
+      token("(");
+      // end of name and type scope
+      builder.close();
+
+      if (!node.isConstructor()) {
+        builder.open(Indent.If.make(breakBeforeName, plusFour, ZERO));
+      }
+      builder.open(plusFour);
+      {
+        if (!node.parameters().isEmpty() || node.getReceiverType() != null) {
+          // Break before args.
+          builder.breakToFill("");
+          visitFormals(
+              Optional.fromNullable(node.getReceiverType()),
+              node.getReceiverQualifier(),
+              node.parameters());
+        }
+        token(")");
+        extraDimensions(plusFour, node.extraDimensions());
+        if (!node.thrownExceptionTypes().isEmpty()) {
+          builder.breakToFill(" ");
+          builder.open(plusFour);
+          {
+            visitThrowsClause(node.thrownExceptionTypes());
+          }
+          builder.close();
+        }
+      }
+      builder.close();
+      if (!node.isConstructor()) {
         builder.close();
       }
-      first = false;
-    }
-    // Break before method name.
-    builder.breakOp(
-        Doc.FillMode.INDEPENDENT, first ? "" : " ", ZERO,
-        Optional.of(Doc.ProgressiveIndent.make(plusFour, plusFour)));
-    visit(node.getName());
-    token("(");
-    BreakTag argsBreak = genSym();
-    if (!node.parameters().isEmpty() || node.getReceiverType() != null) {
-      // Break before args.
-      builder.breakOp(
-          Doc.FillMode.INDEPENDENT, "", ZERO,
-          Optional.of(Doc.ProgressiveIndent.make(plusFour, ZERO)), Optional.of(argsBreak));
-      visitFormals(
-          Optional.fromNullable(node.getReceiverType()), node.getReceiverQualifier(),
-          node.parameters());
-    }
-    token(")");
-    extraDimensions(plusFour, node.extraDimensions());
-    if (!node.thrownExceptionTypes().isEmpty()) {
-      builder.breakOp(
-          Doc.FillMode.INDEPENDENT, " ", Indent.If.make(argsBreak, ZERO, plusFour),
-          Optional.of(Doc.ProgressiveIndent.make(ZERO, plusFour)));
-      builder.open(Indent.If.make(argsBreak, ZERO, plusFour));
-      visitThrowsClause(node.thrownExceptionTypes());
-      builder.close();
     }
     builder.close();
+
     if (node.getBody() == null) {
       token(";");
     } else {
@@ -1219,6 +1241,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       visit(node.getBody());
     }
     builder.guessToken(";");
+
     return false;
   }
 
@@ -1672,7 +1695,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.close();
       builder.space();
     }
-    // An empty try-with-resources body can collapse to "{}" if there are no trailing catch or 
+    // An empty try-with-resources body can collapse to "{}" if there are no trailing catch or
     // finally blocks.
     boolean trailingClauses = !node.catchClauses().isEmpty() || node.getFinally() != null;
     visitBlock(
@@ -2449,8 +2472,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           fillMode = FillMode.UNIFIED;
         }
 
-        builder.breakOp(
-            fillMode, "", ZERO, Optional.of(Doc.ProgressiveIndent.make(ZERO, ZERO)));
+        builder.breakOp(fillMode, "", ZERO);
         token(".");
       }
       dotExpressionUpToArgs(e);
@@ -2715,40 +2737,67 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       List<Dimension> extraDimensions,
       String equals,
       Optional<Expression> initializer) {
+
+    BreakTag typeBreak = genSym();
+
     builder.open(ZERO);
-    visitAndBreakModifiers(modifiers, annotationsDirection);
-    builder.open(ZERO);
-    builder.open(plusFour);
-    type.accept(this);
-    if (isVarargs.isYes()) {
-      // TODO(jdd): Should these be vertical?
-      visitAnnotations(varargsAnnotations, BreakOrNot.YES, BreakOrNot.YES);
-      builder.op("...");
-    }
-    builder.close();
-    builder.breakOp(
-        Doc.FillMode.INDEPENDENT, " ", ZERO,
-        Optional.of(Doc.ProgressiveIndent.make(plusFour, ZERO)));
-    visit(name);
-    builder.op(op);
-    extraDimensions(initializer.isPresent() ? plusEight : plusFour, extraDimensions);
-    if (initializer.isPresent()) {
-      builder.space();
-      token(equals);
-      if (initializer.get().getNodeType() == ASTNode.ARRAY_INITIALIZER) {
-        builder.close();
+    {
+      visitAndBreakModifiers(modifiers, annotationsDirection);
+      builder.open(plusFour);
+      {
         builder.open(ZERO);
-        builder.space();
-        initializer.get().accept(this);
-      } else {
-        builder.breakOp(
-            Doc.FillMode.INDEPENDENT, " ", ZERO,
-            Optional.of(Doc.ProgressiveIndent.make(plusFour, ZERO)));
-        initializer.get().accept(this);
+        {
+          builder.open(ZERO);
+          {
+              type.accept(this);
+              if (isVarargs.isYes()) {
+                visitAnnotations(varargsAnnotations, BreakOrNot.YES, BreakOrNot.YES);
+                builder.op("...");
+              }
+          }
+          builder.close();
+
+          builder.breakOp(
+              Doc.FillMode.INDEPENDENT,
+              " ",
+              ZERO,
+              Optional.of(typeBreak));
+
+          // conditionally ident the name and initializer +4 if the type spans
+          // multiple lines
+          builder.open(Indent.If.make(typeBreak, plusFour, ZERO));
+          visit(name);
+          builder.op(op);
+          extraDimensions(initializer.isPresent() ? plusFour : ZERO, extraDimensions);
+        }
+        builder.close();
       }
+      builder.close();
+
+      if (initializer.isPresent()) {
+        builder.space();
+        token(equals);
+        if (initializer.get().getNodeType() == ASTNode.ARRAY_INITIALIZER) {
+          builder.open(minusFour);
+          {
+            builder.space();
+            initializer.get().accept(this);
+          }
+          builder.close();
+        } else {
+          builder.open(Indent.If.make(typeBreak, plusFour, ZERO));
+          {
+            builder.breakToFill(" ");
+            initializer.get().accept(this);
+          }
+          builder.close();
+        }
+      }
+      // end of conditional name and initializer indent
+      builder.close();
     }
     builder.close();
-    builder.close();
+
   }
 
   /**

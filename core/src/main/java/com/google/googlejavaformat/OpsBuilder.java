@@ -165,7 +165,7 @@ public final class OpsBuilder {
 
   /** Emit a {@link Doc.Break}. */
   public final void breakOp() {
-    breakOp(Doc.FillMode.UNIFIED, "", ZERO, Optional.<Doc.ProgressiveIndent>absent());
+    breakOp(Doc.FillMode.UNIFIED, "", ZERO);
   }
 
   /**
@@ -173,17 +173,17 @@ public final class OpsBuilder {
    * @param plusIndent extra indent if taken
    */
   public final void breakOp(Indent plusIndent) {
-    breakOp(Doc.FillMode.UNIFIED, "", plusIndent, Optional.<Doc.ProgressiveIndent>absent());
+    breakOp(Doc.FillMode.UNIFIED, "", plusIndent);
   }
 
   /** Emit a filled {@link Doc.Break}. */
   public final void breakToFill() {
-    breakOp(Doc.FillMode.INDEPENDENT, "", ZERO, Optional.<Doc.ProgressiveIndent>absent());
+    breakOp(Doc.FillMode.INDEPENDENT, "", ZERO);
   }
 
   /** Emit a forced {@link Doc.Break}. */
   public final void forcedBreak() {
-    breakOp(Doc.FillMode.FORCED, "", ZERO, Optional.<Doc.ProgressiveIndent>absent());
+    breakOp(Doc.FillMode.FORCED, "", ZERO);
   }
 
   /**
@@ -191,7 +191,7 @@ public final class OpsBuilder {
    * @param plusIndent extra indent if taken
    */
   public final void forcedBreak(Indent plusIndent) {
-    breakOp(Doc.FillMode.FORCED, "", plusIndent, Optional.<Doc.ProgressiveIndent>absent());
+    breakOp(Doc.FillMode.FORCED, "", plusIndent);
   }
 
   /**
@@ -199,7 +199,7 @@ public final class OpsBuilder {
    * @param flat the {@link Doc.Break} when not broken
    */
   public final void breakOp(String flat) {
-    breakOp(Doc.FillMode.UNIFIED, flat, ZERO, Optional.<Doc.ProgressiveIndent>absent());
+    breakOp(Doc.FillMode.UNIFIED, flat, ZERO);
   }
 
   /**
@@ -207,7 +207,7 @@ public final class OpsBuilder {
    * @param flat the {@link Doc.Break} when not broken
    */
   public final void breakToFill(String flat) {
-    breakOp(Doc.FillMode.INDEPENDENT, flat, ZERO, Optional.<Doc.ProgressiveIndent>absent());
+    breakOp(Doc.FillMode.INDEPENDENT, flat, ZERO);
   }
 
   /**
@@ -215,13 +215,10 @@ public final class OpsBuilder {
    * @param fillMode the {@link Doc.FillMode}
    * @param flat the {@link Doc.Break} when not broken
    * @param plusIndent extra indent if taken
-   * @param optProgressiveIndent the {@link Doc.ProgressiveIndent} governing the progression of
-   *     indents on this level
    */
   public final void breakOp(
-      Doc.FillMode fillMode, String flat, Indent plusIndent,
-      Optional<Doc.ProgressiveIndent> optProgressiveIndent) {
-    breakOp(fillMode, flat, plusIndent, optProgressiveIndent, Optional.<BreakTag>absent());
+      Doc.FillMode fillMode, String flat, Indent plusIndent) {
+    breakOp(fillMode, flat, plusIndent, Optional.<BreakTag>absent());
   }
 
   /**
@@ -229,14 +226,11 @@ public final class OpsBuilder {
    * @param fillMode the {@link Doc.FillMode}
    * @param flat the {@link Doc.Break} when not broken
    * @param plusIndent extra indent if taken
-   * @param optProgressiveIndent the optional {@link Doc.ProgressiveIndent} governing the
-   *     progression of indents on this level
    * @param optionalTag an optional tag for remembering whether the break was taken
    */
   public final void breakOp(
-      Doc.FillMode fillMode, String flat, Indent plusIndent,
-      Optional<Doc.ProgressiveIndent> optProgressiveIndent, Optional<BreakTag> optionalTag) {
-    ops.add(Doc.Break.make(fillMode, flat, plusIndent, optProgressiveIndent, optionalTag));
+      Doc.FillMode fillMode, String flat, Indent plusIndent, Optional<BreakTag> optionalTag) {
+    ops.add(Doc.Break.make(fillMode, flat, plusIndent, optionalTag));
   }
 
   /**
