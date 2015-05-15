@@ -227,8 +227,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private final Indent.Const plusEight;
 
   private static final ImmutableList<Op> BREAK_LIST =
+      ImmutableList.<Op>of(Doc.Break.make(Doc.FillMode.UNIFIED, " ", ZERO));
+  private static final ImmutableList<Op> BREAK_FILL_LIST =
       ImmutableList.of(
-          OpenOp.make(ZERO, 0), Doc.Break.make(Doc.FillMode.INDEPENDENT, " ", ZERO),
+          OpenOp.make(ZERO, 0),
+          Doc.Break.make(Doc.FillMode.INDEPENDENT, " ", ZERO),
           CloseOp.make());
   private static final ImmutableList<Op> FORCE_BREAK_LIST =
       ImmutableList.<Op>of(Doc.Break.makeForced());
@@ -869,7 +872,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(FieldDeclaration node) {
     sync(node);
-    addDeclaration(node.modifiers(), node.getType(), node.fragments(), Direction.VERTICAL);
+    addDeclaration(
+        node.modifiers(),
+        node.getType(),
+        node.fragments(),
+        fieldAnnotationDirection(node.modifiers()));
     builder.guessToken(";");
     return false;
   }
@@ -1143,12 +1150,17 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   /** Visitor method for {@link MemberValuePair}s. */
   @Override
   public boolean visit(MemberValuePair node) {
+    boolean isArrayInitializer = node.getValue().getNodeType() == ASTNode.ARRAY_INITIALIZER;
     sync(node);
-    builder.open(plusFour);
+    builder.open(isArrayInitializer ? ZERO : plusFour);
     visit(node.getName());
     builder.space();
     token("=");
-    builder.breakOp(" ");
+    if (isArrayInitializer) {
+      builder.space();
+    } else {
+      builder.breakOp(" ");
+    }
     node.getValue().accept(this);
     builder.close();
     return false;
@@ -1493,7 +1505,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   /** Visitor method for {@link SingleVariableDeclaration}s. */
   @Override
   public boolean visit(SingleVariableDeclaration node) {
-    visitToDeclare(Direction.VERTICAL, node, Optional.fromNullable(node.getInitializer()), "=");
+    visitToDeclare(Direction.HORIZONTAL, node, Optional.fromNullable(node.getInitializer()), "=");
     return false;
   }
 
@@ -2106,21 +2118,28 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       lastWasAnnotation = true;
     }
     builder.close();
+    ImmutableList<Op> trailingBreak =
+        annotationsDirection.isVertical() ? FORCE_BREAK_LIST : BREAK_LIST;
+    if (idx >= modifiers.size()) {
+      return trailingBreak;
+    }
+    if (lastWasAnnotation) {
+      builder.addAll(trailingBreak);
+    }
+
     builder.open(ZERO);
     first = true;
     for (; idx < modifiers.size(); idx++) {
       IExtendedModifier modifier = modifiers.get(idx);
       if (!first) {
-        builder.addAll(BREAK_LIST);
-      } else if (lastWasAnnotation) {
-        builder.addAll(annotationsDirection.isVertical() ? FORCE_BREAK_LIST : BREAK_LIST);
+        builder.addAll(BREAK_FILL_LIST);
       }
       ((ASTNode) modifier).accept(this);
       first = false;
-      lastWasAnnotation = false;
+      lastWasAnnotation = modifier.isAnnotation();
     }
     builder.close();
-    return lastWasAnnotation && annotationsDirection.isVertical() ? FORCE_BREAK_LIST : BREAK_LIST;
+    return BREAK_FILL_LIST;
   }
 
   /** Helper method for {@link CatchClause}s. */
@@ -3022,6 +3041,23 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return normalAnnotations == 0 && markerAnnotations <= 1 && singleMemberAnnotations == 0
         ? Direction.HORIZONTAL
         : Direction.VERTICAL;
+  }
+
+  /**
+   * Should a field with a set of modifiers be declared with horizontal annotations?
+   * This is currently true if all annotations are marker annotations.
+   * 
+   * @param modifiers the list of {@link IExtendedModifier}s
+   * @return whether the local can be declared with horizontal annotations
+   */
+  private static Direction fieldAnnotationDirection(List<IExtendedModifier> modifiers) {
+    for (IExtendedModifier modifier : modifiers) {
+      if (modifier.isAnnotation() 
+          && ((ASTNode) modifier).getNodeType() != ASTNode.MARKER_ANNOTATION) {
+        return Direction.VERTICAL;
+      }
+    }
+    return Direction.HORIZONTAL;
   }
 
   // TODO(jdd): Do more?
