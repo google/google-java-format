@@ -2961,6 +2961,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       }
       builder.close();
       builder.forcedBreak();
+      builder.markForPartialFormat();
       if (braces.isYes()) {
         builder.blankLineWanted(false);
         token("}", plusTwo);

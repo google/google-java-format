@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
@@ -145,6 +146,27 @@ public final class Formatter {
       throw new AssertionError("IOException impossible for StringWriter");
     }
     return result.toString();
+  }
+
+  /**
+   * Emit a list of {@link Replacement}s to convert from input to output.
+   * @param input the input compilation unit
+   * @param characterRanges the character ranges to reformat
+   * @return a list of {@link Replacement}s, reverse-sorted from high index to low index, without
+   *     overlaps
+   * @throws FormatterException if the input string cannot be parsed
+   */
+  public ImmutableList<Replacement> getFormatReplacements(
+      String input, List<Range<Integer>> characterRanges) throws FormatterException {
+    JavaInput javaInput = new JavaInput(input);
+    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(), false);
+    List<String> errors = new ArrayList<>();
+    format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
+    if (!errors.isEmpty()) {
+      throw new FormatterException(errors.get(0));
+    }
+    RangeSet<Integer> tokenRangeSet = characterRangesToTokenRanges(javaInput, characterRanges);
+    return javaOutput.getFormatReplacements(tokenRangeSet);
   }
 
   private static RangeSet<Integer> characterRangesToTokenRanges(

@@ -179,7 +179,7 @@ public final class PartialFormattingTest {
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
   }
-  
+
   @Test
   public void insertLeadingNewlines2() throws Exception {
     String input = "class Test { int xxx = 1;\n\n         int yyy = 1; int zzz = 1; }";
@@ -191,7 +191,7 @@ public final class PartialFormattingTest {
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
   }
-  
+
   @Test
   public void insertTrailingNewlines() throws Exception {
     String input = "class Test { int xxx = 1;\n  int yyy = 1;      int zzz = 1; }";
@@ -222,7 +222,37 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test { void f() { return;\n"
             + "  }\n"
-            + "}\n";
+            + " }\n";
+    int idx = input.indexOf("}");
+    String output = doGetFormatReplacements(input, idx, idx);
+    assertEquals("bad output", expectedOutput, output);
+  }
+  
+  @Test
+  public void formatTrailingBraceEmptyMethodBody() throws Exception {
+    String input = "class Test { void f() {} }\n";
+    String expectedOutput =
+        "class Test {\n"
+            + "  void f() {}\n"
+            + " }\n";
+    int idx = input.indexOf("}");
+    String output = doGetFormatReplacements(input, idx, idx);
+    assertEquals("bad output", expectedOutput, output);
+  }
+  
+  @Test
+  public void formatTrailingBraceEmptyClassBody() throws Exception {
+    String input = "class Test { int x; }\n";
+    String expectedOutput = "class Test { int x;\n}\n";
+    int idx = input.indexOf("}");
+    String output = doGetFormatReplacements(input, idx, idx);
+    assertEquals("bad output", expectedOutput, output);
+  }
+  
+  @Test
+  public void formatTrailingBraceEmptyClassBody2() throws Exception {
+    String input = "class Test {\n}\n";
+    String expectedOutput = "class Test {}\n";
     int idx = input.indexOf("}");
     String output = doGetFormatReplacements(input, idx, idx);
     assertEquals("bad output", expectedOutput, output);
@@ -301,36 +331,36 @@ public final class PartialFormattingTest {
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
   }
-  
+
   @Test
   public void statementAndComments() throws Exception {
-    String input = 
-        "public class MyTest {\n" 
-            + "{\n" 
-            + "// asd\n" 
-            + "int x = 1;\n" 
-            + "// asd\n" 
-            + "int y = 2;\n"  
-            + "// asd\n" 
-            + "int z = 3;\n" 
-            + "// asd\n" 
-            + "}\n" 
-            + "}\n" 
+    String input =
+        "public class MyTest {\n"
+            + "{\n"
+            + "// asd\n"
+            + "int x = 1;\n"
+            + "// asd\n"
+            + "int y = 2;\n"
+            + "// asd\n"
+            + "int z = 3;\n"
+            + "// asd\n"
+            + "}\n"
+            + "}\n"
             + "\n";
     String expectedOutput =
-        "public class MyTest {\n" 
-            + "{\n" 
-            + "// asd\n" 
-            + "int x = 1;\n" 
-            + "    // asd\n" 
-            + "    int y = 2;\n"  
-            + "// asd\n" 
-            + "int z = 3;\n" 
-            + "// asd\n" 
-            + "}\n" 
-            + "}\n" 
+        "public class MyTest {\n"
+            + "{\n"
+            + "// asd\n"
+            + "int x = 1;\n"
+            + "    // asd\n"
+            + "    int y = 2;\n"
+            + "// asd\n"
+            + "int z = 3;\n"
+            + "// asd\n"
+            + "}\n"
+            + "}\n"
             + "\n";
-    
+
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("Foo.java");
     Files.write(path, input.getBytes(StandardCharsets.UTF_8));
@@ -343,36 +373,36 @@ public final class PartialFormattingTest {
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
   }
-  
+
   @Test
   public void statementAndComments2() throws Exception {
-    String input = 
-        "public class MyTest {\n" 
-            + "{\n" 
-            + "// asd\n" 
-            + "int x = 1;\n" 
-            + "// asd\n" 
-            + "int y = 2;\n"  
-            + "// asd\n" 
-            + "int z = 3;\n" 
-            + "// asd\n" 
-            + "}\n" 
-            + "}\n" 
+    String input =
+        "public class MyTest {\n"
+            + "{\n"
+            + "// asd\n"
+            + "int x = 1;\n"
+            + "// asd\n"
+            + "int y = 2;\n"
+            + "// asd\n"
+            + "int z = 3;\n"
+            + "// asd\n"
+            + "}\n"
+            + "}\n"
             + "\n";
     String expectedOutput =
-        "public class MyTest {\n" 
-            + "{\n" 
-            + "// asd\n" 
-            + "int x = 1;\n" 
-            + "    // asd\n" 
-            + "    int y = 2;\n"  
-            + "// asd\n" 
-            + "int z = 3;\n" 
-            + "// asd\n" 
-            + "}\n" 
-            + "}\n" 
+        "public class MyTest {\n"
+            + "{\n"
+            + "// asd\n"
+            + "int x = 1;\n"
+            + "    // asd\n"
+            + "    int y = 2;\n"
+            + "// asd\n"
+            + "int z = 3;\n"
+            + "// asd\n"
+            + "}\n"
+            + "}\n"
             + "\n";
-    
+
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("Foo.java");
     Files.write(path, input.getBytes(StandardCharsets.UTF_8));
@@ -385,36 +415,36 @@ public final class PartialFormattingTest {
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
   }
-  
+
   @Test
   public void statementAndComments3() throws Exception {
-    String input = 
-        "public class MyTest {\n" 
-            + "{\n" 
-            + "// asd\n" 
-            + "int x = 1;\n" 
-            + "// asd\n" 
-            + "int y = 2;\n"  
-            + "// asd\n" 
-            + "int z = 3;\n" 
-            + "// asd\n" 
-            + "}\n" 
-            + "}\n" 
+    String input =
+        "public class MyTest {\n"
+            + "{\n"
+            + "// asd\n"
+            + "int x = 1;\n"
+            + "// asd\n"
+            + "int y = 2;\n"
+            + "// asd\n"
+            + "int z = 3;\n"
+            + "// asd\n"
+            + "}\n"
+            + "}\n"
             + "\n";
     String expectedOutput =
-        "public class MyTest {\n" 
-            + "{\n" 
-            + "// asd\n" 
-            + "int x = 1;\n" 
-            + "// asd\n" 
-            + "int y = 2;\n"  
-            + "    // asd\n" 
-            + "    int z = 3;\n" 
-            + "// asd\n" 
-            + "}\n" 
-            + "}\n" 
+        "public class MyTest {\n"
+            + "{\n"
+            + "// asd\n"
+            + "int x = 1;\n"
+            + "// asd\n"
+            + "int y = 2;\n"
+            + "    // asd\n"
+            + "    int z = 3;\n"
+            + "// asd\n"
+            + "}\n"
+            + "}\n"
             + "\n";
-    
+
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("Foo.java");
     Files.write(path, input.getBytes(StandardCharsets.UTF_8));
@@ -427,11 +457,11 @@ public final class PartialFormattingTest {
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
   }
-  
+
   @Test
   public void blankAndComment() throws Exception {
-    String input = 
-        "public class MyTest {\n" 
+    String input =
+        "public class MyTest {\n"
             + "  public void testListDefinitions() throws Exception {\n"
             + "    definitionService.insert(createDefinition(1));\n"
             + "    definitionService.insert(createIncrementalDefinition(2));\n"
@@ -441,12 +471,12 @@ public final class PartialFormattingTest {
             + "    // No maxResults\n"
             + "    assertThat(achievementFirstPartyHelper.listDefinitionsByApplication(\n"
             + "            STUB_GAIA_ID, STUB_APPLICATION_ID, Optional.<Integer>absent(),\n"
-            + "            Optional.<String>absent()).getAchievements()).containsExactly(createExpectedDefinition(1), createIncrementalExpectedDefinition(2), createExpectedDefinition(3), createIncrementalExpectedDefinition(4)).inOrder();\n" 
+            + "            Optional.<String>absent()).getAchievements()).containsExactly(createExpectedDefinition(1), createIncrementalExpectedDefinition(2), createExpectedDefinition(3), createIncrementalExpectedDefinition(4)).inOrder();\n"
             + "  }\n"
             + "}\n"
             + "\n";
     String expectedOutput =
-        "public class MyTest {\n" 
+        "public class MyTest {\n"
             + "  public void testListDefinitions() throws Exception {\n"
             + "    definitionService.insert(createDefinition(1));\n"
             + "    definitionService.insert(createIncrementalDefinition(2));\n"
@@ -454,7 +484,7 @@ public final class PartialFormattingTest {
             + "    definitionService.insert(createIncrementalDefinition(4));\n"
             + "\n"
             + "    // No maxResults\n"
-            + "    assertThat(\n" 
+            + "    assertThat(\n"
             + "            achievementFirstPartyHelper\n"
             + "                .listDefinitionsByApplication(\n"
             + "                    STUB_GAIA_ID,\n"
@@ -467,20 +497,38 @@ public final class PartialFormattingTest {
             + "            createIncrementalExpectedDefinition(2),\n"
             + "            createExpectedDefinition(3),\n"
             + "            createIncrementalExpectedDefinition(4))\n"
-            + "        .inOrder();\n" 
+            + "        .inOrder();\n"
             + "  }\n"
             + "}\n"
             + "\n";
-    
+
     String toFormat = "    assertThat(achievementFirstPartyHelper.listDefinitionsByApplication(\n";
     int idx = input.indexOf(toFormat);
     String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
     assertEquals("bad output", expectedOutput, output);
   }
-  
+
   @Test
   public void emptyFile() throws Exception {
     new Formatter().formatSource("");
     new Formatter().formatSource("\n", ImmutableList.of(Range.closedOpen(0, 1)));
+  }
+
+  @Test
+  public void testGetFormatReplacementRanges() throws Exception {
+    String input =
+        ""
+            /* line 0 character  0 */ + "class Foo{\n"
+            /* line 1 character 11 */ + "void f\n"
+            /* line 2 character 18 */ + "() {\n"
+            /* line 3 character 23 */ + "}\n"
+            /* line 4 character 25 */ + "}\n";
+    // Claim to have modified the parentheses.
+    ImmutableList<Replacement> ranges = 
+        new Formatter().getFormatReplacements(input, ImmutableList.of(Range.closedOpen(18, 19)));
+    assertThat(ranges).hasSize(1);
+    Replacement replacement = ranges.get(0);
+    assertThat(replacement.getReplacementString()).isEqualTo("  void f() {}");
+    assertThat(replacement.getReplaceRange()).isEqualTo(Range.closedOpen(11, 24));
   }
 }
