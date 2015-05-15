@@ -14,6 +14,9 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
+
+import com.google.common.base.CharMatcher;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
@@ -23,7 +26,8 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.CommentsHelper;
-import com.google.googlejavaformat.InputOutput;
+import com.google.googlejavaformat.Input;
+import com.google.googlejavaformat.Input.Token;
 import com.google.googlejavaformat.Output;
 
 import java.io.IOException;
@@ -32,7 +36,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 /*
  * Throughout this file, {@code i} is an index for input lines, {@code j} is an index for output
@@ -47,32 +53,8 @@ import java.util.Set;
 public final class JavaOutput extends Output {
   /** We merge untouched lines from the input with reformatted lines from the output. */
   enum From {
-    INPUT, OUTPUT
-  }
-
-  /**
-   * A non-empty half-open run of lines in the merged result.
-   */
-  static final class RunInfo {
-    final From from; // Where is the run from?
-    final int ij0; // The run's (included) lower bound.
-    final int ij1; // The run's (non-included) upper bound.
-
-    /** LinesInfo constructor. */
-    RunInfo(From from, int ij0, int ij1) {
-      this.from = from;
-      this.ij0 = ij0;
-      this.ij1 = ij1;
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(this)
-          .add("from", from)
-          .add("ij0", ij0)
-          .add("ij1", ij1)
-          .toString();
-    }
+    INPUT,
+    OUTPUT
   }
 
   private static final String LINE_TOO_LONG_WARNING =
@@ -82,6 +64,7 @@ public final class JavaOutput extends Output {
   private final CommentsHelper commentsHelper; // Used to re-flow comments.
   private final boolean addWarnings; // Add warnings as comments in output.
   private final Map<Integer, Boolean> blankLines = new HashMap<>(); // Info on blank lines.
+  private final NavigableSet<Integer> partialFormatBoundaries = new TreeSet<>();
 
   private final List<String> mutableLines = new ArrayList<>();
   private final int kN; // The number of tokens or comments in the input, excluding the EOF.
@@ -108,6 +91,11 @@ public final class JavaOutput extends Output {
   @Override
   public void blankLine(int k, boolean wanted) {
     blankLines.put(k, wanted);
+  }
+
+  @Override
+  public void markForPartialFormat(int k) {
+    partialFormatBoundaries.add(k);
   }
 
   @Override
@@ -255,243 +243,144 @@ public final class JavaOutput extends Output {
   }
 
   /**
+   * Emit a list of {@link Replacement}s to convert from input to output.
+   * @return a list of {@link Replacement}s, sorted by start index, without overlaps
+   */
+  public ImmutableList<Replacement> getFormatReplacements(RangeSet<Integer> iRangeSet0) {
+    ImmutableList.Builder<Replacement> result = ImmutableList.builder();
+    Map<Integer, Range<Integer>> kToJ = JavaOutput.makeKToIJ(this, kN);
+
+    // Expand the token ranges to align with re-formattable boundaries.
+    RangeSet<Integer> breakableRanges = TreeRangeSet.create();
+    RangeSet<Integer> iRangeSet = iRangeSet0.subRangeSet(Range.closed(0, javaInput.getkN()));
+    for (Range<Integer> iRange : iRangeSet.asRanges()) {
+      breakableRanges.add(expandToBreakableRegions(iRange.canonical(DiscreteDomain.integers())));
+    }
+    
+    // Construct replacements for each reformatted region.
+    for (Range<Integer> range : breakableRanges.asRanges()) {
+
+      Input.Tok startTok = startTok(javaInput.getToken(range.lowerEndpoint()));
+      Input.Tok endTok = endTok(javaInput.getToken(range.upperEndpoint() - 1));
+
+      // Add all output lines in the given token range to the replacement.
+      StringBuilder replacement = new StringBuilder();
+
+      boolean needsBreakBefore = false;
+      int replaceFrom = startTok.getPosition();
+      while (replaceFrom > 0) {
+        char previous = javaInput.getText().charAt(replaceFrom - 1);
+        if (previous == '\n') {
+          break;
+        }
+        if (CharMatcher.WHITESPACE.matches(previous)) {
+          replaceFrom--;
+          continue;
+        }
+        needsBreakBefore = true;
+        break;
+      }
+
+      if (needsBreakBefore) {
+        replacement.append('\n');
+      }
+
+      boolean first = true;
+      for (int i = kToJ.get(startTok.getIndex()).lowerEndpoint();
+          i < kToJ.get(endTok.getIndex()).upperEndpoint();
+          i++) {
+        if (!first) {
+          replacement.append('\n');
+        }
+        first = false;
+        // It's possible to run out of output lines (e.g. if the input ended with
+        // multiple trailing newlines).
+        if (i < getLineCount()) {
+          replacement.append(getLine(i));
+        }
+      }
+
+      // Insert a line break if the input doesn't already contain one at the end
+      // of the reformatted region.
+      boolean needsBreakAfter =
+          endTok.getPosition() + 1 < javaInput.getText().length()
+              && javaInput.getText().charAt(endTok.getPosition() + 1) != '\n';
+      if (needsBreakAfter) {
+        replacement.append('\n');
+      }
+
+      result.add(
+          Replacement.create(
+              Range.closedOpen(replaceFrom, endTok.getPosition() + 1),
+              replacement.toString()));
+    }
+
+    return result.build();
+  }
+
+  /**
+   * Expand a token range to start and end on acceptable boundaries for re-formatting.
+   *
+   * @param iRange the {@link Range} of tokens
+   * @return the expanded token range
+   */
+  private Range<Integer> expandToBreakableRegions(Range<Integer> iRange) {
+    // The original line range.
+    int loTok = iRange.lowerEndpoint();
+    int hiTok = iRange.upperEndpoint() - 1;
+
+    // Expand the token indices to formattable boundaries (e.g. edges of statements).
+    loTok = firstNonNull(partialFormatBoundaries.floor(loTok), partialFormatBoundaries.first());
+    hiTok =
+        firstNonNull(partialFormatBoundaries.higher(hiTok), partialFormatBoundaries.last() + 1);
+
+    return Range.closedOpen(loTok, hiTok);
+  }
+
+  /**
    * Merge the (un-reformatted) input lines and the (reformatted) output lines. The result will
-   * contain all of the toks from the input and output, combining whole lines from the input and
-   * output, will contain the specified lines from the output, and will contain as few extra output
-   * lines as possible.
+   * contain all of the toks from the input and output.
+   *
    * @param writer the destination {@link Writer}
-   * @param iRangeSet0 the canonical {@link Range} of input lines to reformat
-   * @param maxWidth the maximum line width
-   * @param errors the list of errors to copy to the output
-   * @throws IOException on IO error
+   * @param iRangeSet0 the canonical {@link Range} of tokens to reformat
    */
-  public void writeMerged(
-      Appendable writer, RangeSet<Integer> iRangeSet0, int maxWidth, List<String> errors)
-      throws IOException {
-    int mergedLineNumber = 0;
-    for (RunInfo runInfo : pickRuns(iRangeSet0)) {
-      From from = runInfo.from;
-      for (int ij = runInfo.ij0; ij < runInfo.ij1; ij++) {
-        String line = (from == From.INPUT ? javaInput : this).getLine(ij);
-        if (from == From.OUTPUT && line.length() > maxWidth
-            && !(line.startsWith("package ") || line.startsWith("import "))) {
-          if (addWarnings) {
-            writer.append("// ").append(LINE_TOO_LONG_WARNING).append('\n');
-            line = line.trim();
-          } else {
-            errors.add(String.format("output line %d: line too long", mergedLineNumber));
-          }
-        }
-        writer.append(line).append('\n');
-        mergedLineNumber++;
+  public void writeMerged(Appendable writer, RangeSet<Integer> iRangeSet0) throws IOException {
+    ImmutableList<Replacement> replacements = getFormatReplacements(iRangeSet0);
+    String inputText = javaInput.getText();
+    // The index to copy input text from.
+    int inputIndex = 0;
+    for (Replacement replacement : replacements) {
+      if (inputIndex < replacement.getReplaceRange().lowerEndpoint()) {
+        writer.append(
+            inputText.subSequence(inputIndex, replacement.getReplaceRange().lowerEndpoint()));
       }
+      inputIndex = replacement.getReplaceRange().upperEndpoint();
+      writer.append(replacement.getReplacementString());
     }
-    if (addWarnings) {
-      for (String error : errors) {
-        writer.append("// ERROR: ").append(error).append('\n');
-      }
+    if (inputIndex < inputText.length()) {
+      writer.append(inputText.substring(inputIndex));
     }
   }
 
-  /**
-   * Pick how to merge the (un-reformatted) input lines and the (reformatted) output lines. The
-   * merge will contain all of the toks from the input and output, combining whole lines from each,
-   * the specified lines from the output, and as few extra output lines as possible. The
-   * {@link RunInfo} elements of the result will alternate {@link From#INPUT} and
-   * {@link From#OUTPUT}.
-   * @param iRangeSet0 the empty or canonical {@link Range} of input lines to reformat
-   * @return the list of {@link RunInfo} defining the output
-   */
-  public ImmutableList<RunInfo> pickRuns(RangeSet<Integer> iRangeSet0) {
-    ImmutableList.Builder<RunInfo> runInfos = ImmutableList.builder();
-    int iN = javaInput.getLineCount(); // Number of input lines.
-    int jN = getLineCount(); // Number of output lines.
-    if (iN > 0 && getLineCount() > 0) {
-      RangeSet<Integer> iRangeSet = iRangeSet0.subRangeSet(Range.closedOpen(0, iN));
-      RangeSet<Integer> kRangeSet = TreeRangeSet.create();
-      Map<Integer, Range<Integer>> kToI = makeKToIJ(javaInput, javaInput.getkN());
-      Map<Integer, Range<Integer>> kToJ = makeKToIJ(this, kN);
-      for (Range<Integer> iRange : iRangeSet.asRanges()) {
-        kRangeSet.add(
-            expandIRangeToKRange(iRange.canonical(DiscreteDomain.integers()), kToI, kToJ, iN, jN));
-      }
-      int k = 0; // We've output all toks up to but not including {@code k}.
-      for (Range<Integer> kRange0 : kRangeSet.asRanges()) {
-        Range<Integer> kRange = kRange0.canonical(DiscreteDomain.integers());
-        int kLo = kRange.lowerEndpoint();
-        int kHi = kRange.upperEndpoint() - 1;
-        if (k <= kLo - 1) {
-          runInfos.addAll(pickRuns(javaInput, kToI, k, kLo - 1, iN, From.INPUT));
-          k = kLo;
-        }
-        if (k <= kHi) {
-          runInfos.addAll(pickRuns(this, kToJ, k, kHi, jN, From.OUTPUT));
-          k = Math.max(k, kHi + 1);
-        }
-      }
-      if (k <= kN) {
-        runInfos.addAll(pickRuns(javaInput, kToI, k, kN, iN, From.INPUT));
+  /** The earliest Tok in the Token, including leading trivia. */
+  public static Input.Tok startTok(Token token) {
+    for (Input.Tok tok : token.getToksBefore()) {
+      if (tok.getIndex() >= 0) {
+        return tok;
       }
     }
-    return runInfos.build();
+    return token.getTok();
   }
 
-  //TODO(jdd): Fix.
-  /**
-   * Given a {@link Range} of input lines, minimally expand the range so that the first line begins
-   * with a numbered tok that also begins a line in the output, and so that the last line ends with
-   * a numbered tok that also ends a line in the output, returning the range of
-   * {@link JavaInput.Tok}s.
-   * @param iRange the {@link Range} of input lines
-   * @param kToI the map from numbered toks to input line ranges
-   * @param kToJ the map from numbered toks to output line ranges
-   * @param iN the number of input lines
-   * @param jN the number of output lines
-   * @return the minimally expanded range of toks
-   */
-  private Range<Integer> expandIRangeToKRange(
-      Range<Integer> iRange, Map<Integer, Range<Integer>> kToI, Map<Integer, Range<Integer>> kToJ,
-      int iN, int jN) {
-    int iLo = iRange.lowerEndpoint();
-    int iHi = iRange.upperEndpoint() - 1;
-    // Expand input line range until it begins and ends at a tok, or is at the beginning or end.
-    for (; 0 < iLo && javaInput.getRange0s(iLo).isEmpty(); --iLo) {}
-    for (; iHi < iN - 1 && javaInput.getRange1s(iHi).isEmpty(); ++iHi) {}
-    // Compute input tok range.
-    int kILo = ijBackToK0(javaInput, iLo);
-    int kIHi = ijForwardToK1(javaInput, iHi, iN);
-    int jLo = kToJ.get(kILo).lowerEndpoint();
-    int jHi = kToJ.get(kIHi).canonical(DiscreteDomain.integers()).upperEndpoint() - 1;
-    // TODO(jdd): Is this unneeded?
-    // Expand output line range until it begins and ends at a tok, or is at the beginning or end.
-    for (; 0 < jLo && javaInput.getRange0s(jLo).isEmpty(); --jLo) {}
-    for (; jHi < jN - 1 && javaInput.getRange1s(iHi).isEmpty(); ++jHi) {}
-    int kJLo = ijBackToK0(this, jLo);
-    int kJHi = ijForwardToK1(this, jHi, iN);
-    // Iterate over both index ranges.
-    while (kILo != kJLo) {
-      if (kILo < kJLo) {
-        kJLo = kBackToK0(this, kJLo - 1, kToJ);
-      } else {
-        kILo = kBackToK0(javaInput, kILo - 1, kToI);
+  /** The last Tok in the Token, including trailing trivia. */
+  public static Input.Tok endTok(Token token) {
+    for (int i = token.getToksAfter().size() - 1; i >= 0; i--) {
+      Input.Tok tok = token.getToksAfter().get(i);
+      if (tok.getIndex() >= 0) {
+        return tok;
       }
     }
-    while (kIHi != kJHi) {
-      if (kIHi < kJHi) {
-        kIHi = kForwardToK1(javaInput, kIHi + 1, kToI, iN);
-      } else {
-        kJHi = kForwardToK1(this, kJHi + 1, kToJ, jN);
-      }
-    }
-    return Range.closedOpen(kJLo, kJHi + 1);
-  }
-
-  /**
-   * Given a line number, move backward, if needed, until we reach a tok that begins a line, and
-   * return the tok index. If this fails, return {@code 0}.
-   * @param put the {@link InputOutput}
-   * @param ij0 the line number
-   * @return the resulting tok index
-   */
-  private static int ijBackToK0(InputOutput put, int ij0) {
-    for (int ij = ij0;; --ij) {
-      if (ij <= 0) {
-        return 0;
-      }
-      Range<Integer> kRange0 = put.getRange0s(ij);
-      if (!kRange0.isEmpty()) {
-        Range<Integer> kRange = put.getRanges(ij);
-        if (!kRange.isEmpty()
-            && kRange.lowerEndpoint().intValue() == kRange0.lowerEndpoint().intValue()) {
-          return kRange0.lowerEndpoint();
-        }
-      }
-    }
-  }
-
-  /**
-   * Given a tok index, move backward, if needed, until we reach a tok that begins a line, and
-   * return the tok index. If this fails, return {@code 0}.
-   * @param put the {@link InputOutput}
-   * @param k the tok index
-   * @param kToI the map from token indices to ranges of {@link InputOutput} lines
-   * @return the resulting tok index
-   */
-  private static int kBackToK0(InputOutput put, int k, Map<Integer, Range<Integer>> kToI) {
-    return 0 < k ? ijBackToK0(put, kToI.get(k).lowerEndpoint()) : 0;
-  }
-
-  /**
-   * Given a line number, move forward, if needed, until we reach a tok that ends a line in the
-   * {@link InputOutput}, or until we reach the last tok.
-   * @param put the {@link InputOutput}
-   * @param ij0 the line number
-   * @param ijN the number of lines
-   * @return the resulting tok index
-   */
-  private int ijForwardToK1(InputOutput put, int ij0, int ijN) {
-    for (int ij = ij0;; ++ij) {
-      if (ij >= ijN - 1) {
-        return kN - 1;
-      }
-      Range<Integer> kRange1 = put.getRange1s(ij);
-      if (!kRange1.isEmpty()) {
-        Range<Integer> kRange = put.getRanges(ij);
-        if (!kRange.isEmpty()
-            && kRange.upperEndpoint().intValue() == kRange1.upperEndpoint().intValue()) {
-          return Math.min(kRange1.upperEndpoint() - 1, kN - 1);
-        }
-      }
-    }
-  }
-
-  /**
-   * Given a tok index, move forward, if needed, until we reach a tok that ends a line in the
-   * {@link InputOutput}, or until we reach the last tok.
-   * @param put the {@link InputOutput}
-   * @param k the tok index
-   * @param kToI the map from token indices to ranges of {@link InputOutput} lines
-   * @return the resulting tok index
-   */
-  private int kForwardToK1(InputOutput put, int k, Map<Integer, Range<Integer>> kToI, int ijN) {
-    return k < kN ? ijForwardToK1(put, kToI.get(k).upperEndpoint() - 1, ijN) : kN - 1;
-  }
-
-  /**
-   * Pick which lines to write from the input or output.
-   * @param put the {@link InputOutput}
-   * @param kTiIJ the map from tok indices to line ranges in the {@link InputOutput}
-   * @param kLo the first tok index, which begins a line in the input and in the output
-   * @param kHi0 the last tok index, which ends a line in the input and in the output
-   * @param ijN the number of lines in the {@link InputOutput}
-   * @param from whether we are picking input lines or output lines
-   */
-  private List<RunInfo> pickRuns(
-      InputOutput put, Map<Integer, Range<Integer>> kTiIJ, int kLo, int kHi0, int ijN, From from) {
-    List<RunInfo> result = new ArrayList<>();
-    if (kLo <= kHi0) {
-      int kHi = Math.min(kHi0, kN - 1);
-      if (kLo <= kHi) {
-        int ijLo = kTiIJ.get(kLo).lowerEndpoint();
-        int ijHi = kTiIJ.get(kHi).upperEndpoint() - 1;
-        if (from == From.OUTPUT) {
-          // Expand output range to include blank lines.
-          while (0 < ijLo && put.getRanges(ijLo - 1).isEmpty()) {
-            --ijLo;
-          }
-          while (ijHi < ijN - 1 && put.getRanges(ijHi + 1).isEmpty()) {
-            ++ijHi;
-          }
-        }
-        if (ijHi > ijN) {
-          ijHi = ijN;
-        }
-        if (ijLo <= ijHi) {
-          result.add(new RunInfo(from, ijLo, ijHi + 1));
-        }
-      }
-    }
-    return result;
+    return token.getTok();
   }
 
   private boolean isComment(String text) {

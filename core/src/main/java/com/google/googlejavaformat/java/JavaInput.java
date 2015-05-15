@@ -14,6 +14,8 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -215,6 +217,9 @@ public final class JavaInput extends Input {
   private final ImmutableList<Token> tokens; // The Tokens for this input.
   private final ImmutableSortedMap<Integer, Token> positionTokenMap; // Map position to Token.
 
+  /** Map from Tok index to the associated Token. */
+  private final Token[] kToToken;
+
   /**
    * Input constructor.
    * @param text the input text
@@ -228,12 +233,29 @@ public final class JavaInput extends Input {
     ImmutableList<Tok> toks = buildToks(text, chars);
     positionToColumnMap = makePositionToColumnMap(toks);
     tokens = buildTokens(toks);
-    ImmutableSortedMap.Builder<Integer, Token> locationTokenMap = 
-        ImmutableSortedMap.naturalOrder();
+    ImmutableSortedMap.Builder<Integer, Token> locationTokenMap = ImmutableSortedMap.naturalOrder();
     for (Token token : tokens) {
-      locationTokenMap.put(token.getTok().getPosition(), token);
+      locationTokenMap.put(JavaOutput.startTok(token).getPosition(), token);
     }
     positionTokenMap = locationTokenMap.build();
+
+    // adjust kN for EOF
+    kToToken = new Token[kN + 1];
+    for (Token token : tokens) {
+      for (Input.Tok tok : token.getToksBefore()) {
+        if (tok.getIndex() < 0) {
+          continue;
+        }
+        kToToken[tok.getIndex()] = token;
+      }
+      kToToken[token.getTok().getIndex()] = token;
+      for (Input.Tok tok : token.getToksAfter()) {
+        if (tok.getIndex() < 0) {
+          continue;
+        }
+        kToToken[tok.getIndex()] = token;
+      }
+    }
   }
 
   private static ImmutableMap<Integer, Integer> makePositionToColumnMap(List<Tok> toks) {
@@ -368,15 +390,15 @@ public final class JavaInput extends Input {
     int k = 0;
     int kN = toks.size();
 
-    while (k < kN) { 
+    while (k < kN) {
       // Remaining non-tokens before the token go here.
       ImmutableList.Builder<Tok> toksBefore = ImmutableList.builder();
-      
+
       while (!toks.get(k).isToken()) {
         toksBefore.add(toks.get(k++));
       }
       Tok tok = toks.get(k++);
-      
+
       // Non-tokens starting on the same line go here too.
       ImmutableList.Builder<Tok> toksAfter = ImmutableList.builder();
       while (k < kN && !"\n".equals(toks.get(k).getText()) && !toks.get(k).isToken()) {
@@ -386,8 +408,7 @@ public final class JavaInput extends Input {
           break;
         }
       }
-      tokens.add(
-          new Token(toksBefore.build(), tok, toksAfter.build()));
+      tokens.add(new Token(toksBefore.build(), tok, toksAfter.build()));
     }
     return tokens.build();
   }
@@ -439,18 +460,18 @@ public final class JavaInput extends Input {
   }
 
   /**
-   * Convert from an offset and length flag pair to a range of line numbers.
+   * Convert from an offset and length flag pair to a token range.
    * @param offset the {@code 0}-based offset in characters
    * @param length the length in characters
-   * @return the {@code 0}-based {@link Range} of line numbers
-   * @throws FormatterException 
+   * @return the {@code 0}-based {@link Range} of tokens
+   * @throws FormatterException
    */
-  Range<Integer> characterRangeToLineRange(int offset, int length) throws FormatterException {
+  Range<Integer> characterRangeToTokenRange(int offset, int length) throws FormatterException {
     int requiredLength = offset + length;
     if (requiredLength > text.length()) {
       throw new FormatterException(
           String.format(
-              "invalid length %d, offset + length (%d) is outside the file", 
+              "invalid length %d, offset + length (%d) is outside the file",
               requiredLength,
               requiredLength));
     }
@@ -458,11 +479,19 @@ public final class JavaInput extends Input {
       return Formatter.EMPTY_RANGE;
     }
     NavigableMap<Integer, JavaInput.Token> map = getPositionTokenMap();
-    Map.Entry<Integer, JavaInput.Token> tokenEntryLo = map.floorEntry(offset);
-    Map.Entry<Integer, JavaInput.Token> tokenEntryHi = map.ceilingEntry(offset + length - 1);
+    Map.Entry<Integer, JavaInput.Token> tokenEntryLo =
+        firstNonNull(map.floorEntry(offset), map.firstEntry());
+    Map.Entry<Integer, JavaInput.Token> tokenEntryHi =
+        firstNonNull(map.ceilingEntry(offset + length - 1), map.lastEntry());
     return Range.closedOpen(
-        tokenEntryLo == null ? 0 : getLineNumberLo(tokenEntryLo.getValue()),
-        tokenEntryHi == null ? getLineCount() : getLineNumberHi(tokenEntryHi.getValue()) + 1);
+        tokenEntryLo.getValue().getTok().getIndex(),
+        tokenEntryHi.getValue().getTok().getIndex() + 1);
+  }
+
+  Range <Integer> lineRangeToTokenRange(Range<Integer> lineRange) {
+    return Range.closedOpen(
+        getRange0s(lineRange.lowerEndpoint()).lowerEndpoint(),
+        getRange1s(lineRange.upperEndpoint() - 1).upperEndpoint());
   }
 
   /**
@@ -471,6 +500,14 @@ public final class JavaInput extends Input {
    */
   int getkN() {
     return kN;
+  }
+
+  /**
+   * Get the Token by index.
+   * @param k the token index
+   */
+  Token getToken(int k) {
+    return kToToken[k];
   }
 
   /**

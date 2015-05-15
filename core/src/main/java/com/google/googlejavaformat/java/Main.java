@@ -186,20 +186,20 @@ public final class Main {
                           CharStreams.toString(new InputStreamReader(in, StandardCharsets.UTF_8));
                       JavaInput javaInput = new JavaInput(stringFromStream);
                       JavaOutput javaOutput =
-                          new JavaOutput(
-                              javaInput, new JavaCommentsHelper(),
-                              addCommentsFlagFinal);
-                      RangeSet<Integer> lines = TreeRangeSet.create();
+                          new JavaOutput(javaInput, new JavaCommentsHelper(), addCommentsFlagFinal);
+                      RangeSet<Integer> tokens = TreeRangeSet.create();
                       for (String line : linesFlagsFinal) {
-                        lines.addAll(parseRangeSet(line));
+                        for (Range<Integer> lineRange : parseRangeSet(line).asRanges()) {
+                          tokens.add(javaInput.lineRangeToTokenRange(lineRange));
+                        }
                       }
                       for (int i = 0; i < offsetFlagsFinal.size(); i++) {
-                        lines.add(
-                            javaInput.characterRangeToLineRange(
+                        tokens.add(
+                            javaInput.characterRangeToTokenRange(
                                 offsetFlagsFinal.get(i), lengthFlagsFinal.get(i)));
                       }
-                      if (lines.isEmpty()) {
-                        lines.add(Range.<Integer>all());
+                      if (tokens.isEmpty()) {
+                        tokens.add(Range.<Integer>all());
                       }
                       List<String> errors = new ArrayList<>();
                       Formatter.format(
@@ -214,14 +214,14 @@ public final class Main {
                       }
                       if (!iFlagFinal || fileName.equals("-")) {
                         synchronized (mutex) {
-                          javaOutput.writeMerged(outWriter, lines, Formatter.MAX_WIDTH, errors);
+                          javaOutput.writeMerged(outWriter, tokens);
                           outWriter.flush();
                         }
                       } else {
                         String tempFileName = fileName + '#';
                         try (Writer writer =
                             new OutputStreamWriter(new FileOutputStream(tempFileName), UTF_8)) {
-                          javaOutput.writeMerged(writer, lines, Formatter.MAX_WIDTH, errors);
+                          javaOutput.writeMerged(writer, tokens);
                           outWriter.flush();
                         } catch (IOException e) {
                           synchronized (mutex) {

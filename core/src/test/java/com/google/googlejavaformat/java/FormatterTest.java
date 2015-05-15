@@ -18,9 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.google.common.collect.DiscreteDomain;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Range;
 import com.google.common.io.CharStreams;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ResourceInfo;
@@ -40,7 +37,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -94,44 +90,6 @@ public final class FormatterTest {
       String output = new Formatter().formatSource(input);
       assertEquals("bad output for " + fileName, expectedOutput, output);
     }
-  }
-
-  @Test
-  public void testGetFormatReplacements0() throws Exception {
-    String input =
-        ""
-            /* line 0 character  0 */ + "class Foo{\n"
-            /* line 1 character 11 */ + "void f\n"
-            /* line 2 character 18 */ + "() {\n"
-            /* line 3 character 23 */ + "}\n"
-            /* line 4 character 25 */ + "}\n";
-    String expectedOutput =
-        ""
-            /* line 0 character  0 */ + "class Foo{\n"
-            /* line 1 character 11 */ + "  void f() {}\n"
-            /* line 2 character 25 */ + "}\n";
-    // Claim to have modified the parentheses.
-    String output = doGetFormatReplacements(input, 18, 19);
-    assertEquals("bad output", expectedOutput, output);
-  }
-
-  @Test
-  public void testGetFormatReplacements1() throws Exception {
-    String input =
-        ""
-            /* line 0 character  0 */ + "class Foo{\n"
-            /* line 1 character 11 */ + "void f\n"
-            /* line 2 character 18 */ + "() {\n"
-            /* line 3 character 23 */ + "}\n"
-            /* line 4 character 25 */ + "}\n";
-    String expectedOutput =
-        ""
-            /* line 0 character  0 */ + "class Foo{\n"
-            /* line 1 character 11 */ + "  void f() {}\n"
-            /* line 2 character 25 */ + "}\n";
-    // Claim to have modified everything after the parentheses.
-    String output = doGetFormatReplacements(input, 20, 21);
-    assertEquals("bad output", expectedOutput, output);
   }
 
   @Test
@@ -218,22 +176,5 @@ public final class FormatterTest {
     assertThat(main.format(args)).isEqualTo(1);
     assertThat(err.toString())
         .contains("error: invalid length 9999, offset + length (9999) is outside the file");
-  }
-
-  private static String doGetFormatReplacements(String input, int characterILo, int characterIHi)
-      throws Exception {
-    List<Replacement> replacements =
-        new Formatter()
-            .getFormatReplacements(
-                input, ImmutableList.of(Range.closedOpen(characterILo, characterIHi + 1)));
-    // Reformat the source.
-    String source = input;
-    for (Replacement replacement : replacements) {
-      Range<Integer> range = replacement.getReplaceRange().canonical(DiscreteDomain.integers());
-      source =
-          source.substring(0, range.lowerEndpoint()) + replacement.getReplacementString()
-              + source.substring(range.upperEndpoint());
-    }
-    return source;
   }
 }

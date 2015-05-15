@@ -101,7 +101,7 @@ public abstract class InputOutput {
     Map<Integer, Range<Integer>> map = new HashMap<>();
     int ijN = put.getLineCount();
     LOOP:
-    for (int ij = 0; ij < ijN; ij++) {
+    for (int ij = 0; ij <= ijN; ij++) {
       Range<Integer> range = put.getRanges(ij).canonical(INTEGERS);
       for (int k = range.lowerEndpoint(); k < range.upperEndpoint(); k++) {
         if (map.containsKey(k)) {

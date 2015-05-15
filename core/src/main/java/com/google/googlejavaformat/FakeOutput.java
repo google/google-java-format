@@ -83,6 +83,9 @@ final class FakeOutput extends Output {
   public void blankLine(int k, boolean wanted) {}
 
   @Override
+  public void markForPartialFormat(int k) {}
+
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("maxWidth", maxWidth)

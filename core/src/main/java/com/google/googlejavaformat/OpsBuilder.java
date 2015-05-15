@@ -234,6 +234,15 @@ public final class OpsBuilder {
   }
 
   /**
+   * Make the boundary of a region that can be partially formatted. The
+   * boundary will be included in the following region, e.g.:
+   * [[boundary0, boundary1), [boundary1, boundary2), ...].
+   */
+  public void markForPartialFormat() {
+    output.markForPartialFormat(getI(input.getTokens().get(tokenI)));
+  }
+
+  /**
    * Add a list of {@link Op}s.
    * @param newOps the list of {@link Op}s
    */

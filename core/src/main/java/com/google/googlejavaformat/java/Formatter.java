@@ -15,14 +15,11 @@
 package com.google.googlejavaformat.java;
 
 import com.google.common.collect.DiscreteDomain;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.Doc;
 import com.google.googlejavaformat.DocBuilder;
-import com.google.googlejavaformat.InputOutput;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
 
@@ -116,7 +113,7 @@ public final class Formatter {
     RangeSet<Integer> lineRangeSet = TreeRangeSet.create();
     lineRangeSet.add(Range.<Integer>all());
     try {
-      javaOutput.writeMerged(result, lineRangeSet, MAX_WIDTH, errors);
+      javaOutput.writeMerged(result, lineRangeSet);
     } catch (IOException ignored) {
       throw new AssertionError("IOException impossible for StringWriter");
     }
@@ -141,113 +138,25 @@ public final class Formatter {
       throw new FormatterException(errors.get(0));
     }
     StringBuilder result = new StringBuilder(input.length());
-    RangeSet<Integer> lineRangeSet = characterRangesToLineRangeSet(javaInput, characterRanges);
+    RangeSet<Integer> tokenRangeSet = characterRangesToTokenRanges(javaInput, characterRanges);
     try {
-      javaOutput.writeMerged(result, lineRangeSet, MAX_WIDTH, errors);
+      javaOutput.writeMerged(result, tokenRangeSet);
     } catch (IOException ignored) {
       throw new AssertionError("IOException impossible for StringWriter");
     }
     return result.toString();
   }
 
-  /**
-   * Emit a list of {@link Replacement}s to convert from input to output.
-   * @param input the input compilation unit
-   * @param characterRanges the character ranges to reformat
-   * @return a list of {@link Replacement}s, reverse-sorted from high index to low index, without
-   *     overlaps
-   * @throws FormatterException if the input string cannot be parsed
-   */
-  public ImmutableList<Replacement> getFormatReplacements(
-      String input, List<Range<Integer>> characterRanges) throws FormatterException {
-    List<Replacement> replacements = new ArrayList<>();
-    JavaInput javaInput = new JavaInput(input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(), false);
-    List<String> errors = new ArrayList<>();
-    format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
-    if (!errors.isEmpty()) {
-      throw new FormatterException(errors.get(0));
-    }
-    RangeSet<Integer> inputLineRangeSet = characterRangesToLineRangeSet(javaInput, characterRanges);
-    List<JavaOutput.RunInfo> lineInfos = javaOutput.pickRuns(inputLineRangeSet);
-    /*
-     * There is one {@code lineInfo} for each line of the merged output: an unformatted
-     * {@link From#INPUT} line or a formatted {@link From#OUTPUT} line. Each {@link Replacement}
-     * represents a run of {@link From#OUTPUT}s; it specifies the character range of the replaced
-     * input lines and the {@code String} value of the replacing output lines. The
-     * {@link Replacement}s do not overlap, since the lines do not.
-     */
-    JavaOutput.From trackingFrom = JavaOutput.From.OUTPUT; // Which are we currently tracking?
-    int inputLineI = 0; // Up to this line in the unformatted input, during From.INPUT.
-    int inputCharacterI = 0; // Up to this character in the unformatted input, during From.INPUT.
-    int outputLineJ = 0; // Up to this line in the formatted output, during From.OUTPUT.
-    int outputLineJ0 = 0; // When did we switch to output?
-    for (int ij = 0; ij < lineInfos.size(); ij++) {
-      JavaOutput.RunInfo lineInfo = lineInfos.get(ij);
-      if (trackingFrom == JavaOutput.From.INPUT) {
-        if (lineInfo.from == JavaOutput.From.INPUT) {
-          // Continue tracking input.
-          while (inputLineI <= lineInfo.ij0) {
-            inputCharacterI += javaInput.getLine(inputLineI++).length() + 1; // Include '\n'.
-          }
-        } else {
-          // Done tracking input; switch to output.
-          trackingFrom = JavaOutput.From.OUTPUT;
-          outputLineJ0 = lineInfo.ij0;
-          outputLineJ = lineInfo.ij0 + 1;
-        }
-      } else {
-        if (lineInfo.from == JavaOutput.From.INPUT) {
-          // Done tracking output; switch to input and emit a Replacement.
-          int inputRange0 = inputCharacterI; // Where we switched to output.
-          trackingFrom = JavaOutput.From.INPUT;
-          while (inputLineI < lineInfo.ij0) {
-            inputCharacterI += javaInput.getLine(inputLineI++).length() + 1; // Include '\n'.
-          }
-          int inputRange1 = inputCharacterI;
-          inputCharacterI += javaInput.getLine(inputLineI++).length() + 1; // Include '\n'.
-          Range<Integer> range = Range.closedOpen(inputRange0, inputRange1);
-          if (!range.isEmpty() || outputLineJ0 < outputLineJ) {
-            // Emit a Replacement.
-            replacements.add(
-                Replacement.create(range, getLines(javaOutput, outputLineJ0, outputLineJ)));
-          }
-        } else {
-          // Continue tracking output.
-          outputLineJ = lineInfo.ij0 + 1;
-        }
-      }
-    }
-    if (trackingFrom == JavaOutput.From.OUTPUT && outputLineJ0 < outputLineJ) {
-      // Emit final Replacement.
-      Range<Integer> range = Range.closedOpen(inputCharacterI, javaInput.getText().length());
-      if (!range.isEmpty() || outputLineJ0 < outputLineJ) {
-        // Emit a Replacement.
-        replacements.add(
-            Replacement.create(range, getLines(javaOutput, outputLineJ0, outputLineJ)));
-      }
-    }
-    return ImmutableList.copyOf(Lists.reverse(replacements));
-  }
-
-  private static RangeSet<Integer> characterRangesToLineRangeSet(
+  private static RangeSet<Integer> characterRangesToTokenRanges(
       JavaInput javaInput, List<Range<Integer>> characterRanges) throws FormatterException {
-    RangeSet<Integer> lineRangeSet = TreeRangeSet.create();
+    RangeSet<Integer> tokenRangeSet = TreeRangeSet.create();
     for (Range<Integer> characterRange0 : characterRanges) {
       Range<Integer> characterRange = characterRange0.canonical(DiscreteDomain.integers());
-      lineRangeSet.add(
-          javaInput.characterRangeToLineRange(
+      tokenRangeSet.add(
+          javaInput.characterRangeToTokenRange(
               characterRange.lowerEndpoint(),
               characterRange.upperEndpoint() - characterRange.lowerEndpoint()));
     }
-    return lineRangeSet.subRangeSet(Range.openClosed(0, javaInput.getLineCount()));
-  }
-
-  private static String getLines(InputOutput put, int ij0, int ij1) {
-    StringBuilder builder = new StringBuilder();
-    for (int ij = ij0; ij < ij1; ij++) {
-      builder.append(put.getLine(ij)).append('\n');
-    }
-    return builder.toString();
+    return tokenRangeSet;
   }
 }

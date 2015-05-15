@@ -27,7 +27,7 @@ public abstract class Output extends InputOutput {
    * Unique identifier for a break.
    */
   public static final class BreakTag {}
-  
+
   /**
    * Indent by outputting {@code indent} spaces.
    * @param indent the current indent
@@ -66,6 +66,12 @@ public abstract class Output extends InputOutput {
    * @param wanted whether a blank line is wanted here
    */
   public abstract void blankLine(int k, boolean wanted);
+
+  /**
+   * Marks the boundary of a region that can be partially formatted.
+   * @param k the token index
+   */
+  public abstract void markForPartialFormat(int k);
 
   /**
    * Get the {@link CommentsHelper}.

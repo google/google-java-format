@@ -292,6 +292,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(CompilationUnit node) {
     boolean first = true;
     if (node.getPackage() != null) {
+      builder.markForPartialFormat();
       visit(node.getPackage());
       builder.breakOp();
       first = false;
@@ -301,6 +302,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.blankLineWanted(true);
       }
       for (ImportDeclaration importDeclaration : (List<ImportDeclaration>) node.imports()) {
+        builder.markForPartialFormat();
         visit(importDeclaration);
         builder.breakOp();
       }
@@ -310,10 +312,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       if (!first) {
         builder.blankLineWanted(true);
       }
+      builder.markForPartialFormat();
       type.accept(this);
       builder.breakOp();
       first = false;
     }
+    // set a partial format marker at EOF to make sure we can format the entire file
+    builder.markForPartialFormat();
     return false;
   }
 
@@ -2024,6 +2029,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       tokenBreakTrailingComment("{", plusTwo);
       for (Statement statement : (List<Statement>) node.statements()) {
         builder.forcedBreak();
+        builder.markForPartialFormat();
         statement.accept(this);
       }
       builder.close();
@@ -2032,6 +2038,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       if (allowTrailingBlankLine == AllowTrailingBlankLine.NO) {
         builder.blankLineWanted(false);
       }
+      builder.markForPartialFormat();
       token("}", plusTwo);
     }
   }
@@ -2947,6 +2954,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         if (!first && (thisOneGetsBlankLineBefore || lastOneGotBlankLineBefore)) {
           builder.blankLineWanted(true);
         }
+        builder.markForPartialFormat();
         bodyDeclaration.accept(this);
         first = false;
         lastOneGotBlankLineBefore = thisOneGetsBlankLineBefore;
