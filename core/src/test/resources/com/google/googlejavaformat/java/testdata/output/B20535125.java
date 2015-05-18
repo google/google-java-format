@@ -110,7 +110,7 @@ class Test {
     } finally {
     }
 
-    for (;;) {}
+    for (; ; ) {}
 
     while (true) {}
 

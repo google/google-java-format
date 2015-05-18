@@ -906,17 +906,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     builder.close();
     token(";");
-    if (node.getExpression() == null) {
-      builder.breakOp("");
-    } else {
-      builder.breakOp(" ");
+    builder.breakOp(" ");
+    if (node.getExpression() != null) {
       node.getExpression().accept(this);
     }
     token(";");
-    if (node.updaters().isEmpty()) {
-      builder.breakOp("");
-    } else {
-      builder.breakOp(" ");
+    builder.breakOp(" ");
+    if (!node.updaters().isEmpty()) {
       builder.open(node.updaters().size() <= 1 ? ZERO : plusFour);
       boolean firstUpdater = true;
       for (Expression updater : (List<Expression>) node.updaters()) {
