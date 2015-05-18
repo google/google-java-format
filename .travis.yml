@@ -1,5 +1,12 @@
 language: java
 
+notifications:
+  email:
+    recipients:
+      - google-java-format-dev+travis@google.com
+    on_success: change
+    on_failure: always
+
 jdk:
   - oraclejdk7
   - oraclejdk8
