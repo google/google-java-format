@@ -311,7 +311,9 @@ public final class JavaOutput extends Output {
 
       result.add(
           Replacement.create(
-              Range.closedOpen(replaceFrom, endTok.getPosition() + 1),
+              Range.closedOpen(
+                  replaceFrom, 
+                  Math.min(endTok.getPosition() + 1, javaInput.getText().length())),
               replacement.toString()));
     }
 
