@@ -10,3 +10,10 @@ notifications:
 jdk:
   - oraclejdk7
   - oraclejdk8
+
+# use travis-ci docker based infrastructure
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.m2
