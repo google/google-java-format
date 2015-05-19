@@ -23,6 +23,7 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeMultimap;
 import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.CharStreams;
+import com.google.googlejavaformat.FormatterDiagnostic;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -79,11 +80,6 @@ public final class Main {
         names = {"--indent", "-indent", "-t"},
         description = "The atomic unit of indentation (default is 2).")
     Integer indentFlag = 2;
-
-    @Parameter(
-        names = {"--addComments", "-addComments"},
-        description = "Insert diagnostics as comments in output.")
-    boolean addCommentsFlag = false;
 
     @Parameter(names = {"--version", "-version", "-v"}, description = "Print the version.")
     boolean versionFlag = false;
@@ -166,7 +162,6 @@ public final class Main {
     List<Future<Boolean>> results = new ArrayList<>();
     ExecutorService executorService = Executors.newFixedThreadPool(MAX_THREADS);
     final boolean iFlagFinal = argInfo.parameters.iFlag;
-    final boolean addCommentsFlagFinal = argInfo.parameters.addCommentsFlag;
     final int indentMultiplierFlagFinal = argInfo.parameters.indentFlag / 2;
     final List<String> linesFlagsFinal = argInfo.parameters.linesFlags;
     final List<Integer> offsetFlagsFinal = argInfo.parameters.offsetFlags;
@@ -184,9 +179,10 @@ public final class Main {
                              fileName.equals("-") ? System.in : new FileInputStream(fileName)) {
                       String stringFromStream =
                           CharStreams.toString(new InputStreamReader(in, StandardCharsets.UTF_8));
-                      JavaInput javaInput = new JavaInput(stringFromStream);
-                      JavaOutput javaOutput =
-                          new JavaOutput(javaInput, new JavaCommentsHelper(), addCommentsFlagFinal);
+                      JavaInput javaInput =
+                          new JavaInput(
+                              fileName.equals("-") ? "<stdin>" : fileName, stringFromStream);
+                      JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
                       RangeSet<Integer> tokens = TreeRangeSet.create();
                       for (String line : linesFlagsFinal) {
                         for (Range<Integer> lineRange : parseRangeSet(line).asRanges()) {
@@ -201,16 +197,18 @@ public final class Main {
                       if (tokens.isEmpty()) {
                         tokens.add(Range.<Integer>all());
                       }
-                      List<String> errors = new ArrayList<>();
+                      List<FormatterDiagnostic> errors = new ArrayList<>();
                       Formatter.format(
                           javaInput, javaOutput, Formatter.MAX_WIDTH, errors,
                           indentMultiplierFlagFinal);
-                      theseOkay &= errors.isEmpty();
-                      synchronized (mutex) {
-                        for (String error : errors) {
-                          errWriter.println(
-                              (fileName.equals("-") ? "<stdin>" : fileName) + ": " + error);
+                      if (!errors.isEmpty()) {
+                        theseOkay = false;
+                        synchronized (mutex) {
+                          for (FormatterDiagnostic error : errors) {
+                            errWriter.println(error.toString());
+                          }
                         }
+                        continue;
                       }
                       if (!iFlagFinal || fileName.equals("-")) {
                         synchronized (mutex) {

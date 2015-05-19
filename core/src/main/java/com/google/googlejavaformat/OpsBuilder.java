@@ -32,7 +32,7 @@ public final class OpsBuilder {
   private final Input input;
   private final List<Op> ops = new ArrayList<>();
   private final Output output;
-  private final List<String> errors;
+  private final List<FormatterDiagnostic> errors;
   private static final Indent.Const ZERO = Indent.Const.ZERO;
 
   private int tokenI = 0;
@@ -44,7 +44,7 @@ public final class OpsBuilder {
    * @param output the {@link Output}, used here only to record blank-line information
    * @param errors mutable list to receive errors
    */
-  public OpsBuilder(Input input, Output output, List<String> errors) {
+  public OpsBuilder(Input input, Output output, List<FormatterDiagnostic> errors) {
     this.input = input;
     this.output = output;
     this.errors = errors; // Assignment of mutable collection.
@@ -59,27 +59,39 @@ public final class OpsBuilder {
    * Sync to position in the input. If we've skipped outputting any tokens that were present in the
    * input tokens, output them here and optionally complain.
    * @param inputPosition the {@code 0}-based input position
-   * @param complain whether to complain if there were missed tokens
    */
-  public final void sync(int inputPosition, boolean complain) {
+  public final void sync(int inputPosition) {
+    if (inputPosition > this.inputPosition) {
+      ImmutableList<? extends Input.Token> tokens = input.getTokens();
+      int tokensN = tokens.size();
+      if (tokenI < tokensN && inputPosition > tokens.get(tokenI).getTok().getPosition()) {
+        // Found a missing input token. Insert it and mark it missing (usually not good).
+        Input.Token token = tokens.get(tokenI++);
+        throw new AssertionError(
+            input
+                .createDiagnostic(
+                    inputPosition,
+                    String.format("did not generate token \"%s\"", token.getTok().getText()))
+                .toString());
+      }
+      this.inputPosition = inputPosition;
+    }
+  }
+  
+  /** Output any remaining tokens from the input stream (e.g. terminal whitespace). */
+  public final void drain() {
+    int inputPosition = input.getText().length() + 1;
     if (inputPosition > this.inputPosition) {
       ImmutableList<? extends Input.Token> tokens = input.getTokens();
       int tokensN = tokens.size();
       while (tokenI < tokensN && inputPosition > tokens.get(tokenI).getTok().getPosition()) {
-        // Found a missing input token. Insert it and mark it missing (usually not good).
         Input.Token token = tokens.get(tokenI++);
-        if (complain) {
-          errors.add(
-              String.format(
-                  "input position %d: did not generate token \"%s\"", inputPosition,
-                  token.getTok().getText()));
-        }
         ops.add(
             Doc.Token.make(
                 token, Doc.Token.RealOrImaginary.IMAGINARY, ZERO, Optional.<Indent>absent()));
       }
-      this.inputPosition = inputPosition;
     }
+    this.inputPosition = inputPosition;
   }
 
   /**
@@ -141,7 +153,8 @@ public final class OpsBuilder {
        */
       if (realOrImaginary.isReal()) {
         errors.add(
-            String.format("input position %d: generated extra token \"%s\"", inputPosition, token));
+            input.createDiagnostic(
+                inputPosition, String.format("generated extra token \"%s\"", token)));
       }
     }
   }

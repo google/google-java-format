@@ -21,6 +21,7 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.Doc;
 import com.google.googlejavaformat.DocBuilder;
+import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
 
@@ -28,6 +29,7 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Message;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -77,7 +79,10 @@ public final class Formatter {
    * @param indentationMultiplier the multiplier for the unit of indent; the default is 1
    */
   public static void format(
-      JavaInput javaInput, JavaOutput javaOutput, int maxWidth, List<String> errors,
+      JavaInput javaInput,
+      JavaOutput javaOutput,
+      int maxWidth,
+      List<FormatterDiagnostic> errors,
       int indentationMultiplier) {
     ASTParser parser = ASTParser.newParser(AST.JLS8);
     parser.setSource(javaInput.getText().toCharArray());
@@ -86,11 +91,18 @@ public final class Formatter {
     JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, options);
     parser.setCompilerOptions(options);
     CompilationUnit unit = (CompilationUnit) parser.createAST(null);
+    javaInput.setCompilationUnit(unit);
+    if (unit.getMessages().length > 0) {
+      for (Message message : unit.getMessages()) {
+        errors.add(javaInput.createDiagnostic(message.getStartPosition(), message.getMessage()));
+      }
+      return;
+    }
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput, errors);
     // Output compilation unit.
     new JavaInputAstVisitor(builder, indentationMultiplier).visit(unit);
-    builder.sync(javaInput.getText().length(), true);
-    builder.sync(javaInput.getText().length() + 1, false);
+    builder.sync(javaInput.getText().length());
+    builder.drain();
     new DocBuilder().withOps(builder.build()).build().write(
         javaOutput, maxWidth, new Doc.State(+0, 0)); // Write the Doc to the Output.
     javaOutput.flush();
@@ -103,12 +115,12 @@ public final class Formatter {
    * @throws FormatterException if the input string cannot be parsed
    */
   public String formatSource(String input) throws FormatterException {
-    JavaInput javaInput = new JavaInput(input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(), false);
-    List<String> errors = new ArrayList<>();
+    JavaInput javaInput = new JavaInput(null, input);
+    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
+    List<FormatterDiagnostic> errors = new ArrayList<>();
     format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
     if (!errors.isEmpty()) {
-      throw new FormatterException(errors.get(0));
+      throw new FormatterException(errors);
     }
     StringBuilder result = new StringBuilder(input.length());
     RangeSet<Integer> lineRangeSet = TreeRangeSet.create();
@@ -131,12 +143,12 @@ public final class Formatter {
    */
   public String formatSource(String input, List<Range<Integer>> characterRanges)
       throws FormatterException {
-    JavaInput javaInput = new JavaInput(input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(), false);
-    List<String> errors = new ArrayList<>();
+    JavaInput javaInput = new JavaInput(null, input);
+    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
+    List<FormatterDiagnostic> errors = new ArrayList<>();
     format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
     if (!errors.isEmpty()) {
-      throw new FormatterException(errors.get(0));
+      throw new FormatterException(errors);
     }
     StringBuilder result = new StringBuilder(input.length());
     RangeSet<Integer> tokenRangeSet = characterRangesToTokenRanges(javaInput, characterRanges);
@@ -158,12 +170,12 @@ public final class Formatter {
    */
   public ImmutableList<Replacement> getFormatReplacements(
       String input, List<Range<Integer>> characterRanges) throws FormatterException {
-    JavaInput javaInput = new JavaInput(input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(), false);
-    List<String> errors = new ArrayList<>();
+    JavaInput javaInput = new JavaInput(null, input);
+    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
+    List<FormatterDiagnostic> errors = new ArrayList<>();
     format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
     if (!errors.isEmpty()) {
-      throw new FormatterException(errors.get(0));
+      throw new FormatterException(errors);
     }
     RangeSet<Integer> tokenRangeSet = characterRangesToTokenRanges(javaInput, characterRanges);
     return javaOutput.getFormatReplacements(tokenRangeSet);

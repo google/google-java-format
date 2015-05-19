@@ -14,13 +14,27 @@
 
 package com.google.googlejavaformat.java;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.google.googlejavaformat.FormatterDiagnostic;
+
+import java.util.List;
+
 /** Checked exception class for formatter errors. */
 public final class FormatterException extends Exception {
-  FormatterException(Throwable cause) {
-    super(cause);
-  }
+
+  private ImmutableList<FormatterDiagnostic> diagnostics;
 
   FormatterException(String message) {
     super(message);
+  }
+
+  public FormatterException(List<FormatterDiagnostic> diagnostics) {
+    super(Joiner.on('\n').join(diagnostics));
+    this.diagnostics = ImmutableList.copyOf(diagnostics);
+  }
+  
+  public List<FormatterDiagnostic> diagnostics() {
+    return diagnostics;
   }
 }

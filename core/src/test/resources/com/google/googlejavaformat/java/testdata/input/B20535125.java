@@ -113,9 +113,9 @@ class Test {
 
     }
 
-    try (Lock _ = lock.lock()) {}
+    try (Lock l = lock.lock()) {}
 
-    try (Lock _ = lock.lock()) {} finally {}
+    try (Lock l = lock.lock()) {} finally {}
 
     for (;;) {}
 

@@ -57,12 +57,8 @@ public final class JavaOutput extends Output {
     OUTPUT
   }
 
-  private static final String LINE_TOO_LONG_WARNING =
-      "THE FOLLOWING LINE WAS TOO LONG TO FIT. PLEASE CORRECT IT.";
-
   private final JavaInput javaInput; // Used to follow along while emitting the output.
   private final CommentsHelper commentsHelper; // Used to re-flow comments.
-  private final boolean addWarnings; // Add warnings as comments in output.
   private final Map<Integer, Boolean> blankLines = new HashMap<>(); // Info on blank lines.
   private final NavigableSet<Integer> partialFormatBoundaries = new TreeSet<>();
 
@@ -81,10 +77,9 @@ public final class JavaOutput extends Output {
    * @param javaInput the {@link JavaInput}, used to match up blank lines in the output
    * @param commentsHelper the {@link CommentsHelper}, used to rewrite comments
    */
-  public JavaOutput(JavaInput javaInput, CommentsHelper commentsHelper, boolean addWarnings) {
+  public JavaOutput(JavaInput javaInput, CommentsHelper commentsHelper) {
     this.javaInput = javaInput;
     this.commentsHelper = commentsHelper;
-    this.addWarnings = addWarnings;
     kN = javaInput.getkN();
   }
 

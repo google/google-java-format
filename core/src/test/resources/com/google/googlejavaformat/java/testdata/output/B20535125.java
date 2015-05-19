@@ -104,9 +104,9 @@ class Test {
       System.err.println("Hi");
     }
 
-    try (Lock _ = lock.lock()) {}
+    try (Lock l = lock.lock()) {}
 
-    try (Lock _ = lock.lock()) {
+    try (Lock l = lock.lock()) {
     } finally {
     }
 

@@ -18,6 +18,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
+import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
@@ -28,6 +29,7 @@ import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.compiler.IScanner;
 import org.eclipse.jdt.core.compiler.ITerminalSymbols;
 import org.eclipse.jdt.core.compiler.InvalidInputException;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -201,6 +203,7 @@ public final class JavaInput extends Input {
 
   private static final Splitter NEWLINE_SPLITTER = Splitter.on('\n');
 
+  private final String filename;
   private final String text; // The input.
   private int kN; // The number of numbered toks (tokens or comments), excluding the EOF.
   private Map<Integer, Range<Integer>> kToI = null; // Map from token indices to line numbers.
@@ -225,7 +228,8 @@ public final class JavaInput extends Input {
    * @param text the input text
    * @throws FormatterException if the input cannot be parsed
    */
-  public JavaInput(String text) throws FormatterException {
+  public JavaInput(String filename, String text) throws FormatterException {
+    this.filename = filename;
     this.text = text;
     char[] chars = text.toCharArray();
     List<String> lines = NEWLINE_SPLITTER.splitToList(text);
@@ -270,7 +274,8 @@ public final class JavaInput extends Input {
    * Get the input text.
    * @return the input text
    */
-  String getText() {
+  @Override
+  public String getText() {
     return text;
   }
 
@@ -381,7 +386,7 @@ public final class JavaInput extends Input {
       computeRanges(toks);
       return ImmutableList.copyOf(toks);
     } catch (InvalidInputException e) {
-      throw new FormatterException(e);
+      throw new FormatterException(e.getMessage());
     }
   }
 
@@ -536,5 +541,24 @@ public final class JavaInput extends Input {
         .add("tokens", tokens)
         .add("super", super.toString())
         .toString();
+  }
+
+  @Override
+  public String filename() {
+    return filename;
+  }
+
+  private CompilationUnit unit;
+
+  @Override
+  public int getLineNumber(int inputPosition) {
+    Verify.verifyNotNull(unit, "Expected compilation unit to be set.");
+    return unit.getLineNumber(inputPosition);
+  }
+
+  // TODO(cushon): refactor JavaInput so the CompilationUnit can be passed into
+  // the constructor.
+  public void setCompilationUnit(CompilationUnit unit) {
+    this.unit = unit;
   }
 }

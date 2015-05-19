@@ -123,8 +123,24 @@ public abstract class Input extends InputOutput {
 
   public abstract ImmutableMap<Integer, Integer> getPositionToColumnMap();
 
+  public abstract String getText();
+  
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("super", super.toString()).toString();
+  }
+
+  /** The input filename. */
+  public abstract String filename();
+
+  /** Converts a character offset in the input to a line number. */
+  public abstract int getLineNumber(int inputPosition);
+
+  /**
+   * Construct a diagnostic. Populates the input filename, and converts
+   * character offsets to numbers.
+   * */
+  public FormatterDiagnostic createDiagnostic(int inputPosition, String message) {
+    return new FormatterDiagnostic(filename(), getLineNumber(inputPosition), message);
   }
 }

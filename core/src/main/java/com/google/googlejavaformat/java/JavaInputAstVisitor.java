@@ -3101,7 +3101,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * @param node the ASTNode holding the input position
    */
   final void sync(ASTNode node) {
-    builder.sync(node.getStartPosition(), true);
+    builder.sync(node.getStartPosition());
   }
 
   final BreakTag genSym() {
