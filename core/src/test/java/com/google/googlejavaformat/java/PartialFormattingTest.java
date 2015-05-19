@@ -17,6 +17,7 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 
@@ -530,5 +531,57 @@ public final class PartialFormattingTest {
     Replacement replacement = ranges.get(0);
     assertThat(replacement.getReplacementString()).isEqualTo("  void f() {}");
     assertThat(replacement.getReplaceRange()).isEqualTo(Range.closedOpen(11, 24));
+  }
+
+  @Test
+  public void noTokensOnLine() throws Exception {
+    String input =
+        Joiner.on('\n')
+            .join(
+                "    package com.google.googlejavaformat.java;",
+                "/*",
+                " * Copyright 2015 Google Inc.",
+                " *",
+                " * Licensed under the Apache License, Version 2.0 (the \"License\"); you may not",
+                " * in compliance with the License. You may obtain a copy of the License at",
+                " *",
+                " *     http://www.apache.org/licenses/LICENSE-2.0",
+                " *",
+                " * Unless required by applicable law or agreed to in writing, software distribute",
+                " * is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY",
+                " * or implied. See the License for the specific language governing permissions an",
+                " * the License.",
+                " */",
+                "",
+                "import com.google.googlejavaformat.FormatterDiagnostic;",
+                "",
+                "import java.util.List;",
+                "",
+                "/** Checked exception class for formatter errors. */",
+                "public final class FormatterException extends Exception {",
+                "",
+                "  FormatterException(String message) {",
+                "    super(message);",
+                "  }",
+                "",
+                "  /**",
+                "   * @param errors",
+                "   */",
+                "  public FormatterException(List<FormatterDiagnostic> errors) {",
+                "    // TODO(cushon): Auto-generated constructor stub",
+                "  }",
+                "}");
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("FormatterException.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    String[] args = {"-lines", "3:4", path.toString()};
+    assertThat(main.format(args)).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(input);
   }
 }
