@@ -142,7 +142,7 @@ public class CommandLineFlagsTest {
     }
 
     try {
-      ArgInfo.processArgs("-indent", "4");
+      ArgInfo.processArgs("-aosp");
       fail();
     } catch (UsageException e) {
       // expected

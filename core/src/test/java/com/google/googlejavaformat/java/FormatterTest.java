@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ResourceInfo;
@@ -90,6 +91,37 @@ public final class FormatterTest {
       String output = new Formatter().formatSource(input);
       assertEquals("bad output for " + fileName, expectedOutput, output);
     }
+  }
+
+  @Test
+  public void testFormatAosp() throws Exception {
+    // don't forget to misspell "long", or you will be mystified for a while
+    String input =
+        "class A{void b(){while(true){weCanBeCertainThatThisWillEndUpGettingWrapped("
+            + "because, it, is, just, so, very, very, very, very, looong);}}}";
+    String expectedOutput =
+        Joiner.on("\n").join(
+            "class A {",
+            "    void b() {",
+            "        while (true) {",
+            "            weCanBeCertainThatThisWillEndUpGettingWrapped(",
+            "                    because, it, is, just, so, very, very, very, very, looong);",
+            "        }",
+            "    }",
+            "}",
+            "");
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("A.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    String[] args = {"--aosp", path.toString()};
+    assertThat(main.format(args)).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expectedOutput);
   }
 
   @Test

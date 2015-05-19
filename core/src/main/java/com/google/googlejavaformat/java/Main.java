@@ -77,9 +77,9 @@ public final class Main {
     private final List<Integer> lengthFlags = new ArrayList<>();
 
     @Parameter(
-        names = {"--indent", "-indent", "-t"},
-        description = "The atomic unit of indentation (default is 2).")
-    Integer indentFlag = 2;
+        names = {"--aosp", "-aosp", "-a"},
+        description = "Use AOSP style instead of Google Style (4-space indentation).")
+    boolean aospFlag = false;
 
     @Parameter(names = {"--version", "-version", "-v"}, description = "Print the version.")
     boolean versionFlag = false;
@@ -101,7 +101,6 @@ public final class Main {
       {"google-java-format: Version " + GoogleJavaFormatVersion.VERSION};
 
   private static final String[] ADDITIONAL_USAGE = {
-      "The --indent value must be a positive multiple of 2.",
       "If -i is given with -, the result is sent to stdout.",
       "The --lines, --offset, and --length flags may be given more than once.",
       "The --offset and --length flags must be given an equal number of times.",
@@ -162,7 +161,7 @@ public final class Main {
     List<Future<Boolean>> results = new ArrayList<>();
     ExecutorService executorService = Executors.newFixedThreadPool(MAX_THREADS);
     final boolean iFlagFinal = argInfo.parameters.iFlag;
-    final int indentMultiplierFlagFinal = argInfo.parameters.indentFlag / 2;
+    final int indentMultiplierFlagFinal = argInfo.parameters.aospFlag ? 2 : 1;
     final List<String> linesFlagsFinal = argInfo.parameters.linesFlags;
     final List<Integer> offsetFlagsFinal = argInfo.parameters.offsetFlags;
     final List<Integer> lengthFlagsFinal = argInfo.parameters.lengthFlags;
