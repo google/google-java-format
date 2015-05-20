@@ -40,6 +40,8 @@ public final class TypeNameClassifierTest {
 
     assertThat(JavaCaseFormat.from("A_$")).isEqualTo(JavaCaseFormat.UPPERCASE);
     assertThat(JavaCaseFormat.from("a_$")).isEqualTo(JavaCaseFormat.LOWERCASE);
+    assertThat(JavaCaseFormat.from("_")).isEqualTo(JavaCaseFormat.LOWERCASE);
+    assertThat(JavaCaseFormat.from("_A")).isEqualTo(JavaCaseFormat.UPPERCASE);
   }
 
   private static int getPrefix(String qualifiedName) {

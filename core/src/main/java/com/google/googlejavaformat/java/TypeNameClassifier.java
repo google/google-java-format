@@ -133,14 +133,15 @@ public final class TypeNameClassifier {
       boolean firstUppercase = false;
       boolean hasUppercase = false;
       boolean hasLowercase = false;
+      boolean first = true;
       for (int i = 0; i < name.length(); i++) {
         char c = name.charAt(i);
-        if (i == 0) {
-          Verify.verify(Character.isAlphabetic(c));
-          firstUppercase = Character.isUpperCase(c);
-        }
         if (!Character.isAlphabetic(c)) {
           continue;
+        }
+        if (first) {
+          firstUppercase = Character.isUpperCase(c);
+          first = false;
         }
         hasUppercase |= Character.isUpperCase(c);
         hasLowercase |= Character.isLowerCase(c);
