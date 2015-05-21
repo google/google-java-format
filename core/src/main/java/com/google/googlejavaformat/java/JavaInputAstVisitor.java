@@ -3019,7 +3019,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       if (braces.isYes()) {
         builder.space();
         tokenBreakTrailingComment("{", plusTwo);
-        builder.blankLineWanted(false);
         builder.open(ZERO);
       }
       builder.open(plusTwo);

@@ -1,4 +1,5 @@
 class B20128174 {
+
   enum Suit {
     DIAMONDS,
     HEARTS,

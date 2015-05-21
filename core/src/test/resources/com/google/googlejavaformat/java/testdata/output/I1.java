@@ -37,6 +37,7 @@ class Test {
 }
 
 class Test {
+
   @Nullable private String creationUserAgent;
 
   {

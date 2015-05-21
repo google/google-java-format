@@ -7,6 +7,7 @@ package edu.oswego.cs.dl.util.concurrent;
 @Bar
 @Baz
 class Test {
+
   @Foo
   @Bar
   @Baz
