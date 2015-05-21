@@ -20,6 +20,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.googlejavaformat.Output.BreakTag;
+import com.google.googlejavaformat.Output.NewlineIfBroken;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -243,7 +244,24 @@ public final class OpsBuilder {
    */
   public final void breakOp(
       Doc.FillMode fillMode, String flat, Indent plusIndent, Optional<BreakTag> optionalTag) {
-    ops.add(Doc.Break.make(fillMode, flat, plusIndent, optionalTag));
+    ops.add(Doc.Break.make(fillMode, flat, plusIndent, optionalTag, NewlineIfBroken.NO));
+  }
+
+  /**
+   * Emit a generic {@link Doc.Break}.
+   * @param fillMode the {@link Doc.FillMode}
+   * @param flat the {@link Doc.Break} when not broken
+   * @param plusIndent extra indent if taken
+   * @param optionalTag an optional tag for remembering whether the break was taken
+   * @param newline emit a newline if this break is taken
+   */
+  public final void breakOp(
+      Doc.FillMode fillMode,
+      String flat,
+      Indent plusIndent,
+      Optional<BreakTag> optionalTag,
+      NewlineIfBroken newline) {
+    ops.add(Doc.Break.make(fillMode, flat, plusIndent, optionalTag, newline));
   }
 
   /**

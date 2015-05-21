@@ -108,6 +108,16 @@ public final class JavaOutput extends Output {
     return ImmutableSet.copyOf(breaksTaken);
   }
 
+  @Override
+  public void forceBlankLine() {
+    // respect existing blank line suppressions to avoid inserting blanks for
+    // breaks at the start/end of a block, or beginning/end of a method
+    // declaration
+    if (!blankLines.containsKey(lastK)) {
+      blankLines.put(lastK, true);
+    }
+  }
+
   // TODO(jdd): Add invariant.
   @Override
   public void append(String text, Range<Integer> range) {

@@ -67,6 +67,10 @@ final class FakeOutput extends Output {
   }
 
   @Override
+  public void forceBlankLine() {
+  }
+
+  @Override
   public void append(String text, Range<Integer> range) {
     lineI += CharMatcher.is('\n').countIn(text);
   }

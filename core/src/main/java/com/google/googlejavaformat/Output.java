@@ -29,10 +29,28 @@ public abstract class Output extends InputOutput {
   public static final class BreakTag {}
 
   /**
+   * Should the output include a newline if the break is taken?
+   */
+  public enum NewlineIfBroken {
+    YES,
+    NO;
+
+    public boolean isYes() {
+      return this == YES;
+    }
+  }
+
+  /**
    * Indent by outputting {@code indent} spaces.
    * @param indent the current indent
    */
   public abstract void indent(int indent);
+
+  /**
+   * Insert a blank line into the output stream during formatting,
+   * e.g. if a specific break is taken.
+   */
+  public abstract void forceBlankLine();
 
   /**
    * Output a string.

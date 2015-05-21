@@ -19,6 +19,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.Output.BreakTag;
+import com.google.googlejavaformat.Output.NewlineIfBroken;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -528,14 +529,19 @@ public abstract class Doc {
     private final String flat;
     private final Indent plusIndent;
     private final Optional<BreakTag> optTag;
+    private final NewlineIfBroken newline;
 
     private Break(
-        FillMode fillMode, String flat, Indent plusIndent,
-        Optional<BreakTag> optTag) {
+        FillMode fillMode,
+        String flat,
+        Indent plusIndent,
+        Optional<BreakTag> optTag,
+        NewlineIfBroken newline) {
       this.fillMode = fillMode;
       this.flat = flat;
       this.plusIndent = plusIndent;
       this.optTag = optTag;
+      this.newline = newline;
     }
 
     /**
@@ -546,8 +552,7 @@ public abstract class Doc {
      * @return the new {@code Break}
      */
     public static Break make(FillMode fillMode, String flat, Indent plusIndent) {
-      return new Break(
-          fillMode, flat, plusIndent, Optional.<BreakTag>absent());
+      return new Break(fillMode, flat, plusIndent, Optional.<BreakTag>absent(), NewlineIfBroken.NO);
     }
 
     /**
@@ -559,8 +564,12 @@ public abstract class Doc {
      * @return the new {@code Break}
      */
     static Break make(
-        FillMode fillMode, String flat, Indent plusIndent, Optional<BreakTag> optTag) {
-      return new Break(fillMode, flat, plusIndent, optTag);
+        FillMode fillMode,
+        String flat,
+        Indent plusIndent,
+        Optional<BreakTag> optTag,
+        NewlineIfBroken newline) {
+      return new Break(fillMode, flat, plusIndent, optTag, newline);
     }
 
     /**
@@ -620,6 +629,9 @@ public abstract class Doc {
      * @return the new column
      */
     int writeBroken(Output output, int indent) {
+      if (newline.isYes()) {
+        output.forceBlankLine();
+      }
       output.append("\n", EMPTY_RANGE);
       int newIndent = Math.max(indent + plusIndent.eval(output), 0);
       output.indent(newIndent);

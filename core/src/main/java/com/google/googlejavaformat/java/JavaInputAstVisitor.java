@@ -28,6 +28,7 @@ import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpenOp;
 import com.google.googlejavaformat.OpsBuilder;
 import com.google.googlejavaformat.Output.BreakTag;
+import com.google.googlejavaformat.Output.NewlineIfBroken;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -165,6 +166,16 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
     boolean isYes() {
       return this == YES;
+    }
+  }
+
+  /** Whether to allow leading blank lines in blocks. */
+  enum AllowLeadingBlankLine {
+    YES,
+    NO;
+
+    static AllowLeadingBlankLine valueOf(boolean b) {
+      return b ? YES : NO;
     }
   }
 
@@ -351,6 +362,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(AnnotationTypeMemberDeclaration node) {
     sync(node);
     declareOne(
+        node,
         Direction.VERTICAL,
         node.modifiers(),
         node.getType(),
@@ -360,8 +372,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         "()",
         ImmutableList.<Dimension>of(),
         "default",
-        Optional.fromNullable(node.getDefault()));
-    token(";");
+        Optional.fromNullable(node.getDefault()),
+        Optional.of(";"));
     return false;
   }
 
@@ -544,7 +556,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   /** Visitor method for {@link Block}s. */
   @Override
   public boolean visit(Block node) {
-    visitBlock(node, CollapseEmptyOrNot.YES, AllowTrailingBlankLine.NO);
+    visitBlock(node, CollapseEmptyOrNot.YES, AllowLeadingBlankLine.NO, AllowTrailingBlankLine.NO);
     return false;
   }
 
@@ -697,7 +709,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(DoStatement node) {
     sync(node);
     token("do");
-    visitStatement(node.getBody(), CollapseEmptyOrNot.YES, AllowTrailingBlankLine.YES);
+    visitStatement(
+        node.getBody(),
+        CollapseEmptyOrNot.YES,
+        AllowLeadingBlankLine.YES,
+        AllowTrailingBlankLine.YES);
     if (node.getBody().getNodeType() == ASTNode.BLOCK) {
       builder.space();
     } else {
@@ -734,7 +750,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.close();
     token(")");
     builder.close();
-    visitStatement(node.getBody(), CollapseEmptyOrNot.YES, AllowTrailingBlankLine.NO);
+    visitStatement(
+        node.getBody(),
+        CollapseEmptyOrNot.YES,
+        AllowLeadingBlankLine.YES,
+        AllowTrailingBlankLine.NO);
     return false;
   }
 
@@ -878,11 +898,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(FieldDeclaration node) {
     sync(node);
     addDeclaration(
+        node,
         node.modifiers(),
         node.getType(),
         node.fragments(),
         fieldAnnotationDirection(node.modifiers()));
-    builder.guessToken(";");
     return false;
   }
 
@@ -927,7 +947,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     builder.close();
     token(")");
-    visitStatement(node.getBody(), CollapseEmptyOrNot.YES, AllowTrailingBlankLine.NO);
+    visitStatement(
+        node.getBody(),
+        CollapseEmptyOrNot.YES,
+        AllowLeadingBlankLine.YES,
+        AllowTrailingBlankLine.NO);
     return false;
   }
 
@@ -974,6 +998,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       visitStatement(
           statements.get(i),
           CollapseEmptyOrNot.valueOf(onlyClause),
+          AllowLeadingBlankLine.YES,
           AllowTrailingBlankLine.valueOf(trailingClauses));
       followingBlock = statements.get(i).getNodeType() == ASTNode.BLOCK;
       first = false;
@@ -985,7 +1010,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.forcedBreak();
       }
       token("else");
-      visitStatement(node.getElseStatement(), CollapseEmptyOrNot.NO, AllowTrailingBlankLine.NO);
+      visitStatement(
+          node.getElseStatement(),
+          CollapseEmptyOrNot.NO,
+          AllowLeadingBlankLine.YES,
+          AllowTrailingBlankLine.NO);
     }
     builder.close();
     return false;
@@ -1225,6 +1254,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           // Break before args.
           builder.breakToFill("");
           visitFormals(
+              node,
               Optional.fromNullable(node.getReceiverType()),
               node.getReceiverQualifier(),
               node.parameters());
@@ -1251,7 +1281,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       token(";");
     } else {
       builder.space();
-      visit(node.getBody());
+      visitBlock(
+          node.getBody(),
+          CollapseEmptyOrNot.YES,
+          AllowLeadingBlankLine.YES,
+          AllowTrailingBlankLine.NO);
     }
     builder.guessToken(";");
 
@@ -1714,6 +1748,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     visitBlock(
         node.getBody(),
         CollapseEmptyOrNot.valueOf(!trailingClauses),
+        AllowLeadingBlankLine.YES,
         AllowTrailingBlankLine.valueOf(trailingClauses));
     for (int i = 0; i < node.catchClauses().size(); i++) {
       CatchClause catchClause = (CatchClause) node.catchClauses().get(i);
@@ -1724,7 +1759,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.space();
       token("finally");
       builder.space();
-      visitBlock(node.getFinally(), CollapseEmptyOrNot.NO, AllowTrailingBlankLine.NO);
+      visitBlock(
+          node.getFinally(),
+          CollapseEmptyOrNot.NO,
+          AllowLeadingBlankLine.YES,
+          AllowTrailingBlankLine.NO);
     }
     builder.close();
     return false;
@@ -1934,6 +1973,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(VariableDeclarationStatement node) {
     sync(node);
     addDeclaration(
+        node,
         node.modifiers(), node.getType(), node.fragments(),
         canLocalHaveHorizontalAnnotations(node.modifiers()));
     return false;
@@ -1948,7 +1988,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     token("(");
     node.getExpression().accept(this);
     token(")");
-    visitStatement(node.getBody(), CollapseEmptyOrNot.YES, AllowTrailingBlankLine.NO);
+    visitStatement(
+        node.getBody(),
+        CollapseEmptyOrNot.YES,
+        AllowLeadingBlankLine.YES,
+        AllowTrailingBlankLine.NO);
     return false;
   }
 
@@ -2013,6 +2057,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private void visitBlock(
       Block node,
       CollapseEmptyOrNot collapseEmptyOrNot,
+      AllowLeadingBlankLine allowLeadingBlankLine,
       AllowTrailingBlankLine allowTrailingBlankLine) {
     sync(node);
     if (collapseEmptyOrNot.isYes() && node.statements().isEmpty()) {
@@ -2023,6 +2068,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.open(ZERO);
       builder.open(plusTwo);
       tokenBreakTrailingComment("{", plusTwo);
+      if (allowLeadingBlankLine == AllowLeadingBlankLine.NO) {
+        builder.blankLineWanted(false);
+      }
       for (Statement statement : (List<Statement>) node.statements()) {
         builder.forcedBreak();
         builder.markForPartialFormat();
@@ -2046,12 +2094,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private void visitStatement(
       Statement node,
       CollapseEmptyOrNot collapseEmptyOrNot,
+      AllowLeadingBlankLine allowLeadingBlank,
       AllowTrailingBlankLine allowTrailingBlank) {
     sync(node);
     switch (node.getNodeType()) {
       case ASTNode.BLOCK:
         builder.space();
-        visitBlock((Block) node, collapseEmptyOrNot, allowTrailingBlank);
+        visitBlock((Block) node, collapseEmptyOrNot, allowLeadingBlank, allowTrailingBlank);
         break;
       default:
         // TODO(jdd): Fix.
@@ -2160,7 +2209,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.close();
     token(")");
     builder.space();
-    visitBlock(node.getBody(), CollapseEmptyOrNot.NO, allowTrailingBlankLine);
+    visitBlock(
+        node.getBody(), CollapseEmptyOrNot.NO, AllowLeadingBlankLine.YES, allowTrailingBlankLine);
   }
 
   /**
@@ -2209,6 +2259,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   /** Helper method for {@link MethodDeclaration}s. */
   private void visitFormals(
+      ASTNode node,
       Optional<Type> receiverType, SimpleName receiverQualifier,
       List<SingleVariableDeclaration> parameters) {
     if (receiverType.isPresent() || !parameters.isEmpty()) {
@@ -2217,6 +2268,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       if (receiverType.isPresent()) {
         // TODO(jdd): Use builders.
         declareOne(
+            node,
             Direction.HORIZONTAL,
             ImmutableList.<IExtendedModifier>of(),
             receiverType.get(),
@@ -2226,7 +2278,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
             "",
             ImmutableList.<Dimension>of(),
             "",
-            Optional.<Expression>absent());
+            Optional.<Expression>absent(),
+            Optional.<String>absent());
         first = false;
       }
       for (SingleVariableDeclaration parameter : parameters) {
@@ -2276,6 +2329,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       Optional<Expression> initializer, String equals) {
     sync(node);
     declareOne(
+        node,
         annotationsDirection,
         node.modifiers(),
         node.getType(),
@@ -2285,7 +2339,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         "",
         node.extraDimensions(),
         equals,
-        initializer);
+        initializer,
+        Optional.<String>absent());
   }
 
   /** Helper method for {@link MethodDeclaration}s and {@link TypeDeclaration}s. */
@@ -2747,8 +2802,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * @param extraDimensions the extra dimensions
    * @param equals "=" or equivalent
    * @param initializer the (optional) initializer
+   * @param trailing the (optional) trailing token, e.g. ';'
    */
   void declareOne(
+      ASTNode node,
       Direction annotationsDirection,
       List<IExtendedModifier> modifiers,
       Type type,
@@ -2758,9 +2815,23 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       String op,
       List<Dimension> extraDimensions,
       String equals,
-      Optional<Expression> initializer) {
+      Optional<Expression> initializer,
+      Optional<String> trailing) {
 
     BreakTag typeBreak = genSym();
+
+    // If the node is a field declaration, try to output any declaration
+    // annotations in-line. If the entire declaration doesn't fit on a single
+    // line, fall back to one-per-line.
+    boolean variableDeclarationAnnotations =
+        node.getNodeType() == ASTNode.FIELD_DECLARATION
+            && hasDeclarationAnnotations(modifiers);
+
+    if (variableDeclarationAnnotations) {
+      builder.open(ZERO);
+      builder.breakOp(
+          Doc.FillMode.UNIFIED, "", ZERO, Optional.<BreakTag>absent(), NewlineIfBroken.YES);
+    }
 
     builder.open(ZERO);
     {
@@ -2817,9 +2888,18 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       }
       // end of conditional name and initializer indent
       builder.close();
+
+      if (trailing.isPresent()) {
+        builder.guessToken(trailing.get());
+      }
     }
     builder.close();
 
+    if (variableDeclarationAnnotations) {
+      builder.breakOp(
+          Doc.FillMode.UNIFIED, "", ZERO, Optional.<BreakTag>absent(), NewlineIfBroken.YES);
+      builder.close();
+    }
   }
 
   /**
@@ -2867,6 +2947,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       first = false;
     }
     builder.close();
+    token(";");
     builder.close();
   }
 
@@ -2878,11 +2959,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * @param annotationsDirection {@link Direction#VERTICAL} or {@link Direction#HORIZONTAL}
    */
   void addDeclaration(
+      ASTNode node,
       List<IExtendedModifier> modifiers, Type type, List<VariableDeclarationFragment> fragments,
       Direction annotationsDirection) {
     if (fragments.size() == 1) {
       VariableDeclarationFragment fragment = fragments.get(0);
       declareOne(
+          node,
           annotationsDirection,
           modifiers,
           type,
@@ -2892,11 +2975,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           "",
           fragment.extraDimensions(),
           "=",
-          Optional.fromNullable(fragment.getInitializer()));
+          Optional.fromNullable(fragment.getInitializer()),
+          Optional.of(";"));
     } else {
       declareMany(annotationsDirection, modifiers, type, fragments);
     }
-    token(";");
   }
 
   // TODO(jdd): State precondition (and check callers).
@@ -2946,7 +3029,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.forcedBreak();
         boolean thisOneGetsBlankLineBefore =
             bodyDeclaration.getNodeType() != ASTNode.FIELD_DECLARATION
-                || hasJavaDoc(bodyDeclaration) || hasAnnotations(bodyDeclaration.modifiers());
+                || hasJavaDoc(bodyDeclaration);
         if (!first && (thisOneGetsBlankLineBefore || lastOneGotBlankLineBefore)) {
           builder.blankLineWanted(true);
         }
@@ -2967,8 +3050,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   }
 
   /** Does a list of {@link IExtendedModifier}s contain annotations? */
-  private static boolean hasAnnotations(List<IExtendedModifier> extendedModifiers) {
+  private static boolean hasDeclarationAnnotations(List<IExtendedModifier> extendedModifiers) {
     for (IExtendedModifier extendedModifier : extendedModifiers) {
+      if (extendedModifier.isModifier()) {
+        break;
+      }
       if (extendedModifier.isAnnotation()) {
         return true;
       }
