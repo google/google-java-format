@@ -1198,11 +1198,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     sync(node);
     visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL);
 
-    builder.open(ZERO);
+    builder.open(plusFour);
     {
       BreakTag breakBeforeName = genSym();
       BreakTag breakBeforeType = genSym();
-      builder.open(node.typeParameters().isEmpty() ? ZERO : plusFour);
+      builder.open(ZERO);
       {
         boolean first = true;
         if (!node.typeParameters().isEmpty()) {
@@ -1219,7 +1219,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
             first = false;
           }
           if (!openedNameAndTypeScope) {
-            builder.open(plusFour);
+            builder.open(Indent.If.make(breakBeforeType, plusFour, ZERO));
             openedNameAndTypeScope = true;
           }
           if (node.getReturnType2() == null) {
@@ -1247,7 +1247,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
       builder.open(Indent.If.make(breakBeforeName, plusFour, ZERO));
       builder.open(Indent.If.make(breakBeforeType, plusFour, ZERO));
-      builder.open(plusFour);
+      builder.open(ZERO);
       {
         if (!node.parameters().isEmpty() || node.getReceiverType() != null) {
           // Break before args.
