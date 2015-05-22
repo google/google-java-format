@@ -1198,52 +1198,55 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     sync(node);
     visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL);
 
-    builder.open(node.typeParameters().isEmpty() ? ZERO : plusFour);
+    builder.open(ZERO);
     {
-      boolean first = true;
-      if (!node.typeParameters().isEmpty()) {
-        visitTypeParameters(node.typeParameters(), ZERO, BreakOrNot.NO);
-        first = false;
-      }
-
+      BreakTag breakBeforeName = genSym();
       BreakTag breakBeforeType = genSym();
-      boolean openedNameAndTypeScope = false;
-      if (!node.isConstructor()) {
+      builder.open(node.typeParameters().isEmpty() ? ZERO : plusFour);
+      {
+        boolean first = true;
+        if (!node.typeParameters().isEmpty()) {
+          visitTypeParameters(node.typeParameters(), ZERO, BreakOrNot.NO);
+          first = false;
+        }
+
+        boolean openedNameAndTypeScope = false;
+        if (!node.isConstructor()) {
+          if (!first) {
+            builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO,
+                Optional.of(breakBeforeType));
+          } else {
+            first = false;
+          }
+          if (!openedNameAndTypeScope) {
+            builder.open(plusFour);
+            openedNameAndTypeScope = true;
+          }
+          if (node.getReturnType2() == null) {
+            token("void");
+          } else {
+            node.getReturnType2().accept(this);
+          }
+        }
         if (!first) {
           builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO,
-              Optional.of(breakBeforeType));
+              Optional.of(breakBeforeName));
         } else {
           first = false;
         }
         if (!openedNameAndTypeScope) {
-          builder.open(plusFour);
+          builder.open(ZERO);
           openedNameAndTypeScope = true;
         }
-        if (node.getReturnType2() == null) {
-          token("void");
-        } else {
-          node.getReturnType2().accept(this);
-        }
+        visit(node.getName());
+        token("(");
+        // end of name and type scope
+        builder.close();
       }
-      BreakTag breakBeforeName = genSym();
-      if (!first) {
-        builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO,
-            Optional.of(breakBeforeName));
-      } else {
-        first = false;
-      }
-      if (!openedNameAndTypeScope) {
-        builder.open(ZERO);
-        openedNameAndTypeScope = true;
-      }
-      visit(node.getName());
-      token("(");
-      // end of name and type scope
       builder.close();
 
-      if (!node.isConstructor()) {
-        builder.open(Indent.If.make(breakBeforeName, plusFour, ZERO));
-      }
+      builder.open(Indent.If.make(breakBeforeName, plusFour, ZERO));
+      builder.open(Indent.If.make(breakBeforeType, plusFour, ZERO));
       builder.open(plusFour);
       {
         if (!node.parameters().isEmpty() || node.getReceiverType() != null) {
@@ -1267,9 +1270,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         }
       }
       builder.close();
-      if (!node.isConstructor()) {
-        builder.close();
-      }
+      builder.close();
+      builder.close();
     }
     builder.close();
 

@@ -59,8 +59,8 @@ class Test {
       @Foo @Bar @Baz Object var,
       @Foo(xs = 42) @Bar @Baz Object var) {}
 
-  <@TA T extends @TA Object>
-      @TA T f(List<? extends @TA T> a, List<? super @TA T> b) throws @TA Exception {}
+  <@TA T extends @TA Object> @TA T f(List<? extends @TA T> a, List<? super @TA T> b)
+      throws @TA Exception {}
 
   @FooXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   @BarXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
