@@ -453,18 +453,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.open(plusTwo);
       tokenBreakTrailingComment("{", plusTwo);
       builder.blankLineWanted(false);
-      builder.breakOp();
-      builder.open(ZERO, maybeFillLines(node.expressions(), MAX_LINES_FOR_ARRAY_INITIALIZERS));
       boolean hasTrailingComma = hasTrailingToken(builder.getInput(), node.expressions(), ",");
+      builder.breakOp(hasTrailingComma ? FillMode.FORCED : FillMode.UNIFIED, "", ZERO);
+      builder.open(ZERO, maybeFillLines(node.expressions(), MAX_LINES_FOR_ARRAY_INITIALIZERS));
       boolean first = true;
       for (Expression expression : (List<Expression>) node.expressions()) {
         if (!first) {
           token(",");
-          if (hasTrailingComma) {
-            builder.forcedBreak();
-          } else {
-            builder.breakToFill(" ");
-          }
+          builder.breakToFill(" ");
         }
         expression.accept(this);
         first = false;
