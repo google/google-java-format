@@ -64,6 +64,11 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava-testlib</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.google.truth</groupId>
+      <artifactId>truth</artifactId>
+      <version>0.26</version>
+    </dependency>
   </dependencies>
 
   <build>
