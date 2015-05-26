@@ -7,7 +7,7 @@ public class B20341001 {
     1, 1, 1, 1
   };
   int[] xs = {
-    Foo.CONST,
+    Foo.CONSTxx,
     1,
     1,
     1,
