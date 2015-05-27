@@ -2048,7 +2048,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     if (collapseEmptyOrNot.isYes() && node.statements().isEmpty()) {
       tokenBreakTrailingComment("{", plusTwo);
       builder.blankLineWanted(false);
-      token("}");
+      token("}", plusTwo);
     } else {
       builder.open(ZERO);
       builder.open(plusTwo);

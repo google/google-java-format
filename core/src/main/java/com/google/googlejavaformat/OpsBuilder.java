@@ -350,9 +350,7 @@ public final class OpsBuilder {
                     Doc.Break.make(
                         Doc.FillMode.FORCED,
                         "",
-                        tokBefore.getColumn() == token.getTok().getColumn()
-                            ? ZERO
-                            : tokenOp.getPlusIndentCommentsBefore()));
+                        tokenOp.getPlusIndentCommentsBefore()));
               } else if (!first) {
                 tokOps.put(j, SPACE);
               }

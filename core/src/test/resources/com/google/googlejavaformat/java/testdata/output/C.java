@@ -72,7 +72,7 @@ class C<T> {
         if (false == true) continue;
         if (false == false) continue LABEL;
         // Comment indented +2
-      // Comment indented +0
+        // Comment indented +2
       }
     }
   }
