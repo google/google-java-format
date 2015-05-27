@@ -6,4 +6,7 @@ class B21331232 {
       @Nullable Iterable<T> target) {
     return IterableSubject.create(getFailureStrategy(), target);
   }
+
+  <T> boolean mightContain(
+      T object, Funnel<? super T> funnels, int numHashFunctions, BitArray bits);
 }

@@ -8,4 +8,6 @@ class B21331232 {
       IterableSubject<? extends IterableSubject<?, T, C>, T, C> that(@Nullable Iterable<T> target) {
     return IterableSubject.create(getFailureStrategy(), target);
   }
+
+  <T> boolean mightContain(T object, Funnel<? super T> funnels, int numHashFunctions, BitArray bits);
 }
