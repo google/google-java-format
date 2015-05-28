@@ -28,6 +28,8 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class CommandLineFlagsTest {
 
+  // TODO(eaftan): Disallow passing both -lines and -offset/-length, like clang-format.
+
   @Test
   public void formatInPlaceRequiresAtLeastOneFile() {
     try {

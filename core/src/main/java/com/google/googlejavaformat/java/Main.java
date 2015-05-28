@@ -14,35 +14,25 @@
 
 package com.google.googlejavaformat.java;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import com.google.common.base.Splitter;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeMultimap;
 import com.google.common.collect.TreeRangeSet;
-import com.google.common.io.CharStreams;
-import com.google.googlejavaformat.FormatterDiagnostic;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -135,6 +125,7 @@ public final class Main {
    * The main entry point for the formatter, with some number of file names to format. We process
    * them in parallel, but we must be careful; if multiple file names refer to the same file (which
    * is hard to determine), we must serialize their update.
+   *
    * @param args the command-line arguments
    */
   public int format(String... args) throws UsageException {
@@ -147,134 +138,40 @@ public final class Main {
       argInfo.throwUsage();
     }
 
-    final Multimap<String, String> filesByBasename = TreeMultimap.create();
-    for (String fileName : argInfo.parameters.fileNamesFlag) {
-      if (fileName.endsWith(".java")) {
-        filesByBasename.put(new File(fileName).getName(), fileName);
-      } else {
-        errWriter.println("Skipping non-Java file: " + fileName);
-      }
+    ConstructFilesToFormatResult constructFilesToFormatResult = constructFilesToFormat(argInfo);
+    boolean allOkay = constructFilesToFormatResult.allOkay;
+    ImmutableList<FileToFormat> filesToFormat = constructFilesToFormatResult.filesToFormat;
+    if (filesToFormat.isEmpty()) {
+      return allOkay ? 0 : 1;
     }
-    if (argInfo.parameters.stdinStdoutFlag) {
-      filesByBasename.put("-", "-");
-    }
+
     List<Future<Boolean>> results = new ArrayList<>();
-    ExecutorService executorService = Executors.newFixedThreadPool(MAX_THREADS);
-    final boolean iFlagFinal = argInfo.parameters.iFlag;
-    final int indentMultiplierFlagFinal = argInfo.parameters.aospFlag ? 2 : 1;
-    final List<String> linesFlagsFinal = argInfo.parameters.linesFlags;
-    final List<Integer> offsetFlagsFinal = argInfo.parameters.offsetFlags;
-    final List<Integer> lengthFlagsFinal = argInfo.parameters.lengthFlags;
-    final Object mutex = new Object();
-    for (final String baseName : filesByBasename.keySet()) {
+    int numThreads = Math.min(MAX_THREADS, filesToFormat.size());
+    ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+    int indentMultiplier = argInfo.parameters.aospFlag ? 2 : 1;
+    Object outputLock = new Object();
+    for (FileToFormat fileToFormat : filesToFormat) {
       results.add(
           executorService.submit(
-              new Callable<Boolean>() {
-                @Override
-                public Boolean call() {
-                  boolean theseOkay = true;
-                  for (String fileName : filesByBasename.get(baseName)) {
-                    try (InputStream in =
-                             fileName.equals("-") ? System.in : new FileInputStream(fileName)) {
-                      String stringFromStream =
-                          CharStreams.toString(new InputStreamReader(in, StandardCharsets.UTF_8));
-                      JavaInput javaInput =
-                          new JavaInput(
-                              fileName.equals("-") ? "<stdin>" : fileName, stringFromStream);
-                      JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
-                      RangeSet<Integer> tokens = TreeRangeSet.create();
-                      for (String line : linesFlagsFinal) {
-                        for (Range<Integer> lineRange : parseRangeSet(line).asRanges()) {
-                          tokens.add(javaInput.lineRangeToTokenRange(lineRange));
-                        }
-                      }
-                      for (int i = 0; i < offsetFlagsFinal.size(); i++) {
-                        tokens.add(
-                            javaInput.characterRangeToTokenRange(
-                                offsetFlagsFinal.get(i), lengthFlagsFinal.get(i)));
-                      }
-                      if (tokens.isEmpty()) {
-                        tokens.add(Range.<Integer>all());
-                      }
-                      List<FormatterDiagnostic> errors = new ArrayList<>();
-                      Formatter.format(
-                          javaInput, javaOutput, Formatter.MAX_WIDTH, errors,
-                          indentMultiplierFlagFinal);
-                      if (!errors.isEmpty()) {
-                        theseOkay = false;
-                        synchronized (mutex) {
-                          for (FormatterDiagnostic error : errors) {
-                            errWriter.println(error.toString());
-                          }
-                        }
-                        continue;
-                      }
-                      if (!iFlagFinal || fileName.equals("-")) {
-                        synchronized (mutex) {
-                          javaOutput.writeMerged(outWriter, tokens);
-                          outWriter.flush();
-                        }
-                      } else {
-                        String tempFileName = fileName + '#';
-                        try (Writer writer =
-                            new OutputStreamWriter(new FileOutputStream(tempFileName), UTF_8)) {
-                          javaOutput.writeMerged(writer, tokens);
-                          outWriter.flush();
-                        } catch (IOException e) {
-                          synchronized (mutex) {
-                            errWriter.append(tempFileName)
-                                .append(": cannot write temp file: ")
-                                .append(e.getMessage())
-                                .append('\n')
-                                .flush();
-                          }
-                          theseOkay = false;
-                          continue;
-                        }
-                        if (!new File(tempFileName).renameTo(new File(fileName))) {
-                          synchronized (mutex) {
-                            errWriter.append(tempFileName)
-                                .append(": cannot rename temp file")
-                                .append('\n')
-                                .flush();
-                          }
-                          theseOkay = false;
-                        }
-                      }
-                    } catch (IOException e) {
-                      synchronized (mutex) {
-                        errWriter.append(fileName)
-                            .append(": could not read file: ")
-                            .append(e.getMessage())
-                            .append('\n')
-                            .flush();
-                      }
-                      theseOkay = false;
-                    } catch (FormatterException e) {
-                      synchronized (mutex) {
-                        errWriter.append(fileName)
-                            .append(": error: ")
-                            .append(e.getMessage())
-                            .append('\n')
-                            .flush();
-                      }
-                      theseOkay = false;
-                    } catch (RuntimeException e) {
-                      e.printStackTrace();
-                      theseOkay = false;
-                    }
-                  }
-                  return theseOkay;
-                }
-              }));
+              new FormatFileCallable(
+                  fileToFormat,
+                  outputLock,
+                  indentMultiplier,
+                  argInfo.parameters.iFlag,
+                  outWriter,
+                  errWriter)));
     }
-    boolean allOkay = true;
     for (Future<Boolean> result : results) {
       try {
         allOkay &= result.get();
-      } catch (InterruptedException | ExecutionException e) {
-        synchronized (mutex) {
-          errWriter.println(e.getMessage());
+      } catch (InterruptedException e) {
+        synchronized (outputLock) {
+          errWriter.println(e);
+        }
+        allOkay = false;
+      } catch (ExecutionException e) {
+        synchronized (outputLock) {
+          errWriter.println(e.getCause());
         }
         allOkay = false;
       }
@@ -282,40 +179,57 @@ public final class Main {
     return allOkay ? 0 : 1;
   }
 
-  /**
-   * Parse --lines flag, like "1:12,14,20:36". Multiple ranges can be given with multiple --lines
-   * flags, or separated by commas. A single line can be set by a single number. Line numbers are
-   * {@code 1}-based, but are converted to the {@code 0}-based numbering used internally by
-   * google-java-format.
-   * @param arg the command-line flag
-   * @return the {@link RangeSet} of line numbers, converted to {@link 0}-based
-   */
-  private static RangeSet<Integer> parseRangeSet(String arg) {
-    RangeSet<Integer> result = TreeRangeSet.create();
-    for (String range : COMMA_SPLITTER.split(arg)) {
-      result.add(parseRange(range));
+  // Package-private for testing
+  ConstructFilesToFormatResult constructFilesToFormat(ArgInfo argInfo) {
+    boolean allOkay = true;
+    Set<Path> seenRealPaths = new HashSet<>();
+    ImmutableList.Builder<FileToFormat> filesToFormat = ImmutableList.builder();
+    for (String fileName : argInfo.parameters.fileNamesFlag) {
+      if (fileName.endsWith(".java")) {
+        try {
+          Path originalPath = Paths.get(fileName);
+          boolean added = seenRealPaths.add(originalPath.toRealPath());
+          if (added) {
+            filesToFormat.add(
+                new FileToFormatPath(
+                    originalPath,
+                    parseRangeSet(argInfo.parameters.linesFlags),
+                    argInfo.parameters.offsetFlags,
+                    argInfo.parameters.lengthFlags));
+          }
+        } catch (IOException e) {
+          errWriter
+              .append(fileName)
+              .append(": could not read file: ")
+              .append(e.getMessage())
+              .append('\n')
+              .flush();
+          allOkay = false;
+        }
+      } else {
+        errWriter.println("Skipping non-Java file: " + fileName);
+      }
     }
-    return result;
+
+    if (argInfo.parameters.stdinStdoutFlag) {
+      filesToFormat.add(
+          new FileToFormatStdin(
+              parseRangeSet(argInfo.parameters.linesFlags),
+              argInfo.parameters.offsetFlags,
+              argInfo.parameters.lengthFlags));
+    }
+
+    return new ConstructFilesToFormatResult(allOkay, filesToFormat.build());
   }
 
-  /**
-   * Parse a range, as in "1:12" or "42". Line numbers provided are {@code 1}-based, but are
-   * converted here to {@code 0}-based.
-   * @param arg the command-line argument
-   * @return the {@link RangeSet} of line numbers, converted to {@link 0}-based
-   */
-  private static Range<Integer> parseRange(String arg) {
-    List<String> args = COLON_SPLITTER.splitToList(arg);
-    switch (args.size()) {
-      case 1:
-        int line = Integer.parseInt(args.get(0)) - 1;
-        return Range.closedOpen(line, line + 1);
-      case 2:
-        int line0 = Integer.parseInt(args.get(0)) - 1;
-        int line1 = Integer.parseInt(args.get(1)) - 1;
-        return Range.closedOpen(line0, line1 + 1);
-      default:
-        throw new IllegalArgumentException(arg);
+  // Package-private for testing
+  static class ConstructFilesToFormatResult {
+    final boolean allOkay;
+    final ImmutableList<FileToFormat> filesToFormat;
+
+    ConstructFilesToFormatResult(boolean allOkay, ImmutableList<FileToFormat> filesToFormat) {
+      this.allOkay = allOkay;
+      this.filesToFormat = filesToFormat;
     }
   }
 
@@ -378,6 +292,47 @@ public final class Main {
   private void version() {
     for (String line : VERSION) {
       errWriter.println(line);
+    }
+  }
+
+  /**
+   * Parse multiple --lines flags, like {"1:12,14,20:36", "40:45,50"}. Multiple ranges can be given
+   * with multiple --lines flags or separated by commas. A single line can be set by a single
+   * number. Line numbers are {@code 1}-based, but are converted to the {@code 0}-based numbering
+   * used internally by google-java-format.
+   *
+   * @param linesFlags a list of command-line flags
+   * @return the {@link RangeSet} of line numbers, converted to {@code 0}-based
+   */
+  private static RangeSet<Integer> parseRangeSet(List<String> linesFlags) {
+    RangeSet<Integer> result = TreeRangeSet.create();
+    for (String linesFlag : linesFlags) {
+      for (String range : COMMA_SPLITTER.split(linesFlag)) {
+        result.add(parseRange(range));
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Parse a range, as in "1:12" or "42". Line numbers provided are {@code 1}-based, but are
+   * converted here to {@code 0}-based.
+   *
+   * @param arg the command-line argument
+   * @return the {@link RangeSet} of line numbers, converted to {@code 0}-based
+   */
+  private static Range<Integer> parseRange(String arg) {
+    List<String> args = COLON_SPLITTER.splitToList(arg);
+    switch (args.size()) {
+      case 1:
+        int line = Integer.parseInt(args.get(0)) - 1;
+        return Range.closedOpen(line, line + 1);
+      case 2:
+        int line0 = Integer.parseInt(args.get(0)) - 1;
+        int line1 = Integer.parseInt(args.get(1)) - 1;
+        return Range.closedOpen(line0, line1 + 1);
+      default:
+        throw new IllegalArgumentException(arg);
     }
   }
 }
