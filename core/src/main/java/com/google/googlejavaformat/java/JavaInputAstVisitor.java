@@ -27,6 +27,7 @@ import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpenOp;
 import com.google.googlejavaformat.OpsBuilder;
+import com.google.googlejavaformat.OpsBuilder.StatementContext;
 import com.google.googlejavaformat.Output.BreakTag;
 import com.google.googlejavaformat.Output.NewlineIfBroken;
 
@@ -882,12 +883,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(FieldDeclaration node) {
     sync(node);
-    addDeclaration(
-        node,
-        node.modifiers(),
-        node.getType(),
-        node.fragments(),
-        fieldAnnotationDirection(node.modifiers()));
+    try (StatementContext statementContext = builder.enterStatementContext()) {
+      addDeclaration(
+          node,
+          node.modifiers(),
+          node.getType(),
+          node.fragments(),
+          fieldAnnotationDirection(node.modifiers())); 
+    }
     return false;
   }
 
@@ -2059,7 +2062,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       for (Statement statement : (List<Statement>) node.statements()) {
         builder.forcedBreak();
         builder.markForPartialFormat();
-        statement.accept(this);
+        try (StatementContext statementContext = builder.enterStatementContext()) {
+          statement.accept(this); 
+        }
       }
       builder.close();
       builder.forcedBreak();

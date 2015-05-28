@@ -36,6 +36,9 @@ public final class OpsBuilder {
   private final List<FormatterDiagnostic> errors;
   private static final Indent.Const ZERO = Indent.Const.ZERO;
 
+  /** Records whether the formatter is currently in a statement context. */
+  private boolean inStatement = false;
+  
   private int tokenI = 0;
   private int inputPosition = Integer.MIN_VALUE;
 
@@ -270,6 +273,9 @@ public final class OpsBuilder {
    * [[boundary0, boundary1), [boundary1, boundary2), ...].
    */
   public void markForPartialFormat() {
+    if (inStatement) {
+      return;
+    }
     output.markForPartialFormat(getI(input.getTokens().get(tokenI)));
   }
 
@@ -457,5 +463,31 @@ public final class OpsBuilder {
         .add("tokenI", tokenI)
         .add("inputPosition", inputPosition)
         .toString();
+  }
+
+  /** Open a region that cannot be partially formatted. */
+  public StatementContext enterStatementContext() {
+    return new StatementContext();
+  }
+  
+  /**
+   * Records a region that cannot be partially formatted.
+   * 
+   * <p>This is used to avoid formatting parts of nested statements (e.g.
+   * variables initialized with anonymous classes).
+   */
+  public class StatementContext implements AutoCloseable {
+    
+    final boolean previous;
+    
+    private StatementContext() {
+      previous = inStatement;
+      inStatement = true;
+    }
+    
+    @Override
+    public void close() {
+      inStatement = previous;
+    }
   }
 }

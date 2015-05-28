@@ -586,4 +586,68 @@ public final class PartialFormattingTest {
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(input);
   }
+  
+  @Test
+  public void nestedStatement1() throws Exception {
+    String input =
+        "public class MyTest {{\n"
+            + "int x = \n 1;\n"
+            + "int y = new Runnable() {\n"
+            + "  void run() {\n"
+            + "    System.err.println(42);\n"
+            + "  }\n"
+            + "};\n"
+            + "int z = \n 1;\n"
+            + "}}\n"
+            + "\n";
+    String expectedOutput =
+        "public class MyTest {{\n"
+            + "int x = \n 1;\n"
+            + "    int y =\n"
+            + "        new Runnable() {\n"
+            + "          void run() {\n"
+            + "            System.err.println(42);\n"
+            + "          }\n"
+            + "        };\n"
+            + "int z = \n 1;\n"
+            + "}}\n"
+            + "\n";
+
+    String toFormat = "Runnable";
+    int idx = input.indexOf(toFormat);
+    String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
+    assertEquals("bad output", expectedOutput, output);
+  }
+  
+  @Test
+  public void nestedStatement2() throws Exception {
+    String input =
+        "public class MyTest {\n"
+            + "int x = \n 1;\n"
+            + "int y = new Runnable() {\n"
+            + "  void run() {\n"
+            + "    System.err.println(42);\n"
+            + "  }\n"
+            + "};\n"
+            + "int z = \n 1;\n"
+            + "}\n"
+            + "\n";
+    String expectedOutput =
+        "public class MyTest {\n"
+            + "int x = \n 1;\n"
+            + "  int y =\n"
+            + "      new Runnable() {\n"
+            + "        void run() {\n"
+            + "          System.err.println(42);\n"
+            + "        }\n"
+            + "      };\n"
+            + "int z = \n 1;\n"
+            + "}\n"
+            + "\n";
+
+    String toFormat = "Runnable";
+    int idx = input.indexOf(toFormat);
+    String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
+    assertEquals("bad output", expectedOutput, output);
+  }
 }
