@@ -2409,7 +2409,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     if (node != null) {
       builder.open(plusFour);
       node.accept(this);
-      builder.breakOp(ZERO);
+      builder.breakOp();
       needDot = true;
     }
 
@@ -2455,12 +2455,12 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       prefixIndex = firstInvocationIndex;
     }
 
-    boolean builderStyle = shouldUseBuilderStyle(items, invocationCount, prefixIndex);
+    FillMode builderStyleFillMode = builderStyleFillMode(items, invocationCount, prefixIndex);
 
     if (prefixIndex > 0) {
-      visitDotWithPrefix(items, needDot, prefixIndex, builderStyle);
+      visitDotWithPrefix(items, needDot, prefixIndex, builderStyleFillMode);
     } else {
-      visitRegularDot(items, needDot, builderStyle);
+      visitRegularDot(items, needDot, builderStyleFillMode);
     }
 
     if (node != null) {
@@ -2468,40 +2468,47 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
   }
 
-  private static boolean shouldUseBuilderStyle(
+  private static FillMode builderStyleFillMode(
       List<Expression> items, int invocations, int prefixIndex) {
     if (prefixIndex >= 0 && items.get(prefixIndex).getNodeType() == ASTNode.METHOD_INVOCATION) {
       // If the chain starts with a type name-shaped thing followed by a method invocation, that
       // method doesn't count towards the threshold.
       invocations--;
     }
-    return invocations >= MAX_INVOCATIONS_BEFORE_BUILDER_STYLE;
+    if (invocations < MAX_INVOCATIONS_BEFORE_BUILDER_STYLE) {
+      return FillMode.INDEPENDENT;
+    }
+    if (invocations == MAX_INVOCATIONS_BEFORE_BUILDER_STYLE) {
+      return FillMode.UNIFIED;
+    }
+    return FillMode.FORCED;
   }
 
   /**
    * Output a "regular" chain of dereferences, possibly in builder-style. Break before every dot.
    *
-   * @param items        in the chain
-   * @param needDot      whether a leading dot is needed
-   * @param builderStyle whether builder-style should be used
+   * @param items           in the chain
+   * @param needDot         whether a leading dot is needed
+   * @param builderFillMode fill mode to use for builder-style
    */
-  private void visitRegularDot(List<Expression> items, boolean needDot, boolean builderStyle) {
+  private void visitRegularDot(List<Expression> items, boolean needDot, FillMode builderFillMode) {
     boolean trailingDereferences = items.size() > 1;
-    builder.open(needDot ? ZERO : plusFour, MAX_LINES_FOR_CHAINED_ACCESSES);
+    boolean needDot0 = needDot;
+    if (!needDot0) {
+      builder.open(plusFour, MAX_LINES_FOR_CHAINED_ACCESSES); 
+    }
     for (Expression e : items) {
       if (needDot) {
-        if (builderStyle) {
-          builder.forcedBreak();
-        } else {
-          builder.breakOp();
-        }
+        builder.breakOp(builderFillMode, "", ZERO);
         token(".");
       }
       dotExpressionUpToArgs(e);
       dotExpressionArgsAndParen(e, (trailingDereferences || needDot) ? plusFour : ZERO);
       needDot = true;
     }
-    builder.close();
+    if (!needDot0) {
+      builder.close(); 
+    }
   }
 
   /**
@@ -2509,13 +2516,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * syntactic unit, either because it looks like a type name or because there
    * is only a single method invocation in the chain.
    *
-   * @param items        in the chain
-   * @param needDot      whether a leading dot is needed
-   * @param prefixIndex  the index of the last item in the prefix
-   * @param builderStyle whether builder-style should be used
+   * @param items           in the chain
+   * @param needDot         whether a leading dot is needed
+   * @param prefixIndex     the index of the last item in the prefix
+   * @param builderFillMode fill mode to use for builder-style
    */
   private void visitDotWithPrefix(
-      List<Expression> items, boolean needDot, int prefixIndex, boolean builderStyle) {
+      List<Expression> items, boolean needDot, int prefixIndex, FillMode builderFillMode) {
     // Are there method invocations or field accesses after the prefix?
     boolean trailingDereferences = prefixIndex >= 0 && prefixIndex < items.size() - 1;
 
@@ -2528,10 +2535,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         FillMode fillMode;
         if (prefixIndex >= 0 && i <= prefixIndex) {
           fillMode = FillMode.INDEPENDENT;
-        } else if (builderStyle) {
-          fillMode = FillMode.FORCED;
         } else {
-          fillMode = FillMode.UNIFIED;
+          fillMode = builderFillMode;
         }
 
         builder.breakOp(fillMode, "", ZERO);

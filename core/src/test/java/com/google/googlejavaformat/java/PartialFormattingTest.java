@@ -87,6 +87,7 @@ public final class PartialFormattingTest {
             + "ImmutableList<Integer> ids = ImmutableList.builder()\n"
             + ".add(1)\n"
             + ".add(2)\n"
+            + ".add(3)\n"
             + ".build();\n"
             + "}}\n";
     String expectedOutput =
@@ -95,6 +96,7 @@ public final class PartialFormattingTest {
             + "        ImmutableList.builder()\n"
             + "            .add(1)\n"
             + "            .add(2)\n"
+            + "            .add(3)\n"
             + "            .build();\n"
             + "}}\n";
     int idx = input.indexOf("add(2)");

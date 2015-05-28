@@ -12,11 +12,7 @@ class B20701054 {
     Foo z = Foo.INSTANCE.field.field.field.field.field;
 
     ImmutableList<String> x = ImmutableList.INSTANCE.add(1).build();
-    ImmutableList<String> x =
-        ImmutableList.INSTANCE
-            .add(1)
-            .add(2)
-            .build();
+    ImmutableList<String> x = ImmutableList.INSTANCE.add(1).add(2).build();
     ImmutableList<String> x =
         ImmutableList.INSTANCE
             .add(1)
@@ -32,11 +28,7 @@ class B20701054 {
             .build();
 
     ImmutableList<String> x = ImmutableList.builder().add(1).build();
-    ImmutableList<String> x =
-        ImmutableList.builder()
-            .add(1)
-            .add(2)
-            .build();
+    ImmutableList<String> x = ImmutableList.builder().add(1).add(2).build();
     ImmutableList<String> x =
         ImmutableList.builder()
             .add(1)
@@ -104,10 +96,13 @@ class B20701054 {
             .read("readCrawlReportTable")
             .parallelDo("reKeyErrorsByPropertyCode", new RekeyErrorsByPropertyCodeFn());
 
+    if (ImmutableList.builder().add(1).add(2).add(3)) {}
+
     if (ImmutableList.builder()
         .add(1)
         .add(2)
-        .add(3)) {}
+        .add(3)
+        .add(4)) {}
 
     if (value.fst.name.toString().equals("value")) {}
 

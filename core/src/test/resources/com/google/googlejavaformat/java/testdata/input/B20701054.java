@@ -66,6 +66,12 @@ class B20701054 {
     if (ImmutableList.builder().add(1).add(2).add(3)) {
     }
 
+    if (ImmutableList.builder()
+        .add(1)
+        .add(2)
+        .add(3)
+        .add(4)) {}
+
     if (value.fst.name.toString().equals("value")) {
     }
 
