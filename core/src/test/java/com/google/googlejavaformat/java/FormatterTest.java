@@ -14,6 +14,8 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.io.Files.getFileExtension;
+import static com.google.common.io.Files.getNameWithoutExtension;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -61,21 +63,20 @@ public final class FormatterTest {
       Path resourceNamePath = Paths.get(resourceName);
       if (resourceNamePath.startsWith(testDataPath)) {
         Path subPath = testDataPath.relativize(resourceNamePath);
-        assertEquals("bad testdata file names", 2, subPath.getNameCount());
-        String dirName = subPath.getName(0).toString();
-        String fileName = subPath.getName(1).toString();
-        assertThat(fileName).endsWith(".java");
+        assertEquals("bad testdata file names", 1, subPath.getNameCount());
+        String baseName = getNameWithoutExtension(subPath.getFileName().toString());
+        String extension = getFileExtension(subPath.getFileName().toString());
         final String stringFromStream;
         try (InputStream stream = classLoader.getResourceAsStream(resourceName)) {
           stringFromStream =
               CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
         }
-        switch (dirName) {
+        switch (extension) {
           case "input":
-            inputs.put(fileName, stringFromStream);
+            inputs.put(baseName, stringFromStream);
             break;
           case "output":
-            outputs.put(fileName, stringFromStream);
+            outputs.put(baseName, stringFromStream);
             break;
           default:
         }
