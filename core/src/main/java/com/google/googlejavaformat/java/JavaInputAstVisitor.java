@@ -1717,7 +1717,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.space();
     if (!node.resources().isEmpty()) {
       token("(");
-      builder.open(ZERO);
+      builder.open(plusFour);
       boolean first = true;
       for (VariableDeclarationExpression resource :
           (List<VariableDeclarationExpression>) node.resources()) {
