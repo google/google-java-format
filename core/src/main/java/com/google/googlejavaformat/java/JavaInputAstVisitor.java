@@ -1728,6 +1728,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         visit(resource);
         first = false;
       }
+      // TODO(cushon): emit a space after the optional trailing semi-colon
+      builder.guessToken(";");
       token(")");
       builder.close();
       builder.space();
