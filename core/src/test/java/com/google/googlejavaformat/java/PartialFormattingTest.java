@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.base.Joiner;
@@ -649,5 +650,65 @@ public final class PartialFormattingTest {
     int idx = input.indexOf(toFormat);
     String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
     assertEquals("bad output", expectedOutput, output);
+  }
+  
+  @Test
+  public void blankLine() throws Exception {
+    String input =
+        "public class MyTest {\n"
+            + "int x = 1;\n"
+            + "\n"
+            + "int y = 1;\n"
+            + "}\n"
+            + "\n";
+    String expectedOutput = input;
+
+    testFormatLine(input, expectedOutput, 3);
+  }
+
+  @Test
+  public void lineWithIdentifier() throws Exception {
+    String input =
+        "public class MyTest {\n"
+            + "int\n"
+            + "y\n"
+            + "= 1;\n"
+            + "}\n"
+            + "\n";
+    String expectedOutput =
+        "public class MyTest {\n"
+            + "  int y = 1;\n"
+            + "}\n"
+            + "\n";
+
+    testFormatLine(input, expectedOutput, 3);
+  }
+  
+  // formatted region doesn't expand to include entire comment
+  @Test
+  public void lineInsideComment() throws Exception {
+    String input =
+        "public class MyTest {\n"
+            + "/* This is a\n"
+            + "            poorly indented\n"
+            + "                       comment*/\n"
+            + "}\n"
+            + "\n";
+    
+    testFormatLine(input, input, 3);
+  }
+  
+  private void testFormatLine(String input, String expectedOutput, int i) throws Exception {
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+    Files.write(path, input.getBytes(UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    String[] args = {"-lines", Integer.toString(i), path.toString()};
+    assertThat(main.format(args)).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expectedOutput);
   }
 }

@@ -90,7 +90,9 @@ class FormatFileCallable implements Callable<Boolean> {
                 fileToFormat.offsets().get(i), fileToFormat.lengths().get(i)));
       }
       if (tokens.isEmpty()) {
-        tokens.add(Range.<Integer>all());
+        if (fileToFormat.lineRanges().asRanges().isEmpty() && fileToFormat.offsets().isEmpty()) {
+          tokens.add(Range.<Integer>all());
+        }
       }
       List<FormatterDiagnostic> errors = new ArrayList<>();
       Formatter.format(javaInput, javaOutput, Formatter.MAX_WIDTH, errors, indentMultiplier);

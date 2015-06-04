@@ -493,11 +493,11 @@ public final class JavaInput extends Input {
         tokenEntryHi.getValue().getTok().getIndex() + 1);
   }
 
-  Range <Integer> lineRangeToTokenRange(Range<Integer> lineRange) {
+  Range<Integer> lineRangeToTokenRange(Range<Integer> lineRange) {
     int startLine = lineRange.lowerEndpoint();
     int start = getRange0s(startLine).lowerEndpoint();
     while (start < 0 && startLine >= 0) {
-      startLine--;
+      startLine++;
       start = getRange0s(startLine).lowerEndpoint();
     }
     Verify.verify(start >= 0);
@@ -505,7 +505,7 @@ public final class JavaInput extends Input {
     int endLine = lineRange.upperEndpoint() - 1;
     int end = getRange1s(endLine).upperEndpoint();
     while (end < 0 && endLine < getLineCount()) {
-      endLine++;
+      endLine--;
       end = getRange1s(endLine).upperEndpoint();
     }
     Verify.verify(end >= 0);
