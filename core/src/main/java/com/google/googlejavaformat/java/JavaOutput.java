@@ -290,36 +290,20 @@ public final class JavaOutput extends Output {
         replacement.append('\n');
       }
 
-      boolean first = true;
       for (int i = kToJ.get(startTok.getIndex()).lowerEndpoint();
           i < kToJ.get(endTok.getIndex()).upperEndpoint();
           i++) {
-        if (!first) {
-          replacement.append('\n');
-        }
-        first = false;
         // It's possible to run out of output lines (e.g. if the input ended with
         // multiple trailing newlines).
         if (i < getLineCount()) {
-          replacement.append(getLine(i));
+          replacement.append(getLine(i)).append('\n');
         }
       }
 
-      // Insert a line break if the input doesn't already contain one at the end
-      // of the reformatted region.
-      boolean needsBreakAfter =
-          endTok.getPosition() + 1 < javaInput.getText().length()
-              && javaInput.getText().charAt(endTok.getPosition() + 1) != '\n';
-      if (needsBreakAfter) {
-        replacement.append('\n');
-      }
-
-      result.add(
-          Replacement.create(
-              Range.closedOpen(
-                  replaceFrom, 
-                  Math.min(endTok.getPosition() + 1, javaInput.getText().length())),
-              replacement.toString()));
+      int endpos = Math.min(
+          endTok.getPosition() + endTok.getText().length() + 1,
+          javaInput.getText().length());
+      result.add(Replacement.create(Range.closedOpen(replaceFrom, endpos), replacement.toString()));
     }
 
     return result.build();

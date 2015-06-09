@@ -180,7 +180,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test { int xxx = 1;\n"
             + "  int yyy = 1;\n"
-            + " int zzz = 1; }";
+            + "int zzz = 1; }";
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
@@ -192,7 +192,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test { int xxx = 1;\n\n"
             + "  int yyy = 1;\n"
-            + " int zzz = 1; }";
+            + "int zzz = 1; }";
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
@@ -204,7 +204,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test { int xxx = 1;\n"
             + "  int yyy = 1;\n"
-            + "      int zzz = 1; }";
+            + "     int zzz = 1; }";
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
@@ -216,7 +216,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test {\n"
             + "  void zzz() {\n"
-            + " int x; } }";
+            + "int x; } }";
     int idx = input.indexOf("zzz");
     String output = doGetFormatReplacements(input, idx, idx);
     assertEquals("bad output", expectedOutput, output);
@@ -228,7 +228,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test { void f() { return;\n"
             + "  }\n"
-            + " }\n";
+            + "}\n";
     int idx = input.indexOf("}");
     String output = doGetFormatReplacements(input, idx, idx);
     assertEquals("bad output", expectedOutput, output);
@@ -240,7 +240,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test {\n"
             + "  void f() {}\n"
-            + " }\n";
+            + "}\n";
     int idx = input.indexOf("}");
     String output = doGetFormatReplacements(input, idx, idx);
     assertEquals("bad output", expectedOutput, output);
@@ -534,8 +534,8 @@ public final class PartialFormattingTest {
         new Formatter().getFormatReplacements(input, ImmutableList.of(Range.closedOpen(18, 19)));
     assertThat(ranges).hasSize(1);
     Replacement replacement = ranges.get(0);
-    assertThat(replacement.getReplacementString()).isEqualTo("  void f() {}");
-    assertThat(replacement.getReplaceRange()).isEqualTo(Range.closedOpen(11, 24));
+    assertThat(replacement.getReplacementString()).isEqualTo("  void f() {}\n");
+    assertThat(replacement.getReplaceRange()).isEqualTo(Range.closedOpen(11, 25));
   }
 
   @Test
@@ -768,6 +768,30 @@ public final class PartialFormattingTest {
 
     Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
     String[] args = {"-lines", Integer.toString(i), path.toString()};
+    assertThat(main.format(args)).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void lineWithTrailingComment() throws Exception {
+    String input =
+        "class Foo{\n"
+            + "int xxx; // asd\n"
+            + "}\n";
+    String expectedOutput =
+        "class Foo{\n"
+            + "  int xxx; // asd\n"
+            + "}\n";
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    String[] args = {"-lines", "2", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
   }
