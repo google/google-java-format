@@ -98,22 +98,24 @@ class Test {
   Object var;
 
   @Deprecated(
-      x = 42,
-      y = {
-        XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
-        XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
-        XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
-        XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-      })
+    x = 42,
+    y = {
+      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
+      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
+      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
+      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    }
+  )
   Object var;
 
   @Deprecated(
-      y = {
-        XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
-        XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
-        XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
-        XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-      })
+    y = {
+      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
+      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
+      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
+      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    }
+  )
   Object var;
 }
 
@@ -121,16 +123,18 @@ class Test {
   @Mirror(in = edu.oswego.cs.dl.util.concurrent.F.class, methods = "foo"),
   @Mirror(in = edu.oswego.cs.dl.util.concurrent.F.class, methods = "foo"),
   @Mirror(
-      in = edu.oswego.cs.dl.util.concurrent.F.class,
-      enable = false,
-      methods = {
-        "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo",
-        "foo", "foo",
-      }),
+    in = edu.oswego.cs.dl.util.concurrent.F.class,
+    enable = false,
+    methods = {
+      "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo",
+      "foo", "foo",
+    }
+  ),
   @Mirror(
-      in = edu.oswego.cs.dl.util.concurrent.F.class,
-      enable = false,
-      methods = {"foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo"}),
+    in = edu.oswego.cs.dl.util.concurrent.F.class,
+    enable = false,
+    methods = {"foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo"}
+  ),
   @Mirror(in = edu.oswego.cs.dl.util.concurrent.F.class, methods = "foo"),
 })
 class C {}

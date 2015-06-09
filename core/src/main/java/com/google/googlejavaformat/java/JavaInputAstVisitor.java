@@ -1318,9 +1318,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(NormalAnnotation node) {
     sync(node);
-    builder.open(plusFour);
+    builder.open(ZERO);
     token("@");
     node.getTypeName().accept(this);
+    builder.open(plusTwo);
     token("(");
     builder.breakOp();
     builder.open(ZERO, MAX_LINES_FOR_ANNOTATION_ELEMENT_VALUE_PAIRS);
@@ -1334,6 +1335,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       first = false;
     }
     builder.close();
+    builder.close();
+    builder.breakOp();
     builder.close();
     token(")");
     return false;

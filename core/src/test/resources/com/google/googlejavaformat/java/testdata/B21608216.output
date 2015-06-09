@@ -1,0 +1,11 @@
+@PluginInfo(
+  shortName = "chromesuggestions",
+  owner = "mathp",
+  demoLink = "unspecified",
+  modules = {
+    BackendsModule.class,
+    CommonBackendsModule.class,
+    ChromeSuggestionsPlugin.ChromeSuggestionsModule.class
+  }
+)
+class B21608216 {}
