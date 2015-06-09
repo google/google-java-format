@@ -164,7 +164,7 @@ public final class Formatter {
    * Emit a list of {@link Replacement}s to convert from input to output.
    * @param input the input compilation unit
    * @param characterRanges the character ranges to reformat
-   * @return a list of {@link Replacement}s, reverse-sorted from high index to low index, without
+   * @return a list of {@link Replacement}s, sorted from low index to high index, without
    *     overlaps
    * @throws FormatterException if the input string cannot be parsed
    */

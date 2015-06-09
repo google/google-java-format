@@ -33,6 +33,8 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Tests formatting parts of files.
@@ -696,6 +698,64 @@ public final class PartialFormattingTest {
             + "\n";
     
     testFormatLine(input, input, 3);
+  }
+  
+  @Test
+  public void testReplacementsSorted() throws Exception {
+    String input =
+        Joiner.on('\n')
+            .join(
+                "class Test {",
+                "int a = 1;",
+                "int b = 2;",
+                "int c = 3;",
+                "int d = 4;",
+                "int e = 5;",
+                "}");
+    List<Range<Integer>> ranges = new ArrayList<>();
+    for (int i = 1; i <= 5; i += 2) {
+      int idx = input.indexOf(String.valueOf(i));
+      ranges.add(Range.closedOpen(idx, idx + 1));
+    }
+
+    ImmutableList<Replacement> replacements = new Formatter().getFormatReplacements(input, ranges);
+
+    // expect replacements in ascending order, by start position
+    List<Integer> startPositions = new ArrayList<>();
+    for (Replacement replacement : replacements) {
+      startPositions.add(replacement.getReplaceRange().lowerEndpoint());
+    }
+    assertThat(startPositions).hasSize(3);
+    assertThat(startPositions).isStrictlyOrdered();
+  }
+
+  @Test
+  public void testReplacementsSorted_DescendingInput() throws Exception {
+    String input =
+        Joiner.on('\n')
+            .join(
+                "class Test {",
+                "int a = 1;",
+                "int b = 2;",
+                "int c = 3;",
+                "int d = 4;",
+                "int e = 5;",
+                "}");
+    List<Range<Integer>> ranges = new ArrayList<>();
+    for (int i = 5; i >= 1; i -= 2) {
+      int idx = input.indexOf(String.valueOf(i));
+      ranges.add(Range.closedOpen(idx, idx + 1));
+    }
+
+    ImmutableList<Replacement> replacements = new Formatter().getFormatReplacements(input, ranges);
+
+    // expect replacements in ascending order, by start position
+    List<Integer> startPositions = new ArrayList<>();
+    for (Replacement replacement : replacements) {
+      startPositions.add(replacement.getReplaceRange().lowerEndpoint());
+    }
+    assertThat(startPositions).hasSize(3);
+    assertThat(startPositions).isStrictlyOrdered();
   }
   
   private void testFormatLine(String input, String expectedOutput, int i) throws Exception {
