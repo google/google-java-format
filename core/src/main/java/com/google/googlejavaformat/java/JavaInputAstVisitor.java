@@ -2417,10 +2417,19 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     // The dot chain started with a primary expression: output it normally, and indent
     // the rest of the chain +4.
     if (node != null) {
-      builder.open(plusFour);
-      node.accept(this);
-      builder.breakOp();
-      needDot = true;
+      // Exception: if it's an anonymous class declaration, we don't need to
+      // break and indent after the trailing '}'.
+      if (node.getNodeType() == ASTNode.CLASS_INSTANCE_CREATION
+          && ((ClassInstanceCreation) node).getAnonymousClassDeclaration() != null) {
+        builder.open(ZERO);
+        node.accept(this);
+        token(".");
+      } else {
+        builder.open(plusFour);
+        node.accept(this);
+        builder.breakOp();
+        needDot = true;
+      }
     }
 
     // Check if the dot chain has a prefix that looks like a type name, so we can
