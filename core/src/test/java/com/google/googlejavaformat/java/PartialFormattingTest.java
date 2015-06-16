@@ -795,4 +795,34 @@ public final class PartialFormattingTest {
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
   }
+
+  // Nested statements are OK as long as they're nested inside "block-like" constructs.
+  @Test
+  public void nestedStatement_allowPartial() throws Exception {
+    String input =
+        "public class MyTest {{\n"
+            + "if (true) {\n"
+            + "if (true) {\n"
+            + "System.err.println(\"Hello\");\n"
+            + "} else {\n"
+            + "System.err.println(\"Goodbye\");\n"
+            + "}\n"
+            + "}\n"
+            + "}}\n";
+    String expectedOutput =
+        "public class MyTest {{\n"
+            + "if (true) {\n"
+            + "if (true) {\n"
+            + "        System.err.println(\"Hello\");\n"
+            + "} else {\n"
+            + "System.err.println(\"Goodbye\");\n"
+            + "}\n"
+            + "}\n"
+            + "}}\n";
+
+    String toFormat = "Hello";
+    int idx = input.indexOf(toFormat);
+    String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
+    assertEquals("bad output", expectedOutput, output);
+  }
 }

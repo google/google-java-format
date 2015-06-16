@@ -27,7 +27,6 @@ import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpenOp;
 import com.google.googlejavaformat.OpsBuilder;
-import com.google.googlejavaformat.OpsBuilder.StatementContext;
 import com.google.googlejavaformat.Output.BreakTag;
 import com.google.googlejavaformat.Output.NewlineIfBroken;
 
@@ -129,6 +128,8 @@ import org.eclipse.jdt.core.dom.WildcardType;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -305,12 +306,29 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     plusEight = Indent.Const.make(+8, indentMultiplier);
   }
 
+  /** A record of whether we have visited into an expression. */
+  private final Deque<Boolean> inExpression = new ArrayDeque<>(Arrays.asList(false));
+
+  private boolean inExpression() {
+    return inExpression.peekLast();
+  }
+
+  /** Pre-visits {@link ASTNode}s. */
+  public void preVisit(ASTNode node) {
+    inExpression.addLast(node instanceof Expression || inExpression.peekLast());
+  }
+
+  /** Post-visits {@link ASTNode}s. */
+  public void postVisit(ASTNode node) {
+    inExpression.removeLast();
+  }
+
   /** Visitor method for a {@link CompilationUnit}. */
   @Override
   public boolean visit(CompilationUnit node) {
     boolean first = true;
     if (node.getPackage() != null) {
-      builder.markForPartialFormat();
+      markForPartialFormat();
       visit(node.getPackage());
       builder.breakOp();
       first = false;
@@ -320,7 +338,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.blankLineWanted(true);
       }
       for (ImportDeclaration importDeclaration : (List<ImportDeclaration>) node.imports()) {
-        builder.markForPartialFormat();
+        markForPartialFormat();
         visit(importDeclaration);
         builder.breakOp();
       }
@@ -330,13 +348,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       if (!first) {
         builder.blankLineWanted(true);
       }
-      builder.markForPartialFormat();
+      markForPartialFormat();
       type.accept(this);
       builder.breakOp();
       first = false;
     }
     // set a partial format marker at EOF to make sure we can format the entire file
-    builder.markForPartialFormat();
+    markForPartialFormat();
     return false;
   }
 
@@ -883,14 +901,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(FieldDeclaration node) {
     sync(node);
-    try (StatementContext statementContext = builder.enterStatementContext()) {
-      addDeclaration(
-          node,
-          node.modifiers(),
-          node.getType(),
-          node.fragments(),
-          fieldAnnotationDirection(node.modifiers()));
-    }
+    markForPartialFormat();
+    addDeclaration(
+        node,
+        node.modifiers(),
+        node.getType(),
+        node.fragments(),
+        fieldAnnotationDirection(node.modifiers()));
     return false;
   }
 
@@ -2079,10 +2096,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       }
       for (Statement statement : (List<Statement>) node.statements()) {
         builder.forcedBreak();
-        builder.markForPartialFormat();
-        try (StatementContext statementContext = builder.enterStatementContext()) {
-          statement.accept(this);
-        }
+        markForPartialFormat();
+        statement.accept(this);
       }
       builder.close();
       builder.forcedBreak();
@@ -2090,7 +2105,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       if (allowTrailingBlankLine == AllowTrailingBlankLine.NO) {
         builder.blankLineWanted(false);
       }
-      builder.markForPartialFormat();
+      markForPartialFormat();
       token("}", plusTwo);
     }
   }
@@ -3054,14 +3069,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         if (!first && (thisOneGetsBlankLineBefore || lastOneGotBlankLineBefore)) {
           builder.blankLineWanted(true);
         }
-        builder.markForPartialFormat();
+        markForPartialFormat();
         bodyDeclaration.accept(this);
         first = false;
         lastOneGotBlankLineBefore = thisOneGetsBlankLineBefore;
       }
       builder.close();
       builder.forcedBreak();
-      builder.markForPartialFormat();
+      markForPartialFormat();
       if (braces.isYes()) {
         builder.blankLineWanted(false);
         token("}", plusTwo);
@@ -3200,6 +3215,12 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         Doc.Token.RealOrImaginary.REAL,
         ZERO,
         Optional.<Indent>of(breakAndIndentTrailingComment));
+  }
+
+  private void markForPartialFormat() {
+    if (!inExpression()) {
+      builder.markForPartialFormat();
+    }
   }
 
   /**
