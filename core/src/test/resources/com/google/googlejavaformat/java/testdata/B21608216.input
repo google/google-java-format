@@ -4,5 +4,9 @@
             modules = { BackendsModule.class,
                         CommonBackendsModule.class,
                         ChromeSuggestionsPlugin.ChromeSuggestionsModule.class })
+@Module(library = true, complete = false)
+@Module(library = true, complete = false, injects = {ClassInfoTracker.class, JslayoutMetaProto.class})
+@Module(library = true, complete = false, injects = {ClassInfoTracker.class, JslayoutMetaProto.class, JslayoutMetaProto.class, JslayoutMeta.class})
+@Module(injects = {One.class, Two.class}, includes = {Three.class, Four.class})
 class B21608216 {
 }

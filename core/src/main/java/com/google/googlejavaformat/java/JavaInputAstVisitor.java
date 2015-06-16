@@ -889,7 +889,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           node.modifiers(),
           node.getType(),
           node.fragments(),
-          fieldAnnotationDirection(node.modifiers())); 
+          fieldAnnotationDirection(node.modifiers()));
     }
     return false;
   }
@@ -1321,20 +1321,33 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.open(ZERO);
     token("@");
     node.getTypeName().accept(this);
-    builder.open(plusTwo);
+    builder.open(plusTwo, MAX_LINES_FOR_ANNOTATION_ELEMENT_VALUE_PAIRS);
     token("(");
     builder.breakOp();
-    builder.open(ZERO, MAX_LINES_FOR_ANNOTATION_ELEMENT_VALUE_PAIRS);
     boolean first = true;
+
+    // Format the member value pairs one-per-line if any of them are
+    // initialized with arrays.
+    boolean hasArrayInitializer = false;
+    for (MemberValuePair value : (List<MemberValuePair>) node.values()) {
+      if (value.getValue().getNodeType() == ASTNode.ARRAY_INITIALIZER) {
+        hasArrayInitializer = true;
+        break;
+      }
+    }
+
     for (MemberValuePair value : (List<MemberValuePair>) node.values()) {
       if (!first) {
         token(",");
-        builder.breakToFill(" ");
+        if (hasArrayInitializer) {
+          builder.forcedBreak();
+        } else {
+          builder.breakToFill(" ");
+        }
       }
       value.accept(this);
       first = false;
     }
-    builder.close();
     builder.close();
     builder.breakOp();
     builder.close();
@@ -2068,7 +2081,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.forcedBreak();
         builder.markForPartialFormat();
         try (StatementContext statementContext = builder.enterStatementContext()) {
-          statement.accept(this); 
+          statement.accept(this);
         }
       }
       builder.close();
@@ -2514,7 +2527,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     boolean trailingDereferences = items.size() > 1;
     boolean needDot0 = needDot;
     if (!needDot0) {
-      builder.open(plusFour, MAX_LINES_FOR_CHAINED_ACCESSES); 
+      builder.open(plusFour, MAX_LINES_FOR_CHAINED_ACCESSES);
     }
     for (Expression e : items) {
       if (needDot) {
@@ -2526,7 +2539,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       needDot = true;
     }
     if (!needDot0) {
-      builder.close(); 
+      builder.close();
     }
   }
 
@@ -3145,13 +3158,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   /**
    * Should a field with a set of modifiers be declared with horizontal annotations?
    * This is currently true if all annotations are marker annotations.
-   * 
+   *
    * @param modifiers the list of {@link IExtendedModifier}s
    * @return whether the local can be declared with horizontal annotations
    */
   private static Direction fieldAnnotationDirection(List<IExtendedModifier> modifiers) {
     for (IExtendedModifier modifier : modifiers) {
-      if (modifier.isAnnotation() 
+      if (modifier.isAnnotation()
           && ((ASTNode) modifier).getNodeType() != ASTNode.MARKER_ANNOTATION) {
         return Direction.VERTICAL;
       }
