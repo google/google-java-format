@@ -32,6 +32,7 @@
 
   <modules>
     <module>core</module>
+    <module>idea-plugin</module>
   </modules>
 
   <name>Google Java Format Parent</name>
@@ -131,6 +132,12 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava-testlib</artifactId>
         <version>${guava.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.google.truth</groupId>
+        <artifactId>truth</artifactId>
+        <version>0.26</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
