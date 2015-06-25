@@ -264,9 +264,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   /**
    * A maxLinesFilled value for OpenOp.make that indicates one-per-line mode
-   * should always be used.
+   * should never be used.
    */
-  private static final int NEVER_FILL = 0;
+  private static final int ALWAYS_FILL = 0;
 
   static {
     PRECEDENCE.put("*", 10);
@@ -475,24 +475,39 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.blankLineWanted(false);
       token("}", plusTwo);
     } else {
+      // Special-case the formatting of array initializers inside annotations
+      // to more eagerly use a one-per-line layout.
+      boolean inMemberValuePair =
+          node.getParent().getNodeType() == ASTNode.MEMBER_VALUE_PAIR
+              || node.getParent().getNodeType() == ASTNode.SINGLE_MEMBER_ANNOTATION;
+      boolean shortItems = hasOnlyShortItems(node.expressions());
+      boolean allowFilledElementsOnOwnLine = shortItems || !inMemberValuePair;
+
       builder.open(plusTwo);
       tokenBreakTrailingComment("{", plusTwo);
       builder.blankLineWanted(false);
       boolean hasTrailingComma = hasTrailingToken(builder.getInput(), node.expressions(), ",");
       builder.breakOp(hasTrailingComma ? FillMode.FORCED : FillMode.UNIFIED, "", ZERO);
-      builder.open(
-          ZERO, maxLinesFilledForItems(node.expressions(), MAX_LINES_FOR_ARRAY_INITIALIZERS));
+      if (allowFilledElementsOnOwnLine) {
+        builder.open(ZERO, shortItems ? ALWAYS_FILL : MAX_LINES_FOR_ARRAY_INITIALIZERS);
+      }
       boolean first = true;
       for (Expression expression : (List<Expression>) node.expressions()) {
         if (!first) {
           token(",");
-          builder.breakToFill(" ");
+          if (allowFilledElementsOnOwnLine) {
+            builder.breakToFill(" ");
+          } else {
+            builder.breakOp(" ");
+          }
         }
         expression.accept(this);
         first = false;
       }
       builder.guessToken(",");
-      builder.close();
+      if (allowFilledElementsOnOwnLine) {
+        builder.close();
+      }
       builder.breakOp(minusTwo);
       builder.blankLineWanted(false);
       builder.close();
@@ -506,12 +521,16 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * expression list, and {code NEVER_FILL} otherwise.
    */
   private static int maxLinesFilledForItems(List<Expression> expressions, int defaultThreshold) {
+    return hasOnlyShortItems(expressions) ? ALWAYS_FILL : defaultThreshold;
+  }
+
+  private static boolean hasOnlyShortItems(List<Expression> expressions) {
     for (Expression expression : expressions) {
       if (expression.getLength() >= MAX_ITEM_LENGTH_FOR_FILLING) {
-        return defaultThreshold;
+        return false;
       }
     }
-    return NEVER_FILL;
+    return true;
   }
 
   /** Visitor method for {@link ArrayType}s. */
