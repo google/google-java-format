@@ -1841,7 +1841,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       }
       if (hasSuperInterfaceTypes) {
         builder.breakToFill(" ");
-        builder.open(plusFour);
+        builder.open(node.superInterfaceTypes().size() > 1 ? plusFour : ZERO);
         token(node.isInterface() ? "extends" : "implements");
         builder.space();
         boolean first = true;
