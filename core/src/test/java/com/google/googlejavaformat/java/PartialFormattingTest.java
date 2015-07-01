@@ -180,7 +180,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test { int xxx = 1;\n"
             + "  int yyy = 1;\n"
-            + "int zzz = 1; }";
+            + " int zzz = 1; }";
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
@@ -192,7 +192,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test { int xxx = 1;\n\n"
             + "  int yyy = 1;\n"
-            + "int zzz = 1; }";
+            + " int zzz = 1; }";
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
@@ -204,7 +204,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test { int xxx = 1;\n"
             + "  int yyy = 1;\n"
-            + "     int zzz = 1; }";
+            + "      int zzz = 1; }";
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
@@ -216,7 +216,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test {\n"
             + "  void zzz() {\n"
-            + "int x; } }";
+            + " int x; } }";
     int idx = input.indexOf("zzz");
     String output = doGetFormatReplacements(input, idx, idx);
     assertEquals("bad output", expectedOutput, output);
@@ -228,24 +228,24 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test { void f() { return;\n"
             + "  }\n"
-            + "}\n";
+            + " }\n";
     int idx = input.indexOf("}");
     String output = doGetFormatReplacements(input, idx, idx);
     assertEquals("bad output", expectedOutput, output);
   }
-  
+
   @Test
   public void formatTrailingBraceEmptyMethodBody() throws Exception {
     String input = "class Test { void f() {} }\n";
     String expectedOutput =
         "class Test {\n"
             + "  void f() {}\n"
-            + "}\n";
+            + " }\n";
     int idx = input.indexOf("}");
     String output = doGetFormatReplacements(input, idx, idx);
     assertEquals("bad output", expectedOutput, output);
   }
-  
+
   @Test
   public void formatTrailingBraceEmptyClassBody() throws Exception {
     String input = "class Test { int x; }\n";
@@ -254,7 +254,7 @@ public final class PartialFormattingTest {
     String output = doGetFormatReplacements(input, idx, idx);
     assertEquals("bad output", expectedOutput, output);
   }
-  
+
   @Test
   public void formatTrailingBraceEmptyClassBody2() throws Exception {
     String input = "class Test {\n}\n";
@@ -530,12 +530,12 @@ public final class PartialFormattingTest {
             /* line 3 character 23 */ + "}\n"
             /* line 4 character 25 */ + "}\n";
     // Claim to have modified the parentheses.
-    ImmutableList<Replacement> ranges = 
+    ImmutableList<Replacement> ranges =
         new Formatter().getFormatReplacements(input, ImmutableList.of(Range.closedOpen(18, 19)));
     assertThat(ranges).hasSize(1);
     Replacement replacement = ranges.get(0);
-    assertThat(replacement.getReplacementString()).isEqualTo("  void f() {}\n");
-    assertThat(replacement.getReplaceRange()).isEqualTo(Range.closedOpen(11, 25));
+    assertThat(replacement.getReplacementString()).isEqualTo("  void f() {}");
+    assertThat(replacement.getReplaceRange()).isEqualTo(Range.closedOpen(11, 24));
   }
 
   @Test
@@ -589,7 +589,7 @@ public final class PartialFormattingTest {
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(input);
   }
-  
+
   @Test
   public void nestedStatement1() throws Exception {
     String input =
@@ -621,7 +621,7 @@ public final class PartialFormattingTest {
     String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
     assertEquals("bad output", expectedOutput, output);
   }
-  
+
   @Test
   public void nestedStatement2() throws Exception {
     String input =
@@ -653,7 +653,7 @@ public final class PartialFormattingTest {
     String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
     assertEquals("bad output", expectedOutput, output);
   }
-  
+
   @Test
   public void blankLine() throws Exception {
     String input =
@@ -685,7 +685,7 @@ public final class PartialFormattingTest {
 
     testFormatLine(input, expectedOutput, 3);
   }
-  
+
   // formatted region doesn't expand to include entire comment
   @Test
   public void lineInsideComment() throws Exception {
@@ -696,10 +696,10 @@ public final class PartialFormattingTest {
             + "                       comment*/\n"
             + "}\n"
             + "\n";
-    
+
     testFormatLine(input, input, 3);
   }
-  
+
   @Test
   public void testReplacementsSorted() throws Exception {
     String input =
@@ -757,7 +757,7 @@ public final class PartialFormattingTest {
     assertThat(startPositions).hasSize(3);
     assertThat(startPositions).isStrictlyOrdered();
   }
-  
+
   private void testFormatLine(String input, String expectedOutput, int i) throws Exception {
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("Foo.java");
@@ -824,5 +824,58 @@ public final class PartialFormattingTest {
     int idx = input.indexOf(toFormat);
     String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
     assertEquals("bad output", expectedOutput, output);
+  }
+
+  // regression test for b/b22196513
+  @Test
+  public void noTrailingWhitespace() throws Exception {
+    String input =
+        ""
+            + "class Test {\n"
+            + "  {\n"
+            + "    {\n"
+            + "      {\n"
+            + "      }\n"
+            + "    }\n"
+            + "}}\n";
+    String expected =
+        ""
+            + "class Test {\n"
+            + "  {\n"
+            + "    {\n"
+            + "      {\n"
+            + "      }\n"
+            + "    }\n"
+            + "  }\n"
+            + "}\n";
+    ImmutableList<Range<Integer>> ranges = ImmutableList.of(Range.closedOpen(43, 45));
+    String output = new Formatter().formatSource(input, ranges);
+    assertEquals("bad output", expected, output);
+  }
+  
+  // regression test for b/b22196513
+  @Test
+  public void trailingNonBreakingWhitespace() throws Exception {
+    String input =
+        ""
+            + "class Test {\n"
+            + "  {\n"
+            + "    int x;int y;\n"
+            + "  }\n"
+            + "}\n";
+    String expected =
+        ""
+            + "class Test {\n"
+            + "  {\n"
+            + "    int x;\n"
+            + "int y;\n"
+            + "  }\n"
+            + "}\n";
+    String match = "int x;";
+    int start = input.indexOf(match);
+    int end = start + match.length();
+    ImmutableList<Range<Integer>> ranges = ImmutableList.of(Range.closedOpen(start, end));
+    String output = new Formatter().formatSource(input, ranges);
+    assertEquals("bad output", expected, output);
   }
 }

@@ -261,7 +261,7 @@ public final class JavaOutput extends Output {
     for (Range<Integer> iRange : iRangeSet.asRanges()) {
       breakableRanges.add(expandToBreakableRegions(iRange.canonical(DiscreteDomain.integers())));
     }
-    
+
     // Construct replacements for each reformatted region.
     for (Range<Integer> range : breakableRanges.asRanges()) {
 
@@ -290,18 +290,40 @@ public final class JavaOutput extends Output {
         replacement.append('\n');
       }
 
+      boolean first = true;
       for (int i = kToJ.get(startTok.getIndex()).lowerEndpoint();
           i < kToJ.get(endTok.getIndex()).upperEndpoint();
           i++) {
         // It's possible to run out of output lines (e.g. if the input ended with
         // multiple trailing newlines).
         if (i < getLineCount()) {
-          replacement.append(getLine(i)).append('\n');
+          if (first) {
+            first = false;
+          } else {
+            replacement.append('\n');
+          }
+          replacement.append(getLine(i));
         }
       }
 
+      boolean needsBreakAfter = true;
+      for (int idx = endTok.getPosition() + endTok.getText().length();
+          idx < javaInput.getText().length();
+          idx++) {
+        char trailing = javaInput.getText().charAt(idx);
+        if (trailing == '\n') {
+          needsBreakAfter = false;
+        }
+        if (!CharMatcher.WHITESPACE.matches(trailing)) {
+          break;
+        }
+      }
+      if (needsBreakAfter) {
+        replacement.append('\n');
+      }
+
       int endpos = Math.min(
-          endTok.getPosition() + endTok.getText().length() + 1,
+          endTok.getPosition() + endTok.getText().length(),
           javaInput.getText().length());
       result.add(Replacement.create(Range.closedOpen(replaceFrom, endpos), replacement.toString()));
     }
