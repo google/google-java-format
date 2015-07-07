@@ -32,7 +32,7 @@
 
   <modules>
     <module>core</module>
-    <module>idea-plugin</module>
+    <module>idea_plugin</module>
   </modules>
 
   <name>Google Java Format Parent</name>
