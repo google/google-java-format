@@ -19,6 +19,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
+import com.google.common.io.CharSink;
+import com.google.common.io.CharSource;
 import com.google.googlejavaformat.Doc;
 import com.google.googlejavaformat.DocBuilder;
 import com.google.googlejavaformat.FormatterDiagnostic;
@@ -106,6 +108,18 @@ public final class Formatter {
     new DocBuilder().withOps(builder.build()).build().write(
         javaOutput, maxWidth, new Doc.State(+0, 0)); // Write the Doc to the Output.
     javaOutput.flush();
+  }
+
+  /**
+   * Format the given input (a Java compilation unit) into the output stream.
+   *
+   * @throws FormatterException if the input cannot be parsed
+   */
+  public void formatSource(CharSource input, CharSink output)
+      throws FormatterException, IOException {
+    // TODO(cushon): proper support for streaming input/output. Input may
+    // not be feasible (parsing) but output should be easier.
+    output.write(formatSource(input.read()));
   }
 
   /**
