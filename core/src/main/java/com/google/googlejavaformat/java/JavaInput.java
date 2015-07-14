@@ -494,7 +494,7 @@ public final class JavaInput extends Input {
   }
 
   Range<Integer> lineRangeToTokenRange(Range<Integer> lineRange) {
-    int startLine = lineRange.lowerEndpoint();
+    int startLine = Math.max(0, lineRange.lowerEndpoint());
     int start = getRange0s(startLine).lowerEndpoint();
     while (start < 0 && startLine >= 0) {
       startLine++;
@@ -502,7 +502,7 @@ public final class JavaInput extends Input {
     }
     Verify.verify(start >= 0);
 
-    int endLine = lineRange.upperEndpoint() - 1;
+    int endLine = Math.min(lineRange.upperEndpoint() - 1, getLineCount() - 1);
     int end = getRange1s(endLine).upperEndpoint();
     while (end < 0 && endLine < getLineCount()) {
       endLine--;

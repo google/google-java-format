@@ -878,4 +878,52 @@ public final class PartialFormattingTest {
     String output = new Formatter().formatSource(input, ranges);
     assertEquals("bad output", expected, output);
   }
+
+  @Test
+  public void outOfRangeStartLine() throws Exception {
+    String input =
+        "class Foo {\n"
+            + "int x = 1;\n"
+            + "}";
+    String expectedOutput =
+        "class Foo {\n"
+            + "  int x = 1;\n"
+            + "}\n";
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    String[] args = {"-lines", "-1:3", path.toString()};
+    assertThat(main.format(args)).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void outOfRangeEndLine() throws Exception {
+    String input =
+        "class Foo {\n"
+            + "int x = 1;\n"
+            + "}";
+    String expectedOutput =
+        "class Foo {\n"
+            + "  int x = 1;\n"
+            + "}\n";
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    String[] args = {"-lines", "1:5", path.toString()};
+    assertThat(main.format(args)).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expectedOutput);
+  }
 }
