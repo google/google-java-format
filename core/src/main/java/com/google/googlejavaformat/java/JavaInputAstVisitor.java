@@ -1403,7 +1403,22 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(NumberLiteral node) {
     sync(node);
-    token(node.getToken());
+    String value = node.getToken();
+    if (value.startsWith("-")) {
+      // jdt normally parses negative numeric literals as a unary minus on an
+      // unsigned literal, but in the case of Long.MIN_VALUE and
+      // Integer.MIN_VALUE it creates a signed literal without a unary minus
+      // expression.
+      //
+      // Unfortunately in both cases the input token stream will still have
+      // the '-' token followed by an unsigned numeric literal token. We
+      // hack around this by checking for a leading '-' in the text of the
+      // given numeric literal, and emitting two separate tokens if it is
+      // present to match the input stream.
+      token("-");
+      value = value.substring(1);
+    }
+    token(value);
     return false;
   }
 
