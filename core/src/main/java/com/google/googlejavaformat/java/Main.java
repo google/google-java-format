@@ -14,6 +14,8 @@
 
 package com.google.googlejavaformat.java;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
@@ -26,6 +28,7 @@ import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -112,7 +115,10 @@ public final class Main {
    * @param args the command-line arguments
    */
   public static void main(String... args) {
-    Main formatter = new Main(new PrintWriter(System.out, true), new PrintWriter(System.err, true));
+    Main formatter =
+        new Main(
+            new PrintWriter(new OutputStreamWriter(System.out, UTF_8), true),
+            new PrintWriter(new OutputStreamWriter(System.err, UTF_8), true));
     try {
       int result = formatter.format(args);
       System.exit(result);
