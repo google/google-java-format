@@ -1093,7 +1093,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(Initializer node) {
     sync(node);
     visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL);
-    visit(node.getBody());
+    node.getBody().accept(this);
     builder.guessToken(";");
     return false;
   }
@@ -1152,7 +1152,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(LambdaExpression node) {
     sync(node);
-    builder.open(plusFour);
+    boolean statementBody = node.getBody().getNodeType() == ASTNode.BLOCK;
+    builder.open(statementBody ? ZERO : plusFour);
     builder.open(plusFour);
     if (node.hasParentheses()) {
       token("(");
@@ -1163,29 +1164,21 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         token(",");
         builder.breakOp(" ");
       }
-      if (parameter.getNodeType() == ASTNode.SINGLE_VARIABLE_DECLARATION) {
-        visit((SingleVariableDeclaration) parameter);
-      } else if (parameter.getNodeType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT) {
-        visit((VariableDeclarationFragment) parameter);
-      } else {
-        token("<<<PARAMETER>>>");
-      }
+      parameter.accept(this);;
       first = false;
     }
     if (node.hasParentheses()) {
       token(")");
     }
     builder.close();
-    builder.breakOp(" ");
+    if (statementBody) {
+      builder.space();
+    } else {
+      builder.breakOp(" ");
+    }
     builder.op("->");
     builder.space();
-    if (node.getBody().getNodeType() == ASTNode.BLOCK) {
-      visit((Block) node.getBody());
-    } else if (node.getBody() instanceof Expression) {
-      node.getBody().accept(this);
-    } else {
-      token("<<<BODY>>>");
-    }
+    node.getBody().accept(this);
     builder.close();
     return false;
   }
@@ -1745,7 +1738,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.close();
     token(")");
     builder.space();
-    visit(node.getBody());
+    node.getBody().accept(this);
     return false;
   }
 
