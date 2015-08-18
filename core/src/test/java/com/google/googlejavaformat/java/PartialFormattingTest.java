@@ -852,7 +852,7 @@ public final class PartialFormattingTest {
     String output = new Formatter().formatSource(input, ranges);
     assertEquals("bad output", expected, output);
   }
-  
+
   // regression test for b/b22196513
   @Test
   public void trailingNonBreakingWhitespace() throws Exception {
@@ -925,5 +925,57 @@ public final class PartialFormattingTest {
     String[] args = {"-lines", "1:5", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void testOutOfRangeLines() throws Exception {
+    String input = "class Foo {\n" + "}\n";
+    String expectedOutput = "class Foo {}\n";
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    String[] args = {
+      "-lines=23:27", "-lines=1:1", "-lines=31:35", "-lines=52:63", "-lines=1:1", path.toString()
+    };
+    assertThat(main.format(args)).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void testEmptyFirstLine() throws Exception {
+    String input = "\n" + "\n" + "class Foo {\n" + "}\n";
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    String[] args = {"-lines=1:1", path.toString()};
+    assertThat(main.format(args)).isEqualTo(0);
+  }
+
+  @Test
+  public void testEmptyLastLine() throws Exception {
+    String input = "class Foo {\n" + "}\n" + "\n" + "\n";
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    String[] args = {"-lines=5:5", path.toString()};
+    assertThat(main.format(args)).isEqualTo(0);
   }
 }

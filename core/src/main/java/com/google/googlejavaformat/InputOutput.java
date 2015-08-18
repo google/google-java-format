@@ -28,7 +28,7 @@ import java.util.Map;
 public abstract class InputOutput {
   private ImmutableList<String> lines = ImmutableList.of();
 
-  private static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
+  protected static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
   private static final CharMatcher NEWLINE_MATCHER = CharMatcher.is('\n');
   private static final DiscreteDomain<Integer> INTEGERS = DiscreteDomain.integers();
 
