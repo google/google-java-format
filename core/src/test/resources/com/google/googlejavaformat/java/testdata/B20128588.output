@@ -24,9 +24,7 @@ class Test {
   void f() {}
 
   @Foo @Bar @Baz static Object field;
-
   static @Foo @Bar @Baz Object field;
-
   @Foo @Bar @Baz Object field;
 
   @Foo(xs = 42)

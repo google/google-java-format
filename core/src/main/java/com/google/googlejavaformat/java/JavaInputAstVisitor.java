@@ -27,8 +27,8 @@ import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpenOp;
 import com.google.googlejavaformat.OpsBuilder;
+import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output.BreakTag;
-import com.google.googlejavaformat.Output.NewlineIfBroken;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -239,15 +239,21 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private final Indent.Const plusFour;
   private final Indent.Const plusEight;
 
-  private static final ImmutableList<Op> BREAK_LIST =
-      ImmutableList.<Op>of(Doc.Break.make(Doc.FillMode.UNIFIED, " ", ZERO));
-  private static final ImmutableList<Op> BREAK_FILL_LIST =
-      ImmutableList.of(
-          OpenOp.make(ZERO, 0),
-          Doc.Break.make(Doc.FillMode.INDEPENDENT, " ", ZERO),
-          CloseOp.make());
-  private static final ImmutableList<Op> FORCE_BREAK_LIST =
-      ImmutableList.<Op>of(Doc.Break.makeForced());
+  private static final ImmutableList<Op> breakList(Optional<BreakTag> breakTag) {
+    return ImmutableList.<Op>of(Doc.Break.make(Doc.FillMode.UNIFIED, " ", ZERO, breakTag));
+  }
+
+  private static final ImmutableList<Op> breakFillList(Optional<BreakTag> breakTag) {
+    return ImmutableList.of(
+        OpenOp.make(ZERO, 0),
+        Doc.Break.make(Doc.FillMode.INDEPENDENT, " ", ZERO, breakTag),
+        CloseOp.make());
+  }
+
+  private static final ImmutableList<Op> forceBreakList(Optional<BreakTag> breakTag) {
+    return ImmutableList.<Op>of(Doc.Break.make(FillMode.FORCED, "", Indent.Const.ZERO, breakTag));
+  }
+
   private static final ImmutableList<Op> EMPTY_LIST = ImmutableList.of();
   private static final Map<String, Integer> PRECEDENCE = new HashMap<>();
   private static final int MAX_LINES_FOR_ARGUMENTS = 1;
@@ -314,11 +320,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   }
 
   /** Pre-visits {@link ASTNode}s. */
+  @Override
   public void preVisit(ASTNode node) {
     inExpression.addLast(node instanceof Expression || inExpression.peekLast());
   }
 
   /** Post-visits {@link ASTNode}s. */
+  @Override
   public void postVisit(ASTNode node) {
     inExpression.removeLast();
   }
@@ -335,7 +343,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     if (!node.imports().isEmpty()) {
       if (!first) {
-        builder.blankLineWanted(true);
+        builder.blankLineWanted(BlankLineWanted.YES);
       }
       for (ImportDeclaration importDeclaration : (List<ImportDeclaration>) node.imports()) {
         markForPartialFormat();
@@ -346,7 +354,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     for (AbstractTypeDeclaration type : (List<AbstractTypeDeclaration>) node.types()) {
       if (!first) {
-        builder.blankLineWanted(true);
+        builder.blankLineWanted(BlankLineWanted.YES);
       }
       markForPartialFormat();
       type.accept(this);
@@ -363,7 +371,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(AnnotationTypeDeclaration node) {
     sync(node);
     builder.open(ZERO);
-    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL);
+    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
     builder.open(ZERO);
     token("@");
     token("interface");
@@ -472,7 +480,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     sync(node);
     if (node.expressions().isEmpty()) {
       tokenBreakTrailingComment("{", plusTwo);
-      builder.blankLineWanted(false);
+      builder.blankLineWanted(BlankLineWanted.NO);
       token("}", plusTwo);
     } else {
       // Special-case the formatting of array initializers inside annotations
@@ -485,7 +493,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
       builder.open(plusTwo);
       tokenBreakTrailingComment("{", plusTwo);
-      builder.blankLineWanted(false);
+      builder.blankLineWanted(BlankLineWanted.NO);
       boolean hasTrailingComma = hasTrailingToken(builder.getInput(), node.expressions(), ",");
       builder.breakOp(hasTrailingComma ? FillMode.FORCED : FillMode.UNIFIED, "", ZERO);
       if (allowFilledElementsOnOwnLine) {
@@ -509,7 +517,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.close();
       }
       builder.breakOp(minusTwo);
-      builder.blankLineWanted(false);
+      builder.blankLineWanted(BlankLineWanted.NO);
       builder.close();
       token("}", plusTwo);
     }
@@ -785,7 +793,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(EnumConstantDeclaration node) {
     sync(node);
-    List<Op> breaks = visitModifiers(node.modifiers(), Direction.VERTICAL);
+    List<Op> breaks =
+        visitModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
     if (!breaks.isEmpty()) {
       builder.open(ZERO);
       builder.addAll(breaks);
@@ -811,7 +820,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(EnumDeclaration node) {
     sync(node);
     builder.open(ZERO);
-    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL);
+    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
     builder.open(plusFour);
     token("enum");
     builder.breakOp(" ");
@@ -842,12 +851,12 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     tokenBreakTrailingComment("{", plusTwo);
     if (node.enumConstants().isEmpty()) {
       builder.open(ZERO);
-      builder.blankLineWanted(false);
+      builder.blankLineWanted(BlankLineWanted.NO);
       token("}");
       builder.close();
     } else {
       builder.open(plusTwo);
-      builder.blankLineWanted(false);
+      builder.blankLineWanted(BlankLineWanted.NO);
       builder.forcedBreak();
       builder.open(ZERO);
       boolean first = true;
@@ -875,7 +884,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         addBodyDeclarations(node.bodyDeclarations(), BracesOrNot.NO, FirstDeclarationsOrNot.NO);
       }
       builder.forcedBreak();
-      builder.blankLineWanted(false);
+      builder.blankLineWanted(BlankLineWanted.NO);
       token("}", plusTwo);
       builder.close();
     }
@@ -1092,7 +1101,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(Initializer node) {
     sync(node);
-    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL);
+    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
     node.getBody().accept(this);
     builder.guessToken(";");
     return false;
@@ -1217,7 +1226,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(MethodDeclaration node) {
     sync(node);
-    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL);
+    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
 
     builder.open(plusFour);
     {
@@ -1419,7 +1428,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(PackageDeclaration node) {
     sync(node);
-    visitAndBreakModifiers(node.annotations(), Direction.VERTICAL);
+    visitAndBreakModifiers(node.annotations(), Direction.VERTICAL, Optional.<BreakTag>absent());
     builder.open(plusFour);
     token("package");
     builder.space();
@@ -1705,7 +1714,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     token(")");
     builder.space();
     tokenBreakTrailingComment("{", plusTwo);
-    builder.blankLineWanted(false);
+    builder.blankLineWanted(BlankLineWanted.NO);
     builder.open(plusFour);
     for (ASTNode statement : (List<ASTNode>) node.statements()) {
       if (statement.getNodeType() == ASTNode.SWITCH_CASE) {
@@ -1720,7 +1729,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     builder.close();
     builder.forcedBreak();
-    builder.blankLineWanted(false);
+    builder.blankLineWanted(BlankLineWanted.NO);
     token("}", plusFour);
     return false;
   }
@@ -1825,7 +1834,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(TypeDeclaration node) {
     sync(node);
-    List<Op> breaks = visitModifiers(node.modifiers(), Direction.VERTICAL);
+    List<Op> breaks =
+        visitModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
     boolean hasSuperclassType = node.getSuperclassType() != null;
     boolean hasSuperInterfaceTypes = !node.superInterfaceTypes().isEmpty();
     builder.open(ZERO);
@@ -1917,7 +1927,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(TypeParameter node) {
     sync(node);
     builder.open(ZERO);
-    visitAndBreakModifiers(node.modifiers(), Direction.HORIZONTAL);
+    visitAndBreakModifiers(node.modifiers(), Direction.HORIZONTAL, Optional.<BreakTag>absent());
     visit(node.getName());
     if (!node.typeBounds().isEmpty()) {
       builder.space();
@@ -2112,14 +2122,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     sync(node);
     if (collapseEmptyOrNot.isYes() && node.statements().isEmpty()) {
       tokenBreakTrailingComment("{", plusTwo);
-      builder.blankLineWanted(false);
+      builder.blankLineWanted(BlankLineWanted.NO);
       token("}", plusTwo);
     } else {
       builder.open(ZERO);
       builder.open(plusTwo);
       tokenBreakTrailingComment("{", plusTwo);
       if (allowLeadingBlankLine == AllowLeadingBlankLine.NO) {
-        builder.blankLineWanted(false);
+        builder.blankLineWanted(BlankLineWanted.NO);
       }
       for (Statement statement : (List<Statement>) node.statements()) {
         builder.forcedBreak();
@@ -2130,7 +2140,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.forcedBreak();
       builder.close();
       if (allowTrailingBlankLine == AllowTrailingBlankLine.NO) {
-        builder.blankLineWanted(false);
+        builder.blankLineWanted(BlankLineWanted.NO);
       }
       markForPartialFormat();
       token("}", plusTwo);
@@ -2185,9 +2195,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * combined modifiers and annotations and the trailing break.
    * @param modifiers a list of {@link IExtendedModifier}s, which can include annotations
    * @param annotationDirection direction of annotations
+   * @param declarationAnnotationBreak a tag for the {code Break} after any declaration annotations.
    */
-  void visitAndBreakModifiers(List<IExtendedModifier> modifiers, Direction annotationDirection) {
-    builder.addAll(visitModifiers(modifiers, annotationDirection));
+  void visitAndBreakModifiers(
+      List<IExtendedModifier> modifiers,
+      Direction annotationDirection,
+      Optional<BreakTag> declarationAnnotationBreak) {
+    builder.addAll(
+        visitModifiers(modifiers, annotationDirection, declarationAnnotationBreak));
   }
 
   /**
@@ -2196,10 +2211,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * trailing break.
    * @param modifiers a list of {@link IExtendedModifier}s, which can include annotations
    * @param annotationsDirection {@link Direction#VERTICAL} or {@link Direction#HORIZONTAL}
+   * @param declarationAnnotationBreak a tag for the {code Break} after any declaration annotations.
    * @return the list of {@link Doc.Break}s following the modifiers and annotations
    */
   private List<Op> visitModifiers(
-      List<IExtendedModifier> modifiers, Direction annotationsDirection) {
+      List<IExtendedModifier> modifiers,
+      Direction annotationsDirection,
+      Optional<BreakTag> declarationAnnotationBreak) {
     if (modifiers.isEmpty()) {
       return EMPTY_LIST;
     }
@@ -2213,7 +2231,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         break;
       }
       if (!first) {
-        builder.addAll(annotationsDirection.isVertical() ? FORCE_BREAK_LIST : BREAK_LIST);
+        builder.addAll(
+            annotationsDirection.isVertical()
+                ? forceBreakList(declarationAnnotationBreak)
+                : breakList(declarationAnnotationBreak));
       }
       ((ASTNode) modifier).accept(this);
       first = false;
@@ -2221,7 +2242,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     builder.close();
     ImmutableList<Op> trailingBreak =
-        annotationsDirection.isVertical() ? FORCE_BREAK_LIST : BREAK_LIST;
+        annotationsDirection.isVertical()
+            ? forceBreakList(declarationAnnotationBreak)
+            : breakList(declarationAnnotationBreak);
     if (idx >= modifiers.size()) {
       return trailingBreak;
     }
@@ -2234,14 +2257,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     for (; idx < modifiers.size(); idx++) {
       IExtendedModifier modifier = modifiers.get(idx);
       if (!first) {
-        builder.addAll(BREAK_FILL_LIST);
+        builder.addAll(breakFillList(Optional.<BreakTag>absent()));
       }
       ((ASTNode) modifier).accept(this);
       first = false;
       lastWasAnnotation = modifier.isAnnotation();
     }
     builder.close();
-    return BREAK_FILL_LIST;
+    return breakFillList(Optional.<BreakTag>absent());
   }
 
   /** Helper method for {@link CatchClause}s. */
@@ -2883,6 +2906,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       Optional<String> trailing) {
 
     BreakTag typeBreak = genSym();
+    BreakTag verticalAnnotationBreak = genSym();
 
     // If the node is a field declaration, try to output any declaration
     // annotations in-line. If the entire declaration doesn't fit on a single
@@ -2892,14 +2916,12 @@ public final class JavaInputAstVisitor extends ASTVisitor {
             && hasDeclarationAnnotations(modifiers);
 
     if (variableDeclarationAnnotations) {
-      builder.open(ZERO);
-      builder.breakOp(
-          Doc.FillMode.UNIFIED, "", ZERO, Optional.<BreakTag>absent(), NewlineIfBroken.YES);
+      builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
     }
 
     builder.open(ZERO);
     {
-      visitAndBreakModifiers(modifiers, annotationsDirection);
+      visitAndBreakModifiers(modifiers, annotationsDirection, Optional.of(verticalAnnotationBreak));
       builder.open(plusFour);
       {
         builder.open(ZERO);
@@ -2960,9 +2982,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.close();
 
     if (variableDeclarationAnnotations) {
-      builder.breakOp(
-          Doc.FillMode.UNIFIED, "", ZERO, Optional.<BreakTag>absent(), NewlineIfBroken.YES);
-      builder.close();
+      builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
     }
   }
 
@@ -2977,7 +2997,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       Direction annotationsDirection, List<IExtendedModifier> modifiers, Type type,
       List<VariableDeclarationFragment> fragments) {
     builder.open(ZERO);
-    visitAndBreakModifiers(modifiers, annotationsDirection);
+    visitAndBreakModifiers(modifiers, annotationsDirection, Optional.<BreakTag>absent());
     builder.open(plusFour);
     type.accept(this);
     // TODO(jdd): Open another time?
@@ -3074,7 +3094,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       if (braces.isYes()) {
         builder.space();
         tokenBreakTrailingComment("{", plusTwo);
-        builder.blankLineWanted(false);
+        builder.blankLineWanted(BlankLineWanted.NO);
         builder.open(ZERO);
         token("}", plusTwo);
         builder.close();
@@ -3093,8 +3113,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         boolean thisOneGetsBlankLineBefore =
             bodyDeclaration.getNodeType() != ASTNode.FIELD_DECLARATION
                 || hasJavaDoc(bodyDeclaration);
-        if (!first && (thisOneGetsBlankLineBefore || lastOneGotBlankLineBefore)) {
-          builder.blankLineWanted(true);
+        if (first) {
+          builder.blankLineWanted(BlankLineWanted.PRESERVE);
+        } else if (!first && (thisOneGetsBlankLineBefore || lastOneGotBlankLineBefore)) {
+          builder.blankLineWanted(BlankLineWanted.YES);
         }
         markForPartialFormat();
         bodyDeclaration.accept(this);
@@ -3105,7 +3127,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.forcedBreak();
       markForPartialFormat();
       if (braces.isYes()) {
-        builder.blankLineWanted(false);
+        builder.blankLineWanted(BlankLineWanted.NO);
         token("}", plusTwo);
         builder.close();
       }

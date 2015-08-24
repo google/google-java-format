@@ -15,9 +15,9 @@
 package com.google.googlejavaformat;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Optional;
 import com.google.common.collect.Range;
-
-import java.util.Set;
+import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 
 /**
  * An output from the formatter.
@@ -26,17 +26,21 @@ public abstract class Output extends InputOutput {
   /**
    * Unique identifier for a break.
    */
-  public static final class BreakTag {}
+  public static final class BreakTag {
 
-  /**
-   * Should the output include a newline if the break is taken?
-   */
-  public enum NewlineIfBroken {
-    YES,
-    NO;
+    Optional<Boolean> taken = Optional.absent();
 
-    public boolean isYes() {
-      return this == YES;
+    public void recordBroken(boolean broken) {
+      // TODO(cushon): enforce invariants.
+      // Currently we rely on setting Breaks multiple times, e.g. when deciding
+      // whether a Level should be flowed. Using separate data structures
+      // instead of mutation or adding an explicit 'reset' step would allow
+      // a useful invariant to be enforced here.
+      taken = Optional.of(broken);
+    }
+
+    public boolean wasBreakTaken() {
+      return taken.or(false);
     }
   }
 
@@ -60,30 +64,11 @@ public abstract class Output extends InputOutput {
   public abstract void append(String text, Range<Integer> range);
 
   /**
-   * Note a break as taken.
-   * @param breakTag the unique break tag
-   */
-  public abstract void breakWasTaken(BreakTag breakTag);
-
-  /**
-   * Was a break taken?
-   * @param breakTag the unique break tag
-   * @return whether the break was taken
-   */
-  protected abstract boolean wasBreakTaken(BreakTag breakTag);
-
-  /**
-   * Return all breaks taken.
-   * @return the set of breaks taken
-   */
-  public abstract Set<BreakTag> breaksTaken();
-
-  /**
    * A blank line is or is not wanted here.
    * @param k the {@link Input.Tok} index
    * @param wanted whether a blank line is wanted here
    */
-  public abstract void blankLine(int k, boolean wanted);
+  public abstract void blankLine(int k, BlankLineWanted wanted);
 
   /**
    * Marks the boundary of a region that can be partially formatted.

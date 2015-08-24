@@ -105,8 +105,9 @@ public final class Formatter {
     new JavaInputAstVisitor(builder, indentationMultiplier).visit(unit);
     builder.sync(javaInput.getText().length());
     builder.drain();
-    new DocBuilder().withOps(builder.build()).build().write(
-        javaOutput, maxWidth, new Doc.State(+0, 0)); // Write the Doc to the Output.
+    Doc doc = new DocBuilder().withOps(builder.build()).build();
+    doc.computeBreaks(javaOutput.getCommentsHelper(), maxWidth, new Doc.State(+0, 0));
+    doc.write(javaOutput);
     javaOutput.flush();
   }
 

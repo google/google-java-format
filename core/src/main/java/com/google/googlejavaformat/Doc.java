@@ -19,7 +19,6 @@ import com.google.common.base.Optional;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.Output.BreakTag;
-import com.google.googlejavaformat.Output.NewlineIfBroken;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -177,13 +176,18 @@ public abstract class Doc {
   abstract Range<Integer> computeRange();
 
   /**
-   * Output a {@code Doc} to an {@link Output}.
-   * @param output the {@link Output}
+   * Make breaking decisions for a {@code Doc}.
    * @param maxWidth the maximum line width
    * @param state the current output state
    * @return the new output state
    */
-  public abstract State write(Output output, int maxWidth, State state);
+  public abstract State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state);
+
+  /**
+   * Write a {@code Doc} to an {@link Output}, after breaking decisions have
+   * been made.
+   */
+  public abstract void write(Output output);
 
   /** A {@code Level} inside a {@link Doc}. */
   static final class Level extends Doc {
@@ -241,87 +245,38 @@ public abstract class Doc {
       return docRange;
     }
 
+    // State that needs to be preserved between calculating breaks and
+    // writing output.
+    // TODO(cushon): represent phases as separate immutable data.
+
+    /** True if the entire {@link Level} fits on one line. */
+    boolean oneLine = false;
+
+    /**
+     * Groups of {@link Doc}s that are children of the current {@link Level},
+     * separated by {@link Break}s.
+     */
+    List<List<Doc>> splits = new ArrayList<>();
+
+    /** {@link Break}s between {@link Doc}s in the current {@link Level}. */
+    List<Break> breaks = new ArrayList<>();
+
     @Override
-    public State write(Output output, int maxWidth, State state) {
+    public State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state) {
       float thisWidth = getWidth();
-      if ((float) state.column + thisWidth <= (float) maxWidth) {
-        output.append(getFlat(), range()); // This is defined because width is finite.
+      if (state.column + thisWidth <= maxWidth) {
+        oneLine = true;
         return state.withColumn(state.column + (int) thisWidth);
       }
       return state.withColumn(
-          writeMaybeFilled(
-                  output, maxWidth, new State(state.indent + plusIndent.eval(output), state.column))
+          computeBroken(
+                  commentsHelper,
+                  maxWidth,
+                  new State(state.indent + plusIndent.eval(), state.column))
               .column);
     }
 
-    private State writeMaybeFilled(Output output, int maxWidth, State state) {
-      if (maxLinesFilled > 0) {
-        FakeOutput fakeOutput =
-            new FakeOutput(maxWidth, output.getCommentsHelper(), output.breaksTaken());
-        writeBroken(fakeOutput, maxWidth, state, false);
-        return writeBroken(output, maxWidth, state, fakeOutput.getLineI() >= maxLinesFilled);
-      } else {
-        return writeBroken(output, maxWidth, state, false);
-      }
-    }
-
-    private State writeBroken(Output output, int maxWidth, State state0, boolean breakAll) {
-      List<List<Doc>> splits = new ArrayList<>();
-      List<Break> breaks = new ArrayList<>();
-      int n = splitByBreaks(docs, splits, breaks);
-      // Handle first split.
-      State state =
-          writeBreakAndSplit(
-              output, maxWidth, state0, Optional.<Break>absent(), splits.get(0), breakAll);
-      // Handle following breaks and split.
-      for (int i = 0; i < n; i++) {
-        state =
-            writeBreakAndSplit(
-                output, maxWidth, state, Optional.of(breaks.get(i)), splits.get(i + 1), breakAll);
-      }
-      return state;
-    }
-
-    private static State writeBreakAndSplit(
-        Output output, int maxWidth, State state0, Optional<Break> optBreakDoc, List<Doc> split,
-        boolean breakAll) {
-      float breakWidth = optBreakDoc.isPresent() ? optBreakDoc.get().getWidth() : 0.0F;
-      float splitWidth = getWidth(split);
-      State state = state0;
-      if (!breakAll && !(optBreakDoc.isPresent() && optBreakDoc.get().fillMode == FillMode.UNIFIED)
-          && !state.mustBreak
-          && (float) state.column + breakWidth + splitWidth <= (float) maxWidth) {
-        // Unbroken break, followed by flat text.
-        if (breakWidth > 0.0F) {
-          output.append(optBreakDoc.get().getFlat(), EMPTY_RANGE);
-        }
-        state =
-            writeSplit(output, maxWidth, split, state.withColumn(state.column + (int) breakWidth));
-      } else {
-        // Break.
-        if (optBreakDoc.isPresent()) {
-          Break breakDoc = optBreakDoc.get();
-          state = state.withColumn(breakDoc.writeBroken(output, state.lastIndent));
-        }
-        state = state.withMustBreak(false);
-        boolean enoughRoom = (float) state.column + splitWidth <= (float) maxWidth;
-        state = writeSplit(output, maxWidth, split, state);
-        if (!enoughRoom) {
-          state = state.withMustBreak(true); // Break after, too.
-        }
-      }
-      return state;
-    }
-
-    private static State writeSplit(Output output, int maxWidth, List<Doc> docs, State state0) {
-      State state = state0;
-      for (Doc doc : docs) {
-        state = doc.write(output, maxWidth, state);
-      }
-      return state;
-    }
-
-    private static int splitByBreaks(List<Doc> docs, List<List<Doc>> splits, List<Break> breaks) {
+    private static void splitByBreaks(List<Doc> docs, List<List<Doc>> splits, List<Break> breaks) {
       splits.clear();
       breaks.clear();
       splits.add(new ArrayList<Doc>());
@@ -333,13 +288,141 @@ public abstract class Doc {
           splits.get(splits.size() - 1).add(doc);
         }
       }
-      return breaks.size();
+    }
+
+    /**
+     * Compute breaks for a {@link Level} that spans multiple lines.
+     */
+    private State computeBroken(CommentsHelper commentsHelper, int maxWidth, State state0) {
+      splitByBreaks(docs, splits, breaks);
+
+      // Attempt to fill the Level, recording the number of lines that takes.
+      int[] outLines = {0};
+      State state = maybeBreakFilled(commentsHelper, maxWidth, state0, false, outLines);
+      int lines = outLines[0];
+
+      // If it took too many lines, re-compute the Level with forced breaks
+      // between every child.
+      if (maxLinesFilled > 0 && lines > maxLinesFilled) {
+        state = maybeBreakFilled(commentsHelper, maxWidth, state0, true, new int[] {0});
+      }
+
+      return state;
+    }
+
+    /**
+     * @param breakAll take all top-level Breaks in the Level.
+     * @param outLines the number of lines spanned by the Level.
+     */
+    private State maybeBreakFilled(
+        CommentsHelper commentsHelper,
+        int maxWidth,
+        State state,
+        boolean breakAll,
+        int[] outLines) {
+      // Infer the number of lines spanned by the Level by checking the column
+      // after laying out each child, and noticing when the column wraps.
+      // This assumes that each child starts at the same indent, and would be
+      // broken by "progressive" indents (which we don't currently use for
+      // anything).
+      // TODO(cushon): this is a hack, make it better.
+      int lines = 1;
+      int lastColumn = state.column;
+
+      state =
+          computeBreakAndSplit(
+              commentsHelper, maxWidth, state, Optional.<Break>absent(), splits.get(0), breakAll);
+
+      if (state.column <= lastColumn) {
+        lines++;
+      }
+      lastColumn = state.column;
+
+      // Handle following breaks and split.
+      for (int i = 0; i < breaks.size(); i++) {
+        state =
+            computeBreakAndSplit(
+                commentsHelper,
+                maxWidth,
+                state,
+                Optional.of(breaks.get(i)),
+                splits.get(i + 1),
+                breakAll);
+
+        if (state.column <= lastColumn) {
+          lines++;
+        }
+        lastColumn = state.column;
+      }
+      outLines[0] = lines;
+      return state;
+    }
+
+    /**
+     * Lay out a Break-separated group of Docs in the current Level.
+     */
+    private static State computeBreakAndSplit(
+        CommentsHelper commentsHelper,
+        int maxWidth,
+        State state,
+        Optional<Break> optBreakDoc,
+        List<Doc> split,
+        boolean breakAll) {
+
+      float breakWidth = optBreakDoc.isPresent() ? optBreakDoc.get().getWidth() : 0.0F;
+      float splitWidth = getWidth(split);
+      boolean shouldBreak =
+          breakAll
+              || (optBreakDoc.isPresent() && optBreakDoc.get().fillMode == FillMode.UNIFIED)
+              || state.mustBreak
+              || state.column + breakWidth + splitWidth > maxWidth;
+
+      if (optBreakDoc.isPresent()) {
+        state = optBreakDoc.get().computeBreaks(state, state.lastIndent, shouldBreak);
+      }
+      boolean enoughRoom = state.column + splitWidth <= maxWidth;
+      state = computeSplit(commentsHelper, maxWidth, split, state.withMustBreak(false));
+      if (!enoughRoom) {
+        state = state.withMustBreak(true); // Break after, too.
+      }
+      return state;
+    }
+
+    private static State computeSplit(
+        CommentsHelper commentsHelper, int maxWidth, List<Doc> docs, State state) {
+      for (Doc doc : docs) {
+        state = doc.computeBreaks(commentsHelper, maxWidth, state);
+      }
+      return state;
+    }
+
+    @Override
+    public void write(Output output) {
+      if (oneLine) {
+        output.append(getFlat(), range()); // This is defined because width is finite.
+      } else {
+        writeFilled(output);
+      }
+    }
+
+    private void writeFilled(Output output) {
+      // Handle first split.
+      for (Doc doc : splits.get(0)) {
+        doc.write(output);
+      }
+      // Handle following breaks and split.
+      for (int i = 0; i < breaks.size(); i++) {
+        breaks.get(i).write(output);
+        for (Doc doc : splits.get(i + 1)) {
+          doc.write(output);
+        }
+      }
     }
 
     /**
      * Get the width of a sequence of {@link Doc}s.
      * @param docs the {@link Doc}s
-     * @return the width, or {@code Float.POSITIVE_INFINITY} if any {@link Doc} must br broken
+     * @return the width, or {@code Float.POSITIVE_INFINITY} if any {@link Doc} must be broken
      */
     static float getWidth(List<Doc> docs) {
       float width = 0.0F;
@@ -447,7 +530,7 @@ public abstract class Doc {
 
     @Override
     float computeWidth() {
-      return (float) token.getTok().getOriginalText().length();
+      return token.getTok().getOriginalText().length();
     }
 
     @Override
@@ -461,10 +544,15 @@ public abstract class Doc {
     }
 
     @Override
-    public State write(Output output, int maxWidth, State state) {
+    public State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state) {
+      String text = token.getTok().getOriginalText();
+      return state.withColumn(state.column + text.length());
+    }
+
+    @Override
+    public void write(Output output) {
       String text = token.getTok().getOriginalText();
       output.append(text, range());
-      return state.withColumn(state.column + text.length());
     }
 
     @Override
@@ -512,9 +600,13 @@ public abstract class Doc {
     }
 
     @Override
-    public State write(Output output, int maxWidth, State state) {
-      output.append(" ", range());
+    public State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state) {
       return state.withColumn(state.column + 1);
+    }
+
+    @Override
+    public void write(Output output) {
+      output.append(" ", range());
     }
 
     @Override
@@ -529,19 +621,12 @@ public abstract class Doc {
     private final String flat;
     private final Indent plusIndent;
     private final Optional<BreakTag> optTag;
-    private final NewlineIfBroken newline;
 
-    private Break(
-        FillMode fillMode,
-        String flat,
-        Indent plusIndent,
-        Optional<BreakTag> optTag,
-        NewlineIfBroken newline) {
+    private Break(FillMode fillMode, String flat, Indent plusIndent, Optional<BreakTag> optTag) {
       this.fillMode = fillMode;
       this.flat = flat;
       this.plusIndent = plusIndent;
       this.optTag = optTag;
-      this.newline = newline;
     }
 
     /**
@@ -552,7 +637,7 @@ public abstract class Doc {
      * @return the new {@code Break}
      */
     public static Break make(FillMode fillMode, String flat, Indent plusIndent) {
-      return new Break(fillMode, flat, plusIndent, Optional.<BreakTag>absent(), NewlineIfBroken.NO);
+      return new Break(fillMode, flat, plusIndent, Optional.<BreakTag>absent());
     }
 
     /**
@@ -563,13 +648,9 @@ public abstract class Doc {
      * @param optTag an optional tag for remembering whether the break was taken
      * @return the new {@code Break}
      */
-    static Break make(
-        FillMode fillMode,
-        String flat,
-        Indent plusIndent,
-        Optional<BreakTag> optTag,
-        NewlineIfBroken newline) {
-      return new Break(fillMode, flat, plusIndent, optTag, newline);
+    public static Break make(
+        FillMode fillMode, String flat, Indent plusIndent, Optional<BreakTag> optTag) {
+      return new Break(fillMode, flat, plusIndent, optTag);
     }
 
     /**
@@ -584,8 +665,8 @@ public abstract class Doc {
      * Return the {@code Break}'s extra indent.
      * @return the extra indent
      */
-    int getPlusIndent(Output output) {
-      return plusIndent.eval(output);
+    int getPlusIndent() {
+      return plusIndent.eval();
     }
 
     /**
@@ -616,29 +697,45 @@ public abstract class Doc {
       return EMPTY_RANGE;
     }
 
-    @Override
-    public State write(Output output, int maxWidth, State state) {
-      output.append(flat, range());
-      return state.withColumn(state.column + flat.length());
+    /** Was this break taken? */
+    boolean broken;
+
+    /** New indent after this break. */
+    int newIndent;
+
+    public State computeBreaks(State state, int lastIndent, boolean broken) {
+      if (optTag.isPresent()) {
+        optTag.get().recordBroken(broken);
+      }
+
+      if (broken) {
+        this.broken = true;
+        this.newIndent = Math.max(lastIndent + plusIndent.eval(), 0);
+        return state.withColumn(newIndent);
+      } else {
+        this.broken = false;
+        this.newIndent = -1;
+        return state.withColumn(state.column + flat.length());
+      }
     }
 
-    /**
-     * Write a broken {@code Break}.
-     * @param output the {@link Output} target
-     * @param indent the current indent
-     * @return the new column
-     */
-    int writeBroken(Output output, int indent) {
-      if (newline.isYes()) {
-        output.forceBlankLine();
+    @Override
+    public State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state) {
+      // Updating the state for {@link Break}s requires deciding if the break
+      // should be taken.
+      // TODO(cushon): this hierarchy is wrong, create a separate interface
+      // for unbreakable Docs?
+      throw new UnsupportedOperationException("Did you mean computeBreaks(State, int, boolean)?");
+    }
+
+    @Override
+    public void write(Output output) {
+      if (broken) {
+        output.append("\n", EMPTY_RANGE);
+        output.indent(newIndent);
+      } else {
+        output.append(flat, range());
       }
-      output.append("\n", EMPTY_RANGE);
-      int newIndent = Math.max(indent + plusIndent.eval(output), 0);
-      output.indent(newIndent);
-      if (optTag.isPresent()) {
-        output.breakWasTaken(optTag.get());
-      }
-      return newIndent;
     }
 
     @Override
@@ -691,16 +788,22 @@ public abstract class Doc {
       return Range.singleton(tok.getIndex()).canonical(INTEGERS);
     }
 
+    String text;
+
     @Override
-    public State write(Output output, int maxWidth, State state) {
+    public State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state) {
       int column = state.column;
-      String text = output.getCommentsHelper().rewrite(tok, maxWidth, column);
-      output.append(text, range());
+      text = commentsHelper.rewrite(tok, maxWidth, column);
       // TODO(lowasser): use lastIndexOf('\n')
       for (char c : text.toCharArray()) {
         column = c == '\n' ? 0 : column + 1;
       }
       return state.withColumn(column);
+    }
+
+    @Override
+    public void write(Output output) {
+      output.append(text, range());
     }
 
     @Override

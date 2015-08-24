@@ -23,7 +23,8 @@ import com.google.googlejavaformat.Output.BreakTag;
  * {@link Doc.Break} has been broken.
  */
 public abstract class Indent {
-  abstract int eval(Output output);
+
+  abstract int eval();
 
   /** A constant function, returning a constant indent. */
   public static final class Const extends Indent {
@@ -40,7 +41,7 @@ public abstract class Indent {
     }
 
     @Override
-    int eval(Output output) {
+    int eval() {
       return n;
     }
 
@@ -67,8 +68,8 @@ public abstract class Indent {
     }
 
     @Override
-    int eval(Output output) {
-      return (output.wasBreakTaken(condition) ? thenIndent : elseIndent).eval(output);
+    int eval() {
+      return (condition.wasBreakTaken() ? thenIndent : elseIndent).eval();
     }
 
     @Override

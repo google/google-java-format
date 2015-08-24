@@ -18,9 +18,10 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output.BreakTag;
-import com.google.googlejavaformat.Output.NewlineIfBroken;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,80 @@ import java.util.List;
  * {@link DocBuilder}.
  */
 public final class OpsBuilder {
+
+  /** A request to add or remove a blank line in the output. */
+  public abstract static class BlankLineWanted {
+
+    /** Always emit a blank line. */
+    public static final BlankLineWanted YES = new SimpleBlankLine(Optional.of(true));
+
+    /** Never emit a blank line. */
+    public static final BlankLineWanted NO = new SimpleBlankLine(Optional.of(false));
+
+    /**
+     * Explicitly preserve blank lines from the input (e.g. before the first
+     * member in a class declaration). Overrides conditional blank lines.
+     */
+    public static final BlankLineWanted PRESERVE = new SimpleBlankLine(Optional.<Boolean>absent());
+
+    /** Is the blank line wanted? */
+    public abstract Optional<Boolean> wanted();
+
+    /** Merge this blank line request with another. */
+    public abstract BlankLineWanted merge(BlankLineWanted wanted);
+
+    /** Emit a blank line if the given break is taken. */
+    public static BlankLineWanted conditional(BreakTag breakTag) {
+      return new ConditionalBlankLine(ImmutableList.of(breakTag));
+    }
+
+    private static final class SimpleBlankLine extends BlankLineWanted {
+      private final Optional<Boolean> wanted;
+
+      SimpleBlankLine(Optional<Boolean> wanted) {
+        this.wanted = wanted;
+      }
+
+      @Override
+      public Optional<Boolean> wanted() {
+        return wanted;
+      }
+
+      @Override
+      public BlankLineWanted merge(BlankLineWanted other) {
+        return this;
+      }
+    }
+
+    private static final class ConditionalBlankLine extends BlankLineWanted {
+
+      private final ImmutableList<BreakTag> tags;
+
+      ConditionalBlankLine(Iterable<BreakTag> tags) {
+        this.tags = ImmutableList.copyOf(tags);
+      }
+
+      @Override
+      public Optional<Boolean> wanted() {
+        for (BreakTag tag : tags) {
+          if (tag.wasBreakTaken()) {
+            return Optional.of(true);
+          }
+        }
+        return Optional.of(false);
+      }
+
+      @Override
+      public BlankLineWanted merge(BlankLineWanted other) {
+        if (!(other instanceof ConditionalBlankLine)) {
+          return other;
+        }
+        return new ConditionalBlankLine(
+            Iterables.concat(this.tags, ((ConditionalBlankLine) other).tags));
+      }
+    }
+  }
+
   private final Input input;
   private final List<Op> ops = new ArrayList<>();
   private final Output output;
@@ -78,7 +153,7 @@ public final class OpsBuilder {
       this.inputPosition = inputPosition;
     }
   }
-  
+
   /** Output any remaining tokens from the input stream (e.g. terminal whitespace). */
   public final void drain() {
     int inputPosition = input.getText().length() + 1;
@@ -244,24 +319,7 @@ public final class OpsBuilder {
    */
   public final void breakOp(
       Doc.FillMode fillMode, String flat, Indent plusIndent, Optional<BreakTag> optionalTag) {
-    ops.add(Doc.Break.make(fillMode, flat, plusIndent, optionalTag, NewlineIfBroken.NO));
-  }
-
-  /**
-   * Emit a generic {@link Doc.Break}.
-   * @param fillMode the {@link Doc.FillMode}
-   * @param flat the {@link Doc.Break} when not broken
-   * @param plusIndent extra indent if taken
-   * @param optionalTag an optional tag for remembering whether the break was taken
-   * @param newline emit a newline if this break is taken
-   */
-  public final void breakOp(
-      Doc.FillMode fillMode,
-      String flat,
-      Indent plusIndent,
-      Optional<BreakTag> optionalTag,
-      NewlineIfBroken newline) {
-    ops.add(Doc.Break.make(fillMode, flat, plusIndent, optionalTag, newline));
+    ops.add(Doc.Break.make(fillMode, flat, plusIndent, optionalTag));
   }
 
   /**
@@ -285,7 +343,7 @@ public final class OpsBuilder {
    * Force or suppress a blank line here in the output.
    * @param wanted whether to force ({@code true}) or suppress {@code false}) the blank line
    */
-  public final void blankLineWanted(boolean wanted) {
+  public final void blankLineWanted(BlankLineWanted wanted) {
     output.blankLine(getI(input.getTokens().get(tokenI)), wanted);
   }
 
@@ -419,7 +477,8 @@ public final class OpsBuilder {
       Op op = ops.get(i);
       if (afterForcedBreak
           && (op instanceof Doc.Space
-              || op instanceof Doc.Break && ((Doc.Break) op).getPlusIndent(output) == 0
+              || op instanceof Doc.Break
+                  && ((Doc.Break) op).getPlusIndent() == 0
                   && " ".equals(((Doc) op).getFlat()))) {
         continue;
       }

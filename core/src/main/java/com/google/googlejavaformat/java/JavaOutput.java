@@ -20,14 +20,13 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
-import com.google.common.collect.Sets;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.CommentsHelper;
 import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Input.Token;
+import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output;
 
 import java.io.IOException;
@@ -37,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
-import java.util.Set;
 import java.util.TreeSet;
 
 /*
@@ -59,7 +57,7 @@ public final class JavaOutput extends Output {
 
   private final JavaInput javaInput; // Used to follow along while emitting the output.
   private final CommentsHelper commentsHelper; // Used to re-flow comments.
-  private final Map<Integer, Boolean> blankLines = new HashMap<>(); // Info on blank lines.
+  private final Map<Integer, BlankLineWanted> blankLines = new HashMap<>(); // Info on blank lines.
   private final NavigableSet<Integer> partialFormatBoundaries = new TreeSet<>();
 
   private final List<String> mutableLines = new ArrayList<>();
@@ -69,8 +67,6 @@ public final class JavaOutput extends Output {
   private int spacesPending = 0;
   private int newlinesPending = 0;
   private StringBuilder lineBuilder = new StringBuilder();
-
-  private final Set<BreakTag> breaksTaken = Sets.newIdentityHashSet();
 
   /**
    * {@code JavaOutput} constructor.
@@ -84,8 +80,12 @@ public final class JavaOutput extends Output {
   }
 
   @Override
-  public void blankLine(int k, boolean wanted) {
-    blankLines.put(k, wanted);
+  public void blankLine(int k, BlankLineWanted wanted) {
+    if (blankLines.containsKey(k)) {
+      blankLines.put(k, blankLines.get(k).merge(wanted));
+    } else {
+      blankLines.put(k, wanted);
+    }
   }
 
   @Override
@@ -94,27 +94,12 @@ public final class JavaOutput extends Output {
   }
 
   @Override
-  public void breakWasTaken(BreakTag breakTag) {
-    breaksTaken.add(breakTag);
-  }
-
-  @Override
-  public boolean wasBreakTaken(BreakTag breakTag) {
-    return breaksTaken.contains(breakTag);
-  }
-
-  @Override
-  public Set<BreakTag> breaksTaken() {
-    return ImmutableSet.copyOf(breaksTaken);
-  }
-
-  @Override
   public void forceBlankLine() {
     // respect existing blank line suppressions to avoid inserting blanks for
     // breaks at the start/end of a block, or beginning/end of a method
     // declaration
     if (!blankLines.containsKey(lastK)) {
-      blankLines.put(lastK, true);
+      blankLines.put(lastK, BlankLineWanted.YES);
     }
   }
 
@@ -139,8 +124,8 @@ public final class JavaOutput extends Output {
        * there's a blank line here and we haven't called {@link OpsBuilder#blankLine}{@code (false)}
        * here, OR if it's a comment.
        */
-      Boolean wanted = blankLines.get(lastK);
-      if (wanted == null || isComment(text) ? sawNewlines : wanted) {
+      BlankLineWanted wanted = blankLines.get(lastK);
+      if ((wanted == null || isComment(text)) ? sawNewlines : wanted.wanted().or(sawNewlines)) {
         ++newlinesPending;
       }
     }
@@ -411,7 +396,6 @@ public final class JavaOutput extends Output {
         .add("lastK", lastK)
         .add("spacesPending", spacesPending)
         .add("newlinesPending", newlinesPending)
-        .add("breaksTaken", breaksTaken)
         .add("blankLines", blankLines)
         .add("super", super.toString())
         .toString();
