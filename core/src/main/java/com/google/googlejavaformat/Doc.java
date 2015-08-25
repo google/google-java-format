@@ -65,32 +65,32 @@ public abstract class Doc {
     final int column;
     final boolean mustBreak;
 
-    State(int indent0, int lastIndent, int indent, int column, boolean mustBreak) {
+    /** The number of lines spanned by the current layout. */
+    final int lines;
+
+    State(int indent0, int lastIndent, int indent, int column, boolean mustBreak, int lines) {
       this.indent0 = indent0;
       this.lastIndent = lastIndent;
       this.indent = indent;
       this.column = column;
       this.mustBreak = mustBreak;
+      this.lines = lines;
     }
 
-    public State(int indent0, int column0) {
-      this(indent0, indent0, indent0, column0, false);
+    public State(int indent0, int column0, int lines0) {
+      this(indent0, indent0, indent0, column0, false, lines0);
     }
 
     State withColumn(int column) {
-      return new State(indent0, lastIndent, indent, column, mustBreak);
-    }
-
-    State withIndent(int indent) {
-      return new State(indent0, lastIndent, indent, column, mustBreak);
-    }
-
-    State withLastIndent(int lastIndent) {
-      return new State(indent0, lastIndent, indent, column, mustBreak);
+      return new State(indent0, lastIndent, indent, column, mustBreak, lines);
     }
 
     State withMustBreak(boolean mustBreak) {
-      return new State(indent0, lastIndent, indent, column, mustBreak);
+      return new State(indent0, lastIndent, indent, column, mustBreak, lines);
+    }
+
+    State withBreaks(int breaks) {
+      return new State(indent0, lastIndent, indent, column, mustBreak, lines + breaks);
     }
 
     @Override
@@ -268,12 +268,12 @@ public abstract class Doc {
         oneLine = true;
         return state.withColumn(state.column + (int) thisWidth);
       }
-      return state.withColumn(
+      State broken =
           computeBroken(
-                  commentsHelper,
-                  maxWidth,
-                  new State(state.indent + plusIndent.eval(), state.column))
-              .column);
+              commentsHelper,
+              maxWidth,
+              new State(state.indent + plusIndent.eval(), state.column, state.lines));
+      return state.withColumn(broken.column).withBreaks(broken.lines - state.lines);
     }
 
     private static void splitByBreaks(List<Doc> docs, List<List<Doc>> splits, List<Break> breaks) {
@@ -297,14 +297,12 @@ public abstract class Doc {
       splitByBreaks(docs, splits, breaks);
 
       // Attempt to fill the Level, recording the number of lines that takes.
-      int[] outLines = {0};
-      State state = maybeBreakFilled(commentsHelper, maxWidth, state0, false, outLines);
-      int lines = outLines[0];
+      State state = maybeBreakFilled(commentsHelper, maxWidth, state0, false);
 
       // If it took too many lines, re-compute the Level with forced breaks
       // between every child.
-      if (maxLinesFilled > 0 && lines > maxLinesFilled) {
-        state = maybeBreakFilled(commentsHelper, maxWidth, state0, true, new int[] {0});
+      if (maxLinesFilled > 0 && (state.lines - state0.lines) >= maxLinesFilled) {
+        state = maybeBreakFilled(commentsHelper, maxWidth, state0, true);
       }
 
       return state;
@@ -312,31 +310,13 @@ public abstract class Doc {
 
     /**
      * @param breakAll take all top-level Breaks in the Level.
-     * @param outLines the number of lines spanned by the Level.
      */
     private State maybeBreakFilled(
-        CommentsHelper commentsHelper,
-        int maxWidth,
-        State state,
-        boolean breakAll,
-        int[] outLines) {
-      // Infer the number of lines spanned by the Level by checking the column
-      // after laying out each child, and noticing when the column wraps.
-      // This assumes that each child starts at the same indent, and would be
-      // broken by "progressive" indents (which we don't currently use for
-      // anything).
-      // TODO(cushon): this is a hack, make it better.
-      int lines = 1;
-      int lastColumn = state.column;
-
+        CommentsHelper commentsHelper, int maxWidth, State state, boolean breakAll) {
       state =
           computeBreakAndSplit(
               commentsHelper, maxWidth, state, Optional.<Break>absent(), splits.get(0), breakAll);
 
-      if (state.column <= lastColumn) {
-        lines++;
-      }
-      lastColumn = state.column;
 
       // Handle following breaks and split.
       for (int i = 0; i < breaks.size(); i++) {
@@ -348,13 +328,7 @@ public abstract class Doc {
                 Optional.of(breaks.get(i)),
                 splits.get(i + 1),
                 breakAll);
-
-        if (state.column <= lastColumn) {
-          lines++;
-        }
-        lastColumn = state.column;
       }
-      outLines[0] = lines;
       return state;
     }
 
@@ -368,7 +342,6 @@ public abstract class Doc {
         Optional<Break> optBreakDoc,
         List<Doc> split,
         boolean breakAll) {
-
       float breakWidth = optBreakDoc.isPresent() ? optBreakDoc.get().getWidth() : 0.0F;
       float splitWidth = getWidth(split);
       boolean shouldBreak =
@@ -452,7 +425,8 @@ public abstract class Doc {
      * Is a Token a real token, or imaginary (e.g., a token generated incorrectly, or an EOF)?
      */
     public enum RealOrImaginary {
-      REAL, IMAGINARY;
+      REAL,
+      IMAGINARY;
 
       boolean isReal() {
         return this == REAL;
@@ -711,7 +685,7 @@ public abstract class Doc {
       if (broken) {
         this.broken = true;
         this.newIndent = Math.max(lastIndent + plusIndent.eval(), 0);
-        return state.withColumn(newIndent);
+        return state.withColumn(newIndent).withBreaks(1);
       } else {
         this.broken = false;
         this.newIndent = -1;
@@ -793,12 +767,18 @@ public abstract class Doc {
     @Override
     public State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state) {
       int column = state.column;
+      int lines = 0;
       text = commentsHelper.rewrite(tok, maxWidth, column);
       // TODO(lowasser): use lastIndexOf('\n')
       for (char c : text.toCharArray()) {
-        column = c == '\n' ? 0 : column + 1;
+        if (c == '\n') {
+          column = 0;
+          lines++;
+        } else {
+          column++;
+        }
       }
-      return state.withColumn(column);
+      return state.withColumn(column).withBreaks(lines);
     }
 
     @Override
