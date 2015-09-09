@@ -34,7 +34,7 @@
 
   <properties>
     <!-- IJ release 14.1.1 -->
-    <idea.platform.version>141.178.9</idea.platform.version>
+    <idea.platform.version>141.1532.4</idea.platform.version>
   </properties>
 
   <dependencies>
@@ -47,7 +47,7 @@
     <!--
     The IJ dependencies below must be installed from your IDEA installation directory
     using src/main/scripts/install-idea-jars.sh .
-    141.178.9 maps to IJ release version 14.1.1.
+    141.1532.4 maps to IJ release version 14.1.4.
     -->
     <dependency>
       <groupId>com.jetbrains.intellij.platform</groupId>
