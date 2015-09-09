@@ -13,46 +13,21 @@ class B20701054 {
 
     ImmutableList<String> x = ImmutableList.INSTANCE.add(1).build();
     ImmutableList<String> x = ImmutableList.INSTANCE.add(1).add(2).build();
-    ImmutableList<String> x =
-        ImmutableList.INSTANCE
-            .add(1)
-            .add(2)
-            .add(3)
-            .build();
-    ImmutableList<String> x =
-        ImmutableList.INSTANCE
-            .add(1)
-            .add(2)
-            .add(3)
-            .add(4)
-            .build();
+    ImmutableList<String> x = ImmutableList.INSTANCE.add(1).add(2).add(3).build();
+    ImmutableList<String> x = ImmutableList.INSTANCE.add(1).add(2).add(3).add(4).build();
 
     ImmutableList<String> x = ImmutableList.builder().add(1).build();
     ImmutableList<String> x = ImmutableList.builder().add(1).add(2).build();
+    ImmutableList<String> x = ImmutableList.builder().add(1).add(2).add(3).build();
+    ImmutableList<String> x = ImmutableList.builder().add(1).add(2).add(3).add(4).build();
+    ImmutableList<String> x = ImmutableList.builder().add(1).add(2).add(3).add(4).add(5).build();
     ImmutableList<String> x =
-        ImmutableList.builder()
-            .add(1)
-            .add(2)
-            .add(3)
-            .build();
-    ImmutableList<String> x =
-        ImmutableList.builder()
-            .add(1)
-            .add(2)
-            .add(3)
-            .add(4)
-            .build();
-    ImmutableList<String> x =
-        ImmutableList.builder()
-            .add(1)
-            .add(2)
-            .add(3)
-            .add(4)
-            .add(5)
-            .build();
+        ImmutableList.builder().add(1).add(2).add(3).add(4).add(5).add(6).build();
 
     ImmutableList<String> x =
         new ImmutableList.Builder<>()
+            .add(xxxxx)
+            .add(xxxxx)
             .add(xxxxx)
             .add(xxxxx)
             .add(xxxxx)
@@ -65,6 +40,8 @@ class B20701054 {
 
     ImmutableList<String> x =
         ImmutableList.new Builder<>()
+            .add(xxxxx)
+            .add(xxxxx)
             .add(xxxxx)
             .add(xxxxx)
             .add(xxxxx)
@@ -98,11 +75,7 @@ class B20701054 {
 
     if (ImmutableList.builder().add(1).add(2).add(3)) {}
 
-    if (ImmutableList.builder()
-        .add(1)
-        .add(2)
-        .add(3)
-        .add(4)) {}
+    if (ImmutableList.builder().add(1).add(2).add(3).add(4)) {}
 
     if (value.fst.name.toString().equals("value")) {}
 

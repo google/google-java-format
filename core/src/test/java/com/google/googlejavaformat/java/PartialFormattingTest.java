@@ -95,12 +95,8 @@ public final class PartialFormattingTest {
             + "}}\n";
     String expectedOutput =
         "class Foo {{\n"
-            + "    ImmutableList<Integer> ids =\n"
-            + "        ImmutableList.builder()\n"
-            + "            .add(1)\n"
-            + "            .add(2)\n"
-            + "            .add(3)\n"
-            + "            .build();\n"
+            + "    ImmutableList<Integer> ids ="
+            + " ImmutableList.builder().add(1).add(2).add(3).build();\n"
             + "}}\n";
     int idx = input.indexOf("add(2)");
     String output = doGetFormatReplacements(input, idx, idx + 1);

@@ -516,15 +516,7 @@ class M {
 
   void f(int... x) {
     M m = null;
-    ((m
-                .identity()
-                .identity()
-                .identity()
-                .identity())
-            .identity()
-            .identity()
-            .identity()
-            .identity())
+    ((m.identity().identity().identity().identity()).identity().identity().identity().identity())
         .identity()
         .identity()
         .identity()

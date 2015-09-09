@@ -260,7 +260,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private static final int MAX_LINES_FOR_ARRAY_INITIALIZERS = 1;
   private static final int MAX_LINES_FOR_ANNOTATION_ELEMENT_VALUE_PAIRS = 1;
   private static final int MAX_LINES_FOR_CHAINED_ACCESSES = 1;
-  private static final int MAX_INVOCATIONS_BEFORE_BUILDER_STYLE = 3;
 
   /**
    * Allow multi-line filling (of array initializers, argument lists, and boolean
@@ -2552,12 +2551,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       prefixIndex = firstInvocationIndex;
     }
 
-    FillMode builderStyleFillMode = builderStyleFillMode(items, invocationCount, prefixIndex);
-
     if (prefixIndex > 0) {
-      visitDotWithPrefix(items, needDot, prefixIndex, builderStyleFillMode);
+      visitDotWithPrefix(items, needDot, prefixIndex);
     } else {
-      visitRegularDot(items, needDot, builderStyleFillMode);
+      visitRegularDot(items, needDot);
     }
 
     if (node != null) {
@@ -2565,30 +2562,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
   }
 
-  private static FillMode builderStyleFillMode(
-      List<Expression> items, int invocations, int prefixIndex) {
-    if (prefixIndex >= 0 && items.get(prefixIndex).getNodeType() == ASTNode.METHOD_INVOCATION) {
-      // If the chain starts with a type name-shaped thing followed by a method invocation, that
-      // method doesn't count towards the threshold.
-      invocations--;
-    }
-    if (invocations < MAX_INVOCATIONS_BEFORE_BUILDER_STYLE) {
-      return FillMode.INDEPENDENT;
-    }
-    if (invocations == MAX_INVOCATIONS_BEFORE_BUILDER_STYLE) {
-      return FillMode.UNIFIED;
-    }
-    return FillMode.FORCED;
-  }
-
   /**
    * Output a "regular" chain of dereferences, possibly in builder-style. Break before every dot.
    *
    * @param items           in the chain
    * @param needDot         whether a leading dot is needed
-   * @param builderFillMode fill mode to use for builder-style
    */
-  private void visitRegularDot(List<Expression> items, boolean needDot, FillMode builderFillMode) {
+  private void visitRegularDot(List<Expression> items, boolean needDot) {
     boolean trailingDereferences = items.size() > 1;
     boolean needDot0 = needDot;
     if (!needDot0) {
@@ -2596,7 +2576,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     for (Expression e : items) {
       if (needDot) {
-        builder.breakOp(builderFillMode, "", ZERO);
+        builder.breakOp(FillMode.UNIFIED, "", ZERO);
         token(".");
       }
       dotExpressionUpToArgs(e);
@@ -2616,10 +2596,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * @param items           in the chain
    * @param needDot         whether a leading dot is needed
    * @param prefixIndex     the index of the last item in the prefix
-   * @param builderFillMode fill mode to use for builder-style
    */
-  private void visitDotWithPrefix(
-      List<Expression> items, boolean needDot, int prefixIndex, FillMode builderFillMode) {
+  private void visitDotWithPrefix(List<Expression> items, boolean needDot, int prefixIndex) {
     // Are there method invocations or field accesses after the prefix?
     boolean trailingDereferences = prefixIndex >= 0 && prefixIndex < items.size() - 1;
 
@@ -2633,7 +2611,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         if (prefixIndex >= 0 && i <= prefixIndex) {
           fillMode = FillMode.INDEPENDENT;
         } else {
-          fillMode = builderFillMode;
+          fillMode = FillMode.UNIFIED;
         }
 
         builder.breakOp(fillMode, "", ZERO);
