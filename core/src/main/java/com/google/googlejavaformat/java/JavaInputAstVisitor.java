@@ -2579,8 +2579,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.breakOp(FillMode.UNIFIED, "", ZERO);
         token(".");
       }
-      dotExpressionUpToArgs(e);
-      dotExpressionArgsAndParen(e, (trailingDereferences || needDot) ? plusFour : ZERO);
+      BreakTag tyargTag = genSym();
+      dotExpressionUpToArgs(e, Optional.of(tyargTag));
+      Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
+      dotExpressionArgsAndParen(
+          e, tyargIndent, (trailingDereferences || needDot) ? plusFour : ZERO);
       needDot = true;
     }
     if (!needDot0) {
@@ -2600,10 +2603,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private void visitDotWithPrefix(List<Expression> items, boolean needDot, int prefixIndex) {
     // Are there method invocations or field accesses after the prefix?
     boolean trailingDereferences = prefixIndex >= 0 && prefixIndex < items.size() - 1;
-
+    
     builder.open(plusFour, MAX_LINES_FOR_CHAINED_ACCESSES);
     builder.open(trailingDereferences ? ZERO : ZERO);
 
+    BreakTag nameTag = genSym();
     for (int i = 0; i < items.size(); i++) {
       Expression e = items.get(i);
       if (needDot) {
@@ -2614,14 +2618,19 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           fillMode = FillMode.UNIFIED;
         }
 
-        builder.breakOp(fillMode, "", ZERO);
+        builder.breakOp(fillMode, "", ZERO, Optional.of(nameTag));
         token(".");
       }
-      dotExpressionUpToArgs(e);
+      BreakTag tyargTag = genSym();
+      dotExpressionUpToArgs(e, Optional.of(tyargTag));
       if (prefixIndex >= 0 && i == prefixIndex) {
         builder.close();
       }
-      dotExpressionArgsAndParen(e, trailingDereferences ? plusFour : ZERO);
+      
+      Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
+      Indent argsIndent = Indent.If.make(nameTag, plusFour, trailingDereferences ? plusFour : ZERO);
+      dotExpressionArgsAndParen(e, tyargIndent, argsIndent);
+
       needDot = true;
     }
 
@@ -2653,7 +2662,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return simpleNames.build();
   }
 
-  private void dotExpressionUpToArgs(Expression expression) {
+  private void dotExpressionUpToArgs(Expression expression, Optional<BreakTag> tyargTag) {
     switch (expression.getNodeType()) {
       case ASTNode.FIELD_ACCESS:
         FieldAccess fieldAccess = (FieldAccess) expression;
@@ -2665,7 +2674,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           builder.open(plusFour);
           addTypeArguments(methodInvocation.typeArguments(), ZERO);
           // TODO(jdd): Should indent the name -4.
-          builder.breakOp(ZERO);
+          builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, tyargTag);
           builder.close();
         }
         visit(methodInvocation.getName());
@@ -2682,18 +2691,18 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
   }
 
-  private void dotExpressionArgsAndParen(Expression expression, Indent indent) {
+  private void dotExpressionArgsAndParen(Expression expression, Indent tyargIndent, Indent indent) {
     switch (expression.getNodeType()) {
-      case ASTNode.FIELD_ACCESS:
-        break;
       case ASTNode.METHOD_INVOCATION:
+        builder.open(tyargIndent);
         MethodInvocation methodInvocation = (MethodInvocation) expression;
         addArguments(methodInvocation.arguments(), indent);
+        builder.close();
         token(")");
         break;
+      case ASTNode.FIELD_ACCESS:
       case ASTNode.SIMPLE_NAME:
       case ASTNode.QUALIFIED_NAME:
-        break;
       default:
         break;
     }

@@ -1,0 +1,46 @@
+class B23749160 {
+  {
+    mockDailySummaryModuleListFiller
+        .buildDailySummaryModulesWithHeadersOnlyAndOneExpandedDayxxxxxxxxxxx(
+            anyInt(), anyInt(), anyInt());
+
+    mockDailySummaryModuleListFiller
+        .<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
+            YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY>
+            buildDailySummaryModulesWithHeadersOnlyAndOneExpandedDayxxxxxxxxxxx(
+                anyInt(), anyInt(), anyInt());
+
+    foo
+        .<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
+            YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY>
+            buildDailySummaryModulesWithHeadersOnlyAndOneExpandedDayxxxxxxxxxxx(
+                anyInt(), anyInt(), anyInt())
+        .bar();
+
+    // `.build`... and `anotherThing`... are technically at different syntactic
+    // levels, but the indentation required to express that starts to get out
+    // of hand
+    MockDailySummaryModuleListFiller
+        .buildDailySummaryModulesWithHeadersOnlyAndOneExpandedDayxxxxxxxxxxx(
+            anyInt(), anyInt(), anyInt())
+        .anotherThing();
+
+    when(
+            mockDailySummaryModuleListFiller
+                .buildDailySummaryModulesWithHeadersOnlyAndOneExpandedDay(
+                    anyInt(), anyInt(), anyInt()))
+        .then();
+
+    private static final List<Integer> SERVICE_LIST =
+        ImmutableList.of(
+            INSServiceID.CARIBOU, // Mail
+            INSServiceID.WRITELY, // Drive
+            INSServiceID.CALENDAR, // Calendar
+            INSServiceID.BUZZ, // Talk
+            INSServiceID.CONTACTS, // Contacts
+            INSServiceID.GROUPS_RELOADED, // Groups
+            INSServiceID.JOTSPOT, // Sites
+            INSServiceID.GEO_DISPATCH // Coordinate
+        );
+  }
+}
