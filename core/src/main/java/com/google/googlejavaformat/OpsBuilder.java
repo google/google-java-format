@@ -365,7 +365,6 @@ public final class OpsBuilder {
   public final ImmutableList<Op> build() {
     // Rewrite the ops to insert comments.
     Multimap<Integer, Op> tokOps = ArrayListMultimap.create();
-    boolean first = true; // Are we at the very beginning?
     int opsN = ops.size();
     for (int i = 0; i < opsN; i++) {
       Op op = ops.get(i);
@@ -409,11 +408,8 @@ public final class OpsBuilder {
                         Doc.FillMode.FORCED,
                         "",
                         tokenOp.getPlusIndentCommentsBefore()));
-              } else if (!first) {
-                tokOps.put(j, SPACE);
               }
               tokOps.putAll(j, makeComment(tokBefore));
-              first = false;
               space = tokBefore.isSlashStarComment();
               newlines = 0;
               lastWasComment = true;
@@ -425,7 +421,6 @@ public final class OpsBuilder {
             tokOps.put(j, SPACE);
           }
           // Now we've seen the Token; output the toksAfter.
-          first = false;
           for (Input.Tok tokAfter : token.getToksAfter()) {
             if (tokAfter.isComment()) {
               boolean breakAfter =
@@ -457,7 +452,6 @@ public final class OpsBuilder {
           for (Input.Tok tokAfter : token.getToksAfter()) {
             tokOps.put(k + 1, Doc.Tok.make(tokAfter));
           }
-          first = false;
         }
       }
     }

@@ -407,6 +407,17 @@ public final class JavaInput extends Input {
       // Non-tokens starting on the same line go here too.
       ImmutableList.Builder<Tok> toksAfter = ImmutableList.builder();
       while (k < kN && !"\n".equals(toks.get(k).getText()) && !toks.get(k).isToken()) {
+        // Don't attach inline comments to leading '('s, e.g. for `f(/*flag1=*/true).
+        //
+        // Attaching inline comments to the right token is hard, and this barely
+        // scratches the surface. But it's enough to do a better job with parameter
+        // name comments.
+        //
+        // TODO(cushon): find a better strategy.
+        if (("(".equals(tok.getText()))
+            && toks.get(k).isSlashStarComment()) {
+          break;
+        }
         Tok nonTokenAfter = toks.get(k++);
         toksAfter.add(nonTokenAfter);
         if (nonTokenAfter.getText().contains("\n")) {

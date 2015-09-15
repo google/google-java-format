@@ -533,6 +533,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   private static boolean hasOnlyShortItems(List<Expression> expressions) {
     for (Expression expression : expressions) {
+      // TODO(cushon): this ignores attached comments, so `/*myParameterName=*/ true` has length 4.
       if (expression.getLength() >= MAX_ITEM_LENGTH_FOR_FILLING) {
         return false;
       }
