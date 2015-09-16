@@ -1691,6 +1691,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(SwitchCase node) {
     sync(node);
+    markForPartialFormat();
     if (node.isDefault()) {
       token("default", plusTwo);
       token(":");

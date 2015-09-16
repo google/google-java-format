@@ -974,4 +974,42 @@ public final class PartialFormattingTest {
     String[] args = {"-lines=5:5", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
   }
+
+  // Regression test for b/22872933
+  // Don't extend partial formatting ranges across switch cases.
+  @Test
+  public void switchCase() throws Exception {
+    String input =
+        Joiner.on('\n').join(
+            "class Test {",
+            "  {",
+            "    switch (foo) {",
+            "      case FOO:",
+            "      f();",
+            "      break;",
+            "      case BAR:",
+            "      g();",
+            "      break;",
+            "    }",
+            "  }",
+            "}");
+    String expectedOutput =
+        Joiner.on('\n').join(
+            "class Test {",
+            "  {",
+            "    switch (foo) {",
+            "      case FOO:",
+            "        f();",
+            "        break;",
+            "      case BAR:", // we deliberately only format the first case
+            "      g();",
+            "      break;",
+            "    }",
+            "  }",
+            "}");
+
+    int idx = input.indexOf("f()");
+    String output = doGetFormatReplacements(input, idx, idx + 1);
+    assertEquals("bad output", expectedOutput, output);
+  }
 }
