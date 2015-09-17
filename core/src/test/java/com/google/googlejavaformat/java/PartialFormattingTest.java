@@ -176,7 +176,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test { int xxx = 1;\n"
             + "  int yyy = 1;\n"
-            + " int zzz = 1; }";
+            + "  int zzz = 1; }";
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
@@ -188,7 +188,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test { int xxx = 1;\n\n"
             + "  int yyy = 1;\n"
-            + " int zzz = 1; }";
+            + "  int zzz = 1; }";
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
@@ -200,7 +200,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test { int xxx = 1;\n"
             + "  int yyy = 1;\n"
-            + "      int zzz = 1; }";
+            + "  int zzz = 1; }";
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
@@ -212,7 +212,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         "class Test {\n"
             + "  void zzz() {\n"
-            + " int x; } }";
+            + "    int x; } }";
     int idx = input.indexOf("zzz");
     String output = doGetFormatReplacements(input, idx, idx);
     assertEquals("bad output", expectedOutput, output);
@@ -223,8 +223,7 @@ public final class PartialFormattingTest {
     String input = "class Test { void f() { return; } }\n";
     String expectedOutput =
         "class Test { void f() { return;\n"
-            + "  }\n"
-            + " }\n";
+            + "  }\n" + "}\n";
     int idx = input.indexOf("}");
     String output = doGetFormatReplacements(input, idx, idx);
     assertEquals("bad output", expectedOutput, output);
@@ -235,8 +234,7 @@ public final class PartialFormattingTest {
     String input = "class Test { void f() {} }\n";
     String expectedOutput =
         "class Test {\n"
-            + "  void f() {}\n"
-            + " }\n";
+            + "  void f() {}\n" + "}\n";
     int idx = input.indexOf("}");
     String output = doGetFormatReplacements(input, idx, idx);
     assertEquals("bad output", expectedOutput, output);
@@ -530,8 +528,8 @@ public final class PartialFormattingTest {
         new Formatter().getFormatReplacements(input, ImmutableList.of(Range.closedOpen(18, 19)));
     assertThat(ranges).hasSize(1);
     Replacement replacement = ranges.get(0);
-    assertThat(replacement.getReplacementString()).isEqualTo("  void f() {}");
-    assertThat(replacement.getReplaceRange()).isEqualTo(Range.closedOpen(11, 24));
+    assertThat(replacement.getReplacementString()).isEqualTo("  void f() {}\n");
+    assertThat(replacement.getReplaceRange()).isEqualTo(Range.closedOpen(11, 25));
   }
 
   @Test
@@ -864,7 +862,7 @@ public final class PartialFormattingTest {
             + "class Test {\n"
             + "  {\n"
             + "    int x;\n"
-            + "int y;\n"
+            + "    int y;\n"
             + "  }\n"
             + "}\n";
     String match = "int x;";
@@ -1009,6 +1007,54 @@ public final class PartialFormattingTest {
             "}");
 
     int idx = input.indexOf("f()");
+    String output = doGetFormatReplacements(input, idx, idx + 1);
+    assertEquals("bad output", expectedOutput, output);
+  }
+
+  // regression test for b/23349153
+  @Test
+  public void emptyStatement() throws Exception {
+    String input =
+        "class Test {{\n"
+            + "Object o = f();;\n"
+            + "}}\n";
+    String expectedOutput = "class Test {{\n"
+            + "    Object o = f();\n"
+            + "    ;\n"
+            + "}}\n";
+    int idx = input.indexOf("Object o");
+    String output = doGetFormatReplacements(input, idx, idx + 1);
+    assertEquals("bad output", expectedOutput, output);
+  }
+
+  @Test
+  public void preserveTrailingWhitespaceAfterNewline() throws Exception {
+    String input = "class Test {{\n"
+            + "Object o = f();       \n"
+            + "            ;\n"
+            + "}}\n";
+    String expectedOutput =
+        "class Test {{\n"
+            + "    Object o = f();\n"
+            + "            ;\n"
+            + "}}\n";
+    int idx = input.indexOf("Object o");
+    String output = doGetFormatReplacements(input, idx, idx + 1);
+    assertEquals("bad output", expectedOutput, output);
+  }
+
+  @Test
+  public void trailingWhitespace() throws Exception {
+    String input = "class Test {{\n"
+            + "Object o = f();       \n"
+            + "            ;\n"
+            + "}}\n";
+    String expectedOutput =
+        "class Test {{\n"
+            + "    Object o = f();\n"
+            + "            ;\n"
+            + "}}\n";
+    int idx = input.indexOf("Object o");
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
   }

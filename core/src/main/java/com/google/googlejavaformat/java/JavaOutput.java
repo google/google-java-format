@@ -276,7 +276,8 @@ public final class JavaOutput extends Output {
       }
 
       boolean first = true;
-      for (int i = kToJ.get(startTok.getIndex()).lowerEndpoint();
+      int i;
+      for (i = kToJ.get(startTok.getIndex()).lowerEndpoint();
           i < kToJ.get(endTok.getIndex()).upperEndpoint();
           i++) {
         // It's possible to run out of output lines (e.g. if the input ended with
@@ -290,27 +291,41 @@ public final class JavaOutput extends Output {
           replacement.append(getLine(i));
         }
       }
+      replacement.append('\n');
 
-      boolean needsBreakAfter = true;
-      for (int idx = endTok.getPosition() + endTok.getText().length();
-          idx < javaInput.getText().length();
-          idx++) {
-        char trailing = javaInput.getText().charAt(idx);
-        if (trailing == '\n') {
-          needsBreakAfter = false;
-        }
-        if (!CharMatcher.WHITESPACE.matches(trailing)) {
+      String trailingLine = i < getLineCount() ? getLine(i) : null;
+
+      int replaceTo =
+          Math.min(endTok.getPosition() + endTok.getText().length(), javaInput.getText().length());
+
+      // Expand the partial formatting range to include non-breaking trailing
+      // whitespace. If the range ultimately ends in a newline, then preserve
+      // whatever original text was on the next line (i.e. don't re-indent
+      // the next line after the reformatted range). However, if the partial
+      // formatting range doesn't end in a newline, then break and re-indent.
+      boolean reIndent = true;
+      while (replaceTo < javaInput.getText().length()) {
+        char endChar = javaInput.getText().charAt(replaceTo);
+        if (endChar == '\n') {
+          reIndent = false;
+          replaceTo++;
           break;
         }
+        if (CharMatcher.WHITESPACE.matches(endChar)) {
+          replaceTo++;
+          continue;
+        }
+        break;
       }
-      if (needsBreakAfter) {
-        replacement.append('\n');
+      if (reIndent && trailingLine != null) {
+        int idx = CharMatcher.WHITESPACE.negate().indexIn(trailingLine);
+        if (idx > 0) {
+          replacement.append(trailingLine, 0, idx);
+        }
       }
 
-      int endpos = Math.min(
-          endTok.getPosition() + endTok.getText().length(),
-          javaInput.getText().length());
-      result.add(Replacement.create(Range.closedOpen(replaceFrom, endpos), replacement.toString()));
+      result.add(
+          Replacement.create(Range.closedOpen(replaceFrom, replaceTo), replacement.toString()));
     }
 
     return result.build();

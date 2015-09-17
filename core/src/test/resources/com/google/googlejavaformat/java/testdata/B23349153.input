@@ -1,0 +1,8 @@
+class B23349153 {
+  enum Foo {
+    A, B,;
+  }
+  {
+    System.err.println("Hello");;
+  }
+}
