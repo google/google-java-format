@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 #
 #===- google-java-format-diff.py - google-java-format Diff Reformatter -----===#
 #
