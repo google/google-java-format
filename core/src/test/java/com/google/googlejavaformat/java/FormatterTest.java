@@ -19,6 +19,7 @@ import static com.google.common.io.Files.getNameWithoutExtension;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
@@ -89,8 +90,12 @@ public final class FormatterTest {
       String input = inputs.get(fileName);
       assertTrue("unmatched input", outputs.containsKey(fileName));
       String expectedOutput = outputs.get(fileName);
-      String output = new Formatter().formatSource(input);
-      assertEquals("bad output for " + fileName, expectedOutput, output);
+      try {
+        String output = new Formatter().formatSource(input);
+        assertEquals("bad output for " + fileName, expectedOutput, output);
+      } catch (FormatterException e) {
+        fail(String.format("Formatter crashed on %s: %s", fileName, e.getMessage()));
+      }
     }
   }
 

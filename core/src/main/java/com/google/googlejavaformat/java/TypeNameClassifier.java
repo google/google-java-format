@@ -36,6 +36,9 @@ public final class TypeNameClassifier {
       public TyParseState next(JavaCaseFormat n) {
         switch (n) {
           case UPPERCASE:
+            // if we see an UpperCamel later, assume this was a class
+            // e.g. com.google.FOO.Bar
+            return TyParseState.AMBIGUOUS;
           case LOWER_CAMEL:
             return TyParseState.REJECT;
           case LOWERCASE:
@@ -77,6 +80,23 @@ public final class TypeNameClassifier {
       @Override
       public TyParseState next(JavaCaseFormat n) {
         return TyParseState.REJECT;
+      }
+    },
+
+    /** An ambiguous type prefix. */
+    AMBIGUOUS(false) {
+      @Override
+      public TyParseState next(JavaCaseFormat n) {
+        switch (n) {
+          case UPPERCASE:
+            return AMBIGUOUS;
+          case LOWER_CAMEL:
+          case LOWERCASE:
+            return TyParseState.REJECT;
+          case UPPER_CAMEL:
+            return TyParseState.TYPE;
+        }
+        throw new AssertionError();
       }
     };
 

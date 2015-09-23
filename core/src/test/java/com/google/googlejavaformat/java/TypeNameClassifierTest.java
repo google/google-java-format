@@ -62,4 +62,12 @@ public final class TypeNameClassifierTest {
     assertThat(getPrefix("ClassName.varName")).isEqualTo(1);
     assertThat(getPrefix("ClassName.Inner.varName")).isEqualTo(2);
   }
+
+  @Test
+  public void ambiguousClass() {
+    assertThat(getPrefix("com.google.security.acl.proto2api.ACL.Entry.newBuilder")).isEqualTo(7);
+    // A human would probably identify this as "class-shaped", but just looking
+    // at the case we have to assume it could be something like `field1.field2.CONST`.
+    assertThat(getPrefix("com.google.security.acl.proto2api.ACL.newBuilder")).isEqualTo(-1);
+  }
 }
