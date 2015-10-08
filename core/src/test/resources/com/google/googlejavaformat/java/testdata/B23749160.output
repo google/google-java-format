@@ -10,8 +10,7 @@ class B23749160 {
             buildDailySummaryModulesWithHeadersOnlyAndOneExpandedDayxxxxxxxxxxx(
                 anyInt(), anyInt(), anyInt());
 
-    foo
-        .<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
+    foo.<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
             YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY>
             buildDailySummaryModulesWithHeadersOnlyAndOneExpandedDayxxxxxxxxxxx(
                 anyInt(), anyInt(), anyInt())

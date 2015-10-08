@@ -5,13 +5,11 @@ class B21278211 {
     // use unified breaks for all chained dereferences
 
     x.f().g();
-    x
-        .fzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz()
+    x.fzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz()
         .gzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz();
 
     x.f().g().h();
-    x
-        .f()
+    x.f()
         .g()
         .hzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz();
 

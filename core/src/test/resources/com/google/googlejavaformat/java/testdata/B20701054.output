@@ -59,8 +59,7 @@ class B20701054 {
         veryLongArgumentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx);
 
     PTable<Long, List<PageSpeedUrlResult>> latestResults =
-        FJ
-            .joinOneShot2(accountSummaryProvider.get(), results)
+        FJ.joinOneShot2(accountSummaryProvider.get(), results)
             .parallelDo("extractPageSpeedUrls", new ExtractPageSpeedUrlsFn(false));
 
     PTable<Long, Long> adImpressionsByAccount =

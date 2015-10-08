@@ -233,6 +233,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private final OpsBuilder builder;
 
   private static final Indent.Const ZERO = Indent.Const.ZERO;
+  private final int indentMultiplier;
   private final Indent.Const minusTwo;
   private final Indent.Const minusFour;
   private final Indent.Const plusTwo;
@@ -304,6 +305,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    */
   public JavaInputAstVisitor(OpsBuilder builder, int indentMultiplier) {
     this.builder = builder;
+    this.indentMultiplier = indentMultiplier;
     minusTwo = Indent.Const.make(-2, indentMultiplier);
     minusFour = Indent.Const.make(-4, indentMultiplier);
     plusTwo = Indent.Const.make(+2, indentMultiplier);
@@ -2576,16 +2578,24 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     if (!needDot0) {
       builder.open(plusFour, MAX_LINES_FOR_CHAINED_ACCESSES);
     }
+    // don't break after the first element if it is every small, unless the
+    // chain starts with another expression
+    int minLength = indentMultiplier * 4;
+    int length = needDot0 ? minLength : 0;
     for (Expression e : items) {
       if (needDot) {
-        builder.breakOp(FillMode.UNIFIED, "", ZERO);
+        if (length > minLength) {
+          builder.breakOp(FillMode.UNIFIED, "", ZERO);
+        }
         token(".");
+        length++;
       }
       BreakTag tyargTag = genSym();
       dotExpressionUpToArgs(e, Optional.of(tyargTag));
       Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
       dotExpressionArgsAndParen(
           e, tyargIndent, (trailingDereferences || needDot) ? plusFour : ZERO);
+      length += e.getLength();
       needDot = true;
     }
     if (!needDot0) {

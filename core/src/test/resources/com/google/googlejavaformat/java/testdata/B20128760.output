@@ -12,8 +12,7 @@ class B20128760 {
         .xxxxx();
 
     xxxxxxXxxx(
-            xxx
-                .xxxXxXxxxxxxx(
+            xxx.xxxXxXxxxxxxx(
                     new XxxxxxxxxXxxxxxxx.Xxxxxxx()
                         .xxxxXxxxXxx(
                             Xxxxx.xxxXxxxxXxxx(
@@ -25,8 +24,7 @@ class B20128760 {
         .xxxxxxxxXxxxxxx();
 
     XXxxxx<Xxxx, XxxxxxxXxxxxxxxxxxXxxxxxxxx> xxxxxxxxxXxxXxxXxXxxxxxxxXx =
-        XX
-            .xxxxXxxXxxx2(
+        XX.xxxxXxxXxxx2(
                 "XxxxXxxxxxxxXxxxXxxxXxxxxxxxXxxxXxxXxxxxxxXxxxxxxxx",
                 xxxxxxxxXxxxXxXxxxxxxxXx,
                 xxxxxxxxXxxxXxxxxXxxxXxXxxxxxxxXx)
