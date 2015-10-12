@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.collect.DiscreteDomain;
@@ -747,6 +748,15 @@ public abstract class Doc {
 
     @Override
     float computeWidth() {
+      // only count the first line of multi-line block comments
+      if (tok.isComment()) {
+        int idx = tok.getOriginalText().indexOf('\n');
+        if (idx > 0) {
+          return idx;
+        } else {
+          return tok.getOriginalText().length();
+        }
+      }
       return tok.getOriginalText().contains("\n")
           ? Float.POSITIVE_INFINITY
           : (float) tok.getOriginalText().length();

@@ -14,33 +14,121 @@
 
 package com.google.googlejavaformat.java;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.googlejavaformat.CommentsHelper;
 import com.google.googlejavaformat.Input;
+import com.google.googlejavaformat.Input.Tok;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /** {@code JavaCommentsHelper} extends {@link CommentsHelper} to rewrite Java comments. */
 public final class JavaCommentsHelper implements CommentsHelper {
-  private static final Splitter NEWLINE_SPLITTER = Splitter.on('\n').trimResults();
+  private static final Splitter NEWLINE_SPLITTER = Splitter.on('\n');
 
   @Override
-  public String rewrite(Input.Tok tok, int maxWidth, int column0) {
-    List<String> rawLines = NEWLINE_SPLITTER.splitToList(tok.getOriginalText());
-    StringBuilder builder = new StringBuilder();
-    String firstLine = rawLines.get(0);
-    builder.append(firstLine);
-    int indent = column0;
-    if (firstLine.startsWith("/*")) {
-      // For block and javadoc comments, add an extra space to trailing lines
-      // to align the "*" at the beginning of each line with the first "/*".
-      indent++;
+  public String rewrite(Tok tok, int maxWidth, int column0) {
+    if (!tok.isComment()) {
+      return tok.getOriginalText();
     }
-    String indentString = Strings.repeat(" ", indent);
-    for (int i = 1; i < rawLines.size(); ++i) {
-      builder.append("\n").append(indentString).append(rawLines.get(i));
+    ArrayList<String> lines = new ArrayList<>();
+    for (String line : NEWLINE_SPLITTER.splitToList(tok.getOriginalText())) {
+      lines.add(CharMatcher.WHITESPACE.trimTrailingFrom(line));
+    }
+    if (lines.size() == 1) {
+      return tok.getOriginalText().trim();
+    }
+    if (tok.isSlashSlashComment()) {
+      return indentLineComments(lines, column0);
+    } else if (javadocShaped(lines)) {
+      return indentJavadoc(lines, column0);
+    } else {
+      return preserveIndentation(lines, column0);
+    }
+  }
+
+  // For non-javadoc-shaped block comments, shift the entire block to the correct
+  // column, but do not adjust relative indentation.
+  private static String preserveIndentation(List<String> lines, int column0) {
+    StringBuilder builder = new StringBuilder();
+
+    // find the leftmost non-whitespace character in all trailing lines
+    int startCol = -1;
+    for (int i = 1; i < lines.size(); i++) {
+      int lineIdx = CharMatcher.WHITESPACE.negate().indexIn(lines.get(i));
+      if (lineIdx >= 0 && (startCol == -1 || lineIdx < startCol)) {
+        startCol = lineIdx;
+      }
+    }
+
+    // output the first line at the current column
+    builder.append(lines.get(0));
+
+    // output all trailing lines with plausible indentation
+    for (int i = 1; i < lines.size(); ++i) {
+      builder.append("\n").append(Strings.repeat(" ", column0));
+      // check that startCol is valid index, e.g. for blank lines
+      if (lines.get(i).length() >= startCol) {
+        builder.append(lines.get(i).substring(startCol));
+      } else {
+        builder.append(lines.get(i));
+      }
     }
     return builder.toString();
+  }
+
+  // Remove leading and trailing whitespace, and re-indent each line.
+  private static String indentLineComments(List<String> lines, int column0) {
+    StringBuilder builder = new StringBuilder();
+    builder.append(lines.get(0).trim());
+    String indentString = Strings.repeat(" ", column0);
+    for (int i = 1; i < lines.size(); ++i) {
+      builder.append("\n").append(indentString).append(lines.get(i).trim());
+    }
+    return builder.toString();
+  }
+
+  // Remove leading and trailing whitespace, and re-indent each line.
+  // Add a +1 indent before '*', and add the '*' if necessary.
+  private static String indentJavadoc(List<String> lines, int column0) {
+    StringBuilder builder = new StringBuilder();
+    builder.append(lines.get(0).trim());
+    int indent = column0 + 1;
+    String indentString = Strings.repeat(" ", indent);
+    for (int i = 1; i < lines.size(); ++i) {
+      builder.append("\n").append(indentString);
+      String line = lines.get(i).trim();
+      if (!line.startsWith("*")) {
+        builder.append("* ");
+      }
+      builder.append(line);
+    }
+    return builder.toString();
+  }
+
+  // Returns true if the comment looks like javadoc
+  private static boolean javadocShaped(List<String> lines) {
+    Iterator<String> it = lines.iterator();
+    if (!it.hasNext()) {
+      return false;
+    }
+    String first = it.next().trim();
+    // if it's actually javadoc, we're done
+    if (first.startsWith("/**")) {
+      return true;
+    }
+    // if it's a block comment, check all trailing lines for '*'
+    if (!first.startsWith("/*")) {
+      return false;
+    }
+    while (it.hasNext()) {
+      if (!it.next().trim().startsWith("*")) {
+        return false;
+      }
+    }
+    return true;
   }
 }
