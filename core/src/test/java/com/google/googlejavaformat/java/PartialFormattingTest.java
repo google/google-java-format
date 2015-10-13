@@ -842,7 +842,7 @@ public final class PartialFormattingTest {
             + "    }\n"
             + "  }\n"
             + "}\n";
-    ImmutableList<Range<Integer>> ranges = ImmutableList.of(Range.closedOpen(43, 45));
+    ImmutableList<Range<Integer>> ranges = ImmutableList.of(Range.closedOpen(45, 48));
     String output = new Formatter().formatSource(input, ranges);
     assertEquals("bad output", expected, output);
   }
@@ -1057,5 +1057,41 @@ public final class PartialFormattingTest {
     int idx = input.indexOf("Object o");
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
+  }
+
+  // Regression test for b/18479811
+  @Test
+  public void onNewline() throws Exception {
+
+    String line1 = "for (Integer x : Arrays.asList(1, 2, 3)) {\n";
+    String line2 = "System.err.println(x);\n";
+    String input = "class Test {{\n" + line1 + line2 + "}}}\n";
+
+    int startOffset = input.indexOf(line1);
+    int length = 1;
+
+    String expectedFormatLine1 =
+        "class Test {{\n"
+            + "    for (Integer x : Arrays.asList(1, 2, 3)) {\n"
+            + "System.err.println(x);\n"
+            + "}}}\n";
+
+    for (; length <= line1.length(); length++) {
+      Range<Integer> range = Range.closedOpen(startOffset, startOffset + length);
+      String output = new Formatter().formatSource(input, ImmutableList.of(range));
+      assertEquals("bad output", expectedFormatLine1, output);
+    }
+
+    String expectedFormatLine1And2 =
+        "class Test {{\n"
+            + "    for (Integer x : Arrays.asList(1, 2, 3)) {\n"
+            + "      System.err.println(x);\n"
+            + "}}}\n";
+
+    for (; length <= line1.length() + line2.length(); length++) {
+      Range<Integer> range = Range.closedOpen(startOffset, startOffset + length);
+      String output = new Formatter().formatSource(input, ImmutableList.of(range));
+      assertEquals("bad output", expectedFormatLine1And2, output);
+    }
   }
 }

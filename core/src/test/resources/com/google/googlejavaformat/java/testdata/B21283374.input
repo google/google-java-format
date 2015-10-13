@@ -32,6 +32,12 @@ class B21283374 {
     assertThat(foo.barAndBaz( /*paramName=*/false, thingy)).isEqualTo(new Something(""));
     assertThat(foo.barAndBaz(/*paramName=*/ false, thingy)).isEqualTo(new Something(""));
 
+    f(/*paramName=*/ false);
+
+    assertThat__________________________________________________________(/*paramName=*/ false, thingy);
+    assertThat__________________________________________________________(
+        /*paramName=*/ false, thingy);
+
     f(
         arg1, /* which arg is this attached to? */
         arg2,

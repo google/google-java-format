@@ -406,7 +406,7 @@ public final class JavaInput extends Input {
 
       // Non-tokens starting on the same line go here too.
       ImmutableList.Builder<Tok> toksAfter = ImmutableList.builder();
-      while (k < kN && !"\n".equals(toks.get(k).getText()) && !toks.get(k).isToken()) {
+      while (k < kN && !toks.get(k).isToken()) {
         // Don't attach inline comments to leading '('s, e.g. for `f(/*flag1=*/true).
         //
         // Attaching inline comments to the right token is hard, and this barely
@@ -498,7 +498,7 @@ public final class JavaInput extends Input {
     Map.Entry<Integer, JavaInput.Token> tokenEntryLo =
         firstNonNull(map.floorEntry(offset), map.firstEntry());
     Map.Entry<Integer, JavaInput.Token> tokenEntryHi =
-        firstNonNull(map.ceilingEntry(offset + length - 1), map.lastEntry());
+        firstNonNull(map.floorEntry(offset + length - 1), map.lastEntry());
     return Range.closedOpen(
         tokenEntryLo.getValue().getTok().getIndex(),
         tokenEntryHi.getValue().getTok().getIndex() + 1);

@@ -394,21 +394,14 @@ public final class OpsBuilder {
           boolean lastWasComment = false; // Was the last thing we output a comment?
           for (Input.Tok tokBefore : token.getToksBefore()) {
             if (tokBefore.isNewline()) {
-              if (newlines == 1) { // Force a line break after two newlines in a row.
-                tokOps.put(j, Doc.Break.makeForced());
-                space = false;
-                lastWasComment = false;
-              }
-              ++newlines;
+              newlines++;
             } else if (tokBefore.isComment()) {
-              if (newlines > 0) {
-                tokOps.put(
-                    j,
-                    Doc.Break.make(
-                        Doc.FillMode.FORCED,
-                        "",
-                        tokenOp.getPlusIndentCommentsBefore()));
-              }
+              tokOps.put(
+                  j,
+                  Doc.Break.make(
+                      tokBefore.isSlashSlashComment() ? Doc.FillMode.FORCED : Doc.FillMode.UNIFIED,
+                      "",
+                      tokenOp.getPlusIndentCommentsBefore()));
               tokOps.putAll(j, makeComment(tokBefore));
               space = tokBefore.isSlashStarComment();
               newlines = 0;

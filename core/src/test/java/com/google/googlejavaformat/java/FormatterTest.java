@@ -215,4 +215,20 @@ public final class FormatterTest {
     assertThat(err.toString())
         .contains("error: invalid length 9999, offset + length (9999) is outside the file");
   }
+
+  @Test
+  public void blankInClassBody() throws FormatterException {
+    String input = "package test;\nclass T {\n\n}\n";
+    String output = new Formatter().formatSource(input);
+    String expect = "package test;\n\nclass T {}\n";
+    assertThat(output).isEqualTo(expect);
+  }
+
+  @Test
+  public void blankInClassBodyNoTrailing() throws FormatterException {
+    String input = "package test;\nclass T {\n\n}";
+    String output = new Formatter().formatSource(input);
+    String expect = "package test;\n\nclass T {}\n";
+    assertThat(output).isEqualTo(expect);
+  }
 }

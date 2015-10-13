@@ -339,7 +339,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     if (node.getPackage() != null) {
       markForPartialFormat();
       visit(node.getPackage());
-      builder.breakOp();
+      builder.forcedBreak();
       first = false;
     }
     if (!node.imports().isEmpty()) {
@@ -349,7 +349,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       for (ImportDeclaration importDeclaration : (List<ImportDeclaration>) node.imports()) {
         markForPartialFormat();
         visit(importDeclaration);
-        builder.breakOp();
+        builder.forcedBreak();
       }
       first = false;
     }
@@ -359,7 +359,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       }
       markForPartialFormat();
       type.accept(this);
-      builder.breakOp();
+      builder.forcedBreak();
       first = false;
     }
     // set a partial format marker at EOF to make sure we can format the entire file
@@ -2710,6 +2710,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         MethodInvocation methodInvocation = (MethodInvocation) expression;
         addArguments(methodInvocation.arguments(), indent);
         builder.close();
+        // TODO(cushon): default to suppressing blank lines?
+        builder.blankLineWanted(BlankLineWanted.NO);
         token(")");
         break;
       case ASTNode.FIELD_ACCESS:
