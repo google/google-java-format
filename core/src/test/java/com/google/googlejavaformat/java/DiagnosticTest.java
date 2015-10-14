@@ -25,8 +25,12 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -56,7 +60,7 @@ public class DiagnosticTest {
 
     StringWriter stdout = new StringWriter();
     StringWriter stderr = new StringWriter();
-    Main main = new Main(new PrintWriter(stdout, true), new PrintWriter(stderr, true));
+    Main main = new Main(new PrintWriter(stdout, true), new PrintWriter(stderr, true), System.in);
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("InvalidSyntax.java");
@@ -65,7 +69,7 @@ public class DiagnosticTest {
     int result = main.format(path.toString());
     assertThat(stdout.toString()).isEmpty();
     assertThat(stderr.toString())
-        .contains("InvalidSyntax.java:2: error: Syntax error on token \"NumPrinter\"");
+        .contains("InvalidSyntax.java:2:18: error: Syntax error on token \"NumPrinter\"");
     assertThat(result).isEqualTo(1);
   }
 
@@ -75,7 +79,7 @@ public class DiagnosticTest {
 
     StringWriter stdout = new StringWriter();
     StringWriter stderr = new StringWriter();
-    Main main = new Main(new PrintWriter(stdout, true), new PrintWriter(stderr, true));
+    Main main = new Main(new PrintWriter(stdout, true), new PrintWriter(stderr, true), System.in);
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("InvalidSyntax.java");
@@ -83,7 +87,7 @@ public class DiagnosticTest {
 
     int result = main.format(path.toString());
     assertThat(stdout.toString()).isEmpty();
-    assertThat(stderr.toString()).contains("InvalidSyntax.java: error: Invalid_Unicode_Escape");
+    assertThat(stderr.toString()).contains("InvalidSyntax.java:1:1: error: Invalid unicode");
     assertThat(result).isEqualTo(1);
   }
 
@@ -94,7 +98,7 @@ public class DiagnosticTest {
 
     StringWriter stdout = new StringWriter();
     StringWriter stderr = new StringWriter();
-    Main main = new Main(new PrintWriter(stdout, true), new PrintWriter(stderr, true));
+    Main main = new Main(new PrintWriter(stdout, true), new PrintWriter(stderr, true), System.in);
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path pathOne = tmpdir.resolve("One.java");
@@ -105,7 +109,7 @@ public class DiagnosticTest {
 
     int result = main.format(pathOne.toString(), pathTwo.toString());
     assertThat(stdout.toString()).isEqualTo(two);
-    assertThat(stderr.toString()).contains("One.java:1: error: Syntax error, insert \"}\"");
+    assertThat(stderr.toString()).contains("One.java:1:11: error: Syntax error, insert \"}\"");
     assertThat(result).isEqualTo(1);
   }
   
@@ -116,7 +120,7 @@ public class DiagnosticTest {
 
     StringWriter stdout = new StringWriter();
     StringWriter stderr = new StringWriter();
-    Main main = new Main(new PrintWriter(stdout, true), new PrintWriter(stderr, true));
+    Main main = new Main(new PrintWriter(stdout, true), new PrintWriter(stderr, true), System.in);
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path pathOne = tmpdir.resolve("One.java");
@@ -127,10 +131,79 @@ public class DiagnosticTest {
 
     int result = main.format("-i", pathOne.toString(), pathTwo.toString());
     assertThat(stdout.toString()).isEmpty();
-    assertThat(stderr.toString()).contains("One.java:1: error: Syntax error on token \"}\"");
+    assertThat(stderr.toString()).contains("One.java:1:13: error: Syntax error on token \"}\"");
     assertThat(result).isEqualTo(1);
     // don't edit files with parse errors
     assertThat(Files.readAllLines(pathOne, UTF_8)).containsExactly("class One {}}");
     assertThat(Files.readAllLines(pathTwo, UTF_8)).containsExactly("class Two {}");
+  }
+
+  @Test
+  public void parseError2() throws FormatterException, IOException, UsageException {
+    String input = "class Foo { void f() {\n g() } }";
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("A.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    String[] args = {path.toString()};
+    int exitCode = main.format(args);
+
+    assertThat(exitCode).isEqualTo(1);
+    assertThat(err.toString())
+        .contains("A.java:2:4: error: Syntax error, insert \";\" to complete BlockStatements");
+  }
+
+  @Test
+  public void parseErrorStdin() throws FormatterException, IOException, UsageException {
+    String input = "class Foo { void f() {\n g() } }";
+
+    InputStream inStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), inStream);
+    String[] args = {"-"};
+    int exitCode = main.format(args);
+
+    assertThat(exitCode).isEqualTo(1);
+    assertThat(err.toString())
+        .isEqualTo("<stdin>:2:4: error: Syntax error, insert \";\" to complete BlockStatements\n");
+  }
+
+  @Test
+  public void lexError2() throws FormatterException, IOException, UsageException {
+    String input = "class Foo { void f() {\n g('foo'); } }";
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("A.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    String[] args = {path.toString()};
+    int exitCode = main.format(args);
+
+    assertThat(exitCode).isEqualTo(1);
+    assertThat(err.toString()).contains("A.java:2:4: error: Invalid character constant");
+  }
+
+  @Test
+  public void lexErrorStdin() throws FormatterException, IOException, UsageException {
+    String input = "class Foo { void f() {\n g('foo'); } }";
+    InputStream inStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), inStream);
+    String[] args = {"-"};
+    int exitCode = main.format(args);
+
+    assertThat(exitCode).isEqualTo(1);
+    assertThat(err.toString()).isEqualTo("<stdin>:2:4: error: Invalid character constant\n");
   }
 }

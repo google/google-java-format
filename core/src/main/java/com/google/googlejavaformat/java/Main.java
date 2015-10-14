@@ -28,6 +28,7 @@ import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -102,10 +103,12 @@ public final class Main {
 
   private final PrintWriter outWriter;
   private final PrintWriter errWriter;
+  private final InputStream inStream;
 
-  public Main(PrintWriter outWriter, PrintWriter errWriter) {
+  public Main(PrintWriter outWriter, PrintWriter errWriter, InputStream inStream) {
     this.outWriter = outWriter;
     this.errWriter = errWriter;
+    this.inStream = inStream;
   }
 
   /**
@@ -118,7 +121,8 @@ public final class Main {
     Main formatter =
         new Main(
             new PrintWriter(new OutputStreamWriter(System.out, UTF_8), true),
-            new PrintWriter(new OutputStreamWriter(System.err, UTF_8), true));
+            new PrintWriter(new OutputStreamWriter(System.err, UTF_8), true),
+            System.in);
     try {
       int result = formatter.format(args);
       System.exit(result);
@@ -222,7 +226,8 @@ public final class Main {
           new FileToFormatStdin(
               parseRangeSet(argInfo.parameters.linesFlags),
               argInfo.parameters.offsetFlags,
-              argInfo.parameters.lengthFlags));
+              argInfo.parameters.lengthFlags,
+              inStream));
     }
 
     return new ConstructFilesToFormatResult(allOkay, filesToFormat.build());

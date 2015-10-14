@@ -386,7 +386,11 @@ public final class JavaInput extends Input {
       computeRanges(toks);
       return ImmutableList.copyOf(toks);
     } catch (InvalidInputException e) {
-      throw new FormatterException(e.getMessage());
+      // jdt's scanner elects not to produce error messages, so we don't either
+      //
+      // problems will get caught (again!) and reported (with error messages!)
+      // during parsing
+      return ImmutableList.of();
     }
   }
 
@@ -592,6 +596,12 @@ public final class JavaInput extends Input {
   public int getLineNumber(int inputPosition) {
     Verify.verifyNotNull(unit, "Expected compilation unit to be set.");
     return unit.getLineNumber(inputPosition);
+  }
+
+  @Override
+  public int getColumnNumber(int inputPosition) {
+    Verify.verifyNotNull(unit, "Expected compilation unit to be set.");
+    return unit.getColumnNumber(inputPosition);
   }
 
   // TODO(cushon): refactor JavaInput so the CompilationUnit can be passed into

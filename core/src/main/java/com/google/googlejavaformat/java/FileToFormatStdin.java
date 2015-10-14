@@ -28,9 +28,15 @@ class FileToFormatStdin extends FileToFormat {
    */
   private static final String STDIN_FILENAME = "<stdin>";
 
+  private final InputStream inputStream;
+
   public FileToFormatStdin(
-      RangeSet<Integer> lineRanges, List<Integer> offsetFlags, List<Integer> lengthFlags) {
+      RangeSet<Integer> lineRanges,
+      List<Integer> offsetFlags,
+      List<Integer> lengthFlags,
+      InputStream inputStream) {
     super(lineRanges, offsetFlags, lengthFlags);
+    this.inputStream = inputStream;
   }
 
   @Override
@@ -40,6 +46,6 @@ class FileToFormatStdin extends FileToFormat {
 
   @Override
   public InputStream inputStream() {
-    return System.in;
+    return inputStream;
   }
 }

@@ -136,11 +136,15 @@ public abstract class Input extends InputOutput {
   /** Converts a character offset in the input to a line number. */
   public abstract int getLineNumber(int inputPosition);
 
+  /** Converts a character offset in the input to a 0-based column number. */
+  public abstract int getColumnNumber(int inputPosition);
+
   /**
    * Construct a diagnostic. Populates the input filename, and converts
    * character offsets to numbers.
    * */
   public FormatterDiagnostic createDiagnostic(int inputPosition, String message) {
-    return new FormatterDiagnostic(filename(), getLineNumber(inputPosition), message);
+    return new FormatterDiagnostic(
+        filename(), getLineNumber(inputPosition), getColumnNumber(inputPosition), message);
   }
 }

@@ -298,7 +298,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines", "3", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
@@ -326,7 +326,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines", "3:4", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
@@ -368,7 +368,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines", "5", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
@@ -410,7 +410,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines", "6", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
@@ -452,7 +452,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines", "7", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
@@ -578,7 +578,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines", "3:4", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(input);
@@ -760,7 +760,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines", Integer.toString(i), path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
@@ -784,7 +784,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines", "2", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
@@ -891,7 +891,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines", "-1:3", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
@@ -915,7 +915,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines", "1:5", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
@@ -933,7 +933,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {
       "-lines=23:27", "-lines=1:1", "-lines=31:35", "-lines=52:63", "-lines=1:1", path.toString()
     };
@@ -952,7 +952,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines=1:1", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
   }
@@ -968,7 +968,7 @@ public final class PartialFormattingTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines=5:5", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
   }

@@ -124,7 +124,7 @@ public final class FormatterTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"--aosp", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
@@ -134,7 +134,7 @@ public final class FormatterTest {
   public void testFormatNonJavaFiles() throws Exception {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
 
     // should succeed because non-Java files are skipped
     assertThat(main.format("foo.go")).isEqualTo(0);
@@ -165,7 +165,7 @@ public final class FormatterTest {
     InputStream oldIn = System.in;
     System.setIn(in);
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     assertThat(main.format("-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
 
@@ -192,7 +192,7 @@ public final class FormatterTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"--offset", "0", "--length", String.valueOf(input.length()), path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
@@ -209,7 +209,7 @@ public final class FormatterTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"--offset", "0", "--length", "9999", path.toString()};
     assertThat(main.format(args)).isEqualTo(1);
     assertThat(err.toString())

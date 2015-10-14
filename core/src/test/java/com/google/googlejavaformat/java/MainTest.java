@@ -45,7 +45,7 @@ public class MainTest {
     Path testFile = testFolder.newFile("Foo.java").toPath();
 
     ArgInfo argInfo = ArgInfo.processArgs(testFile.toString(), testFile.toString());
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     assertThat(main.constructFilesToFormat(argInfo).filesToFormat).hasSize(1);
   }
 
@@ -63,7 +63,7 @@ public class MainTest {
     Files.createSymbolicLink(symlink, testFile);
 
     ArgInfo argInfo = ArgInfo.processArgs(testFile.toString(), symlink.toString());
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true));
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     assertThat(main.constructFilesToFormat(argInfo).filesToFormat).hasSize(1);
   }
 }
