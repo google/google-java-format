@@ -1094,4 +1094,35 @@ public final class PartialFormattingTest {
       assertEquals("bad output", expectedFormatLine1And2, output);
     }
   }
+
+  @Test
+  public void afterNewline() throws Exception {
+
+    String line1 = "for (Integer x : Arrays.asList(1, 2, 3)) {\n";
+    String line2 = "                  System.err.println(x);\n";
+    String input = "class Test {{\n" + line1 + line2 + "}}}\n";
+
+    String expectedFormatLine1 =
+        "class Test {{\n" + "    for (Integer x : Arrays.asList(1, 2, 3)) {\n" + line2 + "}}}\n";
+
+    String expectedFormatLine2 =
+        "class Test {{\n" + line1 + "      System.err.println(x);\n" + "}}}\n";
+
+    int line2Start = input.indexOf(line2);
+    int nonWhitespaceLine2Start = input.indexOf("System.err");
+    int start = -1;
+    for (start = nonWhitespaceLine2Start; start >= line2Start; start--) {
+      Range<Integer> range = Range.closedOpen(start, nonWhitespaceLine2Start + 1);
+      System.err.println(range);
+      String output = new Formatter().formatSource(input, ImmutableList.of(range));
+      assertEquals("bad output", expectedFormatLine2, output);
+    }
+    assertThat(input.charAt(start)).isEqualTo('\n');
+    int line1Start = input.indexOf(line1);
+    for (; start >= line1Start; start--) {
+      Range<Integer> range = Range.closedOpen(start, line2Start);
+      String output = new Formatter().formatSource(input, ImmutableList.of(range));
+      assertEquals("bad output", expectedFormatLine1, output);
+    }
+  }
 }

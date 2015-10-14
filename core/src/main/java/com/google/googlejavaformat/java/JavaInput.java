@@ -239,7 +239,7 @@ public final class JavaInput extends Input {
     tokens = buildTokens(toks);
     ImmutableSortedMap.Builder<Integer, Token> locationTokenMap = ImmutableSortedMap.naturalOrder();
     for (Token token : tokens) {
-      locationTokenMap.put(JavaOutput.startTok(token).getPosition(), token);
+      locationTokenMap.put(JavaOutput.startPosition(token), token);
     }
     positionTokenMap = locationTokenMap.build();
 

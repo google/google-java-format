@@ -380,7 +380,16 @@ public final class JavaOutput extends Output {
     }
   }
 
-  /** The earliest Tok in the Token, including leading trivia. */
+  /** The earliest position of any Tok in the Token, including leading whitespace. */
+  public static int startPosition(Token token) {
+    int min = token.getTok().getPosition();
+    for (Input.Tok tok : token.getToksBefore()) {
+      min = Math.min(min, tok.getPosition());
+    }
+    return min;
+  }
+
+  /** The earliest non-whitespace Tok in the Token. */
   public static Input.Tok startTok(Token token) {
     for (Input.Tok tok : token.getToksBefore()) {
       if (tok.getIndex() >= 0) {
@@ -390,7 +399,7 @@ public final class JavaOutput extends Output {
     return token.getTok();
   }
 
-  /** The last Tok in the Token, including trailing trivia. */
+  /** The last non-whitespace Tok in the Token. */
   public static Input.Tok endTok(Token token) {
     for (int i = token.getToksAfter().size() - 1; i >= 0; i--) {
       Input.Tok tok = token.getToksAfter().get(i);
