@@ -26,7 +26,7 @@ class FileToFormatStdin extends FileToFormat {
   /**
    * A fake filename to return when the file to format comes from stdin.
    */
-  private static final String STDIN_FILENAME = "<stdin>";
+  public static final String STDIN_FILENAME = "<stdin>";
 
   private final InputStream inputStream;
 

@@ -14,6 +14,8 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.googlejavaformat.java.FileToFormatStdin.STDIN_FILENAME;
+
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
@@ -130,7 +132,7 @@ public final class Formatter {
    * @throws FormatterException if the input string cannot be parsed
    */
   public String formatSource(String input) throws FormatterException {
-    JavaInput javaInput = new JavaInput(null, input);
+    JavaInput javaInput = new JavaInput(STDIN_FILENAME, input);
     JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
     List<FormatterDiagnostic> errors = new ArrayList<>();
     format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
@@ -158,7 +160,7 @@ public final class Formatter {
    */
   public String formatSource(String input, List<Range<Integer>> characterRanges)
       throws FormatterException {
-    JavaInput javaInput = new JavaInput(null, input);
+    JavaInput javaInput = new JavaInput(STDIN_FILENAME, input);
     JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
     List<FormatterDiagnostic> errors = new ArrayList<>();
     format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
@@ -185,7 +187,7 @@ public final class Formatter {
    */
   public ImmutableList<Replacement> getFormatReplacements(
       String input, List<Range<Integer>> characterRanges) throws FormatterException {
-    JavaInput javaInput = new JavaInput(null, input);
+    JavaInput javaInput = new JavaInput(STDIN_FILENAME, input);
     JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
     List<FormatterDiagnostic> errors = new ArrayList<>();
     format(javaInput, javaOutput, MAX_WIDTH, errors, 1);

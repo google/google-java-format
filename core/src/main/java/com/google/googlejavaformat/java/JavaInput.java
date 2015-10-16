@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
@@ -124,6 +125,11 @@ public final class JavaInput extends Input {
     }
 
     @Override
+    public boolean isJavadocComment() {
+      return text.startsWith("/**");
+    }
+
+    @Override
     public boolean isComment() {
       return isSlashSlashComment() || isSlashStarComment();
     }
@@ -229,8 +235,8 @@ public final class JavaInput extends Input {
    * @throws FormatterException if the input cannot be parsed
    */
   public JavaInput(String filename, String text) throws FormatterException {
-    this.filename = filename;
-    this.text = text;
+    this.filename = checkNotNull(filename);
+    this.text = checkNotNull(text);
     char[] chars = text.toCharArray();
     List<String> lines = NEWLINE_SPLITTER.splitToList(text);
     setLines(ImmutableList.copyOf(lines));

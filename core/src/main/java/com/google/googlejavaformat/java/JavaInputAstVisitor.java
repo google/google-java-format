@@ -51,6 +51,7 @@ import org.eclipse.jdt.core.dom.BreakStatement;
 import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.CharacterLiteral;
+import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
@@ -103,6 +104,7 @@ import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.StringLiteral;
+import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
@@ -130,6 +132,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -227,6 +230,33 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
     boolean isYes() {
       return this == YES;
+    }
+  }
+
+  /** Position in a list of declarations. */
+  enum DeclarationPosition {
+    FIRST,
+    INTERIOR,
+    LAST;
+
+    static EnumSet<DeclarationPosition> getPositionInParent(ASTNode node) {
+      EnumSet<DeclarationPosition> position = EnumSet.noneOf(DeclarationPosition.class);
+      StructuralPropertyDescriptor locationInParent = node.getLocationInParent();
+      if (locationInParent instanceof ChildListPropertyDescriptor) {
+        List<ASTNode> propertyList =
+            (List<ASTNode>) node.getParent().getStructuralProperty(locationInParent);
+        int idx = propertyList.indexOf(node);
+        if (idx == 0) {
+          position.add(DeclarationPosition.FIRST);
+        }
+        if (idx == propertyList.size() - 1) {
+          position.add(DeclarationPosition.LAST);
+        }
+        if (position.isEmpty()) {
+          position.add(DeclarationPosition.INTERIOR);
+        }
+      }
+      return position;
     }
   }
 
@@ -348,6 +378,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       }
       for (ImportDeclaration importDeclaration : (List<ImportDeclaration>) node.imports()) {
         markForPartialFormat();
+        builder.blankLineWanted(BlankLineWanted.PRESERVE);
         visit(importDeclaration);
         builder.forcedBreak();
       }
@@ -1719,16 +1750,24 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     tokenBreakTrailingComment("{", plusTwo);
     builder.blankLineWanted(BlankLineWanted.NO);
     builder.open(plusFour);
+    boolean first = true;
+    boolean lastWasSwitchCase = false;
     for (ASTNode statement : (List<ASTNode>) node.statements()) {
+      if (!first && !lastWasSwitchCase) {
+        builder.blankLineWanted(BlankLineWanted.PRESERVE);
+      }
       if (statement.getNodeType() == ASTNode.SWITCH_CASE) {
         builder.open(minusTwo);
         builder.forcedBreak();
         visit((SwitchCase) statement);
         builder.close();
+        lastWasSwitchCase = true;
       } else {
         builder.forcedBreak();
         statement.accept(this);
+        lastWasSwitchCase = false;
       }
+      first = false;
     }
     builder.close();
     builder.forcedBreak();
@@ -2133,9 +2172,16 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       tokenBreakTrailingComment("{", plusTwo);
       if (allowLeadingBlankLine == AllowLeadingBlankLine.NO) {
         builder.blankLineWanted(BlankLineWanted.NO);
+      } else {
+        builder.blankLineWanted(BlankLineWanted.PRESERVE);
       }
+      boolean first = true;
       for (Statement statement : (List<Statement>) node.statements()) {
         builder.forcedBreak();
+        if (!first) {
+          builder.blankLineWanted(BlankLineWanted.PRESERVE);
+        }
+        first = false;
         markForPartialFormat();
         statement.accept(this);
       }
@@ -2144,6 +2190,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.close();
       if (allowTrailingBlankLine == AllowTrailingBlankLine.NO) {
         builder.blankLineWanted(BlankLineWanted.NO);
+      } else {
+        builder.blankLineWanted(BlankLineWanted.PRESERVE);
       }
       markForPartialFormat();
       token("}", plusTwo);
@@ -2615,7 +2663,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private void visitDotWithPrefix(List<Expression> items, boolean needDot, int prefixIndex) {
     // Are there method invocations or field accesses after the prefix?
     boolean trailingDereferences = prefixIndex >= 0 && prefixIndex < items.size() - 1;
-    
+
     builder.open(plusFour, MAX_LINES_FOR_CHAINED_ACCESSES);
     builder.open(trailingDereferences ? ZERO : ZERO);
 
@@ -2638,7 +2686,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       if (prefixIndex >= 0 && i == prefixIndex) {
         builder.close();
       }
-      
+
       Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
       Indent argsIndent = Indent.If.make(nameTag, plusFour, trailingDereferences ? plusFour : ZERO);
       dotExpressionArgsAndParen(e, tyargIndent, argsIndent);
@@ -2909,15 +2957,19 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     BreakTag typeBreak = genSym();
     BreakTag verticalAnnotationBreak = genSym();
 
+    EnumSet<DeclarationPosition> position = DeclarationPosition.getPositionInParent(node);
+
     // If the node is a field declaration, try to output any declaration
     // annotations in-line. If the entire declaration doesn't fit on a single
     // line, fall back to one-per-line.
-    boolean variableDeclarationAnnotations =
-        node.getNodeType() == ASTNode.FIELD_DECLARATION
-            && hasDeclarationAnnotations(modifiers);
+    boolean isField = node.getNodeType() == ASTNode.FIELD_DECLARATION;
 
-    if (variableDeclarationAnnotations) {
-      builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
+    if (isField) {
+      if (!position.contains(DeclarationPosition.FIRST)) {
+        builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
+      } else {
+        builder.blankLineWanted(BlankLineWanted.PRESERVE);
+      }
     }
 
     builder.open(ZERO);
@@ -2982,8 +3034,12 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     builder.close();
 
-    if (variableDeclarationAnnotations) {
-      builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
+    if (isField) {
+      if (!position.contains(DeclarationPosition.LAST)) {
+        builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
+      } else {
+        builder.blankLineWanted(BlankLineWanted.NO);
+      }
     }
   }
 
@@ -3133,19 +3189,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.close();
       }
     }
-  }
-
-  /** Does a list of {@link IExtendedModifier}s contain annotations? */
-  private static boolean hasDeclarationAnnotations(List<IExtendedModifier> extendedModifiers) {
-    for (IExtendedModifier extendedModifier : extendedModifiers) {
-      if (extendedModifier.isModifier()) {
-        break;
-      }
-      if (extendedModifier.isAnnotation()) {
-        return true;
-      }
-    }
-    return false;
   }
 
   // Use Eclipse token ID instead of position?

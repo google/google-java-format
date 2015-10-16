@@ -93,16 +93,6 @@ public final class JavaOutput extends Output {
     partialFormatBoundaries.add(k);
   }
 
-  @Override
-  public void forceBlankLine() {
-    // respect existing blank line suppressions to avoid inserting blanks for
-    // breaks at the start/end of a block, or beginning/end of a method
-    // declaration
-    if (!blankLines.containsKey(lastK)) {
-      blankLines.put(lastK, BlankLineWanted.YES);
-    }
-  }
-
   // TODO(jdd): Add invariant.
   @Override
   public void append(String text, Range<Integer> range) {
@@ -121,11 +111,10 @@ public final class JavaOutput extends Output {
       }
       /*
        * Output blank line if we've called {@link OpsBuilder#blankLine}{@code (true)} here, or if
-       * there's a blank line here and we haven't called {@link OpsBuilder#blankLine}{@code (false)}
-       * here, OR if it's a comment.
+       * there's a blank line here and it's a comment.
        */
-      BlankLineWanted wanted = blankLines.get(lastK);
-      if ((wanted == null || isComment(text)) ? sawNewlines : wanted.wanted().or(sawNewlines)) {
+      BlankLineWanted wanted = firstNonNull(blankLines.get(lastK), BlankLineWanted.NO);
+      if (isComment(text) ? sawNewlines : wanted.wanted().or(sawNewlines)) {
         ++newlinesPending;
       }
     }

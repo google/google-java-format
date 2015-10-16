@@ -50,6 +50,7 @@ import java.util.TreeMap;
  */
 @RunWith(JUnit4.class)
 public final class FormatterTest {
+
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
@@ -147,16 +148,8 @@ public final class FormatterTest {
 
   @Test
   public void testFormatStdinStdoutWithDashFlag() throws Exception {
-    String input =
-        "class Foo{\n"
-        + "void f\n"
-        + "() {\n"
-        + "}\n"
-        + "}\n";
-    String expectedOutput =
-        "class Foo {\n"
-        + "  void f() {}\n"
-        + "}\n";
+    String input = "class Foo{\n" + "void f\n" + "() {\n" + "}\n" + "}\n";
+    String expectedOutput = "class Foo {\n" + "  void f() {}\n" + "}\n";
 
     InputStream in = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
     StringWriter out = new StringWriter();
@@ -174,16 +167,8 @@ public final class FormatterTest {
 
   @Test
   public void testFormatLengthUpToEOF() throws Exception {
-    String input =
-        "class Foo{\n"
-        + "void f\n"
-        + "() {\n"
-        + "}\n"
-        + "}\n\n\n\n\n\n";
-    String expectedOutput =
-        "class Foo {\n"
-        + "  void f() {}\n"
-        + "}\n";
+    String input = "class Foo{\n" + "void f\n" + "() {\n" + "}\n" + "}\n\n\n\n\n\n";
+    String expectedOutput = "class Foo {\n" + "  void f() {}\n" + "}\n";
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("Foo.java");
@@ -229,6 +214,38 @@ public final class FormatterTest {
     String input = "package test;\nclass T {\n\n}";
     String output = new Formatter().formatSource(input);
     String expect = "package test;\n\nclass T {}\n";
+    assertThat(output).isEqualTo(expect);
+  }
+
+  @Test
+  public void docCommentTrailingBlank() throws FormatterException {
+    String input = "class T {\n/** asd */\n\nint x;\n}";
+    String output = new Formatter().formatSource(input);
+    String expect = "class T {\n  /** asd */\n  int x;\n}\n";
+    assertThat(output).isEqualTo(expect);
+  }
+
+  @Test
+  public void blockCommentTrailingBlank() throws FormatterException {
+    String input = "class T {\n/* asd */\n\nint x;\n}";
+    String output = new Formatter().formatSource(input);
+    String expect = "class T {\n  /* asd */\n\n  int x;\n}\n";
+    assertThat(output).isEqualTo(expect);
+  }
+
+  @Test
+  public void lineCommentTrailingBlank() throws FormatterException {
+    String input = "class T {\n// asd \n\nint x;\n}";
+    String output = new Formatter().formatSource(input);
+    String expect = "class T {\n  // asd\n\n  int x;\n}\n";
+    assertThat(output).isEqualTo(expect);
+  }
+  
+  @Test
+  public void noBlankAfterLineCommentWithInteriorBlankLine() throws FormatterException {
+    String input = "class T {\n// asd \n\n// dsa \nint x;\n}";
+    String output = new Formatter().formatSource(input);
+    String expect = "class T {\n  // asd\n\n  // dsa\n  int x;\n}\n";
     assertThat(output).isEqualTo(expect);
   }
 }

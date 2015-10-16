@@ -60,28 +60,19 @@ public abstract class Input extends InputOutput {
      */
     String getOriginalText();
 
-    /**
-     * Is the {@code Tok} a newline?
-     * @return whether it is a newline
-     */
+    /** Is the {@code Tok} a newline? */
     boolean isNewline();
 
-    /**
-     * Is the {@code Tok} a "//" comment?
-     * @return whether it is a "//" comment
-     */
+    /** Is the {@code Tok} a "//" comment? */
     boolean isSlashSlashComment();
 
-    /**
-     * Is the {@code Tok} a "/*" comment?
-     * @return whether it is a "/*" comment
-     */
+    /** Is the {@code Tok} a "//" comment? */
     boolean isSlashStarComment();
 
-    /**
-     * Is the {@code Tok} a comment?
-     * @return whether it is a comment
-     */
+    /** Is the {@code Tok} a javadoc comment? */
+    boolean isJavadocComment();
+
+    /** Is the {@code Tok} a comment? */
     boolean isComment();
   }
 

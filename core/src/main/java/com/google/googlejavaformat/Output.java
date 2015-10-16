@@ -51,12 +51,6 @@ public abstract class Output extends InputOutput {
   public abstract void indent(int indent);
 
   /**
-   * Insert a blank line into the output stream during formatting,
-   * e.g. if a specific break is taken.
-   */
-  public abstract void forceBlankLine();
-
-  /**
    * Output a string.
    * @param text the string
    * @param range the {@link Range} corresponding to the string
