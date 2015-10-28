@@ -329,6 +329,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private static final int MAX_FILLED_INFIX_LINES = 1;
   private static final int MAX_LINES_FOR_FORMAL_LIST = 1;
 
+  private static final int MAX_EMPTY_DECLS = 10;
+
   /**
    * The {@code Visitor} constructor.
    * @param builder the {@link OpsBuilder}
@@ -388,14 +390,23 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       if (!first) {
         builder.blankLineWanted(BlankLineWanted.YES);
       }
+      dropEmptyDeclarations();
       markForPartialFormat();
       type.accept(this);
       builder.forcedBreak();
       first = false;
     }
+    dropEmptyDeclarations();
     // set a partial format marker at EOF to make sure we can format the entire file
     markForPartialFormat();
     return false;
+  }
+
+  /** Skips over extra semi-colon at the top-level, or in a class member declaration lists. */
+  private void dropEmptyDeclarations() {
+    for (int times = 0; times < MAX_EMPTY_DECLS; times++) {
+      builder.guessToken(";");
+    }
   }
 
   /** Visitor method for {@link AnnotationTypeDeclaration}s. */
@@ -3166,6 +3177,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       boolean first = first0.isYes();
       boolean lastOneGotBlankLineBefore = false;
       for (BodyDeclaration bodyDeclaration : bodyDeclarations) {
+        dropEmptyDeclarations();
         builder.forcedBreak();
         boolean thisOneGetsBlankLineBefore =
             bodyDeclaration.getNodeType() != ASTNode.FIELD_DECLARATION
@@ -3184,6 +3196,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.forcedBreak();
       markForPartialFormat();
       if (braces.isYes()) {
+        dropEmptyDeclarations();
         builder.blankLineWanted(BlankLineWanted.NO);
         token("}", plusTwo);
         builder.close();
