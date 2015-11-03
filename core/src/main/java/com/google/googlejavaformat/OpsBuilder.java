@@ -20,6 +20,8 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import com.google.googlejavaformat.Input.Tok;
+import com.google.googlejavaformat.Input.Token;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output.BreakTag;
 
@@ -31,6 +33,25 @@ import java.util.List;
  * {@link DocBuilder}.
  */
 public final class OpsBuilder {
+
+  /** @return the actual size of the AST node at position, including comments. */
+  public int actualSize(int position, int length) {
+    Token startToken = input.getPositionTokenMap().floorEntry(position).getValue();
+    int start = startToken.getTok().getPosition();
+    for (Tok tok : startToken.getToksBefore()) {
+      if (tok.isComment()) {
+        start = Math.min(start, tok.getPosition());
+      }
+    }
+    Token endToken = input.getPositionTokenMap().lowerEntry(position + length).getValue();
+    int end = endToken.getTok().getPosition() + endToken.getTok().getText().length();
+    for (Tok tok : endToken.getToksAfter()) {
+      if (tok.isComment()) {
+        end = Math.max(end, tok.getPosition() + tok.getText().length());
+      }
+    }
+    return end - start;
+  }
 
   /** A request to add or remove a blank line in the output. */
   public abstract static class BlankLineWanted {

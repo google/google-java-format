@@ -571,14 +571,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * Returns {@code defaultThreshold} if bin-packing can be used for the given
    * expression list, and {code NEVER_FILL} otherwise.
    */
-  private static int maxLinesFilledForItems(List<Expression> expressions, int defaultThreshold) {
+  private int maxLinesFilledForItems(List<Expression> expressions, int defaultThreshold) {
     return hasOnlyShortItems(expressions) ? ALWAYS_FILL : defaultThreshold;
   }
 
-  private static boolean hasOnlyShortItems(List<Expression> expressions) {
+  private boolean hasOnlyShortItems(List<Expression> expressions) {
     for (Expression expression : expressions) {
-      // TODO(cushon): this ignores attached comments, so `/*myParameterName=*/ true` has length 4.
-      if (expression.getLength() >= MAX_ITEM_LENGTH_FOR_FILLING) {
+      if (builder.actualSize(expression.getStartPosition(), expression.getLength())
+          >= MAX_ITEM_LENGTH_FOR_FILLING) {
         return false;
       }
     }
