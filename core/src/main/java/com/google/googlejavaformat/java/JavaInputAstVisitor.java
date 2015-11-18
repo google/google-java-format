@@ -224,6 +224,16 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
   }
 
+  /** Whether the formal parameter declaration is a receiver. */
+  enum ReceiverParameter {
+    YES,
+    NO;
+
+    boolean isYes() {
+      return this == YES;
+    }
+  }
+
   /** Whether these declarations are the first in the block. */
   enum FirstDeclarationsOrNot {
     YES, NO;
@@ -449,7 +459,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         ImmutableList.<Dimension>of(),
         "default",
         Optional.fromNullable(node.getDefault()),
-        Optional.of(";"));
+        Optional.of(";"),
+        ReceiverParameter.NO);
     return false;
   }
 
@@ -1224,13 +1235,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       token(")");
     }
     builder.close();
+    builder.space();
+    builder.op("->");
     if (statementBody) {
       builder.space();
     } else {
       builder.breakOp(" ");
     }
-    builder.op("->");
-    builder.space();
     node.getBody().accept(this);
     builder.close();
     return false;
@@ -2414,7 +2425,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
             ImmutableList.<Dimension>of(),
             "",
             Optional.<Expression>absent(),
-            Optional.<String>absent());
+            Optional.<String>absent(),
+            ReceiverParameter.YES);
         first = false;
       }
       for (SingleVariableDeclaration parameter : parameters) {
@@ -2475,7 +2487,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         node.extraDimensions(),
         equals,
         initializer,
-        Optional.<String>absent());
+        Optional.<String>absent(),
+        ReceiverParameter.NO);
   }
 
   /** Helper method for {@link MethodDeclaration}s and {@link TypeDeclaration}s. */
@@ -2950,6 +2963,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * @param equals "=" or equivalent
    * @param initializer the (optional) initializer
    * @param trailing the (optional) trailing token, e.g. ';'
+   * @param receiverParameter whether this is a receiver parameter
    */
   void declareOne(
       ASTNode node,
@@ -2963,7 +2977,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       List<Dimension> extraDimensions,
       String equals,
       Optional<Expression> initializer,
-      Optional<String> trailing) {
+      Optional<String> trailing,
+      ReceiverParameter receiverParameter) {
 
     BreakTag typeBreak = genSym();
     BreakTag verticalAnnotationBreak = genSym();
@@ -3009,7 +3024,15 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           // conditionally ident the name and initializer +4 if the type spans
           // multiple lines
           builder.open(Indent.If.make(typeBreak, plusFour, ZERO));
-          visit(name);
+          if (receiverParameter.isYes()) {
+            if (name != null) {
+              visit(name);
+              token(".");
+            }
+            token("this");
+          } else {
+            visit(name);
+          }
           builder.op(op);
           extraDimensions(initializer.isPresent() ? plusFour : ZERO, extraDimensions);
         }
@@ -3128,7 +3151,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           fragment.extraDimensions(),
           "=",
           Optional.fromNullable(fragment.getInitializer()),
-          Optional.of(";"));
+          Optional.of(";"),
+          ReceiverParameter.NO);
     } else {
       declareMany(annotationsDirection, modifiers, type, fragments);
     }
