@@ -818,7 +818,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(EmptyStatement node) {
     sync(node);
-    token(";");
+    builder.guessToken(";");
     return false;
   }
 
