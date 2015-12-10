@@ -29,8 +29,9 @@ import string
 import subprocess
 import StringIO
 import sys
+from distutils.spawn import find_executable
 
-binary = '/usr/bin/google-java-format'
+binary = find_executable('google-java-format') or '/usr/bin/google-java-format'
 
 def main():
   parser = argparse.ArgumentParser(description=
