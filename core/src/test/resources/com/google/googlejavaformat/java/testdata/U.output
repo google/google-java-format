@@ -39,8 +39,16 @@ class U {
           throw new Exception9();
       }
     } catch (
-        Exception0 | Exception1 | Exception2 | Exception3 | Exception4 | Exception5 | Exception6
-                | Exception7 | Exception8 | Exception9
+        Exception0
+                | Exception1
+                | Exception2
+                | Exception3
+                | Exception4
+                | Exception5
+                | Exception6
+                | Exception7
+                | Exception8
+                | Exception9
             e) {
     }
   }

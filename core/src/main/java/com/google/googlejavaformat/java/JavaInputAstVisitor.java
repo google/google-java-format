@@ -2026,7 +2026,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     boolean first = true;
     for (Type type : types) {
       if (!first) {
-        builder.breakToFill(" ");
+        builder.breakOp(" ");
         token("|");
         builder.space();
       }
