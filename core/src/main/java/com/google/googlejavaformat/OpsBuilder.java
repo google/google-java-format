@@ -22,7 +22,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.googlejavaformat.Input.Tok;
 import com.google.googlejavaformat.Input.Token;
-import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output.BreakTag;
 
 import java.util.ArrayList;
@@ -51,6 +50,22 @@ public final class OpsBuilder {
       }
     }
     return end - start;
+  }
+
+  /** @return the start column of the token at {@code position}, including leading comments. */
+  public Integer actualStartColumn(int position) {
+    Token startToken = input.getPositionTokenMap().floorEntry(position).getValue();
+    int start = startToken.getTok().getPosition();
+    int line0 = input.getLineNumber(start);
+    for (Tok tok : startToken.getToksBefore()) {
+      if (line0 != input.getLineNumber(tok.getPosition())) {
+        return start;
+      }
+      if (tok.isComment()) {
+        start = Math.min(start, tok.getPosition());
+      }
+    }
+    return start;
   }
 
   /** A request to add or remove a blank line in the output. */

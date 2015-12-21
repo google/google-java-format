@@ -2823,7 +2823,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    */
   void addArguments(List<Expression> arguments, Indent plusIndent) {
     if (!arguments.isEmpty()) {
-      if (argumentsArePaired(builder.getInput(), arguments)) {
+      if (argumentsArePaired(arguments)) {
         builder.open(plusIndent);
         builder.forcedBreak();
         builder.open(ZERO);
@@ -2864,7 +2864,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
   }
 
-  private static boolean argumentsArePaired(Input input, List<Expression> arguments) {
+  private boolean argumentsArePaired(List<Expression> arguments) {
     int n = arguments.size();
     if (n % 2 != 0 || n < 4) {
       return false;
@@ -2874,19 +2874,18 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     for (int i = 0; i < n; i++) {
       (i % 2 == 0 ? firsts : seconds).add(arguments.get(i));
     }
-    Map<Integer, Integer> positionToColumnMap = input.getPositionToColumnMap();
-    Integer firstColumn0 = positionToColumnMap.get(firsts.get(0).getStartPosition());
+    Integer firstColumn0 = actualColumn(firsts.get(0));
     if (firstColumn0 == null) {
       return false;
     }
     for (int i = 1; i < n / 2; i++) {
-      Integer firstColumnI = positionToColumnMap.get(firsts.get(i).getStartPosition());
+      Integer firstColumnI = actualColumn(firsts.get(i));
       if (!firstColumn0.equals(firstColumnI)) {
         return false;
       }
     }
     for (int i = 0; i < n / 2; i++) {
-      Integer secondColumnI = positionToColumnMap.get(seconds.get(i).getStartPosition());
+      Integer secondColumnI = actualColumn(seconds.get(i));
       if (secondColumnI == null) {
         return false;
       }
@@ -2895,6 +2894,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       }
     }
     return expressionsAreParallel(firsts, n / 2) && expressionsAreParallel(seconds, n / 4 + 1);
+  }
+
+  private Integer actualColumn(Expression expression) {
+    Map<Integer, Integer> positionToColumnMap = builder.getInput().getPositionToColumnMap();
+    return positionToColumnMap.get(builder.actualStartColumn(expression.getStartPosition()));
   }
 
   private static boolean expressionsAreParallel(List<Expression> expressions, int atLeastM) {
