@@ -1856,7 +1856,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           (List<VariableDeclarationExpression>) node.resources()) {
         if (!first) {
           token(";");
-          builder.breakOp(" ");
+          builder.forcedBreak();
         }
         visit(resource);
         first = false;
