@@ -1113,7 +1113,6 @@ public final class PartialFormattingTest {
     int start = -1;
     for (start = nonWhitespaceLine2Start; start >= line2Start; start--) {
       Range<Integer> range = Range.closedOpen(start, nonWhitespaceLine2Start + 1);
-      System.err.println(range);
       String output = new Formatter().formatSource(input, ImmutableList.of(range));
       assertEquals("bad output", expectedFormatLine2, output);
     }
