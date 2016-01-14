@@ -904,7 +904,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     builder.space();
     tokenBreakTrailingComment("{", plusTwo);
-    if (node.enumConstants().isEmpty()) {
+    if (node.enumConstants().isEmpty() && node.bodyDeclarations().isEmpty()) {
       builder.open(ZERO);
       builder.blankLineWanted(BlankLineWanted.NO);
       token("}");
