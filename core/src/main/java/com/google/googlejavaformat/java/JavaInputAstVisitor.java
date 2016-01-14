@@ -1670,6 +1670,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(SuperConstructorInvocation node) {
     sync(node);
+    if (node.getExpression() != null) {
+      node.getExpression().accept(this);
+      token(".");
+    }
     addTypeArguments(node.typeArguments(), plusFour);
     token("super");
     token("(");
