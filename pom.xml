@@ -247,6 +247,8 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>deploy</shadedClassifierName>
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <!-- http://stackoverflow.com/a/6743609 -->
               <filters>
