@@ -1308,7 +1308,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
             openedNameAndTypeScope = true;
           }
           if (node.getReturnType2() == null) {
-            token("void");
+            // ecj parses constructor declarations with the wrong name (e.g. `class X { Y() {} }`)
+            // as regular method declarations, so don't assume that an absent return type means
+            // the method is void-returning.
+            builder.guessToken("void");
           } else {
             node.getReturnType2().accept(this);
           }

@@ -248,4 +248,12 @@ public final class FormatterTest {
     String expect = "class T {\n  // asd\n\n  // dsa\n  int x;\n}\n";
     assertThat(output).isEqualTo(expect);
   }
+  
+  @Test
+  public void badConstructor() throws FormatterException {
+    String input = "class X { Y() {} }";
+    String output = new Formatter().formatSource(input);
+    String expect = "class X {\n  Y() {}\n}\n";
+    assertThat(output).isEqualTo(expect);
+  }
 }
