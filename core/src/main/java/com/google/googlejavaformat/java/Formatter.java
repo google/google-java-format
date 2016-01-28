@@ -74,6 +74,12 @@ public final class Formatter {
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
 
   /**
+   * A new Formatter instance with default options.
+   */
+  public Formatter() {
+  }
+
+  /**
    * Construct a {@code Formatter} given Java compilation unit. Parses the code; builds a
    * {@link JavaInput} and the corresponding {@link JavaOutput}.
    * @param javaInput the input, a Java compilation unit
