@@ -88,7 +88,7 @@ public final class Formatter {
    * @param errors mutable list to receive errors
    * @param indentationMultiplier the multiplier for the unit of indent; the default is 1
    */
-  public static void format(
+  static void format(
       JavaInput javaInput,
       JavaOutput javaOutput,
       int maxWidth,
