@@ -256,4 +256,12 @@ public final class FormatterTest {
     String expect = "class X {\n  Y() {}\n}\n";
     assertThat(output).isEqualTo(expect);
   }
+  
+  @Test
+  public void voidMethod() throws FormatterException {
+    String input = "class X { void Y() {} }";
+    String output = new Formatter().formatSource(input);
+    String expect = "class X {\n  void Y() {}\n}\n";
+    assertThat(output).isEqualTo(expect);
+  }
 }
