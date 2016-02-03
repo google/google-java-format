@@ -705,7 +705,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.space();
     addTypeArguments(node.typeArguments(), plusFour);
     node.getType().accept(this);
-    token("(");
     addArguments(node.arguments(), plusFour);
     token(")");
     builder.close();
@@ -739,7 +738,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     sync(node);
     addTypeArguments(node.typeArguments(), plusFour);
     token("this");
-    token("(");
     addArguments(node.arguments(), plusFour);
     token(")");
     token(";");
@@ -860,7 +858,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.guessToken("(");
       builder.guessToken(")");
     } else {
-      token("(");
       addArguments(node.arguments(), plusFour);
       token(")");
     }
@@ -1674,7 +1671,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     addTypeArguments(node.typeArguments(), plusFour);
     token("super");
-    token("(");
     addArguments(node.arguments(), plusFour);
     token(")");
     token(";");
@@ -1715,7 +1711,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.close();
     addTypeArguments(node.typeArguments(), plusFour);
     visit(node.getName());
-    token("(");
     addArguments(node.arguments(), plusFour);
     token(")");
     return false;
@@ -2764,7 +2759,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           builder.close();
         }
         visit(methodInvocation.getName());
-        token("(");
         break;
       case ASTNode.QUALIFIED_NAME:
         visit(((QualifiedName) expression).getName());
@@ -2824,9 +2818,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * @param plusIndent the extra indent for the arguments
    */
   void addArguments(List<Expression> arguments, Indent plusIndent) {
+    builder.open(plusIndent);
+    token("(");
     if (!arguments.isEmpty()) {
       if (argumentsArePaired(arguments)) {
-        builder.open(plusIndent);
         builder.forcedBreak();
         builder.open(ZERO);
         boolean first = true;
@@ -2846,9 +2841,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           first = false;
         }
         builder.close();
-        builder.close();
       } else {
-        builder.open(plusIndent);
         builder.breakOp();
         builder.open(ZERO, maxLinesFilledForItems(arguments, MAX_LINES_FOR_ARGUMENTS));
         boolean first = true;
@@ -2861,9 +2854,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           first = false;
         }
         builder.close();
-        builder.close();
       }
     }
+    builder.close();
   }
 
   private boolean argumentsArePaired(List<Expression> arguments) {
