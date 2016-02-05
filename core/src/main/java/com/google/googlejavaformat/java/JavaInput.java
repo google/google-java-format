@@ -22,6 +22,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.Input;
@@ -237,10 +238,9 @@ public final class JavaInput extends Input {
   public JavaInput(String filename, String text) throws FormatterException {
     this.filename = checkNotNull(filename);
     this.text = checkNotNull(text);
-    char[] chars = text.toCharArray();
     List<String> lines = NEWLINE_SPLITTER.splitToList(text);
     setLines(ImmutableList.copyOf(lines));
-    ImmutableList<Tok> toks = buildToks(text, chars);
+    ImmutableList<Tok> toks = buildToks(text);
     positionToColumnMap = makePositionToColumnMap(toks);
     tokens = buildTokens(toks);
     ImmutableSortedMap.Builder<Integer, Token> locationTokenMap = ImmutableSortedMap.naturalOrder();
@@ -291,106 +291,9 @@ public final class JavaInput extends Input {
   }
 
   /** Lex the input and build the list of toks. */
-  private ImmutableList<Tok> buildToks(String text, char... chars) throws FormatterException {
+  private ImmutableList<Tok> buildToks(String text) throws FormatterException {
     try {
-      kN = 0;
-      IScanner scanner = ToolFactory.createScanner(true, true, true, "1.8");
-      scanner.setSource(chars);
-      List<Tok> toks = new ArrayList<>();
-      int charI = 0;
-      int columnI = 0;
-      while (scanner.getCurrentTokenEndPosition() < chars.length - 1
-          && scanner.getNextToken() != ITerminalSymbols.TokenNameEOF) {
-        int charI0 = scanner.getCurrentTokenStartPosition();
-        // Get string, possibly with Unicode escapes.
-        String originalTokText = text.substring(charI0, scanner.getCurrentTokenEndPosition() + 1);
-        String tokText = new String(scanner.getCurrentTokenSource()); // Unicode escapes removed.
-        char tokText0 = tokText.charAt(0); // The token's first character.
-        final boolean isToken; // Is this tok a token?
-        final boolean isNumbered; // Is this tok numbered? (tokens and comments)
-        boolean extraNewline = false; // Extra newline at end?
-        List<String> strings = new ArrayList<>();
-        if (Character.isWhitespace(tokText0)) {
-          isToken = false;
-          isNumbered = false;
-          boolean first = true;
-          for (String spaces : NEWLINE_SPLITTER.split(originalTokText)) {
-            if (!first) {
-              strings.add("\n");
-            }
-            if (!spaces.isEmpty()) {
-              strings.add(spaces);
-            }
-            first = false;
-          }
-        } else if (tokText.startsWith("'") || tokText.startsWith("\"")) {
-          isToken = true;
-          isNumbered = true;
-          strings.add(originalTokText);
-        } else if (tokText.startsWith("//") || tokText.startsWith("/*")) {
-          // For compatibility with an earlier lexer, the newline after a // comment is its own tok.
-          if (tokText.startsWith("//") && originalTokText.endsWith("\n")) {
-            originalTokText = originalTokText.substring(0, originalTokText.length() - 1);
-            tokText = tokText.substring(0, tokText.length() - 1);
-            extraNewline = true;
-          }
-          isToken = false;
-          isNumbered = true;
-          strings.add(originalTokText);
-        } else if (Character.isJavaIdentifierStart(tokText0) || Character.isDigit(tokText0)
-            || tokText0 == '.' && tokText.length() > 1 && Character.isDigit(tokText.charAt(1))) {
-          // Identifier, keyword, or numeric literal (a dot may begin a number, as in .2D).
-          isToken = true;
-          isNumbered = true;
-          strings.add(tokText);
-        } else {
-          // Other tokens ("+" or "++" or ">>" are broken into one-character toks, because ">>"
-          // cannot be lexed without syntactic knowledge. This implementation fails if the token
-          // contains Unicode escapes.
-          isToken = true;
-          isNumbered = true;
-          for (char c : tokText.toCharArray()) {
-            strings.add(String.valueOf(c));
-          }
-        }
-        if (strings.size() == 1) {
-          toks.add(
-              new Tok(isNumbered ? kN++ : -1, originalTokText, tokText, charI, columnI, isToken));
-          for (char c : originalTokText.toCharArray()) {
-            if (c == '\n') {
-              columnI = 0;
-            } else {
-              ++columnI;
-            }
-            ++charI;
-          }
-        } else {
-          if (strings.size() != 1 && !tokText.equals(originalTokText)) {
-            throw new FormatterException(
-                "Unicode escapes not allowed in whitespace or multi-character operators");
-          }
-          for (String str : strings) {
-            toks.add(new Tok(isNumbered ? kN++ : -1, str, str, charI, columnI, isToken));
-            for (char c : str.toCharArray()) {
-              if (c == '\n') {
-                columnI = 0;
-              } else {
-                ++columnI;
-              }
-              ++charI;
-            }
-          }
-        }
-        if (extraNewline) {
-          toks.add(new Tok(-1, "\n", "\n", charI, columnI, false));
-          columnI = 0;
-          ++charI;
-        }
-      }
-      toks.add(new Tok(kN++, "", "", charI, columnI, true)); // EOF tok.
-      --kN; // Don't count EOF tok.
-      computeRanges(toks);
-      return ImmutableList.copyOf(toks);
+      return buildToks(text, ImmutableSet.<Integer>of());
     } catch (InvalidInputException e) {
       // jdt's scanner elects not to produce error messages, so we don't either
       //
@@ -398,6 +301,118 @@ public final class JavaInput extends Input {
       // during parsing
       return ImmutableList.of();
     }
+  }
+
+  /**
+   * Lex the input and build the list of toks.
+   *
+   * @param text the text to be lexed.
+   * @param stopIds a set of Eclipse token names which should cause lexing to stop. If one of these
+   *     is found, the returned list will include tokens up to but not including that token.
+   */
+  ImmutableList<Tok> buildToks(String text, ImmutableSet<Integer> stopIds)
+      throws InvalidInputException, FormatterException {
+    stopIds = ImmutableSet.<Integer>builder()
+        .addAll(stopIds).add(ITerminalSymbols.TokenNameEOF).build();
+    kN = 0;
+    IScanner scanner = ToolFactory.createScanner(true, true, true, "1.8");
+    scanner.setSource(text.toCharArray());
+    int textLength = text.length();
+    List<Tok> toks = new ArrayList<>();
+    int charI = 0;
+    int columnI = 0;
+    while (scanner.getCurrentTokenEndPosition() < textLength - 1
+        && !stopIds.contains(scanner.getNextToken())) {
+      int charI0 = scanner.getCurrentTokenStartPosition();
+      // Get string, possibly with Unicode escapes.
+      String originalTokText = text.substring(charI0, scanner.getCurrentTokenEndPosition() + 1);
+      String tokText = new String(scanner.getCurrentTokenSource()); // Unicode escapes removed.
+      char tokText0 = tokText.charAt(0); // The token's first character.
+      final boolean isToken; // Is this tok a token?
+      final boolean isNumbered; // Is this tok numbered? (tokens and comments)
+      boolean extraNewline = false; // Extra newline at end?
+      List<String> strings = new ArrayList<>();
+      if (Character.isWhitespace(tokText0)) {
+        isToken = false;
+        isNumbered = false;
+        boolean first = true;
+        for (String spaces : NEWLINE_SPLITTER.split(originalTokText)) {
+          if (!first) {
+            strings.add("\n");
+          }
+          if (!spaces.isEmpty()) {
+            strings.add(spaces);
+          }
+          first = false;
+        }
+      } else if (tokText.startsWith("'") || tokText.startsWith("\"")) {
+        isToken = true;
+        isNumbered = true;
+        strings.add(originalTokText);
+      } else if (tokText.startsWith("//") || tokText.startsWith("/*")) {
+        // For compatibility with an earlier lexer, the newline after a // comment is its own tok.
+        if (tokText.startsWith("//") && originalTokText.endsWith("\n")) {
+          originalTokText = originalTokText.substring(0, originalTokText.length() - 1);
+          tokText = tokText.substring(0, tokText.length() - 1);
+          extraNewline = true;
+        }
+        isToken = false;
+        isNumbered = true;
+        strings.add(originalTokText);
+      } else if (Character.isJavaIdentifierStart(tokText0) || Character.isDigit(tokText0)
+          || tokText0 == '.' && tokText.length() > 1 && Character.isDigit(tokText.charAt(1))) {
+        // Identifier, keyword, or numeric literal (a dot may begin a number, as in .2D).
+        isToken = true;
+        isNumbered = true;
+        strings.add(tokText);
+      } else {
+        // Other tokens ("+" or "++" or ">>" are broken into one-character toks, because ">>"
+        // cannot be lexed without syntactic knowledge. This implementation fails if the token
+        // contains Unicode escapes.
+        isToken = true;
+        isNumbered = true;
+        for (char c : tokText.toCharArray()) {
+          strings.add(String.valueOf(c));
+        }
+      }
+      if (strings.size() == 1) {
+        toks.add(
+            new Tok(isNumbered ? kN++ : -1, originalTokText, tokText, charI, columnI, isToken));
+        for (char c : originalTokText.toCharArray()) {
+          if (c == '\n') {
+            columnI = 0;
+          } else {
+            ++columnI;
+          }
+          ++charI;
+        }
+      } else {
+        if (strings.size() != 1 && !tokText.equals(originalTokText)) {
+          throw new FormatterException(
+              "Unicode escapes not allowed in whitespace or multi-character operators");
+        }
+        for (String str : strings) {
+          toks.add(new Tok(isNumbered ? kN++ : -1, str, str, charI, columnI, isToken));
+          for (char c : str.toCharArray()) {
+            if (c == '\n') {
+              columnI = 0;
+            } else {
+              ++columnI;
+            }
+            ++charI;
+          }
+        }
+      }
+      if (extraNewline) {
+        toks.add(new Tok(-1, "\n", "\n", charI, columnI, false));
+        columnI = 0;
+        ++charI;
+      }
+    }
+    toks.add(new Tok(kN++, "", "", charI, columnI, true)); // EOF tok.
+    --kN; // Don't count EOF tok.
+    computeRanges(toks);
+    return ImmutableList.copyOf(toks);
   }
 
   private static ImmutableList<Token> buildTokens(List<Tok> toks) {

@@ -45,8 +45,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Integration test for google-java-format. Format each file in the input directory, and confirm
- * that the result is the same as the file in the output directory.
+ * Integration test for google-java-format.
  */
 @RunWith(JUnit4.class)
 public final class FormatterTest {
@@ -54,6 +53,10 @@ public final class FormatterTest {
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
+  /**
+   * Formats each file in the input directory, and confirms that the result is the same as the file
+   * in the output directory.
+   */
   @Test
   public void testFormatter() throws Exception {
     Path testDataPath = Paths.get("com/google/googlejavaformat/java/testdata");
@@ -262,6 +265,29 @@ public final class FormatterTest {
     String input = "class X { void Y() {} }";
     String output = new Formatter().formatSource(input);
     String expect = "class X {\n  void Y() {}\n}\n";
+    assertThat(output).isEqualTo(expect);
+  }
+
+  private static final String UNORDERED_IMPORTS = Joiner.on('\n').join(
+      "import com.google.common.base.Preconditions;",
+      "",
+      "import static org.junit.Assert.fail;",
+      "import static com.google.truth.Truth.assertThat;",
+      "",
+      "import org.junit.runners.JUnit4;",
+      "import org.junit.runner.RunWith;",
+      "",
+      "import java.util.List;",
+      "",
+      "import javax.annotations.Nullable;");
+
+  @Test
+  public void importsNotReorderedByDefault() throws FormatterException {
+    String input = "package com.google.example;\n" + UNORDERED_IMPORTS
+        + "\npublic class ExampleTest {}\n";
+    String output = new Formatter().formatSource(input);
+    String expect = "package com.google.example;\n\n" + UNORDERED_IMPORTS
+        + "\n\npublic class ExampleTest {}\n";
     assertThat(output).isEqualTo(expect);
   }
 }
