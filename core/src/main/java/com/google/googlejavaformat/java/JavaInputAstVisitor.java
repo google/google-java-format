@@ -1293,7 +1293,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         }
 
         boolean openedNameAndTypeScope = false;
-        if (!node.isConstructor()) {
+        // constructor-like declarations that don't match the name of the enclosing class are 
+        // parsed as method declarations with a null return type
+        if (!node.isConstructor() && node.getReturnType2() != null) {
           if (!first) {
             builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO,
                 Optional.of(breakBeforeType));
@@ -1304,9 +1306,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
             builder.open(Indent.If.make(breakBeforeType, plusFour, ZERO));
             openedNameAndTypeScope = true;
           }
-          if (node.getReturnType2() != null) {
-            node.getReturnType2().accept(this);
-          }
+          node.getReturnType2().accept(this);
         }
         if (!first) {
           builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO,

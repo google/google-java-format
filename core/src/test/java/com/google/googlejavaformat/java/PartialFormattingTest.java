@@ -1124,4 +1124,23 @@ public final class PartialFormattingTest {
       assertEquals("bad output", expectedFormatLine1, output);
     }
   }
+
+  @Test
+  public void commentBeforeBadConstructor() throws Exception {
+    String[] lines = {
+      "class D {", //
+      "  /** */",
+      "  F() {}",
+      "}",
+    };
+    String output = new Formatter().formatSource(Joiner.on('\n').join(lines));
+    String[] expected = {
+      "class D {", //
+      "  /** */",
+      "  F() {}",
+      "}",
+      "",
+    };
+    assertThat(output).isEqualTo(Joiner.on('\n').join(expected));
+  }
 }
