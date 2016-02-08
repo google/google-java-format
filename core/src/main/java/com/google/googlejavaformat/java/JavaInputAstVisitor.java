@@ -706,7 +706,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     addTypeArguments(node.typeArguments(), plusFour);
     node.getType().accept(this);
     addArguments(node.arguments(), plusFour);
-    token(")");
     builder.close();
     if (node.getAnonymousClassDeclaration() != null) {
       visit(node.getAnonymousClassDeclaration());
@@ -739,7 +738,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     addTypeArguments(node.typeArguments(), plusFour);
     token("this");
     addArguments(node.arguments(), plusFour);
-    token(")");
     token(";");
     return false;
   }
@@ -859,7 +857,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.guessToken(")");
     } else {
       addArguments(node.arguments(), plusFour);
-      token(")");
     }
     if (node.getAnonymousClassDeclaration() != null) {
       visit(node.getAnonymousClassDeclaration());
@@ -1672,7 +1669,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     addTypeArguments(node.typeArguments(), plusFour);
     token("super");
     addArguments(node.arguments(), plusFour);
-    token(")");
     token(";");
     return false;
   }
@@ -1712,7 +1708,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     addTypeArguments(node.typeArguments(), plusFour);
     visit(node.getName());
     addArguments(node.arguments(), plusFour);
-    token(")");
     return false;
   }
 
@@ -2778,9 +2773,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         MethodInvocation methodInvocation = (MethodInvocation) expression;
         addArguments(methodInvocation.arguments(), indent);
         builder.close();
-        // TODO(cushon): default to suppressing blank lines?
-        builder.blankLineWanted(BlankLineWanted.NO);
-        token(")");
         break;
       case ASTNode.FIELD_ACCESS:
       case ASTNode.SIMPLE_NAME:
@@ -2856,6 +2848,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.close();
       }
     }
+    token(")");
     builder.close();
   }
 
