@@ -23,6 +23,7 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.CharSink;
 import com.google.common.io.CharSource;
+import com.google.errorprone.annotations.Immutable;
 import com.google.googlejavaformat.Doc;
 import com.google.googlejavaformat.DocBuilder;
 import com.google.googlejavaformat.FormatterDiagnostic;
@@ -65,10 +66,13 @@ import java.util.Map;
  * <p>This formatter also produces data structures of which tokens and comments appear where on the
  * input, and on the output, to help output a partial reformatting of a slightly edited input.
  *
+ * <p>Instances of the formatter are immutable and thread-safe.
+ *
  * <p>[1] Nelson, Greg, and John DeTreville. Personal communication.
  * <p>[2] Oppen, Dereck C. "Prettyprinting". ACM Transactions on Programming Languages and Systems,
  *        Volume 2 Issue 4, Oct. 1980, pp. 465–483.
  */
+@Immutable
 public final class Formatter {
   static final int MAX_WIDTH = 100;
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
