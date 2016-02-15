@@ -11,7 +11,7 @@
 [Google Java Style]: http://google-styleguide.googlecode.com/svn/trunk/javaguide.html
 
 
-Using the formtter from the command-line
+Using the formatter from the command-line
 ----------------------------------------
 
 First [download the formatter](https://github.com/google/google-java-format/releases)
