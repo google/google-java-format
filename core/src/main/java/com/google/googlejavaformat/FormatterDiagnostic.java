@@ -35,6 +35,26 @@ public class FormatterDiagnostic {
     this.message = message;
   }
 
+  /** Returns the name of the file that was processed. */
+  public String filename() {
+    return filename;
+  }
+
+  /** Returns the line number on which the error occurred. */
+  public int line() {
+    return lineNumber;
+  }
+
+  /** Returns the 0-indexed column number on which the error occurred. */
+  public int column() {
+    return column;
+  }
+
+  /** Returns a description of the problem that prevented formatting from succeeding. */
+  public String message() {
+    return message;
+  }
+
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
