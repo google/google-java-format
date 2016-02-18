@@ -41,7 +41,6 @@
   :group 'tools)
 
 (defcustom google-java-format-executable
-  ;; GOOGLE3
   "/usr/bin/google-java-format"
   "Location of the google-java-format executable.
 

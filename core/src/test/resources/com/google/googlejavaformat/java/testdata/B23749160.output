@@ -30,16 +30,13 @@ class B23749160 {
                     anyInt(), anyInt(), anyInt()))
         .then();
 
-    private static final List<Integer> SERVICE_LIST =
+    private static final List<Integer> XXXXXXXX =
         ImmutableList.of(
-            INSServiceID.CARIBOU, // Mail
-            INSServiceID.WRITELY, // Drive
-            INSServiceID.CALENDAR, // Calendar
-            INSServiceID.BUZZ, // Talk
-            INSServiceID.CONTACTS, // Contacts
-            INSServiceID.GROUPS_RELOADED, // Groups
-            INSServiceID.JOTSPOT, // Sites
-            INSServiceID.GEO_DISPATCH // Coordinate
+            XXXXXXX, //
+            XXXXXXX, //
+            XXXXXXX, //
+            XXXXXXX, //
+            XXXXXXX //
             );
   }
 }
