@@ -66,4 +66,31 @@ public class MainTest {
     Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     assertThat(main.constructFilesToFormat(argInfo).filesToFormat).hasSize(1);
   }
+
+  @Test
+  public void testUsageOutput() {
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+
+    try {
+      main.format("--help");
+      throw new AssertionError("Expected UsageException to be thrown");
+    } catch (UsageException e) {
+
+      String usage = e.usage();
+
+
+      // Check that doc links are included.
+      assertThat(usage).contains("https://github.com/google/google-java-format");
+      assertThat(usage).contains("Usage: google-java-format");
+
+      // Sanity check that a flag and description is in included.
+      assertThat(usage).contains("--length");
+      assertThat(usage).contains("Character length to format.");
+
+      // Check that some of the additional text is included.
+      assertThat(usage).contains("the result is sent to stdout");
+    }
+  }
 }

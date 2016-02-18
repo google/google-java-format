@@ -18,6 +18,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
@@ -93,6 +94,14 @@ public final class Main {
 
   private static final String[] VERSION =
       {"google-java-format: Version " + GoogleJavaFormatVersion.VERSION};
+
+  private static final String[] USAGE =
+      ObjectArrays.concat(
+          VERSION,
+          new String[] {
+            "https://github.com/google/google-java-format",
+          },
+          String.class);
 
   private static final String[] ADDITIONAL_USAGE = {
       "If -i is given with -, the result is sent to stdout.",
@@ -291,12 +300,17 @@ public final class Main {
 
     public void throwUsage() throws UsageException {
       StringBuilder builder = new StringBuilder();
+      addLines(builder, USAGE);
       jCommander.usage(builder);
-      for (String line : ADDITIONAL_USAGE) {
-        builder.append(line).append(System.lineSeparator());
-      }
-
+      addLines(builder, ADDITIONAL_USAGE);
       throw new UsageException(builder.toString());
+    }
+
+    private static void addLines(StringBuilder builder, String[] lines) {
+      for (String line : lines) {
+        builder.append(line);
+        builder.append(System.lineSeparator());
+      }
     }
   }
 
