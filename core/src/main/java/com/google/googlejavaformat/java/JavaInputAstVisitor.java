@@ -1851,8 +1851,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         visit(resource);
         first = false;
       }
-      // TODO(cushon): emit a space after the optional trailing semi-colon
-      builder.guessToken(";");
+      if (builder.peekToken().equals(Optional.of(";"))) {
+        token(";");
+        builder.space();
+      }
       token(")");
       builder.close();
       builder.space();

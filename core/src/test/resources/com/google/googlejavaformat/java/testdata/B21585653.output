@@ -1,5 +1,5 @@
 class B21585653 {
   {
-    try (X x = x;) {}
+    try (X x = x; ) {}
   }
 }
