@@ -339,8 +339,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private static final int MAX_FILLED_INFIX_LINES = 1;
   private static final int MAX_LINES_FOR_FORMAL_LIST = 1;
 
-  private static final int MAX_EMPTY_DECLS = 10;
-
   /**
    * The {@code Visitor} constructor.
    * @param builder the {@link OpsBuilder}
@@ -412,10 +410,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return false;
   }
 
-  /** Skips over extra semi-colon at the top-level, or in a class member declaration lists. */
+  /** Skips over extra semi-colons at the top-level, or in a class member declaration lists. */
   private void dropEmptyDeclarations() {
-    for (int times = 0; times < MAX_EMPTY_DECLS; times++) {
-      builder.guessToken(";");
+    while (builder.peekToken().equals(Optional.of(";"))) {
+      token(";");
     }
   }
 
