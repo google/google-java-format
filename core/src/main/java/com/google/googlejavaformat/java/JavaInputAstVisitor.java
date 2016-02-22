@@ -2340,15 +2340,60 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.space();
     token("(");
     builder.open(plusFour);
-    builder.breakOp();
-    builder.open(ZERO);
-    visit(node.getException());
-    builder.close();
+    SingleVariableDeclaration ex = node.getException();
+    if (ex.getType().getNodeType() == ASTNode.UNION_TYPE) {
+      builder.open(ZERO);
+      visitUnionType(ex);
+      builder.close();
+    } else {
+      builder.breakToFill();
+      builder.open(ZERO);
+      visit(ex);
+      builder.close();
+    }
     builder.close();
     token(")");
     builder.space();
     visitBlock(
         node.getBody(), CollapseEmptyOrNot.NO, AllowLeadingBlankLine.YES, allowTrailingBlankLine);
+  }
+
+  /** Formats a union type declaration in a catch clause. */
+  private void visitUnionType(SingleVariableDeclaration declaration) {
+    UnionType type = (UnionType) declaration.getType();
+    builder.open(ZERO);
+    sync(declaration);
+    List<Type> union = type.types();
+    boolean first = true;
+    for (int i = 0; i < union.size() - 1; i++) {
+      if (!first) {
+        builder.breakOp(" ");
+        token("|");
+        builder.space();
+      } else {
+        first = false;
+      }
+      union.get(i).accept(this);
+    }
+    builder.breakOp(" ");
+    token("|");
+    builder.space();
+    Type last = union.get(union.size() - 1);
+    declareOne(
+        declaration,
+        Direction.HORIZONTAL,
+        declaration.modifiers(),
+        last,
+        VarArgsOrNot.valueOf(declaration.isVarargs()),
+        declaration.varargsAnnotations(),
+        declaration.getName(),
+        "",
+        declaration.extraDimensions(),
+        "=",
+        Optional.fromNullable(declaration.getInitializer()),
+        Optional.<String>absent(),
+        ReceiverParameter.NO);
+    builder.close();
   }
 
   /**
