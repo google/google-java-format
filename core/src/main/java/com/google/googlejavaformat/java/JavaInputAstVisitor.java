@@ -286,7 +286,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   private static final ImmutableList<Op> breakFillList(Optional<BreakTag> breakTag) {
     return ImmutableList.of(
-        OpenOp.make(ZERO, 0),
+        OpenOp.make(ZERO),
         Doc.Break.make(Doc.FillMode.INDEPENDENT, " ", ZERO, breakTag),
         CloseOp.make());
   }
@@ -297,22 +297,12 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   private static final ImmutableList<Op> EMPTY_LIST = ImmutableList.of();
   private static final Map<String, Integer> PRECEDENCE = new HashMap<>();
-  private static final int MAX_LINES_FOR_ARGUMENTS = 1;
-  private static final int MAX_LINES_FOR_ARRAY_INITIALIZERS = 1;
-  private static final int MAX_LINES_FOR_ANNOTATION_ELEMENT_VALUE_PAIRS = 1;
-  private static final int MAX_LINES_FOR_CHAINED_ACCESSES = 1;
 
   /**
    * Allow multi-line filling (of array initializers, argument lists, and boolean
    * expressions) for items with length less than or equal to this threshold.
    */
   private static final int MAX_ITEM_LENGTH_FOR_FILLING = 10;
-
-  /**
-   * A maxLinesFilled value for OpenOp.make that indicates one-per-line mode
-   * should never be used.
-   */
-  private static final int ALWAYS_FILL = 0;
 
   static {
     PRECEDENCE.put("*", 10);
@@ -335,9 +325,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     PRECEDENCE.put("&&", 2);
     PRECEDENCE.put("||", 1);
   }
-
-  private static final int MAX_FILLED_INFIX_LINES = 1;
-  private static final int MAX_LINES_FOR_FORMAL_LIST = 1;
 
   /**
    * The {@code Visitor} constructor.
@@ -549,17 +536,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       boolean hasTrailingComma = hasTrailingToken(builder.getInput(), node.expressions(), ",");
       builder.breakOp(hasTrailingComma ? FillMode.FORCED : FillMode.UNIFIED, "", ZERO);
       if (allowFilledElementsOnOwnLine) {
-        builder.open(ZERO, shortItems ? ALWAYS_FILL : MAX_LINES_FOR_ARRAY_INITIALIZERS);
+        builder.open(ZERO);
       }
       boolean first = true;
+      FillMode fillMode = shortItems ? FillMode.INDEPENDENT : FillMode.UNIFIED;
       for (Expression expression : (List<Expression>) node.expressions()) {
         if (!first) {
           token(",");
-          if (allowFilledElementsOnOwnLine) {
-            builder.breakToFill(" ");
-          } else {
-            builder.breakOp(" ");
-          }
+          builder.breakOp(fillMode, " ", ZERO);
         }
         expression.accept(this);
         first = false;
@@ -574,14 +558,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       token("}", plusTwo);
     }
     return false;
-  }
-
-  /**
-   * Returns {@code defaultThreshold} if bin-packing can be used for the given
-   * expression list, and {code NEVER_FILL} otherwise.
-   */
-  private int maxLinesFilledForItems(List<Expression> expressions, int defaultThreshold) {
-    return hasOnlyShortItems(expressions) ? ALWAYS_FILL : defaultThreshold;
   }
 
   private boolean hasOnlyShortItems(List<Expression> expressions) {
@@ -1131,11 +1107,12 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     List<Expression> operands = new ArrayList<>();
     List<String> operators = new ArrayList<>();
     walkInfix(PRECEDENCE.get(node.getOperator().toString()), node, operands, operators);
-    builder.open(plusFour, maxLinesFilledForItems(operands, MAX_FILLED_INFIX_LINES));
+    FillMode fillMode = hasOnlyShortItems(operands) ? FillMode.INDEPENDENT : FillMode.UNIFIED;
+    builder.open(plusFour);
     operands.get(0).accept(this);
     int operatorsN = operators.size();
     for (int i = 0; i < operatorsN; i++) {
-      builder.breakToFill(" ");
+      builder.breakOp(fillMode, " ", ZERO);
       builder.op(operators.get(i));
       builder.space();
       operands.get(i + 1).accept(this);
@@ -1404,7 +1381,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.open(ZERO);
     token("@");
     node.getTypeName().accept(this);
-    builder.open(plusTwo, MAX_LINES_FOR_ANNOTATION_ELEMENT_VALUE_PAIRS);
+    builder.open(plusTwo);
     token("(");
     builder.breakOp();
     boolean first = true;
@@ -1501,6 +1478,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       for (Type typeArgument : (List<Type>) node.typeArguments()) {
         if (!first) {
           token(",");
+          // TODO(cushon): unify breaks
           builder.breakToFill(" ");
         }
         typeArgument.accept(this);
@@ -2346,6 +2324,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       visitUnionType(ex);
       builder.close();
     } else {
+      // TODO(cushon): don't break after here for consistency with for, while, etc.
       builder.breakToFill();
       builder.open(ZERO);
       visit(ex);
@@ -2446,7 +2425,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       Optional<Type> receiverType, SimpleName receiverQualifier,
       List<SingleVariableDeclaration> parameters) {
     if (receiverType.isPresent() || !parameters.isEmpty()) {
-      builder.open(ZERO, MAX_LINES_FOR_FORMAL_LIST);
+      builder.open(ZERO);
       boolean first = true;
       if (receiverType.isPresent()) {
         // TODO(jdd): Use builders.
@@ -2469,7 +2448,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       for (SingleVariableDeclaration parameter : parameters) {
         if (!first) {
           token(",");
-          builder.breakToFill(" ");
+          builder.breakOp(" ");
         }
         // TODO(jdd): Check for "=".
         visitToDeclare(Direction.HORIZONTAL, parameter, Optional.<Expression>absent(), "=");
@@ -2685,7 +2664,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     boolean trailingDereferences = items.size() > 1;
     boolean needDot0 = needDot;
     if (!needDot0) {
-      builder.open(plusFour, MAX_LINES_FOR_CHAINED_ACCESSES);
+      builder.open(plusFour);
     }
     // don't break after the first element if it is every small, unless the
     // chain starts with another expression
@@ -2725,7 +2704,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     // Are there method invocations or field accesses after the prefix?
     boolean trailingDereferences = prefixIndex >= 0 && prefixIndex < items.size() - 1;
 
-    builder.open(plusFour, MAX_LINES_FOR_CHAINED_ACCESSES);
+    builder.open(plusFour);
     builder.open(trailingDereferences ? ZERO : ZERO);
 
     BreakTag nameTag = genSym();
@@ -2880,12 +2859,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.close();
       } else {
         builder.breakOp();
-        builder.open(ZERO, maxLinesFilledForItems(arguments, MAX_LINES_FOR_ARGUMENTS));
+        builder.open(ZERO);
         boolean first = true;
+        FillMode fillMode = hasOnlyShortItems(arguments) ? FillMode.INDEPENDENT : FillMode.UNIFIED;
         for (Expression argument : arguments) {
           if (!first) {
             token(",");
-            builder.breakToFill(" ");
+            builder.breakOp(fillMode, " ", ZERO);
           }
           argument.accept(this);
           first = false;

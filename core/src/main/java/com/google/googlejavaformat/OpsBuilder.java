@@ -211,16 +211,7 @@ public final class OpsBuilder {
    * @param plusIndent the extra indent for the new level
    */
   public final void open(Indent plusIndent) {
-    open(plusIndent, 0);
-  }
-
-  /**
-   * Open a new level by emitting an {@link OpenOp}.
-   * @param plusIndent the extra indent for the new level
-   * @param maxLinesFilled if positive, maximum lines to format in filled mode
-   */
-  public final void open(Indent plusIndent, int maxLinesFilled) {
-    ops.add(OpenOp.make(plusIndent, maxLinesFilled));
+    ops.add(OpenOp.make(plusIndent));
   }
 
   /** Close the current level, by emitting a {@link CloseOp}. */

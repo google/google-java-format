@@ -24,33 +24,29 @@ import com.google.common.base.MoreObjects;
  */
 public final class OpenOp implements Op {
   private final Indent plusIndent;
-  private final int maxLinesFilled; // If positive, the maximum count of lines for filled format.
 
-  private OpenOp(Indent plusIndent, int maxLinesFilled) {
+  private OpenOp(Indent plusIndent) {
     this.plusIndent = plusIndent;
-    this.maxLinesFilled = maxLinesFilled;
   }
 
   /**
    * Make an ordinary {@code OpenOp}.
    * @param plusIndent the indent for breaks at this level
-   * @param maxLinesFilled if positive, the maximum number of lines for filled format
    * @return the {@code OpenOp}
    */
-  public static Op make(Indent plusIndent, int maxLinesFilled) {
-    return new OpenOp(plusIndent, maxLinesFilled);
+  public static Op make(Indent plusIndent) {
+    return new OpenOp(plusIndent);
   }
 
   @Override
   public void add(DocBuilder builder) {
-    builder.open(plusIndent, maxLinesFilled);
+    builder.open(plusIndent);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("plusIndent", plusIndent)
-        .add("maxLinesFilled", maxLinesFilled)
         .toString();
   }
 }

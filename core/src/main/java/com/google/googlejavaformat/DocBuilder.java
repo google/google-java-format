@@ -23,7 +23,7 @@ import java.util.List;
  * A {@code DocBuilder} converts a sequence of {@link Op}s into a {@link Doc}.
  */
 public final class DocBuilder {
-  private final Doc.Level base = Doc.Level.make(Indent.Const.ZERO, +0);
+  private final Doc.Level base = Doc.Level.make(Indent.Const.ZERO);
   private final ArrayDeque<Doc.Level> stack = new ArrayDeque<>();
 
   /**
@@ -66,10 +66,9 @@ public final class DocBuilder {
   /**
    * Open a new {@link Doc.Level}.
    * @param plusIndent the extra indent for the {@link Doc.Level}
-   * @param maxLinesFilled the maximum count of lines to try for filled mode
    */
-  void open(Indent plusIndent, int maxLinesFilled) {
-    Doc.Level level = Doc.Level.make(plusIndent, maxLinesFilled);
+  void open(Indent plusIndent) {
+    Doc.Level level = Doc.Level.make(plusIndent);
     stack.addLast(level);
   }
 

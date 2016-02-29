@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat;
 
-import com.google.common.base.CharMatcher;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.collect.DiscreteDomain;
@@ -60,44 +59,33 @@ public abstract class Doc {
 
   /** State for writing. */
   public static final class State {
-    final int indent0;
     final int lastIndent;
     final int indent;
     final int column;
     final boolean mustBreak;
 
-    /** The number of lines spanned by the current layout. */
-    final int lines;
-
-    State(int indent0, int lastIndent, int indent, int column, boolean mustBreak, int lines) {
-      this.indent0 = indent0;
+    State(int lastIndent, int indent, int column, boolean mustBreak) {
       this.lastIndent = lastIndent;
       this.indent = indent;
       this.column = column;
       this.mustBreak = mustBreak;
-      this.lines = lines;
     }
 
-    public State(int indent0, int column0, int lines0) {
-      this(indent0, indent0, indent0, column0, false, lines0);
+    public State(int indent0, int column0) {
+      this(indent0, indent0, column0, false);
     }
 
     State withColumn(int column) {
-      return new State(indent0, lastIndent, indent, column, mustBreak, lines);
+      return new State(lastIndent, indent, column, mustBreak);
     }
 
     State withMustBreak(boolean mustBreak) {
-      return new State(indent0, lastIndent, indent, column, mustBreak, lines);
-    }
-
-    State withBreaks(int breaks) {
-      return new State(indent0, lastIndent, indent, column, mustBreak, lines + breaks);
+      return new State(lastIndent, indent, column, mustBreak);
     }
 
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
-          .add("indent0", indent0)
           .add("lastIndent", lastIndent)
           .add("indent", indent)
           .add("column", column)
@@ -193,22 +181,19 @@ public abstract class Doc {
   /** A {@code Level} inside a {@link Doc}. */
   static final class Level extends Doc {
     private final Indent plusIndent; // The extra indent following breaks.
-    private final int maxLinesFilled; // If positive, max lines for filled format, otherwise no max.
     private final List<Doc> docs = new ArrayList<>(); // The elements of the level.
 
-    private Level(Indent plusIndent, int maxLinesFilled) {
+    private Level(Indent plusIndent) {
       this.plusIndent = plusIndent;
-      this.maxLinesFilled = maxLinesFilled;
     }
 
     /**
      * Factory method for {@code Level}s.
      * @param plusIndent the extra indent inside the {@code Level}
-     * @param maxLinesFilled if positive, cannot be in filled mode if it takes more lines
      * @return the new {@code Level}
      */
-    static Level make(Indent plusIndent, int maxLinesFilled) {
-      return new Level(plusIndent, maxLinesFilled);
+    static Level make(Indent plusIndent) {
+      return new Level(plusIndent);
     }
 
     /**
@@ -271,10 +256,8 @@ public abstract class Doc {
       }
       State broken =
           computeBroken(
-              commentsHelper,
-              maxWidth,
-              new State(state.indent + plusIndent.eval(), state.column, state.lines));
-      return state.withColumn(broken.column).withBreaks(broken.lines - state.lines);
+              commentsHelper, maxWidth, new State(state.indent + plusIndent.eval(), state.column));
+      return state.withColumn(broken.column);
     }
 
     private static void splitByBreaks(List<Doc> docs, List<List<Doc>> splits, List<Break> breaks) {
@@ -294,41 +277,18 @@ public abstract class Doc {
     /**
      * Compute breaks for a {@link Level} that spans multiple lines.
      */
-    private State computeBroken(CommentsHelper commentsHelper, int maxWidth, State state0) {
+    private State computeBroken(CommentsHelper commentsHelper, int maxWidth, State state) {
       splitByBreaks(docs, splits, breaks);
 
-      // Attempt to fill the Level, recording the number of lines that takes.
-      State state = maybeBreakFilled(commentsHelper, maxWidth, state0, false);
-
-      // If it took too many lines, re-compute the Level with forced breaks
-      // between every child.
-      if (maxLinesFilled > 0 && (state.lines - state0.lines) >= maxLinesFilled) {
-        state = maybeBreakFilled(commentsHelper, maxWidth, state0, true);
-      }
-
-      return state;
-    }
-
-    /**
-     * @param breakAll take all top-level Breaks in the Level.
-     */
-    private State maybeBreakFilled(
-        CommentsHelper commentsHelper, int maxWidth, State state, boolean breakAll) {
       state =
           computeBreakAndSplit(
-              commentsHelper, maxWidth, state, Optional.<Break>absent(), splits.get(0), breakAll);
-
+              commentsHelper, maxWidth, state, Optional.<Break>absent(), splits.get(0));
 
       // Handle following breaks and split.
       for (int i = 0; i < breaks.size(); i++) {
         state =
             computeBreakAndSplit(
-                commentsHelper,
-                maxWidth,
-                state,
-                Optional.of(breaks.get(i)),
-                splits.get(i + 1),
-                breakAll);
+                commentsHelper, maxWidth, state, Optional.of(breaks.get(i)), splits.get(i + 1));
       }
       return state;
     }
@@ -341,13 +301,11 @@ public abstract class Doc {
         int maxWidth,
         State state,
         Optional<Break> optBreakDoc,
-        List<Doc> split,
-        boolean breakAll) {
+        List<Doc> split) {
       float breakWidth = optBreakDoc.isPresent() ? optBreakDoc.get().getWidth() : 0.0F;
       float splitWidth = getWidth(split);
       boolean shouldBreak =
-          breakAll
-              || (optBreakDoc.isPresent() && optBreakDoc.get().fillMode == FillMode.UNIFIED)
+          (optBreakDoc.isPresent() && optBreakDoc.get().fillMode == FillMode.UNIFIED)
               || state.mustBreak
               || state.column + breakWidth + splitWidth > maxWidth;
 
@@ -414,7 +372,6 @@ public abstract class Doc {
     public String toString() {
       return MoreObjects.toStringHelper(this)
           .add("plusIndent", plusIndent)
-          .add("maxLinesFilled", maxLinesFilled)
           .add("docs", docs)
           .toString();
     }
@@ -686,7 +643,7 @@ public abstract class Doc {
       if (broken) {
         this.broken = true;
         this.newIndent = Math.max(lastIndent + plusIndent.eval(), 0);
-        return state.withColumn(newIndent).withBreaks(1);
+        return state.withColumn(newIndent);
       } else {
         this.broken = false;
         this.newIndent = -1;
@@ -788,7 +745,7 @@ public abstract class Doc {
           column++;
         }
       }
-      return state.withColumn(column).withBreaks(lines);
+      return state.withColumn(column);
     }
 
     @Override
