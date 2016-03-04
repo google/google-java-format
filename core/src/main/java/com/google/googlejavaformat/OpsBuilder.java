@@ -20,6 +20,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import com.google.googlejavaformat.Indent.Const;
 import com.google.googlejavaformat.Input.Tok;
 import com.google.googlejavaformat.Input.Token;
 import com.google.googlejavaformat.Output.BreakTag;
@@ -454,13 +455,16 @@ public final class OpsBuilder {
           for (Input.Tok tokAfter : token.getToksAfter()) {
             if (tokAfter.isComment()) {
               boolean breakAfter =
-                  tokAfter.isSlashStarComment()
-                      && tokenOp.breakAndIndentTrailingComment().isPresent();
+                  tokAfter.isJavadocComment()
+                      || (tokAfter.isSlashStarComment()
+                          && tokenOp.breakAndIndentTrailingComment().isPresent());
               if (breakAfter) {
                 tokOps.put(
                     k + 1,
                     Doc.Break.make(
-                        Doc.FillMode.FORCED, "", tokenOp.breakAndIndentTrailingComment().get()));
+                        Doc.FillMode.FORCED,
+                        "",
+                        tokenOp.breakAndIndentTrailingComment().or(Const.ZERO)));
               } else {
                 tokOps.put(k + 1, SPACE);
               }
