@@ -49,7 +49,7 @@ A string containing the name or the full path of the executable."
   :type '(file :must-match t :match #'file-executable-p)
   :risky t)
 
-;;###autoload
+;;;###autoload
 (defun google-java-format-region (start end)
   "Use google-java-format to format the code between START and END.
 If called interactively, uses the region, if there is one.  If
