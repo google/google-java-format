@@ -36,7 +36,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
     }
     ArrayList<String> lines = new ArrayList<>();
     for (String line : NEWLINE_SPLITTER.splitToList(tok.getOriginalText())) {
-      lines.add(CharMatcher.WHITESPACE.trimTrailingFrom(line));
+      lines.add(CharMatcher.whitespace().trimTrailingFrom(line));
     }
     if (lines.size() == 1) {
       return tok.getOriginalText().trim();
@@ -58,7 +58,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
     // find the leftmost non-whitespace character in all trailing lines
     int startCol = -1;
     for (int i = 1; i < lines.size(); i++) {
-      int lineIdx = CharMatcher.WHITESPACE.negate().indexIn(lines.get(i));
+      int lineIdx = CharMatcher.whitespace().negate().indexIn(lines.get(i));
       if (lineIdx >= 0 && (startCol == -1 || lineIdx < startCol)) {
         startCol = lineIdx;
       }

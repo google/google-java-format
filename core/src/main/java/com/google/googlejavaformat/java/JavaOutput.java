@@ -252,7 +252,7 @@ public final class JavaOutput extends Output {
         if (previous == '\n') {
           break;
         }
-        if (CharMatcher.WHITESPACE.matches(previous)) {
+        if (CharMatcher.whitespace().matches(previous)) {
           replaceFrom--;
           continue;
         }
@@ -305,14 +305,14 @@ public final class JavaOutput extends Output {
           replaceTo++;
           break;
         }
-        if (CharMatcher.WHITESPACE.matches(endChar)) {
+        if (CharMatcher.whitespace().matches(endChar)) {
           replaceTo++;
           continue;
         }
         break;
       }
       if (reIndent && trailingLine != null) {
-        int idx = CharMatcher.WHITESPACE.negate().indexIn(trailingLine);
+        int idx = CharMatcher.whitespace().negate().indexIn(trailingLine);
         if (idx > 0) {
           replacement.append(trailingLine, 0, idx);
         }
