@@ -53,8 +53,8 @@ import java.util.Map;
  * following a token on the same line go with that token; those following go with the next token---
  * and there is a final EOF token to hold final comments.
  *
- * <p>The formatter walks the AST to generate a Greg Nelson/Dereck Oppen-style list of formatting
- * {@link Op}s [1--2] that then generate a structured {@link Doc}. Each AST node type has a visitor
+ * <p>The formatter walks the AST to generate a Greg Nelson/Derek Oppen-style list of formatting
+ * {@link Op}s [1--2] that then generates a structured {@link Doc}. Each AST node type has a visitor
  * to emit a sequence of {@link Op}s for the node.
  *
  * <p>Some data-structure operations are easier in the list of {@link Op}s, while others become
@@ -69,7 +69,7 @@ import java.util.Map;
  * <p>Instances of the formatter are immutable and thread-safe.
  *
  * <p>[1] Nelson, Greg, and John DeTreville. Personal communication.
- * <p>[2] Oppen, Dereck C. "Prettyprinting". ACM Transactions on Programming Languages and Systems,
+ * <p>[2] Oppen, Derek C. "Prettyprinting". ACM Transactions on Programming Languages and Systems,
  *        Volume 2 Issue 4, Oct. 1980, pp. 465–483.
  */
 @Immutable
@@ -84,7 +84,7 @@ public final class Formatter {
   }
 
   /**
-   * Construct a {@code Formatter} given Java compilation unit. Parses the code; builds a
+   * Construct a {@code Formatter} given a Java compilation unit. Parses the code; builds a
    * {@link JavaInput} and the corresponding {@link JavaOutput}.
    * @param javaInput the input, a Java compilation unit
    * @param javaOutput the {@link JavaOutput}
@@ -113,7 +113,7 @@ public final class Formatter {
       return;
     }
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput, errors);
-    // Output compilation unit.
+    // Output the compilation unit.
     new JavaInputAstVisitor(builder, indentationMultiplier).visit(unit);
     builder.sync(javaInput.getText().length());
     builder.drain();
@@ -161,8 +161,8 @@ public final class Formatter {
   }
 
   /**
-   * Format an input string (a compilation), for only the specified character ranges. These ranges
-   * are extended as necessary (e.g., to encompass whole lines).
+   * Format an input string (a Java compilation unit), for only the specified character ranges.
+   * These ranges are extended as necessary (e.g., to encompass whole lines).
    * @param input the input string
    * @param characterRanges the character ranges to be reformatted
    * @return the output string
