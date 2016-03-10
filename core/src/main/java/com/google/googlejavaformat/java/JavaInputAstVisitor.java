@@ -818,6 +818,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(EnumConstantDeclaration node) {
     sync(node);
+    markForPartialFormat();
     List<Op> breaks =
         visitModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
     if (!breaks.isEmpty()) {

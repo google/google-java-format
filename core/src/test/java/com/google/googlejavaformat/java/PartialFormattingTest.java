@@ -1143,4 +1143,34 @@ public final class PartialFormattingTest {
     };
     assertThat(output).isEqualTo(Joiner.on('\n').join(expected));
   }
+
+  @Test
+  public void partialEnum() throws Exception {
+    String[] input = {
+      "enum E {", //
+      "ONE,",
+      "TWO,",
+      "THREE;",
+      "}",
+    };
+    String[] expected = {
+      "enum E {", //
+      "ONE,",
+      "  TWO,",
+      "THREE;",
+      "}",
+    };
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+    Files.write(path, Joiner.on('\n').join(input).getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    String[] args = {"-lines", "3", path.toString()};
+    assertThat(main.format(args)).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
+  }
 }
