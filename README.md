@@ -54,11 +54,10 @@ dependencies {
 }
 ```
 
-You can then use the formatter quite simply using the various `formatSource`
-methods.  E.g.
+You can then use the formatter through the `formatSource` methods.  E.g.
 
 ```java
-String formattedSource = Formatter.formatSource(sourceString);
+String formattedSource = new Formatter().formatSource(sourceString);
 ```
 
 or
@@ -66,11 +65,11 @@ or
 ```java
 CharSource source = ...
 CharSink output = ...
-Formatter.formatSource(source, output);
+new Formatter().formatSource(source, output);
 ```
 
-Generally speaking, your starting point should be the static methods found
-in `com.google.googlejavaformat.java.Formatter`.
+Generally speaking, your starting point should be the instance methods of
+`com.google.googlejavaformat.java.Formatter`.
 
 Building from source
 --------------------
