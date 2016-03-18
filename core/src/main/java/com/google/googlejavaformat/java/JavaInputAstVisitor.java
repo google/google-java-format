@@ -891,6 +891,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         if (!first) {
           token(",");
           builder.forcedBreak();
+          builder.blankLineWanted(BlankLineWanted.PRESERVE);
         }
         visit(enumConstant);
         first = false;
