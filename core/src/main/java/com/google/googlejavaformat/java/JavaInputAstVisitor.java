@@ -132,6 +132,7 @@ import org.eclipse.jdt.core.dom.WildcardType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -2332,6 +2333,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     UnionType type = (UnionType) declaration.getType();
     builder.open(ZERO);
     sync(declaration);
+    visitAndBreakModifiers(
+        declaration.modifiers(), Direction.HORIZONTAL, Optional.<BreakTag>absent());
     List<Type> union = type.types();
     boolean first = true;
     for (int i = 0; i < union.size() - 1; i++) {
@@ -2351,7 +2354,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     declareOne(
         declaration,
         Direction.HORIZONTAL,
-        declaration.modifiers(),
+        Collections.<IExtendedModifier>emptyList(),
         last,
         VarArgsOrNot.valueOf(declaration.isVarargs()),
         declaration.varargsAnnotations(),
