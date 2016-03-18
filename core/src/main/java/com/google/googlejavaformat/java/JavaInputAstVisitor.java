@@ -30,6 +30,7 @@ import com.google.googlejavaformat.OpsBuilder;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output.BreakTag;
 
+import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
@@ -1672,19 +1673,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(SuperMethodInvocation node) {
     sync(node);
-    builder.open(ZERO);
-    if (node.getQualifier() != null) {
-      node.getQualifier().accept(this);
-      builder.breakOp();
-      token(".");
-    }
-    token("super");
-    builder.breakOp();
-    token(".");
-    builder.close();
-    addTypeArguments(node.typeArguments(), plusFour);
-    visit(node.getName());
-    addArguments(node.arguments(), plusFour);
+    visitDot(node);
     return false;
   }
 
@@ -2569,6 +2558,19 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         case ASTNode.QUALIFIED_NAME:
           node = ((QualifiedName) node).getQualifier();
           break;
+        case ASTNode.SUPER_METHOD_INVOCATION:
+          // Super method invocations are represented as a single AST node that includes
+          // an optional qualifier, 'super', and the method name and arguments. When laying
+          // out a super method invocation in a dot chain we want to treat 'super' and the
+          // method name as distinct elements, so we create a fake AST node for just the
+          // 'super' token.
+          // TODO(cushon): create a higher-level presentation of dot chains
+          stack.addFirst(AST.newAST(AST.JLS8).newSuperFieldAccess());
+          node = ((SuperMethodInvocation) node).getQualifier();
+          break;
+        case ASTNode.THIS_EXPRESSION:
+          node = ((ThisExpression) node).getQualifier();
+          break;
         case ASTNode.SIMPLE_NAME:
           node = null;
           break LOOP;
@@ -2611,7 +2613,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     {
       for (int i = 0; i < items.size(); i++) {
         Expression expression = items.get(i);
-        if (expression.getNodeType() == ASTNode.METHOD_INVOCATION) {
+        if (expression.getNodeType() == ASTNode.METHOD_INVOCATION
+            || expression.getNodeType() == ASTNode.SUPER_METHOD_INVOCATION) {
           if (i > 0 || node != null) {
             // we only want dereference invocations
             invocationCount++;
@@ -2780,6 +2783,22 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         }
         visit(methodInvocation.getName());
         break;
+      case ASTNode.SUPER_METHOD_INVOCATION:
+        SuperMethodInvocation superMethodInvocation = (SuperMethodInvocation) expression;
+        if (!superMethodInvocation.typeArguments().isEmpty()) {
+          builder.open(plusFour);
+          addTypeArguments(superMethodInvocation.typeArguments(), ZERO);
+          builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, tyargTag);
+          builder.close();
+        }
+        visit(superMethodInvocation.getName());
+        break;
+      case ASTNode.SUPER_FIELD_ACCESS:
+        token("super");
+        break;
+      case ASTNode.THIS_EXPRESSION:
+        token("this");
+        break;
       case ASTNode.QUALIFIED_NAME:
         visit(((QualifiedName) expression).getName());
         break;
@@ -2799,6 +2818,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         addArguments(methodInvocation.arguments(), indent);
         builder.close();
         break;
+      case ASTNode.SUPER_METHOD_INVOCATION:
+        builder.open(tyargIndent);
+        SuperMethodInvocation superMethodInvocation = (SuperMethodInvocation) expression;
+        addArguments(superMethodInvocation.arguments(), indent);
+        builder.close();
+        break;
+      case ASTNode.THIS_EXPRESSION:
       case ASTNode.FIELD_ACCESS:
       case ASTNode.SIMPLE_NAME:
       case ASTNode.QUALIFIED_NAME:
