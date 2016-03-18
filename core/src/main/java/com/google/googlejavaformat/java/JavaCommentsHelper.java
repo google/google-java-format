@@ -18,7 +18,6 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.googlejavaformat.CommentsHelper;
-import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Input.Tok;
 
 import java.util.ArrayList;
