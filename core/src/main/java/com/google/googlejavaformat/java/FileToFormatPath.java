@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java;
 
 import com.google.common.collect.RangeSet;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -45,6 +46,6 @@ class FileToFormatPath extends FileToFormat {
 
   @Override
   public InputStream inputStream() throws IOException {
-    return Files.newInputStream(path);
+    return new BufferedInputStream(Files.newInputStream(path));
   }
 }

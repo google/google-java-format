@@ -23,6 +23,7 @@ import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.CharStreams;
 import com.google.googlejavaformat.FormatterDiagnostic;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -49,6 +50,7 @@ class FormatFileCallable implements Callable<Boolean> {
   private final Object outputLock;
   private final int indentMultiplier;
   private final boolean inPlace;
+  private final SortImports sortImports;
   private final PrintWriter outWriter;
   private final PrintWriter errWriter;
 
@@ -57,17 +59,26 @@ class FormatFileCallable implements Callable<Boolean> {
       Object outputLock,
       int indentMultiplier,
       boolean inPlace,
+      SortImports sortImports,
       PrintWriter outWriter,
       PrintWriter errWriter) {
     Preconditions.checkArgument(
-        !(inPlace && fileToFormat instanceof FileToFormatStdin), "Cannot format stdin in place");
+        !(inPlace && fileToFormat instanceof FileToFormatStdin),
+        "Cannot format stdin in place");
 
     this.fileToFormat = Preconditions.checkNotNull(fileToFormat);
     this.outputLock = Preconditions.checkNotNull(outputLock);
     this.indentMultiplier = indentMultiplier;
     this.inPlace = inPlace;
+    this.sortImports = sortImports;
     this.outWriter = Preconditions.checkNotNull(outWriter);
     this.errWriter = Preconditions.checkNotNull(errWriter);
+  }
+
+  enum SortImports {
+    NO,
+    ONLY,
+    ALSO
   }
 
   /**
@@ -75,15 +86,31 @@ class FormatFileCallable implements Callable<Boolean> {
    */
   @Override
   public Boolean call() {
-    String stringFromStream = readInput();
-    if (stringFromStream == null) {
+    String inputString = readInput();
+    if (inputString == null) {
       return false;
     }
 
+    if (sortImports != SortImports.NO) {
+      String reordered = reorderImports(inputString);
+      if (reordered == null) {
+        return false;
+      }
+
+      if (sortImports == SortImports.ONLY) {
+        if (reordered.equals(inputString)) {
+          return true;
+        }
+        return writeString(reordered);
+      }
+
+      inputString = reordered;
+    }
+
     JavaInput javaInput;
-    RangeSet<Integer> tokens;
+    final RangeSet<Integer> tokens;
     try {
-      javaInput = new JavaInput(fileToFormat.fileName(), stringFromStream);
+      javaInput = new JavaInput(fileToFormat.fileName(), inputString);
       tokens = TreeRangeSet.create();
       for (Range<Integer> lineRange : fileToFormat.lineRanges().asRanges()) {
         tokens.add(javaInput.lineRangeToTokenRange(lineRange));
@@ -111,7 +138,7 @@ class FormatFileCallable implements Callable<Boolean> {
       }
     }
 
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
+    final JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
     List<FormatterDiagnostic> errors = new ArrayList<>();
     Formatter.format(javaInput, javaOutput, Formatter.MAX_WIDTH, errors, indentMultiplier);
     if (!errors.isEmpty()) {
@@ -123,7 +150,14 @@ class FormatFileCallable implements Callable<Boolean> {
       return false;
     }
 
-    return writeOutput(javaOutput, tokens);
+    Write writeTokens =
+        new Write() {
+          @Override
+          public void write(Writer writer) throws IOException {
+            javaOutput.writeMerged(writer, tokens);
+          }
+        };
+    return writeOutput(writeTokens);
   }
 
   @Nullable
@@ -145,11 +179,42 @@ class FormatFileCallable implements Callable<Boolean> {
     }
   }
 
-  private boolean writeOutput(JavaOutput javaOutput, RangeSet<Integer> tokens) {
+  @Nullable
+  private String reorderImports(String inputString) {
+    try {
+      return ImportOrderer.reorderImports(fileToFormat.fileName(), inputString);
+    } catch (FormatterException e) {
+      synchronized (outputLock) {
+        errWriter
+            .append(fileToFormat.fileName())
+            .append(": error sorting imports: ")
+            .append(e.getMessage())
+            .append('\n')
+            .flush();
+      }
+      return null;
+    }
+  }
+
+  interface Write {
+    void write(Writer writer) throws IOException;
+  }
+
+  private boolean writeString(final String s) {
+    return writeOutput(
+        new Write() {
+          @Override
+          public void write(Writer writer) throws IOException {
+            writer.write(s);
+          }
+        });
+  }
+
+  private boolean writeOutput(Write write) {
     if (!inPlace) {
       synchronized (outputLock) {
         try {
-          javaOutput.writeMerged(outWriter, tokens);
+          write.write(outWriter);
         } catch (IOException e) {
           errWriter.append("cannot write output: " + e.getMessage()).flush();
         }
@@ -158,8 +223,11 @@ class FormatFileCallable implements Callable<Boolean> {
       }
     } else {
       String tempFileName = fileToFormat.fileName() + '#';
-      try (Writer writer = new OutputStreamWriter(new FileOutputStream(tempFileName), UTF_8)) {
-        javaOutput.writeMerged(writer, tokens);
+      try (Writer writer =
+          new OutputStreamWriter(
+              new BufferedOutputStream(new FileOutputStream(tempFileName)),
+              UTF_8)) {
+        write.write(writer);
         outWriter.flush();
       } catch (IOException e) {
         synchronized (outputLock) {

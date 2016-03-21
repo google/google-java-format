@@ -17,6 +17,7 @@ package com.google.googlejavaformat.java;
 import static com.google.common.io.Files.getFileExtension;
 import static com.google.common.io.Files.getNameWithoutExtension;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -71,11 +73,7 @@ public final class FormatterTest {
         assertEquals("bad testdata file names", 1, subPath.getNameCount());
         String baseName = getNameWithoutExtension(subPath.getFileName().toString());
         String extension = getFileExtension(subPath.getFileName().toString());
-        final String stringFromStream;
-        try (InputStream stream = classLoader.getResourceAsStream(resourceName)) {
-          stringFromStream =
-              CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
-        }
+        String stringFromStream = getResource(resourceName);
         switch (extension) {
           case "input":
             inputs.put(baseName, stringFromStream);
@@ -289,5 +287,47 @@ public final class FormatterTest {
     String expect = "package com.google.example;\n\n" + UNORDERED_IMPORTS
         + "\n\npublic class ExampleTest {}\n";
     assertThat(output).isEqualTo(expect);
+  }
+
+  @Test
+  public void importOrderingWithoutFormatting() throws IOException, UsageException {
+    importOrdering(
+        "--sort-imports=only",
+        "com/google/googlejavaformat/java/testimports/A.imports-only");
+  }
+
+  @Test
+  public void importOrderingAndFormatting() throws IOException, UsageException {
+    importOrdering(
+        "--sort-imports=also",
+        "com/google/googlejavaformat/java/testimports/A.imports-and-formatting");
+  }
+
+  private void importOrdering(String sortArg, String outputResourceName)
+      throws IOException, UsageException {
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+
+    String inputResourceName = "com/google/googlejavaformat/java/testimports/A.input";
+    String input = getResource(inputResourceName);
+    String expectedOutput = getResource(outputResourceName);
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    main.format(new String[] {sortArg, "-i", path.toString()});
+
+    assertThat(err.toString()).isEmpty();
+    assertThat(out.toString()).isEmpty();
+    String output = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    assertThat(output).isEqualTo(expectedOutput);
+  }
+
+  private String getResource(String resourceName) throws IOException {
+    try (InputStream stream = getClass().getClassLoader().getResourceAsStream(resourceName)) {
+      assertWithMessage("Missing resource: " + resourceName).that(stream).isNotNull();
+      return CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
+    }
   }
 }

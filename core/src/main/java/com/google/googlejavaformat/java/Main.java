@@ -22,6 +22,7 @@ import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
+import com.google.googlejavaformat.java.FormatFileCallable.SortImports;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -82,6 +83,14 @@ public final class Main {
     @Parameter(
         names = {"--help", "-help", "-h"}, description = "Print an extended usage statement.")
     boolean helpFlag = false;
+
+    @Parameter(
+        names = {"--sort-imports", "-sort-imports"},
+        description = "Sort import statements. "
+            + "--sort-imports=only to sort imports but do no other formatting. "
+            + "--sort-imports=also to sort imports and do other formatting.",
+        hidden = true)
+    String sortImportsFlag = "";
 
     // TODO(eaftan): clang-format formats stdin -> stdout when no options are passed.  We should
     // match that behavior.
@@ -156,6 +165,25 @@ public final class Main {
     if (argInfo.parameters.helpFlag) {
       argInfo.throwUsage();
     }
+    SortImports sortImports;
+    switch (argInfo.parameters.sortImportsFlag) {
+      case "":
+        sortImports = SortImports.NO;
+        break;
+      case "only":
+        sortImports = SortImports.ONLY;
+        break;
+      case "also":
+        sortImports = SortImports.ALSO;
+        break;
+      default:
+        errWriter.println("Invalid value for --sort-imports. Should be \"only\" or \"also\".");
+        return 1;
+    }
+    if (sortImports != SortImports.NO && argInfo.isSelection()) {
+      errWriter.println("--sort-imports can currently only apply to the whole file");
+      return 1;
+    }
 
     ConstructFilesToFormatResult constructFilesToFormatResult = constructFilesToFormat(argInfo);
     boolean allOkay = constructFilesToFormatResult.allOkay;
@@ -177,6 +205,7 @@ public final class Main {
                   outputLock,
                   indentMultiplier,
                   argInfo.parameters.iFlag,
+                  sortImports,
                   outWriter,
                   errWriter)));
     }
@@ -277,10 +306,7 @@ public final class Main {
       if (parameters.iFlag && parameters.fileNamesFlag.isEmpty()) {
         argInfo.throwUsage();
       }
-      if (!(parameters.linesFlags.isEmpty()
-          && parameters.offsetFlags.isEmpty()
-          && parameters.lengthFlags.isEmpty()
-          || filesToFormat == 1)) {
+      if (argInfo.isSelection() && filesToFormat != 1) {
         argInfo.throwUsage();
       }
       if (parameters.offsetFlags.size() != parameters.lengthFlags.size()) {
@@ -291,6 +317,11 @@ public final class Main {
       }
 
       return argInfo;
+    }
+
+    boolean isSelection() {
+      return !parameters.linesFlags.isEmpty() || !parameters.offsetFlags.isEmpty()
+          || !parameters.lengthFlags.isEmpty();
     }
 
     private ArgInfo(FormatterParameters parameters, JCommander jCommander) {
