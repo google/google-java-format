@@ -41,13 +41,13 @@ public class JavaFormatterOptions {
 
   static final int DEFAULT_MAX_LINE_LENGTH = 100;
 
-  enum SortImports {
+  public enum SortImports {
     NO,
     ONLY,
     ALSO
   }
 
-  enum Style {
+  public enum Style {
 
     /** The default Google Java Style configuration. */
     GOOGLE(1),
@@ -66,7 +66,7 @@ public class JavaFormatterOptions {
     }
   }
 
-  enum JavadocFormatter {
+  public enum JavadocFormatter {
     NONE {
       @Override
       public String format(JavaFormatterOptions options, String text, int column0) {
@@ -87,7 +87,8 @@ public class JavaFormatterOptions {
   private final Style style;
   private final SortImports sortImports;
 
-  JavaFormatterOptions(JavadocFormatter javadocFormatter, Style style, SortImports sortImports) {
+  public JavaFormatterOptions(
+      JavadocFormatter javadocFormatter, Style style, SortImports sortImports) {
     this.javadocFormatter = javadocFormatter;
     this.style = style;
     this.sortImports = sortImports;

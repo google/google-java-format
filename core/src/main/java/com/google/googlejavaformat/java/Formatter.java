@@ -89,7 +89,7 @@ public final class Formatter {
     this(new JavaFormatterOptions(JavadocFormatter.NONE, Style.GOOGLE, SortImports.NO));
   }
 
-  Formatter(JavaFormatterOptions options) {
+  public Formatter(JavaFormatterOptions options) {
     this.options = options;
   }
 
