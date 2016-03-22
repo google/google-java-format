@@ -22,6 +22,7 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.CharStreams;
 import com.google.googlejavaformat.FormatterDiagnostic;
+import com.google.googlejavaformat.java.JavaFormatterOptions.SortImports;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -48,18 +49,16 @@ import javax.annotation.Nullable;
 class FormatFileCallable implements Callable<Boolean> {
   private final FileToFormat fileToFormat;
   private final Object outputLock;
-  private final int indentMultiplier;
+  private final JavaFormatterOptions options;
   private final boolean inPlace;
-  private final SortImports sortImports;
   private final PrintWriter outWriter;
   private final PrintWriter errWriter;
 
   FormatFileCallable(
       FileToFormat fileToFormat,
       Object outputLock,
-      int indentMultiplier,
+      JavaFormatterOptions options,
       boolean inPlace,
-      SortImports sortImports,
       PrintWriter outWriter,
       PrintWriter errWriter) {
     Preconditions.checkArgument(
@@ -68,17 +67,10 @@ class FormatFileCallable implements Callable<Boolean> {
 
     this.fileToFormat = Preconditions.checkNotNull(fileToFormat);
     this.outputLock = Preconditions.checkNotNull(outputLock);
-    this.indentMultiplier = indentMultiplier;
+    this.options = options;
     this.inPlace = inPlace;
-    this.sortImports = sortImports;
     this.outWriter = Preconditions.checkNotNull(outWriter);
     this.errWriter = Preconditions.checkNotNull(errWriter);
-  }
-
-  enum SortImports {
-    NO,
-    ONLY,
-    ALSO
   }
 
   /**
@@ -91,13 +83,13 @@ class FormatFileCallable implements Callable<Boolean> {
       return false;
     }
 
-    if (sortImports != SortImports.NO) {
+    if (options.sortImports() != SortImports.NO) {
       String reordered = reorderImports(inputString);
       if (reordered == null) {
         return false;
       }
 
-      if (sortImports == SortImports.ONLY) {
+      if (options.sortImports() == SortImports.ONLY) {
         if (reordered.equals(inputString)) {
           return true;
         }
@@ -138,9 +130,9 @@ class FormatFileCallable implements Callable<Boolean> {
       }
     }
 
-    final JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
+    final JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
     List<FormatterDiagnostic> errors = new ArrayList<>();
-    Formatter.format(javaInput, javaOutput, Formatter.MAX_WIDTH, errors, indentMultiplier);
+    Formatter.format(javaInput, javaOutput, options, errors);
     if (!errors.isEmpty()) {
       synchronized (outputLock) {
         for (FormatterDiagnostic error : errors) {

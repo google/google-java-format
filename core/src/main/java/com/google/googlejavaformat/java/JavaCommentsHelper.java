@@ -26,15 +26,26 @@ import java.util.List;
 
 /** {@code JavaCommentsHelper} extends {@link CommentsHelper} to rewrite Java comments. */
 public final class JavaCommentsHelper implements CommentsHelper {
+
   private static final Splitter NEWLINE_SPLITTER = Splitter.on('\n');
+
+  private final JavaFormatterOptions options;
+
+  public JavaCommentsHelper(JavaFormatterOptions options) {
+    this.options = options;
+  }
 
   @Override
   public String rewrite(Tok tok, int maxWidth, int column0) {
     if (!tok.isComment()) {
       return tok.getOriginalText();
     }
-    ArrayList<String> lines = new ArrayList<>();
-    for (String line : NEWLINE_SPLITTER.splitToList(tok.getOriginalText())) {
+    String text = tok.getOriginalText();
+    if (tok.isJavadocComment()) {
+      text = options.javadocFormatter().format(options, text, column0);
+    }
+    List<String> lines = new ArrayList<>();
+    for (String line : NEWLINE_SPLITTER.split(text)) {
       lines.add(CharMatcher.whitespace().trimTrailingFrom(line));
     }
     if (lines.size() == 1) {

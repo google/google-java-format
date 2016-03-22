@@ -29,6 +29,9 @@ import com.google.googlejavaformat.DocBuilder;
 import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
+import com.google.googlejavaformat.java.JavaFormatterOptions.JavadocFormatter;
+import com.google.googlejavaformat.java.JavaFormatterOptions.SortImports;
+import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
@@ -74,13 +77,20 @@ import java.util.Map;
  */
 @Immutable
 public final class Formatter {
-  static final int MAX_WIDTH = 100;
+
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
+
+  private final JavaFormatterOptions options;
 
   /**
    * A new Formatter instance with default options.
    */
   public Formatter() {
+    this(new JavaFormatterOptions(JavadocFormatter.NONE, Style.GOOGLE, SortImports.NO));
+  }
+
+  Formatter(JavaFormatterOptions options) {
+    this.options = options;
   }
 
   /**
@@ -88,22 +98,20 @@ public final class Formatter {
    * {@link JavaInput} and the corresponding {@link JavaOutput}.
    * @param javaInput the input, a Java compilation unit
    * @param javaOutput the {@link JavaOutput}
-   * @param maxWidth the maximum formatted width
+   * @param options the {@link JavaFormatterOptions}
    * @param errors mutable list to receive errors
-   * @param indentationMultiplier the multiplier for the unit of indent; the default is 1
    */
   static void format(
       JavaInput javaInput,
       JavaOutput javaOutput,
-      int maxWidth,
-      List<FormatterDiagnostic> errors,
-      int indentationMultiplier) {
+      JavaFormatterOptions options,
+      List<FormatterDiagnostic> errors) {
     ASTParser parser = ASTParser.newParser(AST.JLS8);
     parser.setSource(javaInput.getText().toCharArray());
     @SuppressWarnings("unchecked") // safe by specification
-    Map<String, String> options = JavaCore.getOptions();
-    JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, options);
-    parser.setCompilerOptions(options);
+    Map<String, String> parserOptions = JavaCore.getOptions();
+    JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, parserOptions);
+    parser.setCompilerOptions(parserOptions);
     CompilationUnit unit = (CompilationUnit) parser.createAST(null);
     javaInput.setCompilationUnit(unit);
     if (unit.getMessages().length > 0) {
@@ -114,11 +122,12 @@ public final class Formatter {
     }
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput, errors);
     // Output the compilation unit.
-    new JavaInputAstVisitor(builder, indentationMultiplier).visit(unit);
+    new JavaInputAstVisitor(builder, options.indentationMultiplier()).visit(unit);
     builder.sync(javaInput.getText().length());
     builder.drain();
     Doc doc = new DocBuilder().withOps(builder.build()).build();
-    doc.computeBreaks(javaOutput.getCommentsHelper(), maxWidth, new Doc.State(+0, 0));
+    doc.computeBreaks(
+        javaOutput.getCommentsHelper(), options.maxLineLength(), new Doc.State(+0, 0));
     doc.write(javaOutput);
     javaOutput.flush();
   }
@@ -143,9 +152,9 @@ public final class Formatter {
    */
   public String formatSource(String input) throws FormatterException {
     JavaInput javaInput = new JavaInput(STDIN_FILENAME, input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
+    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
     List<FormatterDiagnostic> errors = new ArrayList<>();
-    format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
+    format(javaInput, javaOutput, options, errors);
     if (!errors.isEmpty()) {
       throw new FormatterException(errors);
     }
@@ -171,9 +180,9 @@ public final class Formatter {
   public String formatSource(String input, List<Range<Integer>> characterRanges)
       throws FormatterException {
     JavaInput javaInput = new JavaInput(STDIN_FILENAME, input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
+    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
     List<FormatterDiagnostic> errors = new ArrayList<>();
-    format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
+    format(javaInput, javaOutput, options, errors);
     if (!errors.isEmpty()) {
       throw new FormatterException(errors);
     }
@@ -198,9 +207,9 @@ public final class Formatter {
   public ImmutableList<Replacement> getFormatReplacements(
       String input, List<Range<Integer>> characterRanges) throws FormatterException {
     JavaInput javaInput = new JavaInput(STDIN_FILENAME, input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper());
+    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
     List<FormatterDiagnostic> errors = new ArrayList<>();
-    format(javaInput, javaOutput, MAX_WIDTH, errors, 1);
+    format(javaInput, javaOutput, options, errors);
     if (!errors.isEmpty()) {
       throw new FormatterException(errors);
     }

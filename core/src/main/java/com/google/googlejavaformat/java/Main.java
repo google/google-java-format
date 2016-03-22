@@ -22,7 +22,8 @@ import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
-import com.google.googlejavaformat.java.FormatFileCallable.SortImports;
+import com.google.googlejavaformat.java.JavaFormatterOptions.JavadocFormatter;
+import com.google.googlejavaformat.java.JavaFormatterOptions.SortImports;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -195,7 +196,13 @@ public final class Main {
     List<Future<Boolean>> results = new ArrayList<>();
     int numThreads = Math.min(MAX_THREADS, filesToFormat.size());
     ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
-    int indentMultiplier = argInfo.parameters.aospFlag ? 2 : 1;
+    JavaFormatterOptions options =
+        new JavaFormatterOptions(
+            JavadocFormatter.NONE,
+            argInfo.parameters.aospFlag
+                ? JavaFormatterOptions.Style.AOSP
+                : JavaFormatterOptions.Style.GOOGLE,
+            sortImports);
     Object outputLock = new Object();
     for (FileToFormat fileToFormat : filesToFormat) {
       results.add(
@@ -203,9 +210,8 @@ public final class Main {
               new FormatFileCallable(
                   fileToFormat,
                   outputLock,
-                  indentMultiplier,
+                  options,
                   argInfo.parameters.iFlag,
-                  sortImports,
                   outWriter,
                   errWriter)));
     }
