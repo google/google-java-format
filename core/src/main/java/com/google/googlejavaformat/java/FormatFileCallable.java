@@ -34,6 +34,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -232,9 +234,19 @@ class FormatFileCallable implements Callable<Boolean> {
         }
         return false;
       }
-      if (!new File(tempFileName).renameTo(new File(fileToFormat.fileName()))) {
+      try {
+        Files.move(
+            new File(tempFileName).toPath(),
+            new File(fileToFormat.fileName()).toPath(),
+            StandardCopyOption.REPLACE_EXISTING);
+      } catch(IOException e) {
         synchronized (outputLock) {
-          errWriter.append(tempFileName).append(": cannot rename temp file").append('\n').flush();
+          errWriter
+              .append(tempFileName)
+              .append(": cannot rename temp file: ")
+              .append(e.getMessage())
+              .append('\n')
+              .flush();
         }
         return false;
       }
