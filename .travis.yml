@@ -18,6 +18,6 @@ cache:
   directories:
     - $HOME/.m2
 
-install: mvn -pl '!idea_plugin' install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+install: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 
-script: mvn -pl '!idea_plugin' test -B
+script: mvn test -B

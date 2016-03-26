@@ -74,12 +74,7 @@ Generally speaking, your starting point should be the instance methods of
 Building from source
 --------------------
 
-To build google-java-format from source, you will need copy IntelliJ's
-platform JARs from a local IntelliJ install; see
-[`install-idea-jars.sh`](idea_plugin/src/main/scripts/install-idea-jars.sh).
-Alternatively, you can skip building the IntelliJ plugin:
-
-    mvn -pl '!idea_plugin' install
+    mvn install
 
 Contributing
 ------------
