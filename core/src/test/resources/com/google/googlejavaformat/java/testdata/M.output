@@ -238,28 +238,152 @@ class M {
     return null;
   }
 
-  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20,
-          T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>
+  <
+          T0,
+          T1,
+          T2,
+          T3,
+          T4,
+          T5,
+          T6,
+          T7,
+          T8,
+          T9,
+          T10,
+          T11,
+          T12,
+          T13,
+          T14,
+          T15,
+          T16,
+          T17,
+          T18,
+          T19,
+          T20,
+          T21,
+          T22,
+          T23,
+          T24,
+          T25,
+          T26,
+          T27,
+          T28,
+          T29,
+          T30,
+          T31>
       T methodName20(int x) {
     return null;
   }
 
-  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20,
-          T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>
+  <
+          T0,
+          T1,
+          T2,
+          T3,
+          T4,
+          T5,
+          T6,
+          T7,
+          T8,
+          T9,
+          T10,
+          T11,
+          T12,
+          T13,
+          T14,
+          T15,
+          T16,
+          T17,
+          T18,
+          T19,
+          T20,
+          T21,
+          T22,
+          T23,
+          T24,
+          T25,
+          T26,
+          T27,
+          T28,
+          T29,
+          T30,
+          T31>
       T methodName21(int x) throws Exception {
     return null;
   }
 
-  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20,
-          T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>
+  <
+          T0,
+          T1,
+          T2,
+          T3,
+          T4,
+          T5,
+          T6,
+          T7,
+          T8,
+          T9,
+          T10,
+          T11,
+          T12,
+          T13,
+          T14,
+          T15,
+          T16,
+          T17,
+          T18,
+          T19,
+          T20,
+          T21,
+          T22,
+          T23,
+          T24,
+          T25,
+          T26,
+          T27,
+          T28,
+          T29,
+          T30,
+          T31>
       T methodName22(int x)
           throws Exception0, Exception1, Exception2, Exception3, Exception4, Exception5, Exception6,
               Exception7, Exception8, Exception9 {
     return null;
   }
 
-  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20,
-          T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>
+  <
+          T0,
+          T1,
+          T2,
+          T3,
+          T4,
+          T5,
+          T6,
+          T7,
+          T8,
+          T9,
+          T10,
+          T11,
+          T12,
+          T13,
+          T14,
+          T15,
+          T16,
+          T17,
+          T18,
+          T19,
+          T20,
+          T21,
+          T22,
+          T23,
+          T24,
+          T25,
+          T26,
+          T27,
+          T28,
+          T29,
+          T30,
+          T31>
       T methodName22(
           int a,
           int b,
@@ -286,8 +410,39 @@ class M {
     return null;
   }
 
-  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20,
-          T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>
+  <
+          T0,
+          T1,
+          T2,
+          T3,
+          T4,
+          T5,
+          T6,
+          T7,
+          T8,
+          T9,
+          T10,
+          T11,
+          T12,
+          T13,
+          T14,
+          T15,
+          T16,
+          T17,
+          T18,
+          T19,
+          T20,
+          T21,
+          T22,
+          T23,
+          T24,
+          T25,
+          T26,
+          T27,
+          T28,
+          T29,
+          T30,
+          T31>
       T methodName23(
           int a,
           int b,
@@ -315,8 +470,39 @@ class M {
     return null;
   }
 
-  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20,
-          T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>
+  <
+          T0,
+          T1,
+          T2,
+          T3,
+          T4,
+          T5,
+          T6,
+          T7,
+          T8,
+          T9,
+          T10,
+          T11,
+          T12,
+          T13,
+          T14,
+          T15,
+          T16,
+          T17,
+          T18,
+          T19,
+          T20,
+          T21,
+          T22,
+          T23,
+          T24,
+          T25,
+          T26,
+          T27,
+          T28,
+          T29,
+          T30,
+          T31>
       T methodName30(
           int a,
           int b,
@@ -345,8 +531,39 @@ class M {
     return null;
   }
 
-  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20,
-          T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>
+  <
+          T0,
+          T1,
+          T2,
+          T3,
+          T4,
+          T5,
+          T6,
+          T7,
+          T8,
+          T9,
+          T10,
+          T11,
+          T12,
+          T13,
+          T14,
+          T15,
+          T16,
+          T17,
+          T18,
+          T19,
+          T20,
+          T21,
+          T22,
+          T23,
+          T24,
+          T25,
+          T26,
+          T27,
+          T28,
+          T29,
+          T30,
+          T31>
       Pair<
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>,
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>>
@@ -354,8 +571,39 @@ class M {
     return null;
   }
 
-  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20,
-          T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>
+  <
+          T0,
+          T1,
+          T2,
+          T3,
+          T4,
+          T5,
+          T6,
+          T7,
+          T8,
+          T9,
+          T10,
+          T11,
+          T12,
+          T13,
+          T14,
+          T15,
+          T16,
+          T17,
+          T18,
+          T19,
+          T20,
+          T21,
+          T22,
+          T23,
+          T24,
+          T25,
+          T26,
+          T27,
+          T28,
+          T29,
+          T30,
+          T31>
       Pair<
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>,
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>>
@@ -363,8 +611,39 @@ class M {
     return null;
   }
 
-  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20,
-          T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>
+  <
+          T0,
+          T1,
+          T2,
+          T3,
+          T4,
+          T5,
+          T6,
+          T7,
+          T8,
+          T9,
+          T10,
+          T11,
+          T12,
+          T13,
+          T14,
+          T15,
+          T16,
+          T17,
+          T18,
+          T19,
+          T20,
+          T21,
+          T22,
+          T23,
+          T24,
+          T25,
+          T26,
+          T27,
+          T28,
+          T29,
+          T30,
+          T31>
       Pair<
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>,
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>>
@@ -374,8 +653,39 @@ class M {
     return null;
   }
 
-  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20,
-          T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>
+  <
+          T0,
+          T1,
+          T2,
+          T3,
+          T4,
+          T5,
+          T6,
+          T7,
+          T8,
+          T9,
+          T10,
+          T11,
+          T12,
+          T13,
+          T14,
+          T15,
+          T16,
+          T17,
+          T18,
+          T19,
+          T20,
+          T21,
+          T22,
+          T23,
+          T24,
+          T25,
+          T26,
+          T27,
+          T28,
+          T29,
+          T30,
+          T31>
       Pair<
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>,
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>>
@@ -405,8 +715,39 @@ class M {
     return null;
   }
 
-  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20,
-          T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>
+  <
+          T0,
+          T1,
+          T2,
+          T3,
+          T4,
+          T5,
+          T6,
+          T7,
+          T8,
+          T9,
+          T10,
+          T11,
+          T12,
+          T13,
+          T14,
+          T15,
+          T16,
+          T17,
+          T18,
+          T19,
+          T20,
+          T21,
+          T22,
+          T23,
+          T24,
+          T25,
+          T26,
+          T27,
+          T28,
+          T29,
+          T30,
+          T31>
       Pair<
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>,
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>>
@@ -437,8 +778,39 @@ class M {
     return null;
   }
 
-  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20,
-          T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>
+  <
+          T0,
+          T1,
+          T2,
+          T3,
+          T4,
+          T5,
+          T6,
+          T7,
+          T8,
+          T9,
+          T10,
+          T11,
+          T12,
+          T13,
+          T14,
+          T15,
+          T16,
+          T17,
+          T18,
+          T19,
+          T20,
+          T21,
+          T22,
+          T23,
+          T24,
+          T25,
+          T26,
+          T27,
+          T28,
+          T29,
+          T30,
+          T31>
       Pair<
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>,
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>>
@@ -623,8 +995,19 @@ class M {
     return this;
   }
 
-  <XXXXXXXXXX, XXXXXXXXXX, XXXXXXXXXX, XXXXXXXXXX, XXXXXXXXXX, XXXXXXXXXX, XXXXXXXXXX, XXXXXXXXXX,
-          XXXXXXXXXX, XXXXXXXXXX, XXXXXXXXXX, XXXXXXXXXX>
+  <
+          XXXXXXXXXX,
+          XXXXXXXXXX,
+          XXXXXXXXXX,
+          XXXXXXXXXX,
+          XXXXXXXXXX,
+          XXXXXXXXXX,
+          XXXXXXXXXX,
+          XXXXXXXXXX,
+          XXXXXXXXXX,
+          XXXXXXXXXX,
+          XXXXXXXXXX,
+          XXXXXXXXXX>
       M(
           ZZZZZZZZZZ z,
           ZZZZZZZZZZ z,

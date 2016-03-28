@@ -1264,12 +1264,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       {
         boolean first = true;
         if (!node.typeParameters().isEmpty()) {
-          visitTypeParameters(node.typeParameters(), ZERO, BreakOrNot.NO);
+          token("<");
+          typeParametersRest(node.typeParameters(), plusFour);
           first = false;
         }
 
         boolean openedNameAndTypeScope = false;
-        // constructor-like declarations that don't match the name of the enclosing class are 
+        // constructor-like declarations that don't match the name of the enclosing class are
         // parsed as method declarations with a null return type
         if (!node.isConstructor() && node.getReturnType2() != null) {
           if (!first) {
@@ -1864,22 +1865,22 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         visitModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
     boolean hasSuperclassType = node.getSuperclassType() != null;
     boolean hasSuperInterfaceTypes = !node.superInterfaceTypes().isEmpty();
-    builder.open(ZERO);
     builder.addAll(breaks);
     token(node.isInterface() ? "interface" : "class");
     builder.space();
     visit(node.getName());
     if (!node.typeParameters().isEmpty()) {
-      visitTypeParameters(
-          node.typeParameters(), hasSuperclassType || hasSuperInterfaceTypes ? plusFour : ZERO,
-          BreakOrNot.YES);
+      token("<");
     }
-    if (hasSuperclassType || hasSuperInterfaceTypes) {
-      builder.open(plusFour);
+    builder.open(plusFour);
+    {
+      if (!node.typeParameters().isEmpty()) {
+        typeParametersRest(
+            node.typeParameters(), hasSuperclassType || hasSuperInterfaceTypes ? plusFour : ZERO);
+      }
       if (hasSuperclassType) {
         builder.breakToFill(" ");
         token("extends");
-        // TODO(b/20761216): using a non-breaking space here could cause >100 char lines
         builder.space();
         node.getSuperclassType().accept(this);
       }
@@ -1899,7 +1900,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         }
         builder.close();
       }
-      builder.close();
     }
     builder.close();
     if (node.bodyDeclarations() == null) {
@@ -2501,29 +2501,27 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         ReceiverParameter.NO);
   }
 
-  /** Helper method for {@link MethodDeclaration}s and {@link TypeDeclaration}s. */
-  private void visitTypeParameters(
-      List<TypeParameter> nodes, Indent plusIndent, BreakOrNot breakAfterOpen) {
-    if (!nodes.isEmpty()) {
-      token("<");
-      builder.open(plusIndent);
-      builder.open(plusFour);
-      if (breakAfterOpen.isYes()) {
-        builder.breakOp();
+  /**
+   * Helper method for formatting the type parameter list of a {@link MethodDeclaration} or
+   * {@link TypeDeclaration}. Does not omit the leading '<', which should be associated with
+   * the type name.
+   */
+  private void typeParametersRest(List<TypeParameter> typeParameters, Indent plusIndent) {
+    builder.open(plusIndent);
+    builder.breakOp();
+    builder.open(ZERO);
+    boolean first = true;
+    for (TypeParameter typeParameter : typeParameters) {
+      if (!first) {
+        token(",");
+        builder.breakOp(" ");
       }
-      boolean first = true;
-      for (TypeParameter node : nodes) {
-        if (!first) {
-          token(",");
-          builder.breakToFill(" ");
-        }
-        visit(node);
-        first = false;
-      }
-      builder.close();
-      builder.close();
-      token(">");
+      typeParameter.accept(this);
+      first = false;
     }
+    token(">");
+    builder.close();
+    builder.close();
   }
 
   /** Helper method for {@link UnionType}s. */
