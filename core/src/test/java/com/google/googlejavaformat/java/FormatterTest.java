@@ -144,7 +144,7 @@ public final class FormatterTest {
 
     // should fail because the file does not exist
     assertThat(main.format("Foo.java")).isNotEqualTo(0);
-    assertThat(err.toString()).contains("could not read file: " + "Foo.java");
+    assertThat(err.toString()).contains("Foo.java" + ": could not read file: ");
   }
 
   @Test
@@ -241,7 +241,7 @@ public final class FormatterTest {
     String expect = "class T {\n  // asd\n\n  int x;\n}\n";
     assertThat(output).isEqualTo(expect);
   }
-  
+
   @Test
   public void noBlankAfterLineCommentWithInteriorBlankLine() throws FormatterException {
     String input = "class T {\n// asd \n\n// dsa \nint x;\n}";
@@ -249,7 +249,7 @@ public final class FormatterTest {
     String expect = "class T {\n  // asd\n\n  // dsa\n  int x;\n}\n";
     assertThat(output).isEqualTo(expect);
   }
-  
+
   @Test
   public void badConstructor() throws FormatterException {
     String input = "class X { Y() {} }";
@@ -257,7 +257,7 @@ public final class FormatterTest {
     String expect = "class X {\n  Y() {}\n}\n";
     assertThat(output).isEqualTo(expect);
   }
-  
+
   @Test
   public void voidMethod() throws FormatterException {
     String input = "class X { void Y() {} }";
