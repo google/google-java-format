@@ -161,7 +161,16 @@ class FormatFileCallable implements Callable<Boolean> {
   @Nullable
   private String readInput() {
     try (InputStream in = fileToFormat.inputStream()) {
-      return CharStreams.toString(new InputStreamReader(in, StandardCharsets.UTF_8));
+      // Transform all line terminators to '\n'.
+      StringBuilder builder = new StringBuilder();
+      for(String line : CharStreams.readLines(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+        builder.append(line).append('\n');
+      }
+      // Strip last '\n'.
+      if (builder.length() > 0) {
+        builder.setLength(builder.length() - 1);
+      }
+      return builder.toString();
       // The filename in the JavaInput is only used to create diagnostics, so it is safe to
       // pass in a synthetic filename like "<stdin>".
     } catch (IOException e) {
