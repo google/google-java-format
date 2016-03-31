@@ -39,6 +39,10 @@ public abstract class InputOutput {
     this.lines = lines;
   }
 
+  public final boolean areLinesEqual(InputOutput other) {
+    return lines.equals(other.lines);
+  }
+
   /**
    * Get the line count.
    * @return the line count
