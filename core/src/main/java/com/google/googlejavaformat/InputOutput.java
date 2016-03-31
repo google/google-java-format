@@ -22,7 +22,9 @@ import com.google.common.collect.Range;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /** This interface defines methods common to an {@link Input} or an {@link Output}. */
 public abstract class InputOutput {
@@ -40,7 +42,34 @@ public abstract class InputOutput {
   }
 
   public final boolean areLinesEqual(InputOutput other) {
-    return lines.equals(other.lines);
+    Pattern pattern = Pattern.compile("(\\r|\\n)");
+    List<String> thisLines = new ArrayList<>(lines);
+    List<String> thatLines = new ArrayList<>(other.lines);
+    ListIterator<String> iterator = thisLines.listIterator(thisLines.size());
+    while(iterator.hasPrevious()) {
+      String s = pattern.matcher(iterator.previous()).replaceAll("");
+      if (s.isEmpty()) {
+        iterator.remove();
+      }
+    }
+    iterator = thatLines.listIterator(thatLines.size());
+    while(iterator.hasPrevious()) {
+      String s = pattern.matcher(iterator.previous()).replaceAll("");
+      if (s.isEmpty()) {
+        iterator.remove();
+      }
+    }
+    if (thisLines.size() != thatLines.size()) {
+      return false;
+    }
+    for (int i = 0; i < thisLines.size(); i++) {
+      String thisLine = pattern.matcher(thisLines.get(i)).replaceAll("");
+      String thatLine = pattern.matcher(thatLines.get(i)).replaceAll("");
+      if (!thisLine.equals(thatLine)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
