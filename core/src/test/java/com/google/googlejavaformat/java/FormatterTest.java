@@ -43,8 +43,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Integration test for google-java-format.
@@ -130,6 +134,31 @@ public final class FormatterTest {
     String[] args = {"--aosp", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void testFormatInPlace() throws IOException, UsageException {
+    String input = "package test;\nclass T {\n\n}\n";
+    String expectedOutput = "package test;\n\nclass T {}\n";
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("InPlace.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+    assertThat(path.toFile().setExecutable(true)).isTrue();
+    assertThat(Files.isExecutable(path)).isTrue();
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    String[] args = {"-i", path.toString()};
+    assertThat(main.format(args)).isEqualTo(0);
+    assertThat(err.toString()).isEmpty();
+    assertThat(out.toString()).isEmpty();
+
+    String output = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    assertThat(output).isEqualTo(expectedOutput);
+    assertThat(Files.isExecutable(path)).isTrue();
   }
 
   @Test
