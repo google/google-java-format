@@ -518,7 +518,8 @@ public final class JavaInput extends Input {
     if (requiredLength > text.length()) {
       throw new FormatterException(
           String.format(
-              "invalid length %d, offset + length (%d) is outside the file",
+              "%s: error: invalid length %d, offset + length (%d) is outside the file",
+              filename,
               requiredLength,
               requiredLength));
     }

@@ -17,11 +17,11 @@ package com.google.googlejavaformat.java;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
+import com.google.common.io.ByteStreams;
 import com.google.googlejavaformat.java.JavaFormatterOptions.JavadocFormatter;
 import com.google.googlejavaformat.java.JavaFormatterOptions.SortImports;
 
@@ -30,16 +30,18 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -186,16 +188,6 @@ public final class Main {
       return 1;
     }
 
-    ConstructFilesToFormatResult constructFilesToFormatResult = constructFilesToFormat(argInfo);
-    boolean allOkay = constructFilesToFormatResult.allOkay;
-    ImmutableList<FileToFormat> filesToFormat = constructFilesToFormatResult.filesToFormat;
-    if (filesToFormat.isEmpty()) {
-      return allOkay ? 0 : 1;
-    }
-
-    List<Future<Boolean>> results = new ArrayList<>();
-    int numThreads = Math.min(MAX_THREADS, filesToFormat.size());
-    ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
     JavaFormatterOptions options =
         new JavaFormatterOptions(
             JavadocFormatter.NONE,
@@ -203,88 +195,99 @@ public final class Main {
                 ? JavaFormatterOptions.Style.AOSP
                 : JavaFormatterOptions.Style.GOOGLE,
             sortImports);
-    Object outputLock = new Object();
-    for (FileToFormat fileToFormat : filesToFormat) {
-      results.add(
-          executorService.submit(
-              new FormatFileCallable(
-                  fileToFormat,
-                  outputLock,
-                  options,
-                  argInfo.parameters.iFlag,
-                  outWriter,
-                  errWriter)));
-    }
-    for (Future<Boolean> result : results) {
-      try {
-        allOkay &= result.get();
-      } catch (InterruptedException e) {
-        synchronized (outputLock) {
-          errWriter.println(e);
-        }
-        allOkay = false;
-      } catch (ExecutionException e) {
-        synchronized (outputLock) {
-          errWriter.println(e.getCause());
-        }
-        allOkay = false;
-      }
-    }
-    return allOkay ? 0 : 1;
-  }
-
-  // Package-private for testing
-  ConstructFilesToFormatResult constructFilesToFormat(ArgInfo argInfo) {
-    boolean allOkay = true;
-    Set<Path> seenRealPaths = new HashSet<>();
-    ImmutableList.Builder<FileToFormat> filesToFormat = ImmutableList.builder();
-    for (String fileName : argInfo.parameters.fileNamesFlag) {
-      if (fileName.endsWith(".java")) {
-        try {
-          Path originalPath = Paths.get(fileName);
-          boolean added = seenRealPaths.add(originalPath.toRealPath());
-          if (added) {
-            filesToFormat.add(
-                new FileToFormatPath(
-                    originalPath,
-                    parseRangeSet(argInfo.parameters.linesFlags),
-                    argInfo.parameters.offsetFlags,
-                    argInfo.parameters.lengthFlags));
-          }
-        } catch (IOException e) {
-          errWriter
-              .append(fileName)
-              .append(": could not read file: ")
-              .append(e.getMessage())
-              .append('\n')
-              .flush();
-          allOkay = false;
-        }
-      } else {
-        errWriter.println("Skipping non-Java file: " + fileName);
-      }
-    }
 
     if (argInfo.parameters.stdinStdoutFlag) {
-      filesToFormat.add(
-          new FileToFormatStdin(
-              parseRangeSet(argInfo.parameters.linesFlags),
-              argInfo.parameters.offsetFlags,
-              argInfo.parameters.lengthFlags,
-              inStream));
+      return formatStdin(argInfo, options);
+    } else {
+      return formatFiles(argInfo, options);
     }
-
-    return new ConstructFilesToFormatResult(allOkay, filesToFormat.build());
   }
 
-  // Package-private for testing
-  static class ConstructFilesToFormatResult {
-    final boolean allOkay;
-    final ImmutableList<FileToFormat> filesToFormat;
+  private int formatFiles(ArgInfo argInfo, JavaFormatterOptions options) {
+    int numThreads = Math.min(MAX_THREADS, argInfo.parameters.fileNamesFlag.size());
+    ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
 
-    ConstructFilesToFormatResult(boolean allOkay, ImmutableList<FileToFormat> filesToFormat) {
-      this.allOkay = allOkay;
-      this.filesToFormat = filesToFormat;
+    Map<Path, Future<String>> results = new LinkedHashMap<>();
+    for (String fileName : argInfo.parameters.fileNamesFlag) {
+      if (!fileName.endsWith(".java")) {
+        errWriter.println("Skipping non-Java file: " + fileName);
+        continue;
+      }
+      Path path = Paths.get(fileName);
+      String input;
+      try {
+        input = new String(Files.readAllBytes(path), UTF_8);
+      } catch (IOException e) {
+        errWriter.write(fileName + ": could not read file: " + e.getMessage());
+        return 1;
+      }
+      results.put(
+          path,
+          executorService.submit(
+              new FormatFileCallable(
+                  fileName,
+                  parseRangeSet(argInfo.parameters.linesFlags),
+                  argInfo.parameters.offsetFlags,
+                  argInfo.parameters.lengthFlags,
+                  input,
+                  options)));
+    }
+
+    boolean allOk = true;
+    for (Map.Entry<Path, Future<String>> result : results.entrySet()) {
+      String formatted;
+      try {
+        formatted = result.getValue().get();
+      } catch (InterruptedException e) {
+        errWriter.println(e.getMessage());
+        allOk = false;
+        continue;
+      } catch (ExecutionException e) {
+        if (e.getCause() instanceof FormatterException) {
+          errWriter.println(e.getCause().getMessage());
+        } else {
+          errWriter.println(result.getKey() + ": error: " + e.getCause().getMessage());
+        }
+        allOk = false;
+        continue;
+      }
+      if (argInfo.parameters.iFlag) {
+        try {
+          Files.write(result.getKey(), formatted.getBytes(UTF_8));
+        } catch (IOException e) {
+          errWriter.write(result.getKey() + ": could not write file: " + e.getMessage());
+          allOk = false;
+          continue;
+        }
+      } else {
+        outWriter.write(formatted);
+      }
+    }
+    return allOk ? 0 : 1;
+  }
+
+  private int formatStdin(ArgInfo argInfo, JavaFormatterOptions options) {
+    String input;
+    try {
+      input = new String(ByteStreams.toByteArray(inStream), UTF_8);
+    } catch (IOException e) {
+      throw new IOError(e);
+    }
+    try {
+      String output =
+          new FormatFileCallable(
+                  Formatter.STDIN_FILENAME,
+                  parseRangeSet(argInfo.parameters.linesFlags),
+                  argInfo.parameters.offsetFlags,
+                  argInfo.parameters.lengthFlags,
+                  input,
+                  options)
+              .call();
+      outWriter.write(output);
+      return 0;
+    } catch (FormatterException e) {
+      errWriter.println(e.getMessage());
+      return 1;
     }
   }
 

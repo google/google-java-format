@@ -14,8 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.googlejavaformat.java.FileToFormatStdin.STDIN_FILENAME;
-
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
@@ -81,6 +79,8 @@ public final class Formatter {
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
 
   private final JavaFormatterOptions options;
+
+  static final String STDIN_FILENAME = "<stdin>";
 
   /**
    * A new Formatter instance with default options.
@@ -158,15 +158,9 @@ public final class Formatter {
     if (!errors.isEmpty()) {
       throw new FormatterException(errors);
     }
-    StringBuilder result = new StringBuilder(input.length());
     RangeSet<Integer> lineRangeSet = TreeRangeSet.create();
     lineRangeSet.add(Range.<Integer>all());
-    try {
-      javaOutput.writeMerged(result, lineRangeSet);
-    } catch (IOException ignored) {
-      throw new AssertionError("IOException impossible for StringWriter");
-    }
-    return result.toString();
+    return javaOutput.writeMerged(lineRangeSet);
   }
 
   /**
@@ -186,14 +180,8 @@ public final class Formatter {
     if (!errors.isEmpty()) {
       throw new FormatterException(errors);
     }
-    StringBuilder result = new StringBuilder(input.length());
     RangeSet<Integer> tokenRangeSet = characterRangesToTokenRanges(javaInput, characterRanges);
-    try {
-      javaOutput.writeMerged(result, tokenRangeSet);
-    } catch (IOException ignored) {
-      throw new AssertionError("IOException impossible for StringWriter");
-    }
-    return result.toString();
+    return javaOutput.writeMerged(tokenRangeSet);
   }
 
   /**

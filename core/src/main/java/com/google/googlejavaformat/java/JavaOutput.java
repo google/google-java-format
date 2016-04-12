@@ -29,8 +29,6 @@ import com.google.googlejavaformat.Input.Token;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -348,10 +346,10 @@ public final class JavaOutput extends Output {
    * Merge the (un-reformatted) input lines and the (reformatted) output lines. The result will
    * contain all of the toks from the input and output.
    *
-   * @param writer the destination {@link Writer}
    * @param iRangeSet0 the canonical {@link Range} of tokens to reformat
    */
-  public void writeMerged(Appendable writer, RangeSet<Integer> iRangeSet0) throws IOException {
+  public String writeMerged(RangeSet<Integer> iRangeSet0) {
+    StringBuilder writer = new StringBuilder(javaInput.getText().length());
     ImmutableList<Replacement> replacements = getFormatReplacements(iRangeSet0);
     String inputText = javaInput.getText();
     // The index to copy input text from.
@@ -367,6 +365,7 @@ public final class JavaOutput extends Output {
     if (inputIndex < inputText.length()) {
       writer.append(inputText.substring(inputIndex));
     }
+    return writer.toString();
   }
 
   /** The earliest position of any Tok in the Token, including leading whitespace. */

@@ -14,120 +14,69 @@
 
 package com.google.googlejavaformat.java;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
-import com.google.common.io.CharStreams;
 import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.java.JavaFormatterOptions.SortImports;
 
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import javax.annotation.Nullable;
-
 /**
- * A {@link Callable} that formats a file.
+ * Encapsulates information about a file to be formatted, including which parts of the file to
+ * format.
  */
-// TODO(eaftan): Consider returning the output instead of writing it in the callable.  This way
-// we could serialize the output to make sure it is presented in the correct order (b/21335725),
-// and we could avoid passing a lock around.
-class FormatFileCallable implements Callable<Boolean> {
-  private final FileToFormat fileToFormat;
-  private final Object outputLock;
+public class FormatFileCallable implements Callable<String> {
+  private final String fileName;
+  private final String input;
+  private final ImmutableRangeSet<Integer> lineRanges;
+  private final ImmutableList<Integer> offsets;
+  private final ImmutableList<Integer> lengths;
   private final JavaFormatterOptions options;
-  private final boolean inPlace;
-  private final PrintWriter outWriter;
-  private final PrintWriter errWriter;
 
-  FormatFileCallable(
-      FileToFormat fileToFormat,
-      Object outputLock,
-      JavaFormatterOptions options,
-      boolean inPlace,
-      PrintWriter outWriter,
-      PrintWriter errWriter) {
-    Preconditions.checkArgument(
-        !(inPlace && fileToFormat instanceof FileToFormatStdin),
-        "Cannot format stdin in place");
-
-    this.fileToFormat = Preconditions.checkNotNull(fileToFormat);
-    this.outputLock = Preconditions.checkNotNull(outputLock);
+  public FormatFileCallable(
+      String fileName,
+      RangeSet<Integer> lineRanges,
+      List<Integer> offsets,
+      List<Integer> lengths,
+      String input,
+      JavaFormatterOptions options) {
+    this.fileName = fileName;
+    this.input = input;
+    this.lineRanges = ImmutableRangeSet.copyOf(lineRanges);
+    this.offsets = ImmutableList.copyOf(offsets);
+    this.lengths = ImmutableList.copyOf(lengths);
     this.options = options;
-    this.inPlace = inPlace;
-    this.outWriter = Preconditions.checkNotNull(outWriter);
-    this.errWriter = Preconditions.checkNotNull(errWriter);
   }
 
-  /**
-   * Formats a file and returns whether the operation succeeded.
-   */
   @Override
-  public Boolean call() {
-    String inputString = readInput();
-    if (inputString == null) {
-      return false;
-    }
-
+  public String call() throws FormatterException {
+    String inputString = input;
     if (options.sortImports() != SortImports.NO) {
-      String reordered = reorderImports(inputString);
-      if (reordered == null) {
-        return false;
-      }
-
+      inputString = ImportOrderer.reorderImports(fileName, inputString);
       if (options.sortImports() == SortImports.ONLY) {
-        if (reordered.equals(inputString)) {
-          return true;
-        }
-        return writeString(reordered);
+        return inputString;
       }
-
-      inputString = reordered;
     }
 
     JavaInput javaInput;
     final RangeSet<Integer> tokens;
-    try {
-      javaInput = new JavaInput(fileToFormat.fileName(), inputString);
-      tokens = TreeRangeSet.create();
-      for (Range<Integer> lineRange : fileToFormat.lineRanges().asRanges()) {
-        tokens.add(javaInput.lineRangeToTokenRange(lineRange));
-      }
-      for (int i = 0; i < fileToFormat.offsets().size(); i++) {
-        tokens.add(
-            javaInput.characterRangeToTokenRange(
-                fileToFormat.offsets().get(i), fileToFormat.lengths().get(i)));
-      }
-    } catch (FormatterException e) {
-      synchronized (outputLock) {
-        errWriter
-            .append(fileToFormat.fileName())
-            .append(": error: ")
-            .append(e.getMessage())
-            .append('\n')
-            .flush();
-      }
-      return false;
+
+    javaInput = new JavaInput(fileName, inputString);
+    tokens = TreeRangeSet.create();
+    for (Range<Integer> lineRange : lineRanges.asRanges()) {
+      tokens.add(javaInput.lineRangeToTokenRange(lineRange));
+    }
+    for (int i = 0; i < offsets.size(); i++) {
+      tokens.add(javaInput.characterRangeToTokenRange(offsets.get(i), lengths.get(i)));
     }
 
     if (tokens.isEmpty()) {
-      if (fileToFormat.lineRanges().asRanges().isEmpty() && fileToFormat.offsets().isEmpty()) {
+      if (lineRanges.asRanges().isEmpty() && offsets.isEmpty()) {
         tokens.add(Range.<Integer>all());
       }
     }
@@ -136,121 +85,8 @@ class FormatFileCallable implements Callable<Boolean> {
     List<FormatterDiagnostic> errors = new ArrayList<>();
     Formatter.format(javaInput, javaOutput, options, errors);
     if (!errors.isEmpty()) {
-      synchronized (outputLock) {
-        for (FormatterDiagnostic error : errors) {
-          errWriter.println(error.toString());
-        }
-      }
-      return false;
+      throw new FormatterException(errors);
     }
-
-    Write writeTokens =
-        new Write() {
-          @Override
-          public void write(Writer writer) throws IOException {
-            javaOutput.writeMerged(writer, tokens);
-          }
-        };
-    return writeOutput(writeTokens);
-  }
-
-  @Nullable
-  private String readInput() {
-    try (InputStream in = fileToFormat.inputStream()) {
-      return CharStreams.toString(new InputStreamReader(in, StandardCharsets.UTF_8));
-      // The filename in the JavaInput is only used to create diagnostics, so it is safe to
-      // pass in a synthetic filename like "<stdin>".
-    } catch (IOException e) {
-      synchronized (outputLock) {
-        errWriter
-            .append(fileToFormat.fileName())
-            .append(": could not read file: ")
-            .append(e.getMessage())
-            .append('\n')
-            .flush();
-      }
-      return null;
-    }
-  }
-
-  @Nullable
-  private String reorderImports(String inputString) {
-    try {
-      return ImportOrderer.reorderImports(fileToFormat.fileName(), inputString);
-    } catch (FormatterException e) {
-      synchronized (outputLock) {
-        errWriter
-            .append(fileToFormat.fileName())
-            .append(": error sorting imports: ")
-            .append(e.getMessage())
-            .append('\n')
-            .flush();
-      }
-      return null;
-    }
-  }
-
-  interface Write {
-    void write(Writer writer) throws IOException;
-  }
-
-  private boolean writeString(final String s) {
-    return writeOutput(
-        new Write() {
-          @Override
-          public void write(Writer writer) throws IOException {
-            writer.write(s);
-          }
-        });
-  }
-
-  private boolean writeOutput(Write write) {
-    if (!inPlace) {
-      synchronized (outputLock) {
-        try {
-          write.write(outWriter);
-        } catch (IOException e) {
-          errWriter.append("cannot write output: " + e.getMessage()).flush();
-        }
-        outWriter.flush();
-        return true;
-      }
-    } else {
-      String tempFileName = fileToFormat.fileName() + '#';
-      try (Writer writer =
-          new OutputStreamWriter(
-              new BufferedOutputStream(new FileOutputStream(tempFileName)),
-              UTF_8)) {
-        write.write(writer);
-        outWriter.flush();
-      } catch (IOException e) {
-        synchronized (outputLock) {
-          errWriter
-              .append(tempFileName)
-              .append(": cannot write temp file: ")
-              .append(e.getMessage())
-              .append('\n')
-              .flush();
-        }
-        return false;
-      }
-      try {
-        Files.move(
-            Paths.get(tempFileName),
-            Paths.get(fileToFormat.fileName()),
-            StandardCopyOption.REPLACE_EXISTING);
-      } catch(IOException e) {
-        synchronized (outputLock) {
-          errWriter
-              .append(tempFileName)
-              .append(": cannot rename temp file: ")
-              .append(e.getMessage())
-              .append('\n')
-              .flush();
-        }
-        return false;
-      }
-      return true;
-    }
+    return javaOutput.writeMerged(tokens);
   }
 }

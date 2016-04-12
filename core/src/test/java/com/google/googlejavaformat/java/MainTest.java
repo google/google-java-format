@@ -16,8 +16,6 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.googlejavaformat.java.Main.ArgInfo;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -26,8 +24,6 @@ import org.junit.runners.JUnit4;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 /**
  * Tests for {@link Main}.
@@ -36,36 +32,6 @@ import java.nio.file.Path;
 public class MainTest {
 
   @Rule public TemporaryFolder testFolder = new TemporaryFolder();
-
-  @Test
-  public void deduplicatesSamePath() throws Exception {
-    StringWriter out = new StringWriter();
-    StringWriter err = new StringWriter();
-
-    Path testFile = testFolder.newFile("Foo.java").toPath();
-
-    ArgInfo argInfo = ArgInfo.processArgs(testFile.toString(), testFile.toString());
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
-    assertThat(main.constructFilesToFormat(argInfo).filesToFormat).hasSize(1);
-  }
-
-  @Test
-  public void deduplicatesDifferentPathsThatResolveToSameCanonicalPath() throws Exception {
-    StringWriter out = new StringWriter();
-    StringWriter err = new StringWriter();
-
-    Path testFile = testFolder.newFile("Foo.java").toPath();
-    Path symlink =
-        testFolder
-            .getRoot()
-            .toPath()
-            .resolve("Bar.java");
-    Files.createSymbolicLink(symlink, testFile);
-
-    ArgInfo argInfo = ArgInfo.processArgs(testFile.toString(), symlink.toString());
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
-    assertThat(main.constructFilesToFormat(argInfo).filesToFormat).hasSize(1);
-  }
 
   @Test
   public void testUsageOutput() {
