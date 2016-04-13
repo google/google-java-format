@@ -207,6 +207,7 @@ public final class Main {
     int numThreads = Math.min(MAX_THREADS, argInfo.parameters.fileNamesFlag.size());
     ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
 
+    Map<Path, String> inputs = new LinkedHashMap<>();
     Map<Path, Future<String>> results = new LinkedHashMap<>();
     for (String fileName : argInfo.parameters.fileNamesFlag) {
       if (!fileName.endsWith(".java")) {
@@ -221,6 +222,7 @@ public final class Main {
         errWriter.write(fileName + ": could not read file: " + e.getMessage());
         return 1;
       }
+      inputs.put(path, input);
       results.put(
           path,
           executorService.submit(
@@ -252,6 +254,9 @@ public final class Main {
         continue;
       }
       if (argInfo.parameters.iFlag) {
+        if (formatted.equals(inputs.get(result.getKey()))) {
+          continue; // preserve original file
+        }
         try {
           Files.write(result.getKey(), formatted.getBytes(UTF_8));
         } catch (IOException e) {

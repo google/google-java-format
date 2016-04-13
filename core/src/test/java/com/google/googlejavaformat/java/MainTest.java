@@ -24,6 +24,10 @@ import org.junit.runners.JUnit4;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Tests for {@link Main}.
@@ -68,5 +72,29 @@ public class MainTest {
     assertThat(main.format("-sort-imports=only", "-lines=5:10", "-")).isEqualTo(1);
     assertThat(err.toString()).contains(
         "--sort-imports can currently only apply to the whole file");
+  }
+
+  @Test
+  public void preserveOriginalFile() throws Exception {
+    Path from = Paths.get("src/test/resources/com/google/googlejavaformat/java/testdata/");
+    Path temp = testFolder.newFolder("preserve").toPath();
+    try (DirectoryStream<Path> stream = Files.newDirectoryStream(from, "*.output")) {
+      for (Path path : stream) {
+        Path java = temp.resolve(path.toFile().getName().replace(".output", ".java"));
+        Files.copy(path, java);
+        preserveOriginalFile(java.toAbsolutePath());
+      }
+    }
+  }
+
+  private void preserveOriginalFile(Path java) throws Exception {
+    long expected = Files.getLastModifiedTime(java).toMillis();
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    int errorCode = main.format("-replace", java.toAbsolutePath().toString());
+    assertThat(errorCode).named("Error Code").isEqualTo(0);
+    long actual = Files.getLastModifiedTime(java).toMillis();
+    assertThat(actual).named("Last modified time changed: " + java).isEqualTo(expected);
   }
 }
