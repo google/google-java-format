@@ -1,39 +1,36 @@
 # google-java-format
 
-[![Build Status](https://travis-ci.org/google/google-java-format.svg?branch=master)](https://travis-ci.org/google/google-java-format)
-
-***Release version:*** *0.1-alpha*
-***Snapshot version:*** *0.1-SNAPSHOT*
-
 `google-java-format` is a program that reformats Java source code to comply with
 [Google Java Style][].
 
 [Google Java Style]: http://google-styleguide.googlecode.com/svn/trunk/javaguide.html
 
-
 Using the formatter from the command-line
 ----------------------------------------
 
-First [download the formatter](https://github.com/google/google-java-format/releases)
-and save it where you wish.  Then simply run it via:
+[Download the formatter](https://github.com/google/google-java-format/releases)
+and run it with:
 
 ```
-java -jar /path/to/google-java-format-0.1-alpha.jar <options> [files...]
+java -jar /path/to/google-java-format-1.0-all-deps.jar <options> [files...]
 ```
 
 The formatter can act on whole files, on limited lines (`--lines`), on specific
 ofsets (`--offset`), passing through to standard-out (default) or altered
 in-place (`--replace`).
 
+To reformat changed lines in a specific patch, use
+[`google-java-format-diff.py`](https://github.com/google/google-java-format/blob/master/scripts/google-java-format-diff.py)
+
 ***Note:*** *There is no configurability as to the formatter's algorithm for
-formatting.  This is a deliberate design decision to unify our
-code formatting on a single format.*
+formatting.  This is a deliberate design decision to unify our code formatting
+on a single format.*
 
 Using the formatter in code-generators
 --------------------------------------
 
 The formatter can be used in software which generates java to output more
-legible java code.  Just include the library in your maven/gradle/etc.
+legible java code. Just include the library in your maven/gradle/etc.
 configuration.
 
 #### Maven
@@ -42,7 +39,7 @@ configuration.
 <dependency>
   <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format</artifactId>
-  <version>0.1-alpha</version>
+  <version>1.0</version>
 </dependency>
 ```
 
@@ -50,7 +47,7 @@ configuration.
 
 ```groovy
 dependencies {
-  compile 'com.google.googlejavaformat:google-java-format:0.1-alpha'
+  compile 'com.google.googlejavaformat:google-java-format:1.0'
 }
 ```
 
@@ -68,7 +65,7 @@ CharSink output = ...
 new Formatter().formatSource(source, output);
 ```
 
-Generally speaking, your starting point should be the instance methods of
+Your starting point should be the instance methods of
 `com.google.googlejavaformat.java.Formatter`.
 
 Building from source
