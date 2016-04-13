@@ -144,6 +144,10 @@ class FormatFileCallable implements Callable<Boolean> {
       return false;
     }
 
+    if (inPlace && javaInput.areLinesEqual(javaOutput)) {
+      return true;
+    }
+
     Write writeTokens =
         new Write() {
           @Override

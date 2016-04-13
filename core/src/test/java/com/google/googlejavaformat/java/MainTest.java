@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.googlejavaformat.java.Main.ArgInfo;
 
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -26,8 +27,10 @@ import org.junit.runners.JUnit4;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Tests for {@link Main}.
@@ -80,7 +83,6 @@ public class MainTest {
 
       String usage = e.usage();
 
-
       // Check that doc links are included.
       assertThat(usage).contains("https://github.com/google/google-java-format");
       assertThat(usage).contains("Usage: google-java-format");
@@ -102,5 +104,34 @@ public class MainTest {
     assertThat(main.format("-sort-imports=only", "-lines=5:10", "-")).isEqualTo(1);
     assertThat(err.toString()).contains(
         "--sort-imports can currently only apply to the whole file");
+  }
+
+  @Test
+  public void preserveOriginalFile() throws Exception {
+    Path from = Paths.get("src/test/resources/com/google/googlejavaformat/java/testdata/");
+    Path temp = testFolder.newFolder("preserve").toPath();
+    try (DirectoryStream<Path> stream = Files.newDirectoryStream(from, "*.output")) {
+      for (Path path : stream) {
+        Path java = temp.resolve(path.toFile().getName().replace(".output", ".java"));
+        // just copy:
+        Files.copy(path, java);
+        // or convert line separators:
+        // List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+        // System.setProperty("line.separator", "\n");
+        // Files.write(java, lines, StandardCharsets.UTF_8);
+        preserveOriginalFile(java.toAbsolutePath());
+      }
+    }
+  }
+
+  private void preserveOriginalFile(Path java) throws Exception {
+    long expected = Files.getLastModifiedTime(java).toMillis();
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    int errorCode = main.format("-replace", java.toAbsolutePath().toString());
+    Assert.assertEquals("ErrorCode not 0: " + err + ": " + out, 0, errorCode);
+    long actual = Files.getLastModifiedTime(java).toMillis();
+    Assert.assertEquals("Last modified time changed: " + java, expected, actual);
   }
 }
