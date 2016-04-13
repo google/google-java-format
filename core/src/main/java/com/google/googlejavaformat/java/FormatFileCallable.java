@@ -217,6 +217,22 @@ class FormatFileCallable implements Callable<Boolean> {
       }
     } else {
       String tempFileName = fileToFormat.fileName() + '#';
+      try {
+        Files.copy(
+              Paths.get(fileToFormat.fileName()),
+              Paths.get(tempFileName),
+              StandardCopyOption.COPY_ATTRIBUTES);
+      } catch (IOException e) {
+        synchronized (outputLock) {
+          errWriter
+              .append(tempFileName)
+              .append(": cannot create temp file: ")
+              .append(e.getMessage())
+              .append('\n')
+              .flush();
+        }
+        return false;
+      }
       try (Writer writer =
           new OutputStreamWriter(
               new BufferedOutputStream(new FileOutputStream(tempFileName)),
