@@ -112,7 +112,7 @@ public class DiagnosticTest {
     assertThat(stderr.toString()).contains("One.java:1:11: error: Syntax error, insert \"}\"");
     assertThat(result).isEqualTo(1);
   }
-  
+
   @Test
   public void oneFileParseErrorReplace() throws Exception {
     String one = "class One {}}\n";
@@ -171,7 +171,7 @@ public class DiagnosticTest {
 
     assertThat(exitCode).isEqualTo(1);
     assertThat(err.toString())
-        .isEqualTo("<stdin>:2:4: error: Syntax error, insert \";\" to complete BlockStatements\n");
+        .contains("<stdin>:2:4: error: Syntax error, insert \";\" to complete BlockStatements");
   }
 
   @Test
@@ -204,6 +204,6 @@ public class DiagnosticTest {
     int exitCode = main.format(args);
 
     assertThat(exitCode).isEqualTo(1);
-    assertThat(err.toString()).isEqualTo("<stdin>:2:4: error: Invalid character constant\n");
+    assertThat(err.toString()).contains("<stdin>:2:4: error: Invalid character constant");
   }
 }
