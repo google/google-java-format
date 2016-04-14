@@ -138,18 +138,17 @@ public final class Main {
    * to determine), we must serialize their updates.
    * @param args the command-line arguments
    */
-  public static void main(String... args) {
-    Main formatter =
-        new Main(
-            new PrintWriter(new OutputStreamWriter(System.out, UTF_8), true),
-            new PrintWriter(new OutputStreamWriter(System.err, UTF_8), true),
-            System.in);
-    try {
-      int result = formatter.format(args);
-      System.exit(result);
+  public static void main(String[] args) {
+    int result;
+    try (PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out, UTF_8));
+        PrintWriter err = new PrintWriter(new OutputStreamWriter(System.err, UTF_8))) {
+      Main formatter = new Main(out, err, System.in);
+      result = formatter.format(args);
     } catch (UsageException e) {
       System.err.print(e.usage());
+      result = 0;
     }
+    System.exit(result);
   }
 
   /**
