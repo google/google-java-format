@@ -163,6 +163,7 @@ public final class Main {
 
     if (argInfo.parameters.versionFlag) {
       version();
+      return 0;
     }
     if (argInfo.parameters.helpFlag) {
       argInfo.throwUsage();
