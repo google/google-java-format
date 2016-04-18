@@ -151,6 +151,7 @@ public final class Formatter {
    * @throws FormatterException if the input string cannot be parsed
    */
   public String formatSource(String input) throws FormatterException {
+    input = ModifierOrderer.reorderModifiers(STDIN_FILENAME, input);
     JavaInput javaInput = new JavaInput(STDIN_FILENAME, input);
     JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
     List<FormatterDiagnostic> errors = new ArrayList<>();
@@ -173,6 +174,7 @@ public final class Formatter {
    */
   public String formatSource(String input, List<Range<Integer>> characterRanges)
       throws FormatterException {
+    input = ModifierOrderer.reorderModifiers(STDIN_FILENAME, input, characterRanges);
     JavaInput javaInput = new JavaInput(STDIN_FILENAME, input);
     JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
     List<FormatterDiagnostic> errors = new ArrayList<>();
@@ -194,6 +196,7 @@ public final class Formatter {
    */
   public ImmutableList<Replacement> getFormatReplacements(
       String input, List<Range<Integer>> characterRanges) throws FormatterException {
+    input = ModifierOrderer.reorderModifiers(STDIN_FILENAME, input, characterRanges);
     JavaInput javaInput = new JavaInput(STDIN_FILENAME, input);
     JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
     List<FormatterDiagnostic> errors = new ArrayList<>();
@@ -205,7 +208,7 @@ public final class Formatter {
     return javaOutput.getFormatReplacements(tokenRangeSet);
   }
 
-  private static RangeSet<Integer> characterRangesToTokenRanges(
+  static RangeSet<Integer> characterRangesToTokenRanges(
       JavaInput javaInput, List<Range<Integer>> characterRanges) throws FormatterException {
     RangeSet<Integer> tokenRangeSet = TreeRangeSet.create();
     for (Range<Integer> characterRange0 : characterRanges) {

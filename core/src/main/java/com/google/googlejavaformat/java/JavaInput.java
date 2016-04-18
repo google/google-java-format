@@ -62,6 +62,7 @@ public final class JavaInput extends Input {
     private final int position;
     private final int columnI;
     private final boolean isToken;
+    private final int id;
 
     /**
      * The {@code Tok} constructor.
@@ -71,14 +72,23 @@ public final class JavaInput extends Input {
      * @param position its {@code 0}-origin position in the input
      * @param columnI its {@code 0}-origin column number in the input
      * @param isToken whether the {@code Tok} is a token
+     * @param id the token id as defined by {@link org.eclipse.jdt.core.compiler.ITerminalSymbols}
      */
-    Tok(int index, String originalText, String text, int position, int columnI, boolean isToken) {
+    Tok(
+        int index,
+        String originalText,
+        String text,
+        int position,
+        int columnI,
+        boolean isToken,
+        int id) {
       this.index = index;
       this.originalText = originalText;
       this.text = text;
       this.position = position;
       this.columnI = columnI;
       this.isToken = isToken;
+      this.id = id;
     }
 
     @Override
@@ -144,6 +154,14 @@ public final class JavaInput extends Input {
           .add("columnI", columnI)
           .add("isToken", isToken)
           .toString();
+    }
+
+    /**
+     * The token id used by the eclipse scanner. See
+     * {@link org.eclipse.jdt.core.compiler.ITerminalSymbols} for possible values.
+     */
+    public int id() {
+      return id;
     }
   }
 
@@ -321,8 +339,11 @@ public final class JavaInput extends Input {
     List<Tok> toks = new ArrayList<>();
     int charI = 0;
     int columnI = 0;
-    while (scanner.getCurrentTokenEndPosition() < textLength - 1
-        && !stopIds.contains(scanner.getNextToken())) {
+    while (scanner.getCurrentTokenEndPosition() < textLength - 1) {
+      int tokenId = scanner.getNextToken();
+      if (stopIds.contains(tokenId)) {
+        break;
+      }
       int charI0 = scanner.getCurrentTokenStartPosition();
       // Get string, possibly with Unicode escapes.
       String originalTokText = text.substring(charI0, scanner.getCurrentTokenEndPosition() + 1);
@@ -377,7 +398,14 @@ public final class JavaInput extends Input {
       }
       if (strings.size() == 1) {
         toks.add(
-            new Tok(isNumbered ? kN++ : -1, originalTokText, tokText, charI, columnI, isToken));
+            new Tok(
+                isNumbered ? kN++ : -1,
+                originalTokText,
+                tokText,
+                charI,
+                columnI,
+                isToken,
+                tokenId));
         for (char c : originalTokText.toCharArray()) {
           if (c == '\n') {
             columnI = 0;
@@ -392,7 +420,7 @@ public final class JavaInput extends Input {
               "Unicode escapes not allowed in whitespace or multi-character operators");
         }
         for (String str : strings) {
-          toks.add(new Tok(isNumbered ? kN++ : -1, str, str, charI, columnI, isToken));
+          toks.add(new Tok(isNumbered ? kN++ : -1, str, str, charI, columnI, isToken, tokenId));
           for (char c : str.toCharArray()) {
             if (c == '\n') {
               columnI = 0;
@@ -404,12 +432,13 @@ public final class JavaInput extends Input {
         }
       }
       if (extraNewline) {
-        toks.add(new Tok(-1, "\n", "\n", charI, columnI, false));
+        toks.add(new Tok(-1, "\n", "\n", charI, columnI, false, tokenId));
         columnI = 0;
         ++charI;
       }
     }
-    toks.add(new Tok(kN++, "", "", charI, columnI, true)); // EOF tok.
+    toks.add(
+        new Tok(kN++, "", "", charI, columnI, true, ITerminalSymbols.TokenNameEOF)); // EOF tok.
     --kN; // Don't count EOF tok.
     computeRanges(toks);
     return ImmutableList.copyOf(toks);

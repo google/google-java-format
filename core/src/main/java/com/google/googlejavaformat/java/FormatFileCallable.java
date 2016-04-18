@@ -63,23 +63,10 @@ public class FormatFileCallable implements Callable<String> {
       }
     }
 
-    JavaInput javaInput;
-    final RangeSet<Integer> tokens;
+    inputString = reorderModifiers(inputString);
 
-    javaInput = new JavaInput(fileName, inputString);
-    tokens = TreeRangeSet.create();
-    for (Range<Integer> lineRange : lineRanges.asRanges()) {
-      tokens.add(javaInput.lineRangeToTokenRange(lineRange));
-    }
-    for (int i = 0; i < offsets.size(); i++) {
-      tokens.add(javaInput.characterRangeToTokenRange(offsets.get(i), lengths.get(i)));
-    }
-
-    if (tokens.isEmpty()) {
-      if (lineRanges.asRanges().isEmpty() && offsets.isEmpty()) {
-        tokens.add(Range.<Integer>all());
-      }
-    }
+    JavaInput javaInput = new JavaInput(fileName, inputString);
+    final RangeSet<Integer> tokens = tokenRanges(javaInput);
 
     final JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
     List<FormatterDiagnostic> errors = new ArrayList<>();
@@ -88,5 +75,26 @@ public class FormatFileCallable implements Callable<String> {
       throw new FormatterException(errors);
     }
     return javaOutput.writeMerged(tokens);
+  }
+
+  private String reorderModifiers(String inputString) throws FormatterException {
+    JavaInput javaInput = new JavaInput(fileName, inputString);
+    return ModifierOrderer.reorderModifiers(javaInput, tokenRanges(javaInput));
+  }
+
+  private RangeSet<Integer> tokenRanges(JavaInput javaInput) throws FormatterException {
+    final RangeSet<Integer> tokens = TreeRangeSet.create();
+    for (Range<Integer> lineRange : lineRanges.asRanges()) {
+      tokens.add(javaInput.lineRangeToTokenRange(lineRange));
+    }
+    for (int i = 0; i < offsets.size(); i++) {
+      tokens.add(javaInput.characterRangeToTokenRange(offsets.get(i), lengths.get(i)));
+    }
+    if (tokens.isEmpty()) {
+      if (lineRanges.asRanges().isEmpty() && offsets.isEmpty()) {
+        tokens.add(Range.<Integer>all());
+      }
+    }
+    return tokens;
   }
 }
