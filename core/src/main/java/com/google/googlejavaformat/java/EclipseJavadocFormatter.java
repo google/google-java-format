@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat.java;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 
 import org.eclipse.jdt.core.JavaCore;
@@ -28,7 +29,41 @@ import org.eclipse.text.edits.TextEdit;
 /** Format javadoc comments using eclipse's formatter, for now. */
 public class EclipseJavadocFormatter {
 
+  /** An ill-formed Unicode 16-bit string of length 3. */
+  private static final String PLACEHOLDER =
+      Strings.repeat(String.valueOf(Character.MIN_HIGH_SURROGATE), 3);
+
+  private static final String P_TAG = "<p>";
+
   static String formatJavadoc(String input, int indent, JavaFormatterOptions options) {
+    // Eclipse lays out `<p>` tags on separate lines, which we do not want. To hack around this,
+    // replace all occurrences of `<p>` in the input with `<p>???`, which will be formatted
+    // as:
+    //
+    // ```
+    // paragraph1
+    // <p>
+    // ???paragraph2
+    // ```
+    //
+    // Finally, delete all `<p>` tags and rewrite `???` back to `<p>`:
+    //
+    // ```
+    // paragraph1
+    //
+    // <p>paragraph2
+    // ```
+    //
+    // A run of three unpaired surrogate code units is used as the placeholder because it
+    // is unlikely to occur naturally in javadoc.
+
+    String preprocessed = input.replace(P_TAG, P_TAG + PLACEHOLDER);
+    String output = formatJavadocInternal(preprocessed, indent, options);
+    return output.replace(P_TAG, "").replace(PLACEHOLDER, P_TAG);
+  }
+
+  private static String formatJavadocInternal(
+      String input, int indent, JavaFormatterOptions options) {
 
     ImmutableMap.Builder<String, String> optionBuilder = ImmutableMap.<String, String>builder();
     optionBuilder.put(

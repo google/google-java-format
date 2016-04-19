@@ -114,4 +114,25 @@ public final class JavadocFormattingTest {
     String actual = formatter.formatSource(Joiner.on('\n').join(input));
     Truth.assertThat(actual).isEqualTo(Joiner.on('\n').join(expected));
   }
+
+  @Test
+  public void paragraphTag() throws Exception {
+    String[] input = {
+      "/**", //
+      " * hello<p>world",
+      " */",
+      "class Test {}",
+    };
+    String[] expected = {
+      "/**", //
+      " * hello",
+      " *",
+      " * <p>world",
+      " */",
+      "class Test {}",
+      "",
+    };
+    String actual = formatter.formatSource(Joiner.on('\n').join(input));
+    Truth.assertThat(actual).isEqualTo(Joiner.on('\n').join(expected));
+  }
 }
