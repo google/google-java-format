@@ -3044,7 +3044,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       }
     }
 
-    builder.open(ZERO);
+    boolean isParam = node.getParent().getNodeType() == ASTNode.METHOD_DECLARATION;
+    builder.open(isParam && hasAnnotations(modifiers) ? plusFour : ZERO);
     {
       visitAndBreakModifiers(modifiers, annotationsDirection, Optional.of(verticalAnnotationBreak));
       builder.open(plusFour);
@@ -3121,6 +3122,15 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.blankLineWanted(BlankLineWanted.NO);
       }
     }
+  }
+
+  private boolean hasAnnotations(List<IExtendedModifier> modifiers) {
+    for (IExtendedModifier modifier : modifiers) {
+      if (modifier.isAnnotation()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
