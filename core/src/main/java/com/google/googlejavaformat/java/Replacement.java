@@ -32,4 +32,8 @@ public abstract class Replacement {
   public static Replacement create(int startPosition, int endPosition, String replaceWith) {
     return new AutoValue_Replacement(Range.closedOpen(startPosition, endPosition), replaceWith);
   }
+
+  public static Replacement create(Range<Integer> range, String replaceWith) {
+    return new AutoValue_Replacement(range, replaceWith);
+  }
 }
