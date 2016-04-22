@@ -14,18 +14,11 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.common.io.Files.getFileExtension;
-import static com.google.common.io.Files.getNameWithoutExtension;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
-import com.google.common.reflect.ClassPath;
-import com.google.common.reflect.ClassPath.ResourceInfo;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,9 +35,6 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * Integration test for google-java-format.
@@ -54,52 +44,6 @@ public final class FormatterTest {
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
-
-  /**
-   * Formats each file in the input directory, and confirms that the result is the same as the file
-   * in the output directory.
-   */
-  @Test
-  public void testFormatter() throws Exception {
-    Path testDataPath = Paths.get("com/google/googlejavaformat/java/testdata");
-    ClassLoader classLoader = getClass().getClassLoader();
-    Map<String, String> inputs = new TreeMap<>();
-    Map<String, String> outputs = new TreeMap<>();
-    for (ResourceInfo resourceInfo : ClassPath.from(classLoader).getResources()) {
-      String resourceName = resourceInfo.getResourceName();
-      Path resourceNamePath = Paths.get(resourceName);
-      if (resourceNamePath.startsWith(testDataPath)) {
-        Path subPath = testDataPath.relativize(resourceNamePath);
-        assertEquals("bad testdata file names", 1, subPath.getNameCount());
-        String baseName = getNameWithoutExtension(subPath.getFileName().toString());
-        String extension = getFileExtension(subPath.getFileName().toString());
-        String stringFromStream = getResource(resourceName);
-        switch (extension) {
-          case "input":
-            inputs.put(baseName, stringFromStream);
-            break;
-          case "output":
-            outputs.put(baseName, stringFromStream);
-            break;
-          default:
-        }
-      }
-    }
-    assertEquals("unmatched inputs and outputs", inputs.size(), outputs.size());
-
-    for (Map.Entry<String, String> entry : inputs.entrySet()) {
-      String fileName = entry.getKey();
-      String input = inputs.get(fileName);
-      assertTrue("unmatched input", outputs.containsKey(fileName));
-      String expectedOutput = outputs.get(fileName);
-      try {
-        String output = new Formatter().formatSource(input);
-        assertEquals("bad output for " + fileName, expectedOutput, output);
-      } catch (FormatterException e) {
-        fail(String.format("Formatter crashed on %s: %s", fileName, e.getMessage()));
-      }
-    }
-  }
 
   @Test
   public void testFormatAosp() throws Exception {
