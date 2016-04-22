@@ -14,61 +14,22 @@
 
 package com.google.googlejavaformat.java;
 
-import com.google.common.base.MoreObjects;
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.Range;
 
 /**
  * Represents a range in the original source and replacement text for that range.
  */
-public final class Replacement {
-  private final Range<Integer> replaceRange;
-  private final String replaceString;
+@AutoValue
+public abstract class Replacement {
 
-  private Replacement(Range<Integer> replaceRange, String replaceString) {
-    this.replaceRange = replaceRange;
-    this.replaceString = replaceString;
-  }
+  /** The range of characters in the original source to replace. */
+  public abstract Range<Integer> getReplaceRange();
 
-  public static Replacement create(Range<Integer> replaceRange, String replaceString) {
-    return new Replacement(replaceRange, replaceString);
-  }
+  /** The string to replace the range of characters with. */
+  public abstract String getReplacementString();
 
-  /**
-   * Returns the range of characters in the original source to replace.
-   */
-  public Range<Integer> getReplaceRange() {
-    return replaceRange;
-  }
-
-  /**
-   * Returns the string to replace the range of characters with.
-   */
-  public String getReplacementString() {
-    return replaceString;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (obj == null || getClass() != obj.getClass()) {
-      return false;
-    }
-    Replacement other = (Replacement) obj;
-    return replaceRange.equals(other.replaceRange) && replaceString.equals(other.replaceString);
-  }
-
-  @Override
-  public int hashCode() {
-    return 31 * replaceRange.hashCode() + replaceString.hashCode();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("replaceRange", replaceRange)
-        .add("replaceString", replaceString)
-        .toString();
+  public static Replacement create(int startPosition, int endPosition, String replaceWith) {
+    return new AutoValue_Replacement(Range.closedOpen(startPosition, endPosition), replaceWith);
   }
 }

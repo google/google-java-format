@@ -21,13 +21,13 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
-import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.Input.Tok;
 import com.google.googlejavaformat.Input.Token;
 
 import org.eclipse.jdt.core.compiler.ITerminalSymbols;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -74,13 +74,11 @@ public class ModifierOrderer {
         return null;
     }
   }
-  
+
   /** Reorders all modifiers in the given text to be in JLS order. */
   public static String reorderModifiers(String fileName, String text) throws FormatterException {
-    JavaInput input = new JavaInput(fileName, text);
-    RangeSet<Integer> tokenRangeSet = TreeRangeSet.create();
-    tokenRangeSet.add(Range.<Integer>all());
-    return reorderModifiers(input, tokenRangeSet);
+    return reorderModifiers(
+        fileName, text, Collections.singleton(Range.closedOpen(0, text.length())));
   }
 
   /**
@@ -88,21 +86,15 @@ public class ModifierOrderer {
    * order.
    */
   public static String reorderModifiers(
-      String fileName, String text, List<Range<Integer>> characterRanges)
+      String fileName, String text, Collection<Range<Integer>> characterRanges)
       throws FormatterException {
-    JavaInput input = new JavaInput(fileName, text);
-    RangeSet<Integer> tokenRangeSet =
-        Formatter.characterRangesToTokenRanges(input, characterRanges);
-    return reorderModifiers(input, tokenRangeSet);
-  }
-
-  /**
-   * Reorders all modifiers in the given {@link JavaInput} and within the given token ranges to be
-   * in JLS order.
-   *
-   * <p>Modifier lists containing comments are not re-ordered.
-   */
-  public static String reorderModifiers(JavaInput javaInput, RangeSet<Integer> tokenRanges) {
+    JavaInput javaInput = new JavaInput(fileName, text);
+    if (javaInput.getTokens().isEmpty()) {
+      // There weren't any tokens, possible because of a lexing error.
+      // Errors about invalid input will be reported later after parsing.
+      return text;
+    }
+    RangeSet<Integer> tokenRanges = javaInput.characterRangesToTokenRanges(characterRanges);
     Iterator<? extends Token> it = javaInput.getTokens().iterator();
     TreeRangeMap<Integer, String> replacements = TreeRangeMap.create();
     while (it.hasNext()) {

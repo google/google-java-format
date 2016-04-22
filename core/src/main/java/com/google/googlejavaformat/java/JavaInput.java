@@ -20,11 +20,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
 import com.google.common.base.Verify;
+import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.Input;
 
 import org.eclipse.jdt.core.ToolFactory;
@@ -34,6 +37,7 @@ import org.eclipse.jdt.core.compiler.InvalidInputException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -549,7 +553,7 @@ public final class JavaInput extends Input {
           String.format(
               "%s: error: invalid length %d, offset + length (%d) is outside the file",
               filename,
-              requiredLength,
+              length,
               requiredLength));
     }
     if (length <= 0) {
@@ -665,5 +669,18 @@ public final class JavaInput extends Input {
   // the constructor.
   public void setCompilationUnit(CompilationUnit unit) {
     this.unit = unit;
+  }
+
+  public RangeSet<Integer> characterRangesToTokenRanges(Collection<Range<Integer>> characterRanges)
+      throws FormatterException {
+    RangeSet<Integer> tokenRangeSet = TreeRangeSet.create();
+    for (Range<Integer> characterRange0 : characterRanges) {
+      Range<Integer> characterRange = characterRange0.canonical(DiscreteDomain.integers());
+      tokenRangeSet.add(
+          characterRangeToTokenRange(
+              characterRange.lowerEndpoint(),
+              characterRange.upperEndpoint() - characterRange.lowerEndpoint()));
+    }
+    return tokenRangeSet;
   }
 }

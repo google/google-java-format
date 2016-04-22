@@ -680,7 +680,7 @@ public final class PartialFormattingTest {
     testFormatLine(input, expectedOutput, 3);
   }
 
-  // formatted region doesn't expand to include entire comment
+  // formatted region expands to include entire comment
   @Test
   public void lineInsideComment() throws Exception {
     String input =
@@ -688,10 +688,19 @@ public final class PartialFormattingTest {
             + "/* This is a\n"
             + "            poorly indented\n"
             + "                       comment*/\n"
+            + "int x;\n"
+            + "}\n"
+            + "\n";
+    String expectedOutput =
+        "public class MyTest {\n"
+            + "  /* This is a\n"
+            + "  poorly indented\n"
+            + "             comment*/\n"
+            + "  int x;\n"
             + "}\n"
             + "\n";
 
-    testFormatLine(input, input, 3);
+    testFormatLine(input, expectedOutput, 3);
   }
 
   @Test

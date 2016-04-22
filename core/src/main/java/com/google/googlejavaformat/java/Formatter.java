@@ -14,11 +14,9 @@
 
 package com.google.googlejavaformat.java;
 
-import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.CharSink;
 import com.google.common.io.CharSource;
 import com.google.errorprone.annotations.Immutable;
@@ -39,6 +37,8 @@ import org.eclipse.jdt.core.dom.Message;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -78,18 +78,26 @@ public final class Formatter {
 
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
 
-  private final JavaFormatterOptions options;
-
   static final String STDIN_FILENAME = "<stdin>";
+
+  private final JavaFormatterOptions options;
+  private final String fileName;
 
   /**
    * A new Formatter instance with default options.
    */
   public Formatter() {
-    this(new JavaFormatterOptions(JavadocFormatter.NONE, Style.GOOGLE, SortImports.NO));
+    this(
+        STDIN_FILENAME,
+        new JavaFormatterOptions(JavadocFormatter.NONE, Style.GOOGLE, SortImports.NO));
   }
 
   public Formatter(JavaFormatterOptions options) {
+    this(STDIN_FILENAME, options);
+  }
+
+  public Formatter(String fileName, JavaFormatterOptions options) {
+    this.fileName = fileName;
     this.options = options;
   }
 
@@ -146,78 +154,53 @@ public final class Formatter {
 
   /**
    * Format an input string (a Java compilation unit) into an output string.
+   *
    * @param input the input string
    * @return the output string
    * @throws FormatterException if the input string cannot be parsed
    */
   public String formatSource(String input) throws FormatterException {
-    input = ModifierOrderer.reorderModifiers(STDIN_FILENAME, input);
-    JavaInput javaInput = new JavaInput(STDIN_FILENAME, input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
-    List<FormatterDiagnostic> errors = new ArrayList<>();
-    format(javaInput, javaOutput, options, errors);
-    if (!errors.isEmpty()) {
-      throw new FormatterException(errors);
-    }
-    RangeSet<Integer> lineRangeSet = TreeRangeSet.create();
-    lineRangeSet.add(Range.<Integer>all());
-    return javaOutput.writeMerged(lineRangeSet);
+    return formatSource(input, Collections.singleton(Range.closedOpen(0, input.length())));
   }
 
   /**
    * Format an input string (a Java compilation unit), for only the specified character ranges.
    * These ranges are extended as necessary (e.g., to encompass whole lines).
+   *
    * @param input the input string
    * @param characterRanges the character ranges to be reformatted
    * @return the output string
    * @throws FormatterException if the input string cannot be parsed
    */
-  public String formatSource(String input, List<Range<Integer>> characterRanges)
+  public String formatSource(String input, Collection<Range<Integer>> characterRanges)
       throws FormatterException {
-    input = ModifierOrderer.reorderModifiers(STDIN_FILENAME, input, characterRanges);
-    JavaInput javaInput = new JavaInput(STDIN_FILENAME, input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
-    List<FormatterDiagnostic> errors = new ArrayList<>();
-    format(javaInput, javaOutput, options, errors);
-    if (!errors.isEmpty()) {
-      throw new FormatterException(errors);
-    }
-    RangeSet<Integer> tokenRangeSet = characterRangesToTokenRanges(javaInput, characterRanges);
-    return javaOutput.writeMerged(tokenRangeSet);
+    return JavaOutput.applyReplacements(input, getFormatReplacements(input, characterRanges));
   }
 
   /**
    * Emit a list of {@link Replacement}s to convert from input to output.
+   *
    * @param input the input compilation unit
    * @param characterRanges the character ranges to reformat
-   * @return a list of {@link Replacement}s, sorted from low index to high index, without
-   *     overlaps
+   * @return a list of {@link Replacement}s, sorted from low index to high index, without overlaps
    * @throws FormatterException if the input string cannot be parsed
    */
   public ImmutableList<Replacement> getFormatReplacements(
-      String input, List<Range<Integer>> characterRanges) throws FormatterException {
-    input = ModifierOrderer.reorderModifiers(STDIN_FILENAME, input, characterRanges);
-    JavaInput javaInput = new JavaInput(STDIN_FILENAME, input);
+      String input, Collection<Range<Integer>> characterRanges) throws FormatterException {
+
+    // TODO(cushon): this is only safe because the modifier ordering doesn't affect whitespace,
+    // and doesn't change the replacements that are output. This is not true in general for
+    // 'de-linting' changes (e.g. import ordering).
+    input = ModifierOrderer.reorderModifiers(fileName, input, characterRanges);
+
+    JavaInput javaInput = new JavaInput(fileName, input);
     JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
     List<FormatterDiagnostic> errors = new ArrayList<>();
     format(javaInput, javaOutput, options, errors);
     if (!errors.isEmpty()) {
       throw new FormatterException(errors);
     }
-    RangeSet<Integer> tokenRangeSet = characterRangesToTokenRanges(javaInput, characterRanges);
+    RangeSet<Integer> tokenRangeSet = javaInput.characterRangesToTokenRanges(characterRanges);
     return javaOutput.getFormatReplacements(tokenRangeSet);
-  }
-
-  static RangeSet<Integer> characterRangesToTokenRanges(
-      JavaInput javaInput, List<Range<Integer>> characterRanges) throws FormatterException {
-    RangeSet<Integer> tokenRangeSet = TreeRangeSet.create();
-    for (Range<Integer> characterRange0 : characterRanges) {
-      Range<Integer> characterRange = characterRange0.canonical(DiscreteDomain.integers());
-      tokenRangeSet.add(
-          javaInput.characterRangeToTokenRange(
-              characterRange.lowerEndpoint(),
-              characterRange.upperEndpoint() - characterRange.lowerEndpoint()));
-    }
-    return tokenRangeSet;
   }
 }

@@ -14,12 +14,13 @@
 
 package com.google.googlejavaformat.java;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
-import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.java.JavaFormatterOptions.SortImports;
 
 import java.util.ArrayList;
@@ -55,6 +56,8 @@ public class FormatFileCallable implements Callable<String> {
 
   @Override
   public String call() throws FormatterException {
+
+    // TODO(cushon): figure out how to integrate import ordering into Formatter
     String inputString = input;
     if (options.sortImports() != SortImports.NO) {
       inputString = ImportOrderer.reorderImports(fileName, inputString);
@@ -63,38 +66,50 @@ public class FormatFileCallable implements Callable<String> {
       }
     }
 
-    inputString = reorderModifiers(inputString);
-
-    JavaInput javaInput = new JavaInput(fileName, inputString);
-    final RangeSet<Integer> tokens = tokenRanges(javaInput);
-
-    final JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
-    List<FormatterDiagnostic> errors = new ArrayList<>();
-    Formatter.format(javaInput, javaOutput, options, errors);
-    if (!errors.isEmpty()) {
-      throw new FormatterException(errors);
-    }
-    return javaOutput.writeMerged(tokens);
+    return new Formatter(fileName, options)
+        .formatSource(inputString, characterRanges(inputString).asRanges());
   }
 
-  private String reorderModifiers(String inputString) throws FormatterException {
-    JavaInput javaInput = new JavaInput(fileName, inputString);
-    return ModifierOrderer.reorderModifiers(javaInput, tokenRanges(javaInput));
-  }
+  static final CharMatcher NEWLINE = CharMatcher.is('\n');
 
-  private RangeSet<Integer> tokenRanges(JavaInput javaInput) throws FormatterException {
-    final RangeSet<Integer> tokens = TreeRangeSet.create();
-    for (Range<Integer> lineRange : lineRanges.asRanges()) {
-      tokens.add(javaInput.lineRangeToTokenRange(lineRange));
+  private RangeSet<Integer> characterRanges(String input) {
+    final RangeSet<Integer> characterRanges = TreeRangeSet.create();
+
+    if (lineRanges.isEmpty() && offsets.isEmpty()) {
+      characterRanges.add(Range.closedOpen(0, input.length()));
+      return characterRanges;
     }
+
+    characterRanges.addAll(lineRangesToCharRanges(input, lineRanges));
+
     for (int i = 0; i < offsets.size(); i++) {
-      tokens.add(javaInput.characterRangeToTokenRange(offsets.get(i), lengths.get(i)));
+      characterRanges.add(Range.closedOpen(offsets.get(i), offsets.get(i) + lengths.get(i)));
     }
-    if (tokens.isEmpty()) {
-      if (lineRanges.asRanges().isEmpty() && offsets.isEmpty()) {
-        tokens.add(Range.<Integer>all());
-      }
+
+    return characterRanges;
+  }
+
+  @VisibleForTesting
+  static RangeSet<Integer> lineRangesToCharRanges(String input, RangeSet<Integer> lineRanges) {
+    List<Integer> lines = new ArrayList<>();
+    lines.add(0);
+    int idx = NEWLINE.indexIn(input);
+    while (idx >= 0) {
+      lines.add(idx + 1);
+      idx = NEWLINE.indexIn(input, idx + 1);
     }
-    return tokens;
+    lines.add(input.length() + 1);
+
+    final RangeSet<Integer> characterRanges = TreeRangeSet.create();
+    for (Range<Integer> lineRange :
+        lineRanges.subRangeSet(Range.closedOpen(0, lines.size() - 1)).asRanges()) {
+      int lineStart = lines.get(lineRange.lowerEndpoint());
+      // Exclude the trailing newline. This isn't strictly necessary, but handling blank lines
+      // as empty ranges is convenient.
+      int lineEnd = lines.get(lineRange.upperEndpoint()) - 1;
+      Range<Integer> range = Range.closedOpen(lineStart, lineEnd);
+      characterRanges.add(range);
+    }
+    return characterRanges;
   }
 }

@@ -30,6 +30,8 @@ import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -316,8 +318,7 @@ public final class JavaOutput extends Output {
         }
       }
 
-      result.add(
-          Replacement.create(Range.closedOpen(replaceFrom, replaceTo), replacement.toString()));
+      result.add(Replacement.create(replaceFrom, replaceTo, replacement.toString()));
     }
 
     return result.build();
@@ -342,28 +343,23 @@ public final class JavaOutput extends Output {
     return Range.closedOpen(loTok, hiTok);
   }
 
-  /**
-   * Merge the (un-reformatted) input lines and the (reformatted) output lines. The result will
-   * contain all of the toks from the input and output.
-   *
-   * @param iRangeSet0 the canonical {@link Range} of tokens to reformat
-   */
-  public String writeMerged(RangeSet<Integer> iRangeSet0) {
-    StringBuilder writer = new StringBuilder(javaInput.getText().length());
-    ImmutableList<Replacement> replacements = getFormatReplacements(iRangeSet0);
-    String inputText = javaInput.getText();
-    // The index to copy input text from.
-    int inputIndex = 0;
+  public static String applyReplacements(String input, List<Replacement> replacements) {
+    replacements = new ArrayList<>(replacements);
+    Collections.sort(
+        replacements,
+        new Comparator<Replacement>() {
+          @Override
+          public int compare(Replacement o1, Replacement o2) {
+            return Integer.compare(
+                o2.getReplaceRange().lowerEndpoint(), o1.getReplaceRange().lowerEndpoint());
+          }
+        });
+    StringBuilder writer = new StringBuilder(input);
     for (Replacement replacement : replacements) {
-      if (inputIndex < replacement.getReplaceRange().lowerEndpoint()) {
-        writer.append(
-            inputText.subSequence(inputIndex, replacement.getReplaceRange().lowerEndpoint()));
-      }
-      inputIndex = replacement.getReplaceRange().upperEndpoint();
-      writer.append(replacement.getReplacementString());
-    }
-    if (inputIndex < inputText.length()) {
-      writer.append(inputText.substring(inputIndex));
+      writer.replace(
+          replacement.getReplaceRange().lowerEndpoint(),
+          replacement.getReplaceRange().upperEndpoint(),
+          replacement.getReplacementString());
     }
     return writer.toString();
   }
