@@ -118,18 +118,36 @@ public final class JavadocFormattingTest {
   @Test
   public void paragraphTag() throws Exception {
     String[] input = {
-      "/**", //
-      " * hello<p>world",
-      " */",
-      "class Test {}",
+      "class Test {",
+      "  /**",
+      "   * hello<p>world",
+      "   */",
+      "  void f() {}",
+      "",
+      "  /**",
+      "   * hello",
+      "   * <p>",
+      "   * world",
+      "   */",
+      "  void f() {}",
+      "}",
     };
     String[] expected = {
-      "/**", //
-      " * hello",
-      " *",
-      " * <p>world",
-      " */",
-      "class Test {}",
+      "class Test {",
+      "  /**",
+      "   * hello",
+      "   *",
+      "   * <p>world",
+      "   */",
+      "  void f() {}",
+      "",
+      "  /**",
+      "   * hello",
+      "   *",
+      "   * <p>world",
+      "   */",
+      "  void f() {}",
+      "}",
       "",
     };
     String actual = formatter.formatSource(Joiner.on('\n').join(input));

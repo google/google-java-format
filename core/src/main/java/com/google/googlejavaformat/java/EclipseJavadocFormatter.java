@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 
 import org.eclipse.jdt.core.JavaCore;
@@ -31,7 +30,7 @@ public class EclipseJavadocFormatter {
 
   /** An ill-formed Unicode 16-bit string of length 3. */
   private static final String PLACEHOLDER =
-      Strings.repeat(String.valueOf(Character.MIN_HIGH_SURROGATE), 3);
+      Character.MIN_HIGH_SURROGATE + Character.MIN_HIGH_SURROGATE + " ";
 
   private static final String P_TAG = "<p>";
 
