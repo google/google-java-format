@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -24,10 +25,10 @@ import org.junit.runners.JUnit4;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.EnumSet;
 
 /**
  * Tests for {@link Main}.
@@ -75,35 +76,26 @@ public class MainTest {
   }
 
   @Test
-  public void preserveOriginalFile() throws Exception {
-    Path from = Paths.get("src/test/resources/com/google/googlejavaformat/java/testdata/");
-    Path temp = testFolder.newFolder("preserve").toPath();
-    try (DirectoryStream<Path> stream = Files.newDirectoryStream(from, "*.output")) {
-      for (Path path : stream) {
-        Path java = temp.resolve(path.toFile().getName().replace(".output", ".java"));
-        Files.copy(path, java);
-        preserveOriginalFile(java.toAbsolutePath());
-      }
-    }
-  }
-
-  private void preserveOriginalFile(Path java) throws Exception {
-    long expected = Files.getLastModifiedTime(java).toMillis();
-    StringWriter out = new StringWriter();
-    StringWriter err = new StringWriter();
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
-    int errorCode = main.format("-replace", java.toAbsolutePath().toString());
-    assertThat(errorCode).named("Error Code").isEqualTo(0);
-    long actual = Files.getLastModifiedTime(java).toMillis();
-    assertThat(actual).named("Last modified time changed: " + java).isEqualTo(expected);
-  }
-
-  @Test
   public void version() throws UsageException {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
     Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     assertThat(main.format("-version")).isEqualTo(0);
     assertThat(err.toString()).contains("google-java-format: Version ");
+  }
+
+  @Test
+  public void preserveOriginalFile() throws Exception {
+    Path path = testFolder.newFile("Test.java").toPath();
+    Files.write(path, "class Test {}\n".getBytes(UTF_8));
+    try {
+      Files.setPosixFilePermissions(path, EnumSet.of(PosixFilePermission.OWNER_READ));
+    } catch (UnsupportedOperationException e) {
+      return;
+    }
+    Main main =
+        new Main(new PrintWriter(System.out, true), new PrintWriter(System.err, true), System.in);
+    int errorCode = main.format("-replace", path.toAbsolutePath().toString());
+    assertThat(errorCode).named("Error Code").isEqualTo(0);
   }
 }

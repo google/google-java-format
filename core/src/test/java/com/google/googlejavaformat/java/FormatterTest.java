@@ -88,7 +88,7 @@ public final class FormatterTest {
 
     // should fail because the file does not exist
     assertThat(main.format("Foo.java")).isNotEqualTo(0);
-    assertThat(err.toString()).contains("Foo.java" + ": could not read file: ");
+    assertThat(err.toString()).contains("Foo.java: could not read file: ");
   }
 
   @Test
