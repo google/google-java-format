@@ -1893,7 +1893,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         for (Type superInterfaceType : (List<Type>) node.superInterfaceTypes()) {
           if (!first) {
             token(",");
-            builder.breakToFill(" ");
+            builder.breakOp(" ");
           }
           superInterfaceType.accept(this);
           first = false;
