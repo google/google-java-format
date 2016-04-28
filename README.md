@@ -5,8 +5,7 @@
 
 [Google Java Style]: http://google-styleguide.googlecode.com/svn/trunk/javaguide.html
 
-Using the formatter from the command-line
-----------------------------------------
+## Using the formatter from the command-line
 
 [Download the formatter](https://github.com/google/google-java-format/releases)
 and run it with:
@@ -20,14 +19,14 @@ ofsets (`--offset`), passing through to standard-out (default) or altered
 in-place (`--replace`).
 
 To reformat changed lines in a specific patch, use
-[`google-java-format-diff.py`](https://github.com/google/google-java-format/blob/master/scripts/google-java-format-diff.py)
+[`google-java-format-diff.py`]
+(https://github.com/google/google-java-format/blob/master/scripts/google-java-format-diff.py)
 
 ***Note:*** *There is no configurability as to the formatter's algorithm for
-formatting.  This is a deliberate design decision to unify our code formatting
-on a single format.*
+formatting. This is a deliberate design decision to unify our code formatting on
+a single format.*
 
-Using the formatter in code-generators
---------------------------------------
+## Using the formatter in code-generators
 
 The formatter can be used in software which generates java to output more
 legible java code. Just include the library in your maven/gradle/etc.
@@ -51,7 +50,7 @@ dependencies {
 }
 ```
 
-You can then use the formatter through the `formatSource` methods.  E.g.
+You can then use the formatter through the `formatSource` methods. E.g.
 
 ```java
 String formattedSource = new Formatter().formatSource(sourceString);
@@ -68,18 +67,15 @@ new Formatter().formatSource(source, output);
 Your starting point should be the instance methods of
 `com.google.googlejavaformat.java.Formatter`.
 
-Building from source
---------------------
+## Building from source
 
     mvn install
 
-Contributing
-------------
+## Contributing
 
 Please see [the contributors guide](CONTRIBUTING.md) for details.
 
-License
--------
+## License
 
 ```text
 Copyright 2015 Google Inc.
