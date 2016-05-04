@@ -142,11 +142,13 @@ public final class Main {
     int result;
     try (PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out, UTF_8));
         PrintWriter err = new PrintWriter(new OutputStreamWriter(System.err, UTF_8))) {
-      Main formatter = new Main(out, err, System.in);
-      result = formatter.format(args);
-    } catch (UsageException e) {
-      System.err.print(e.usage());
-      result = 0;
+      try {
+        Main formatter = new Main(out, err, System.in);
+        result = formatter.format(args);
+      } catch (UsageException e) {
+        System.err.print(e.usage());
+        result = 0;
+      }
     }
     System.exit(result);
   }
