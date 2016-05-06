@@ -100,7 +100,6 @@ public abstract class InputOutput {
   public static Map<Integer, Range<Integer>> makeKToIJ(InputOutput put, int kN) {
     Map<Integer, Range<Integer>> map = new HashMap<>();
     int ijN = put.getLineCount();
-    LOOP:
     for (int ij = 0; ij <= ijN; ij++) {
       Range<Integer> range = put.getRanges(ij).canonical(INTEGERS);
       for (int k = range.lowerEndpoint(); k < range.upperEndpoint(); k++) {
@@ -108,9 +107,6 @@ public abstract class InputOutput {
           map.put(k, Range.closedOpen(map.get(k).lowerEndpoint(), ij + 1));
         } else {
           map.put(k, Range.closedOpen(ij, ij + 1));
-        }
-        if (k == kN) {
-          break LOOP;
         }
       }
     }

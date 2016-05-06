@@ -274,4 +274,11 @@ public final class FormatterTest {
       return CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
     }
   }
+
+  // regression test for google-java-format#47
+  @Test
+  public void testTrailingCommentWithoutTerminalNewline() throws Exception {
+    assertThat(new Formatter().formatSource("/*\n * my comment */"))
+        .isEqualTo("/*\n * my comment */\n");
+  }
 }
