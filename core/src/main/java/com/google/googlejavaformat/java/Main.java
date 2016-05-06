@@ -140,15 +140,17 @@ public final class Main {
    */
   public static void main(String[] args) {
     int result;
-    try (PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out, UTF_8));
-        PrintWriter err = new PrintWriter(new OutputStreamWriter(System.err, UTF_8))) {
-      try {
-        Main formatter = new Main(out, err, System.in);
-        result = formatter.format(args);
-      } catch (UsageException e) {
-        System.err.print(e.usage());
-        result = 0;
-      }
+    PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out, UTF_8));
+    PrintWriter err = new PrintWriter(new OutputStreamWriter(System.err, UTF_8));
+    try {
+      Main formatter = new Main(out, err, System.in);
+      result = formatter.format(args);
+    } catch (UsageException e) {
+      err.print(e.usage());
+      result = 0;
+    } finally {
+      err.flush();
+      out.flush();
     }
     System.exit(result);
   }

@@ -17,6 +17,9 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.io.ByteStreams;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -25,8 +28,10 @@ import org.junit.runners.JUnit4;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
 
@@ -97,5 +102,23 @@ public class MainTest {
         new Main(new PrintWriter(System.out, true), new PrintWriter(System.err, true), System.in);
     int errorCode = main.format("-replace", path.toAbsolutePath().toString());
     assertThat(errorCode).named("Error Code").isEqualTo(0);
+  }
+
+  @Test
+  public void testMain() throws Exception {
+    Process process =
+        new ProcessBuilder(
+                ImmutableList.of(
+                    Paths.get(System.getProperty("java.home")).resolve("bin/java").toString(),
+                    "-cp",
+                    System.getProperty("java.class.path"),
+                    Main.class.getName()))
+            .redirectError(Redirect.PIPE)
+            .redirectOutput(Redirect.PIPE)
+            .start();
+    process.waitFor();
+    String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
+    assertThat(err).contains("Usage: google-java-format");
+    assertThat(process.exitValue()).isEqualTo(0);
   }
 }
