@@ -138,6 +138,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * An extension of {@link OpsBuilder}, implementing a visit pattern for Eclipse AST nodes to build a
@@ -2886,24 +2887,100 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           first = false;
         }
         builder.close();
-      } else {
+      } else if (isFormatMethod(arguments)) {
         builder.breakOp();
         builder.open(ZERO);
-        boolean first = true;
-        FillMode fillMode = hasOnlyShortItems(arguments) ? FillMode.INDEPENDENT : FillMode.UNIFIED;
-        for (Expression argument : arguments) {
-          if (!first) {
-            token(",");
-            builder.breakOp(fillMode, " ", ZERO);
-          }
-          argument.accept(this);
-          first = false;
-        }
+        arguments.get(0).accept(this);
+        token(",");
+        builder.breakOp(" ");
+        builder.open(ZERO);
+        argList(arguments.subList(1, arguments.size()));
         builder.close();
+        builder.close();
+      } else {
+        builder.breakOp();
+        argList(arguments);
       }
     }
     token(")");
     builder.close();
+  }
+
+  private void argList(List<Expression> arguments) {
+    builder.open(ZERO);
+    boolean first = true;
+    FillMode fillMode = hasOnlyShortItems(arguments) ? FillMode.INDEPENDENT : FillMode.UNIFIED;
+    for (Expression argument : arguments) {
+      if (!first) {
+        token(",");
+        builder.breakOp(fillMode, " ", ZERO);
+      }
+      argument.accept(this);
+      first = false;
+    }
+    builder.close();
+  }
+
+  /**
+   * Identifies String formatting methods like {@link String#format} which we prefer to format as:
+   *
+   * <pre>{@code
+   * String.format(
+   *     "the format string: %s %s %s",
+   *     arg, arg, arg);
+   * }</pre>
+   *
+   * <p>And not:
+   *
+   * <pre>{@code
+   * String.format(
+   *     "the format string: %s %s %s",
+   *     arg,
+   *     arg,
+   *     arg);
+   * }</pre>
+   */
+  private boolean isFormatMethod(List<Expression> arguments) {
+    if (arguments.size() < 2) {
+      return false;
+    }
+    if (!isStringConcat(arguments.get(0))) {
+      return false;
+    }
+    return true;
+  }
+
+  private static final Pattern FORMAT_SPECIFIER = Pattern.compile("%|\\{[0-9]\\}");
+
+  private boolean isStringConcat(Expression first) {
+    final boolean[] stringLiteral = {true};
+    final boolean[] formatString = {false};
+    first.accept(new ASTVisitor() {
+      @Override
+      public void preVisit(ASTNode node) {
+        stringLiteral[0] &= isStringConcatNode(node);
+        if (node.getNodeType() == ASTNode.STRING_LITERAL
+                && FORMAT_SPECIFIER.matcher(((StringLiteral) node).getLiteralValue()).find()) {
+          formatString[0] = true;
+        }
+      }
+
+      private boolean isStringConcatNode(ASTNode node) {
+        switch (node.getNodeType()) {
+          case ASTNode.STRING_LITERAL:
+            return true;
+          case ASTNode.INFIX_EXPRESSION:
+            if (((InfixExpression) node).getOperator() == InfixExpression.Operator.PLUS) {
+              return true;
+            }
+            break;
+          default:
+            break;
+        }
+        return false;
+      }
+    });
+    return stringLiteral[0] && formatString[0];
   }
 
   private boolean argumentsArePaired(List<Expression> arguments) {
