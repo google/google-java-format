@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat.java;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 
 import org.eclipse.jdt.core.JavaCore;
@@ -30,11 +31,14 @@ public class EclipseJavadocFormatter {
 
   /** An ill-formed Unicode 16-bit string of length 3. */
   private static final String PLACEHOLDER =
-      Character.MIN_HIGH_SURROGATE + Character.MIN_HIGH_SURROGATE + " ";
+      Strings.repeat(String.valueOf(Character.MIN_HIGH_SURROGATE), 3);
 
   private static final String P_TAG = "<p>";
 
   static String formatJavadoc(String input, int indent, JavaFormatterOptions options) {
+    // drop empty lines before <p> that contain only `* `
+    String preprocessed = input.replaceAll("(\\*\\s*){2,}" + P_TAG, "* " + P_TAG);
+
     // Eclipse lays out `<p>` tags on separate lines, which we do not want. To hack around this,
     // replace all occurrences of `<p>` in the input with `<p>???`, which will be formatted
     // as:
@@ -55,10 +59,9 @@ public class EclipseJavadocFormatter {
     //
     // A run of three unpaired surrogate code units is used as the placeholder because it
     // is unlikely to occur naturally in javadoc.
-
-    String preprocessed = input.replace(P_TAG, P_TAG + PLACEHOLDER);
+    preprocessed = preprocessed.replace(P_TAG, P_TAG + PLACEHOLDER);
     String output = formatJavadocInternal(preprocessed, indent, options);
-    return output.replace(P_TAG, "").replace(PLACEHOLDER, P_TAG);
+    return output.replace(P_TAG, "").replaceAll(PLACEHOLDER + "[ ]*", P_TAG);
   }
 
   private static String formatJavadocInternal(
@@ -73,7 +76,7 @@ public class EclipseJavadocFormatter {
         Integer.toString(options.indentationMultiplier()));
     optionBuilder.put(
         DefaultCodeFormatterConstants.FORMATTER_COMMENT_LINE_LENGTH,
-        Integer.toString(options.maxLineLength() - indent));
+        Integer.toString(options.maxLineLength() - indent - 1));
     optionBuilder.put(
         DefaultCodeFormatterConstants.FORMATTER_LINE_SPLIT,
         Integer.toString(options.maxLineLength()));

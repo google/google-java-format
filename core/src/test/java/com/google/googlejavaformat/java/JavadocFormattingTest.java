@@ -14,8 +14,11 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.Joiner;
-import com.google.common.truth.Truth;
+import com.google.common.io.ByteStreams;
 import com.google.googlejavaformat.java.JavaFormatterOptions.JavadocFormatter;
 import com.google.googlejavaformat.java.JavaFormatterOptions.SortImports;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
@@ -44,7 +47,7 @@ public final class JavadocFormattingTest {
       "",
     };
     String actual = formatter.formatSource(Joiner.on('\n').join(input));
-    Truth.assertThat(actual).isEqualTo(Joiner.on('\n').join(expected));
+    assertThat(actual).isEqualTo(Joiner.on('\n').join(expected));
   }
 
   @Test
@@ -69,7 +72,7 @@ public final class JavadocFormattingTest {
       "",
     };
     String actual = formatter.formatSource(Joiner.on('\n').join(input));
-    Truth.assertThat(actual).isEqualTo(Joiner.on('\n').join(expected));
+    assertThat(actual).isEqualTo(Joiner.on('\n').join(expected));
   }
 
   @Test
@@ -90,7 +93,7 @@ public final class JavadocFormattingTest {
       "",
     };
     String actual = formatter.formatSource(Joiner.on('\n').join(input));
-    Truth.assertThat(actual).isEqualTo(Joiner.on('\n').join(expected));
+    assertThat(actual).isEqualTo(Joiner.on('\n').join(expected));
   }
 
   @Test
@@ -112,7 +115,7 @@ public final class JavadocFormattingTest {
       "",
     };
     String actual = formatter.formatSource(Joiner.on('\n').join(input));
-    Truth.assertThat(actual).isEqualTo(Joiner.on('\n').join(expected));
+    assertThat(actual).isEqualTo(Joiner.on('\n').join(expected));
   }
 
   @Test
@@ -151,6 +154,20 @@ public final class JavadocFormattingTest {
       "",
     };
     String actual = formatter.formatSource(Joiner.on('\n').join(input));
-    Truth.assertThat(actual).isEqualTo(Joiner.on('\n').join(expected));
+    assertThat(actual).isEqualTo(Joiner.on('\n').join(expected));
+  }
+
+  @Test
+  public void paragraphTagNewlines() throws Exception {
+    String input =
+        new String(
+            ByteStreams.toByteArray(getClass().getResourceAsStream("testjavadoc/B28750242.input")),
+            UTF_8);
+    String expected =
+        new String(
+            ByteStreams.toByteArray(getClass().getResourceAsStream("testjavadoc/B28750242.output")),
+            UTF_8);
+    String output = formatter.formatSource(input);
+    assertThat(output).isEqualTo(expected);
   }
 }
