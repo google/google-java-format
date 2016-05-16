@@ -32,6 +32,6 @@ class N {
   )
   void f() {
     assert 00 == 0 && 0x0 == 0 && 1.0e0f == 1.00e0f && 0.2D == .2D;
-    java.lang. /* @MarkerAnnotation */String s = null;
+    java.lang./* @MarkerAnnotation */ String s = null;
   }
 }

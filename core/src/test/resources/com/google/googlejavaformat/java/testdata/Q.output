@@ -7,9 +7,9 @@ class Q {
   class T {}
 
   static void f() {
-    Q. /* @MarkerAnnotation */T t;
+    Q./* @MarkerAnnotation */ T t;
     int zero = Q.zero;
-    java.lang. /* @MarkerAnnotation */String s = null;
+    java.lang./* @MarkerAnnotation */ String s = null;
     Q.f();
   }
 }

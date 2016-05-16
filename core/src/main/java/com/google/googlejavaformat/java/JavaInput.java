@@ -477,6 +477,7 @@ public final class JavaInput extends Input {
           switch (tok.getText()) {
             case "(":
             case "<":
+            case ".":
               break OUTER;
             default:
               break;
