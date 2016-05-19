@@ -334,8 +334,8 @@ public final class JavaInput extends Input {
    */
   ImmutableList<Tok> buildToks(String text, ImmutableSet<Integer> stopIds)
       throws InvalidInputException, FormatterException {
-    stopIds = ImmutableSet.<Integer>builder()
-        .addAll(stopIds).add(ITerminalSymbols.TokenNameEOF).build();
+    stopIds =
+        ImmutableSet.<Integer>builder().addAll(stopIds).add(ITerminalSymbols.TokenNameEOF).build();
     kN = 0;
     IScanner scanner = ToolFactory.createScanner(true, true, true, "1.8");
     scanner.setSource(text.toCharArray());
@@ -384,7 +384,8 @@ public final class JavaInput extends Input {
         isToken = false;
         isNumbered = true;
         strings.add(originalTokText);
-      } else if (Character.isJavaIdentifierStart(tokText0) || Character.isDigit(tokText0)
+      } else if (Character.isJavaIdentifierStart(tokText0)
+          || Character.isDigit(tokText0)
           || tokText0 == '.' && tokText.length() > 1 && Character.isDigit(tokText.charAt(1))) {
         // Identifier, keyword, or numeric literal (a dot may begin a number, as in .2D).
         isToken = true;
@@ -553,9 +554,7 @@ public final class JavaInput extends Input {
       throw new FormatterException(
           String.format(
               "%s: error: invalid length %d, offset + length (%d) is outside the file",
-              filename,
-              length,
-              requiredLength));
+              filename, length, requiredLength));
     }
     if (length <= 0) {
       return Formatter.EMPTY_RANGE;

@@ -45,8 +45,6 @@ public final class OpenOp implements Op {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("plusIndent", plusIndent)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("plusIndent", plusIndent).toString();
   }
 }

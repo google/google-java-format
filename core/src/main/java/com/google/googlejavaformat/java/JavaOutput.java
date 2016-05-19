@@ -337,8 +337,7 @@ public final class JavaOutput extends Output {
 
     // Expand the token indices to formattable boundaries (e.g. edges of statements).
     loTok = firstNonNull(partialFormatBoundaries.floor(loTok), partialFormatBoundaries.first());
-    hiTok =
-        firstNonNull(partialFormatBoundaries.higher(hiTok), partialFormatBoundaries.last() + 1);
+    hiTok = firstNonNull(partialFormatBoundaries.higher(hiTok), partialFormatBoundaries.last() + 1);
 
     return Range.closedOpen(loTok, hiTok);
   }

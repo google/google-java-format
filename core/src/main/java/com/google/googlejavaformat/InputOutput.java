@@ -142,7 +142,15 @@ public abstract class InputOutput {
 
   @Override
   public String toString() {
-    return "InputOutput{" + "lines=" + lines + ", range0s=" + range0s + ", ranges=" + ranges
-        + ", range1s=" + range1s + '}';
+    return "InputOutput{"
+        + "lines="
+        + lines
+        + ", range0s="
+        + range0s
+        + ", ranges="
+        + ranges
+        + ", range1s="
+        + range1s
+        + '}';
   }
 }

@@ -43,16 +43,16 @@ class ImportOrderer {
    * Eclipse token ids that indicate the start of a type definition. We use this to avoid scanning
    * the whole file, since we know that imports must precede any type definition.
    */
-  private static final ImmutableSet<Integer> CLASS_START = ImmutableSet.of(
-      TokenNameclass, TokenNameinterface, TokenNameenum);
+  private static final ImmutableSet<Integer> CLASS_START =
+      ImmutableSet.of(TokenNameclass, TokenNameinterface, TokenNameenum);
 
   /**
    * We use this set to find the first import, and again to check that there are no imports after
    * the place we stopped gathering them. An annotation definition ({@code @interface}) is two
    * tokens, the second which is {@code interface}, so we don't need a separate entry for that.
    */
-  private static final ImmutableSet<String> IMPORT_OR_CLASS_START = ImmutableSet.of(
-      "import", "class", "interface", "enum");
+  private static final ImmutableSet<String> IMPORT_OR_CLASS_START =
+      ImmutableSet.of("import", "class", "interface", "enum");
 
   private final String text;
   private final ImmutableList<Tok> toks;

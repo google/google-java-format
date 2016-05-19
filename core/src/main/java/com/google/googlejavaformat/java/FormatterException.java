@@ -33,7 +33,7 @@ public final class FormatterException extends Exception {
     super(Joiner.on('\n').join(diagnostics));
     this.diagnostics = ImmutableList.copyOf(diagnostics);
   }
-  
+
   public List<FormatterDiagnostic> diagnostics() {
     return diagnostics;
   }

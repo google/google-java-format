@@ -58,41 +58,55 @@ public final class Main {
   @Parameters(separators = "=")
   private static final class FormatterParameters {
     @Parameter(
-        names = {"-i", "-r", "-replace", "--replace"},
-        description = "Send formatted output back to files, not stdout.")
+      names = {"-i", "-r", "-replace", "--replace"},
+      description = "Send formatted output back to files, not stdout."
+    )
     boolean iFlag = false;
 
     @Parameter(
-        names = {"--lines", "-lines", "--line", "-line"},
-        description = "Line range(s) to format, like 5:10 (1-based; default is all).")
+      names = {"--lines", "-lines", "--line", "-line"},
+      description = "Line range(s) to format, like 5:10 (1-based; default is all)."
+    )
     final List<String> linesFlags = new ArrayList<>();
 
     @Parameter(
-        names = {"--offset", "-offset"},
-        description = "Character offset to format (0-based; default is all).")
+      names = {"--offset", "-offset"},
+      description = "Character offset to format (0-based; default is all)."
+    )
     private final List<Integer> offsetFlags = new ArrayList<>();
 
-    @Parameter(names = {"--length", "-length"}, description = "Character length to format.")
+    @Parameter(
+      names = {"--length", "-length"},
+      description = "Character length to format."
+    )
     private final List<Integer> lengthFlags = new ArrayList<>();
 
     @Parameter(
-        names = {"--aosp", "-aosp", "-a"},
-        description = "Use AOSP style instead of Google Style (4-space indentation).")
+      names = {"--aosp", "-aosp", "-a"},
+      description = "Use AOSP style instead of Google Style (4-space indentation)."
+    )
     boolean aospFlag = false;
 
-    @Parameter(names = {"--version", "-version", "-v"}, description = "Print the version.")
+    @Parameter(
+      names = {"--version", "-version", "-v"},
+      description = "Print the version."
+    )
     boolean versionFlag = false;
 
     @Parameter(
-        names = {"--help", "-help", "-h"}, description = "Print an extended usage statement.")
+      names = {"--help", "-help", "-h"},
+      description = "Print an extended usage statement."
+    )
     boolean helpFlag = false;
 
     @Parameter(
-        names = {"--sort-imports", "-sort-imports"},
-        description = "Sort import statements. "
-            + "--sort-imports=only to sort imports but do no other formatting. "
-            + "--sort-imports=also to sort imports and do other formatting.",
-        hidden = true)
+      names = {"--sort-imports", "-sort-imports"},
+      description =
+          "Sort import statements. "
+              + "--sort-imports=only to sort imports but do no other formatting. "
+              + "--sort-imports=also to sort imports and do other formatting.",
+      hidden = true
+    )
     String sortImportsFlag = "";
 
     // TODO(eaftan): clang-format formats stdin -> stdout when no options are passed.  We should
@@ -104,8 +118,9 @@ public final class Main {
     final List<String> fileNamesFlag = new ArrayList<>();
   }
 
-  private static final String[] VERSION =
-      {"google-java-format: Version " + GoogleJavaFormatVersion.VERSION};
+  private static final String[] VERSION = {
+    "google-java-format: Version " + GoogleJavaFormatVersion.VERSION
+  };
 
   private static final String[] USAGE =
       ObjectArrays.concat(
@@ -116,10 +131,10 @@ public final class Main {
           String.class);
 
   private static final String[] ADDITIONAL_USAGE = {
-      "If -i is given with -, the result is sent to stdout.",
-      "The --lines, --offset, and --length flags may be given more than once.",
-      "The --offset and --length flags must be given an equal number of times.",
-      "If --lines, --offset, or --length are given, only one file (or -) may be given."
+    "If -i is given with -, the result is sent to stdout.",
+    "The --lines, --offset, and --length flags may be given more than once.",
+    "The --offset and --length flags must be given an equal number of times.",
+    "If --lines, --offset, or --length are given, only one file (or -) may be given."
   };
 
   private final PrintWriter outWriter;
@@ -338,7 +353,8 @@ public final class Main {
     }
 
     boolean isSelection() {
-      return !parameters.linesFlags.isEmpty() || !parameters.offsetFlags.isEmpty()
+      return !parameters.linesFlags.isEmpty()
+          || !parameters.offsetFlags.isEmpty()
           || !parameters.lengthFlags.isEmpty();
     }
 

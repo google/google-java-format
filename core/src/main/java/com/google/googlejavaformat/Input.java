@@ -115,7 +115,7 @@ public abstract class Input extends InputOutput {
   public abstract ImmutableMap<Integer, Integer> getPositionToColumnMap();
 
   public abstract String getText();
-  
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("super", super.toString()).toString();

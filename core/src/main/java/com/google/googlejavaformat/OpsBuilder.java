@@ -333,8 +333,7 @@ public final class OpsBuilder {
    * @param flat the {@link Doc.Break} when not broken
    * @param plusIndent extra indent if taken
    */
-  public final void breakOp(
-      Doc.FillMode fillMode, String flat, Indent plusIndent) {
+  public final void breakOp(Doc.FillMode fillMode, String flat, Indent plusIndent) {
     breakOp(fillMode, flat, plusIndent, Optional.<BreakTag>absent());
   }
 

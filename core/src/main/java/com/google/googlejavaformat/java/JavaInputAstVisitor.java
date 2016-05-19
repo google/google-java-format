@@ -148,7 +148,8 @@ import java.util.regex.Pattern;
 public final class JavaInputAstVisitor extends ASTVisitor {
   /** Direction for Annotations (usually VERTICAL). */
   enum Direction {
-    VERTICAL, HORIZONTAL;
+    VERTICAL,
+    HORIZONTAL;
 
     boolean isVertical() {
       return this == VERTICAL;
@@ -157,7 +158,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   /** Whether to break or not. */
   enum BreakOrNot {
-    YES, NO;
+    YES,
+    NO;
 
     boolean isYes() {
       return this == YES;
@@ -166,7 +168,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   /** Whether to collapse empty blocks. */
   enum CollapseEmptyOrNot {
-    YES, NO;
+    YES,
+    NO;
 
     static CollapseEmptyOrNot valueOf(boolean b) {
       return b ? YES : NO;
@@ -189,7 +192,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   /** Whether to allow trailing blank lines in blocks. */
   enum AllowTrailingBlankLine {
-    YES, NO;
+    YES,
+    NO;
 
     static AllowTrailingBlankLine valueOf(boolean b) {
       return b ? YES : NO;
@@ -198,7 +202,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   /** Whether to include braces. */
   enum BracesOrNot {
-    YES, NO;
+    YES,
+    NO;
 
     boolean isYes() {
       return this == YES;
@@ -207,7 +212,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   /** Whether or not to include dimensions. */
   enum DimensionsOrNot {
-    YES, NO;
+    YES,
+    NO;
 
     boolean isYes() {
       return this == YES;
@@ -216,7 +222,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   /** Whether or not the declaration is Varargs. */
   enum VarArgsOrNot {
-    YES, NO;
+    YES,
+    NO;
 
     static VarArgsOrNot valueOf(boolean b) {
       return b ? YES : NO;
@@ -239,7 +246,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   /** Whether these declarations are the first in the block. */
   enum FirstDeclarationsOrNot {
-    YES, NO;
+    YES,
+    NO;
 
     boolean isYes() {
       return this == YES;
@@ -1202,7 +1210,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         token(",");
         builder.breakOp(" ");
       }
-      parameter.accept(this);;
+      parameter.accept(this);
       first = false;
     }
     if (node.hasParentheses()) {
@@ -1275,8 +1283,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         // parsed as method declarations with a null return type
         if (!node.isConstructor() && node.getReturnType2() != null) {
           if (!first) {
-            builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO,
-                Optional.of(breakBeforeType));
+            builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO, Optional.of(breakBeforeType));
           } else {
             first = false;
           }
@@ -1287,8 +1294,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           node.getReturnType2().accept(this);
         }
         if (!first) {
-          builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO,
-              Optional.of(breakBeforeName));
+          builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO, Optional.of(breakBeforeName));
         } else {
           first = false;
         }
@@ -1524,7 +1530,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.op(op);
     // Keep prefixes unambiguous.
     Expression operand = node.getOperand();
-    if ((op.equals("+") || op.equals("-")) && operand.getNodeType() == ASTNode.PREFIX_EXPRESSION
+    if ((op.equals("+") || op.equals("-"))
+        && operand.getNodeType() == ASTNode.PREFIX_EXPRESSION
         && ((PrefixExpression) operand).getOperator().toString().startsWith(op)) {
       builder.space();
     }
@@ -2061,7 +2068,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     sync(node);
     addDeclaration(
         node,
-        node.modifiers(), node.getType(), node.fragments(),
+        node.modifiers(),
+        node.getType(),
+        node.fragments(),
         canLocalHaveHorizontalAnnotations(node.modifiers()));
     return false;
   }
@@ -2237,8 +2246,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       List<IExtendedModifier> modifiers,
       Direction annotationDirection,
       Optional<BreakTag> declarationAnnotationBreak) {
-    builder.addAll(
-        visitModifiers(modifiers, annotationDirection, declarationAnnotationBreak));
+    builder.addAll(visitModifiers(modifiers, annotationDirection, declarationAnnotationBreak));
   }
 
   /**
@@ -2417,7 +2425,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   /** Helper method for {@link MethodDeclaration}s. */
   private void visitFormals(
       ASTNode node,
-      Optional<Type> receiverType, SimpleName receiverQualifier,
+      Optional<Type> receiverType,
+      SimpleName receiverQualifier,
       List<SingleVariableDeclaration> parameters) {
     if (receiverType.isPresent() || !parameters.isEmpty()) {
       builder.open(ZERO);
@@ -2483,8 +2492,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * {@link SingleVariableDeclaration}s.
    */
   private void visitToDeclare(
-      Direction annotationsDirection, SingleVariableDeclaration node,
-      Optional<Expression> initializer, String equals) {
+      Direction annotationsDirection,
+      SingleVariableDeclaration node,
+      Optional<Expression> initializer,
+      String equals) {
     sync(node);
     declareOne(
         node,
@@ -2837,7 +2848,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   }
 
   /** Helper methods for method invocations. */
-
   void addTypeArguments(List<Type> typeArguments, Indent plusIndent) {
     if (!typeArguments.isEmpty()) {
       token("<");
@@ -2955,31 +2965,32 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   private boolean isStringConcat(Expression first) {
     final boolean[] stringLiteral = {true};
     final boolean[] formatString = {false};
-    first.accept(new ASTVisitor() {
-      @Override
-      public void preVisit(ASTNode node) {
-        stringLiteral[0] &= isStringConcatNode(node);
-        if (node.getNodeType() == ASTNode.STRING_LITERAL
+    first.accept(
+        new ASTVisitor() {
+          @Override
+          public void preVisit(ASTNode node) {
+            stringLiteral[0] &= isStringConcatNode(node);
+            if (node.getNodeType() == ASTNode.STRING_LITERAL
                 && FORMAT_SPECIFIER.matcher(((StringLiteral) node).getLiteralValue()).find()) {
-          formatString[0] = true;
-        }
-      }
-
-      private boolean isStringConcatNode(ASTNode node) {
-        switch (node.getNodeType()) {
-          case ASTNode.STRING_LITERAL:
-            return true;
-          case ASTNode.INFIX_EXPRESSION:
-            if (((InfixExpression) node).getOperator() == InfixExpression.Operator.PLUS) {
-              return true;
+              formatString[0] = true;
             }
-            break;
-          default:
-            break;
-        }
-        return false;
-      }
-    });
+          }
+
+          private boolean isStringConcatNode(ASTNode node) {
+            switch (node.getNodeType()) {
+              case ASTNode.STRING_LITERAL:
+                return true;
+              case ASTNode.INFIX_EXPRESSION:
+                if (((InfixExpression) node).getOperator() == InfixExpression.Operator.PLUS) {
+                  return true;
+                }
+                break;
+              default:
+                break;
+            }
+            return false;
+          }
+        });
     return stringLiteral[0] && formatString[0];
   }
 
@@ -3131,19 +3142,15 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         {
           builder.open(ZERO);
           {
-              type.accept(this);
-              if (isVarargs.isYes()) {
-                visitAnnotations(varargsAnnotations, BreakOrNot.YES, BreakOrNot.YES);
-                builder.op("...");
-              }
+            type.accept(this);
+            if (isVarargs.isYes()) {
+              visitAnnotations(varargsAnnotations, BreakOrNot.YES, BreakOrNot.YES);
+              builder.op("...");
+            }
           }
           builder.close();
 
-          builder.breakOp(
-              Doc.FillMode.INDEPENDENT,
-              " ",
-              ZERO,
-              Optional.of(typeBreak));
+          builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO, Optional.of(typeBreak));
 
           // conditionally ident the name and initializer +4 if the type spans
           // multiple lines
@@ -3218,7 +3225,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * @param fragments the {@link VariableDeclarationFragment}s
    */
   private void declareMany(
-      Direction annotationsDirection, List<IExtendedModifier> modifiers, Type type,
+      Direction annotationsDirection,
+      List<IExtendedModifier> modifiers,
+      Type type,
       List<VariableDeclarationFragment> fragments) {
     builder.open(ZERO);
     visitAndBreakModifiers(modifiers, annotationsDirection, Optional.<BreakTag>absent());
@@ -3268,7 +3277,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    */
   void addDeclaration(
       ASTNode node,
-      List<IExtendedModifier> modifiers, Type type, List<VariableDeclarationFragment> fragments,
+      List<IExtendedModifier> modifiers,
+      Type type,
+      List<VariableDeclarationFragment> fragments,
       Direction annotationsDirection) {
     if (fragments.size() == 1) {
       VariableDeclarationFragment fragment = fragments.get(0);
