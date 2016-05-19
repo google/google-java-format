@@ -26,9 +26,9 @@ import org.junit.runners.JUnit4;
 
 import java.util.Set;
 
-/** {@link FormatFileCallable}Test */
+/** Tests for {@link Formatter#lineRangesToCharRanges} */
 @RunWith(JUnit4.class)
-public class FormatFileCallableTest {
+public class LineRangesToCharRangesTest {
 
   @SafeVarargs
   final Set<Range<Integer>> getCharRanges(String input, Range<Integer>... ranges) {
@@ -36,7 +36,7 @@ public class FormatFileCallableTest {
     for (Range<Integer> range : ranges) {
       rangeSet.add(range);
     }
-    return FormatFileCallable.lineRangesToCharRanges(input, rangeSet).asRanges();
+    return Formatter.lineRangesToCharRanges(input, rangeSet).asRanges();
   }
 
   @Test

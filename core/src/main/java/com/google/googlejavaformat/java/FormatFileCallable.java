@@ -14,8 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
@@ -23,7 +21,6 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.java.JavaFormatterOptions.SortImports;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -70,8 +67,6 @@ public class FormatFileCallable implements Callable<String> {
         .formatSource(inputString, characterRanges(inputString).asRanges());
   }
 
-  static final CharMatcher NEWLINE = CharMatcher.is('\n');
-
   private RangeSet<Integer> characterRanges(String input) {
     final RangeSet<Integer> characterRanges = TreeRangeSet.create();
 
@@ -80,36 +75,12 @@ public class FormatFileCallable implements Callable<String> {
       return characterRanges;
     }
 
-    characterRanges.addAll(lineRangesToCharRanges(input, lineRanges));
+    characterRanges.addAll(Formatter.lineRangesToCharRanges(input, lineRanges));
 
     for (int i = 0; i < offsets.size(); i++) {
       characterRanges.add(Range.closedOpen(offsets.get(i), offsets.get(i) + lengths.get(i)));
     }
 
-    return characterRanges;
-  }
-
-  @VisibleForTesting
-  static RangeSet<Integer> lineRangesToCharRanges(String input, RangeSet<Integer> lineRanges) {
-    List<Integer> lines = new ArrayList<>();
-    lines.add(0);
-    int idx = NEWLINE.indexIn(input);
-    while (idx >= 0) {
-      lines.add(idx + 1);
-      idx = NEWLINE.indexIn(input, idx + 1);
-    }
-    lines.add(input.length() + 1);
-
-    final RangeSet<Integer> characterRanges = TreeRangeSet.create();
-    for (Range<Integer> lineRange :
-        lineRanges.subRangeSet(Range.closedOpen(0, lines.size() - 1)).asRanges()) {
-      int lineStart = lines.get(lineRange.lowerEndpoint());
-      // Exclude the trailing newline. This isn't strictly necessary, but handling blank lines
-      // as empty ranges is convenient.
-      int lineEnd = lines.get(lineRange.upperEndpoint()) - 1;
-      Range<Integer> range = Range.closedOpen(lineStart, lineEnd);
-      characterRanges.add(range);
-    }
     return characterRanges;
   }
 }

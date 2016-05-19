@@ -14,9 +14,11 @@
 
 package com.google.googlejavaformat.java;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.CharSink;
 import com.google.common.io.CharSource;
 import com.google.errorprone.annotations.Immutable;
@@ -202,5 +204,35 @@ public final class Formatter {
     }
     RangeSet<Integer> tokenRangeSet = javaInput.characterRangesToTokenRanges(characterRanges);
     return javaOutput.getFormatReplacements(tokenRangeSet);
+  }
+
+  static final CharMatcher NEWLINE = CharMatcher.is('\n');
+
+  /**
+   * Converts zero-indexed, [closed, open) line ranges in the given source file to character
+   * ranges.
+   */
+  public static RangeSet<Integer> lineRangesToCharRanges(
+      String input, RangeSet<Integer> lineRanges) {
+    List<Integer> lines = new ArrayList<>();
+    lines.add(0);
+    int idx = NEWLINE.indexIn(input);
+    while (idx >= 0) {
+      lines.add(idx + 1);
+      idx = NEWLINE.indexIn(input, idx + 1);
+    }
+    lines.add(input.length() + 1);
+
+    final RangeSet<Integer> characterRanges = TreeRangeSet.create();
+    for (Range<Integer> lineRange :
+        lineRanges.subRangeSet(Range.closedOpen(0, lines.size() - 1)).asRanges()) {
+      int lineStart = lines.get(lineRange.lowerEndpoint());
+      // Exclude the trailing newline. This isn't strictly necessary, but handling blank lines
+      // as empty ranges is convenient.
+      int lineEnd = lines.get(lineRange.upperEndpoint()) - 1;
+      Range<Integer> range = Range.closedOpen(lineStart, lineEnd);
+      characterRanges.add(range);
+    }
+    return characterRanges;
   }
 }
