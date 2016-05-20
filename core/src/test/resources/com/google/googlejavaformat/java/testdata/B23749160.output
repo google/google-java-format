@@ -24,10 +24,8 @@ class B23749160 {
             anyInt(), anyInt(), anyInt())
         .anotherThing();
 
-    when(
-            mockDailySummaryModuleListFiller
-                .buildDailySummaryModulesWithHeadersOnlyAndOneExpandedDay(
-                    anyInt(), anyInt(), anyInt()))
+    when(mockDailySummaryModuleListFiller.buildDailySummaryModulesWithHeadersOnlyAndOneExpandedDay(
+            anyInt(), anyInt(), anyInt()))
         .then();
 
     private static final List<Integer> XXXXXXXX =

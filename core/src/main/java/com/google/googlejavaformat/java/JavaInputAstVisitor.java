@@ -18,6 +18,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.googlejavaformat.CloseOp;
 import com.google.googlejavaformat.Doc;
@@ -2664,7 +2665,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     if (prefixIndex > 0) {
       visitDotWithPrefix(items, needDot, prefixIndex);
     } else {
-      visitRegularDot(items, needDot);
+      visitRegularDot(node0, items, needDot);
     }
 
     if (node != null) {
@@ -2675,10 +2676,12 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   /**
    * Output a "regular" chain of dereferences, possibly in builder-style. Break before every dot.
    *
-   * @param items           in the chain
-   * @param needDot         whether a leading dot is needed
+   * @param enclosingExpression the parent expression of the dot chain
+   * @param items in the chain
+   * @param needDot whether a leading dot is needed
    */
-  private void visitRegularDot(List<Expression> items, boolean needDot) {
+  private void visitRegularDot(
+      Expression enclosingExpression, List<Expression> items, boolean needDot) {
     boolean trailingDereferences = items.size() > 1;
     boolean needDot0 = needDot;
     if (!needDot0) {
@@ -2696,17 +2699,57 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         token(".");
         length++;
       }
-      BreakTag tyargTag = genSym();
-      dotExpressionUpToArgs(e, Optional.of(tyargTag));
-      Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
-      dotExpressionArgsAndParen(
-          e, tyargIndent, (trailingDereferences || needDot) ? plusFour : ZERO);
+      if (!fillFirstArgument(
+          enclosingExpression, e, items, trailingDereferences ? ZERO : minusFour)) {
+        BreakTag tyargTag = genSym();
+        dotExpressionUpToArgs(e, Optional.of(tyargTag));
+        Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
+        dotExpressionArgsAndParen(
+            e, tyargIndent, (trailingDereferences || needDot) ? plusFour : ZERO);
+      }
       length += e.getLength();
       needDot = true;
     }
     if (!needDot0) {
       builder.close();
     }
+  }
+
+  // avoid formattings like:
+  //
+  // when(
+  //         something
+  //             .happens())
+  //     .thenReturn(result);
+  //
+  private boolean fillFirstArgument(
+      Expression enclosingExpression, Expression e, List<Expression> items, Indent indent) {
+    // is there a trailing dereference?
+    if (items.size() < 2) {
+      return false;
+    }
+    // don't special-case calls nested inside expressions
+    if (enclosingExpression.getParent().getNodeType() != ASTNode.EXPRESSION_STATEMENT
+        || e.getNodeType() != ASTNode.METHOD_INVOCATION) {
+      return false;
+    }
+    MethodInvocation methodInvocation = (MethodInvocation) e;
+    if (methodInvocation.getName().getLength() > 4
+        || !methodInvocation.typeArguments().isEmpty()
+        || methodInvocation.arguments().size() != 1
+        || methodInvocation.getExpression() != null) {
+      return false;
+    }
+    builder.open(ZERO);
+    builder.open(indent);
+    visit(methodInvocation.getName());
+    token("(");
+    Expression arg = Iterables.getOnlyElement((List<Expression>) methodInvocation.arguments());
+    arg.accept(this);
+    builder.close();
+    token(")");
+    builder.close();
+    return true;
   }
 
   /**
