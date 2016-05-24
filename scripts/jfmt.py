@@ -30,8 +30,9 @@ def origin_path():
     return os.path.dirname(os.path.realpath(sys.argv[0]))
 
 # Constants:
-# Command which will be executed by the os.system()
+# Current version name
 GJF = "google-java-format-1.0-all-deps.jar"
+# Command which will be executed by the os.system()
 COMMAND = "java -jar " + origin_path() + "/" + GJF
 # Verbose output.
 DEBUG = False
