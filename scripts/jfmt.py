@@ -4,10 +4,14 @@ from __future__ import print_function
 import sys, os
 
 
+# Purpose:
+# Format all .java files in the directory, including child
+# directories and their .java files, or just a single .java
+# file.
+#
 # Instruction:
-# Script can be called from python interpreter
-# or aliased and used as any other UNIX tools,
-# like 'cd' or 'cat'.
+# Script can be called from python interpreter or aliased
+# and used as any other UNIX tools, like 'cd' or 'cat'.
 #
 # In order to use this script like 'UNIX tool':
 # $ chmod +x jfmt.py
@@ -16,9 +20,9 @@ import sys, os
 #
 #
 # Behaviour:
-# When script called in directory without arguments,
-# or on directory it will format every .java file
-# in current (or provided) directory AND child directories.
+# When script called in directory without arguments, or on
+# directory it will format every .java file in current
+# (or provided) directory AND child directories.
 # 
 # When script called with argument which is path to .java
 # file, only this file will be formated.
