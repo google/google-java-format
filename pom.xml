@@ -32,6 +32,7 @@
 
   <modules>
     <module>core</module>
+    <module>eclipse_plugin</module>
     <!-- google-java-format#24
     <module>idea_plugin</module>
     -->
@@ -117,11 +118,13 @@
         <groupId>com.google.code.findbugs</groupId>
         <artifactId>jsr305</artifactId>
         <version>2.0.1</version>
+        <scope>compile</scope>
       </dependency>
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
         <version>2.0.8</version>
+        <scope>compile</scope>
       </dependency>
 
       <!-- Test dependencies -->
