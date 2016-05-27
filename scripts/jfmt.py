@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 import sys, os
-
+import argparse
 
 # Purpose:
 # Format all .java files in the directory, including child
@@ -38,10 +38,9 @@ def origin_path():
 GJF = "google-java-format-1.0-all-deps.jar"
 # Command which will be executed by the os.system()
 COMMAND = "java -jar " + origin_path() + "/" + GJF
-# Verbose output.
-DEBUG = False
 
-def format_files(p):
+
+def format_files(p, verbose):
     '''
     Format files in `p` directory.
     '''
@@ -51,34 +50,67 @@ def format_files(p):
                 fpath = dirpath + '/' + fname
                 c = COMMAND + " --replace " + fpath
                 os.system(c)
-                if DEBUG:
+                if verbose:
                     print("Path: ", dirpath)
                     print("Name: ", fname)
 
-def format_file(p):
+
+def format_file(p, verbose):
     '''
     Format the file.
     '''
+    if verbose:
+        print("Format file: ", p)
     c = COMMAND + " --replace " + p
     os.system(c)
 
+
 def parse_argv():
-    if len(sys.argv) == 2:
-        p = os.path.abspath(sys.argv[1])
-        if os.path.isfile(p):
-            format_file(p)
-        if os.path.isdir(p):
-            format_files(p)
-    if len(sys.argv) == 1:
-        p = os.getcwd()
-        format_files(p)
+    parser = argparse.ArgumentParser(
+        description='Format all .java files in the directory,' +
+        ' including child directories and their .java files, ' +
+        'or just a single .java file.')
+    parser.add_argument('--verbose',
+                        '-v',
+                        action='store_true',
+                        help='verbose flag')
+    parser.add_argument('file',
+                        nargs='?',
+                        default='none',
+                        help='path to .java file or folder')
+    p = parser.parse_args()
+
+    # Format .java files in current working directory.
+    if len(sys.argv) == 1 or len(sys.argv) == 2 and p.verbose:
+        path = os.getcwd()
+        if p.verbose:
+            print("Path: ", path)
+            format_files(path, True)
+        else:
+            format_files(path, False)
+
+    # Format .java files in proveded directory, or format .java
+    # if proveded argument is a path to it.
+    if p.file != 'none':
+        if os.path.isfile(p.file):
+            if p.verbose:
+                format_file(p.file, True)
+            else:
+                format_file(p.file, False)
+        if os.path.isdir(p.file):
+            if p.verbose:
+                print("Format dir: ", p.file)
+                format_files(p.file, True)
+            else:
+                format_files(p.file, False)
+
 
 def print_help(reason):
     if reason == "jar":
         print("ERROR: No " + GJF + " found")
-        print("\nIn order to use 'jfmt' you need to put " +
-              "'google-java-format-1.0-all-deps.jar' into the folder " +
-              "with 'jfmt' script.\n")
+        print("\nIn order to use 'jfmt' you need to put " + GJF +
+              " into the folder " + "with 'jfmt' script.\n")
+
 
 def check_source():
     '''
@@ -91,13 +123,14 @@ def check_source():
     else:
         return False
 
+
 def main():
     if check_source():
-        print("Processing...")
         parse_argv()
-        print("Done.")
+        print("Done")
     else:
         print_help("jar")
+
 
 if __name__ == '__main__':
     main()
