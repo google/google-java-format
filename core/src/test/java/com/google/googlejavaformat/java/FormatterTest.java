@@ -171,8 +171,16 @@ public final class FormatterTest {
   }
 
   @Test
+  public void blockCommentInteriorTrailingBlank() throws FormatterException {
+    String input = "class T {\n/*\n* asd \n* fgh\n*/ \n\nint x;\n}";
+    String output = new Formatter().formatSource(input);
+    String expect = "class T {\n  /*\n   * asd\n   * fgh\n   */\n\n  int x;\n}\n";
+    assertThat(output).isEqualTo(expect);
+  }
+
+  @Test
   public void blockCommentTrailingBlank() throws FormatterException {
-    String input = "class T {\n/* asd */\n\nint x;\n}";
+    String input = "class T {\n/* asd */ \n\nint x;\n}";
     String output = new Formatter().formatSource(input);
     String expect = "class T {\n  /* asd */\n\n  int x;\n}\n";
     assertThat(output).isEqualTo(expect);
@@ -183,6 +191,15 @@ public final class FormatterTest {
     String input = "class T {\n// asd \n\nint x;\n}";
     String output = new Formatter().formatSource(input);
     String expect = "class T {\n  // asd\n\n  int x;\n}\n";
+    assertThat(output).isEqualTo(expect);
+  }
+
+  @Test
+  public void lineCommentTrailingThinSpace() throws FormatterException {
+    // The Unicode thin space is matched by CharMatcher.whitespace() but not trim().
+    String input = "class T {\n  // asd\u2009\n}\n";
+    String output = new Formatter().formatSource(input);
+    String expect = "class T {\n  // asd\n}\n";
     assertThat(output).isEqualTo(expect);
   }
 

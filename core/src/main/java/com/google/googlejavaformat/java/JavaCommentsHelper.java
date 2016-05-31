@@ -48,9 +48,6 @@ public final class JavaCommentsHelper implements CommentsHelper {
     for (String line : NEWLINE_SPLITTER.split(text)) {
       lines.add(CharMatcher.whitespace().trimTrailingFrom(line));
     }
-    if (lines.size() == 1) {
-      return tok.getOriginalText().trim();
-    }
     if (tok.isSlashSlashComment()) {
       return indentLineComments(lines, column0);
     } else if (javadocShaped(lines)) {

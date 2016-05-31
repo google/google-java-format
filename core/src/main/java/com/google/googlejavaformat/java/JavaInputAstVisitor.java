@@ -1363,6 +1363,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return false;
   }
 
+
   /** Visitor method for {@link Modifier}s. */
   @Override
   public boolean visit(Modifier node) {
