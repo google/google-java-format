@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import com.google.errorprone.annotations.Immutable;
+import com.google.googlejavaformat.java.javadoc.GoogleJavadocFormatter;
 
 /**
  * Options for a google-java-format invocation.
@@ -77,6 +78,12 @@ public class JavaFormatterOptions {
       @Override
       public String format(JavaFormatterOptions options, String text, int column0) {
         return EclipseJavadocFormatter.formatJavadoc(text, column0, options);
+      }
+    },
+    GOOGLE {
+      @Override
+      public String format(JavaFormatterOptions options, String text, int column0) {
+        return GoogleJavadocFormatter.formatJavadoc(text, column0, options);
       }
     };
 

@@ -27,9 +27,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Tests formatting javadoc. */
+/** Tests formatting javadoc with the Eclipse formatter. */
 @RunWith(JUnit4.class)
-public final class JavadocFormattingTest {
+public final class EclipseJavadocFormattingTest {
 
   public final Formatter formatter =
       new Formatter(
@@ -165,7 +165,8 @@ public final class JavadocFormattingTest {
             UTF_8);
     String expected =
         new String(
-            ByteStreams.toByteArray(getClass().getResourceAsStream("testjavadoc/B28750242.output")),
+            ByteStreams.toByteArray(
+                getClass().getResourceAsStream("testjavadoc/B28750242.eclipse.output")),
             UTF_8);
     String output = formatter.formatSource(input);
     assertThat(output).isEqualTo(expected);
