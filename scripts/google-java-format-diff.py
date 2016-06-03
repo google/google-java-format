@@ -51,6 +51,8 @@ def main():
                       '(case insensitive, overridden by -regex)')
   parser.add_argument('-v', '--verbose', action='store_true',
                       help='be more verbose, ineffective without -i')
+  parser.add_argument('-a', '--aosp', action='store_true',
+                      help='use AOSP style instead of Google Style (4-space indentation)')
   args = parser.parse_args()
 
   # Extract changed lines for each file.
@@ -90,6 +92,8 @@ def main():
     command = [binary]
     if args.i:
       command.append('-i')
+    if args.aosp:
+      command.append('--aosp')
     command.extend(lines)
     command.append(filename)
     p = subprocess.Popen(command, stdout=subprocess.PIPE,
