@@ -567,39 +567,6 @@ public final class JavaInput extends Input {
         tokenEntryHi.getValue().getTok().getIndex() + 1);
   }
 
-  Range<Integer> lineRangeToTokenRange(Range<Integer> lineRange) {
-    Range<Integer> lines = Range.closedOpen(0, getLineCount());
-    if (!lines.isConnected(lineRange)) {
-      return EMPTY_RANGE;
-    }
-    lineRange = lines.intersection(lineRange);
-    int startLine = Math.max(0, lineRange.lowerEndpoint());
-    int start = getRange0s(startLine).lowerEndpoint();
-
-    while (start < 0 && lines.contains(startLine)) {
-      startLine++;
-      start = getRange0s(startLine).lowerEndpoint();
-    }
-
-    int endLine = Math.min(lineRange.upperEndpoint() - 1, getLineCount() - 1);
-    int end = getRange1s(endLine).upperEndpoint();
-    while (end < 0 && lines.contains(endLine)) {
-      endLine--;
-      end = getRange1s(endLine).upperEndpoint();
-    }
-
-    Verify.verify(start >= 0);
-    if (end <= start) {
-      // If the file starts with blank lines, a request to format the first line
-      // wont include any tokens, and 'end' will end up being -1. That issue can't
-      // happen at the end of the file because there's an explicit EOF token.
-      return EMPTY_RANGE;
-    }
-    Verify.verify(end >= 0);
-
-    return Range.closedOpen(start, end);
-  }
-
   /**
    * Get the number of toks.
    * @return the number of toks, including the EOF tok
