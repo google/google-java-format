@@ -380,7 +380,7 @@ public class ImportOrdererTest {
   @Test
   public void reorder() throws FormatterException {
     try {
-      String output = ImportOrderer.reorderImports("FakeClass.java", input);
+      String output = ImportOrderer.reorderImports(input);
       assertWithMessage("Expected exception").that(reordered).doesNotMatch("^!!");
       assertWithMessage(input).that(output).isEqualTo(reordered);
     } catch (FormatterException e) {

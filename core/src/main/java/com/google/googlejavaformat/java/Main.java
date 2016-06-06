@@ -54,6 +54,7 @@ public final class Main {
   private static final int MAX_THREADS = 20;
   private static final Splitter COMMA_SPLITTER = Splitter.on(',');
   private static final Splitter COLON_SPLITTER = Splitter.on(':');
+  private static final String STDIN_FILENAME = "<stdin>";
 
   @Parameters(separators = "=")
   private static final class FormatterParameters {
@@ -246,7 +247,6 @@ public final class Main {
           path,
           executorService.submit(
               new FormatFileCallable(
-                  fileName,
                   parseRangeSet(argInfo.parameters.linesFlags),
                   argInfo.parameters.offsetFlags,
                   argInfo.parameters.lengthFlags,
@@ -265,7 +265,7 @@ public final class Main {
         continue;
       } catch (ExecutionException e) {
         if (e.getCause() instanceof FormatterException) {
-          errWriter.println(e.getCause().getMessage());
+          errWriter.println(result.getKey() + ":" + e.getCause().getMessage());
         } else {
           errWriter.println(result.getKey() + ": error: " + e.getCause().getMessage());
         }
@@ -300,7 +300,6 @@ public final class Main {
     try {
       String output =
           new FormatFileCallable(
-                  Formatter.STDIN_FILENAME,
                   parseRangeSet(argInfo.parameters.linesFlags),
                   argInfo.parameters.offsetFlags,
                   argInfo.parameters.lengthFlags,
@@ -310,7 +309,7 @@ public final class Main {
       outWriter.write(output);
       return 0;
     } catch (FormatterException e) {
-      errWriter.println(e.getMessage());
+      errWriter.println(STDIN_FILENAME + ":" + e.getMessage());
       return 1;
     }
   }

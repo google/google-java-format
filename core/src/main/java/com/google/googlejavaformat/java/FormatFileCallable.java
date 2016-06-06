@@ -29,7 +29,6 @@ import java.util.concurrent.Callable;
  * format.
  */
 public class FormatFileCallable implements Callable<String> {
-  private final String fileName;
   private final String input;
   private final ImmutableRangeSet<Integer> lineRanges;
   private final ImmutableList<Integer> offsets;
@@ -37,13 +36,11 @@ public class FormatFileCallable implements Callable<String> {
   private final JavaFormatterOptions options;
 
   public FormatFileCallable(
-      String fileName,
       RangeSet<Integer> lineRanges,
       List<Integer> offsets,
       List<Integer> lengths,
       String input,
       JavaFormatterOptions options) {
-    this.fileName = fileName;
     this.input = input;
     this.lineRanges = ImmutableRangeSet.copyOf(lineRanges);
     this.offsets = ImmutableList.copyOf(offsets);
@@ -57,13 +54,13 @@ public class FormatFileCallable implements Callable<String> {
     // TODO(cushon): figure out how to integrate import ordering into Formatter
     String inputString = input;
     if (options.sortImports() != SortImports.NO) {
-      inputString = ImportOrderer.reorderImports(fileName, inputString);
+      inputString = ImportOrderer.reorderImports(inputString);
       if (options.sortImports() == SortImports.ONLY) {
         return inputString;
       }
     }
 
-    return new Formatter(fileName, options)
+    return new Formatter(options)
         .formatSource(inputString, characterRanges(inputString).asRanges());
   }
 

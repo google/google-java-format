@@ -232,7 +232,6 @@ public final class JavaInput extends Input {
 
   private static final Splitter NEWLINE_SPLITTER = Splitter.on('\n');
 
-  private final String filename;
   private final String text; // The input.
   private int kN; // The number of numbered toks (tokens or comments), excluding the EOF.
   private Map<Integer, Range<Integer>> kToI = null; // Map from token indices to line numbers.
@@ -257,8 +256,7 @@ public final class JavaInput extends Input {
    * @param text the input text
    * @throws FormatterException if the input cannot be parsed
    */
-  public JavaInput(String filename, String text) throws FormatterException {
-    this.filename = checkNotNull(filename);
+  public JavaInput(String text) throws FormatterException {
     this.text = checkNotNull(text);
     List<String> lines = NEWLINE_SPLITTER.splitToList(text);
     setLines(ImmutableList.copyOf(lines));
@@ -553,8 +551,8 @@ public final class JavaInput extends Input {
     if (requiredLength > text.length()) {
       throw new FormatterException(
           String.format(
-              "%s: error: invalid length %d, offset + length (%d) is outside the file",
-              filename, length, requiredLength));
+              "error: invalid length %d, offset + length (%d) is outside the file",
+              length, requiredLength));
     }
     if (length <= 0) {
       return Formatter.EMPTY_RANGE;
@@ -644,11 +642,6 @@ public final class JavaInput extends Input {
         .add("tokens", tokens)
         .add("super", super.toString())
         .toString();
-  }
-
-  @Override
-  public String filename() {
-    return filename;
   }
 
   private CompilationUnit unit;

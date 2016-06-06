@@ -121,9 +121,6 @@ public abstract class Input extends InputOutput {
     return MoreObjects.toStringHelper(this).add("super", super.toString()).toString();
   }
 
-  /** The input filename. */
-  public abstract String filename();
-
   /** Converts a character offset in the input to a line number. */
   public abstract int getLineNumber(int inputPosition);
 
@@ -136,6 +133,6 @@ public abstract class Input extends InputOutput {
    * */
   public FormatterDiagnostic createDiagnostic(int inputPosition, String message) {
     return new FormatterDiagnostic(
-        filename(), getLineNumber(inputPosition), getColumnNumber(inputPosition), message);
+        getLineNumber(inputPosition), getColumnNumber(inputPosition), message);
   }
 }

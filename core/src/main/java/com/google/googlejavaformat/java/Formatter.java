@@ -80,26 +80,17 @@ public final class Formatter {
 
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
 
-  static final String STDIN_FILENAME = "<stdin>";
-
   private final JavaFormatterOptions options;
-  private final String fileName;
 
   /**
    * A new Formatter instance with default options.
    */
   public Formatter() {
     this(
-        STDIN_FILENAME,
         new JavaFormatterOptions(JavadocFormatter.NONE, Style.GOOGLE, SortImports.NO));
   }
 
   public Formatter(JavaFormatterOptions options) {
-    this(STDIN_FILENAME, options);
-  }
-
-  public Formatter(String fileName, JavaFormatterOptions options) {
-    this.fileName = fileName;
     this.options = options;
   }
 
@@ -193,9 +184,9 @@ public final class Formatter {
     // TODO(cushon): this is only safe because the modifier ordering doesn't affect whitespace,
     // and doesn't change the replacements that are output. This is not true in general for
     // 'de-linting' changes (e.g. import ordering).
-    input = ModifierOrderer.reorderModifiers(fileName, input, characterRanges);
+    input = ModifierOrderer.reorderModifiers(input, characterRanges);
 
-    JavaInput javaInput = new JavaInput(fileName, input);
+    JavaInput javaInput = new JavaInput(input);
     JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
     List<FormatterDiagnostic> errors = new ArrayList<>();
     format(javaInput, javaOutput, options, errors);

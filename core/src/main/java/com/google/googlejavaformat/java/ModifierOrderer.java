@@ -76,19 +76,17 @@ public class ModifierOrderer {
   }
 
   /** Reorders all modifiers in the given text to be in JLS order. */
-  public static String reorderModifiers(String fileName, String text) throws FormatterException {
-    return reorderModifiers(
-        fileName, text, Collections.singleton(Range.closedOpen(0, text.length())));
+  public static String reorderModifiers(String text) throws FormatterException {
+    return reorderModifiers(text, Collections.singleton(Range.closedOpen(0, text.length())));
   }
 
   /**
    * Reorders all modifiers in the given text and within the given character ranges to be in JLS
    * order.
    */
-  public static String reorderModifiers(
-      String fileName, String text, Collection<Range<Integer>> characterRanges)
+  public static String reorderModifiers(String text, Collection<Range<Integer>> characterRanges)
       throws FormatterException {
-    JavaInput javaInput = new JavaInput(fileName, text);
+    JavaInput javaInput = new JavaInput(text);
     if (javaInput.getTokens().isEmpty()) {
       // There weren't any tokens, possible because of a lexing error.
       // Errors about invalid input will be reported later after parsing.

@@ -34,13 +34,13 @@ public class ModifierOrdererTest {
 
   @Test
   public void simple() throws FormatterException {
-    assertThat(ModifierOrderer.reorderModifiers("", "static abstract class InnerClass {}"))
+    assertThat(ModifierOrderer.reorderModifiers("static abstract class InnerClass {}"))
         .isEqualTo("abstract static class InnerClass {}");
   }
 
   @Test
   public void comment() throws FormatterException {
-    assertThat(ModifierOrderer.reorderModifiers("", "static/*1*/abstract/*2*/public"))
+    assertThat(ModifierOrderer.reorderModifiers("static/*1*/abstract/*2*/public"))
         .isEqualTo("public/*1*/abstract/*2*/static");
   }
 
@@ -48,7 +48,6 @@ public class ModifierOrdererTest {
   public void everything() throws FormatterException {
     assertThat(
             ModifierOrderer.reorderModifiers(
-                "",
                 "strictfp native synchronized volatile transient final static abstract"
                     + " private protected public"))
         .isEqualTo(
@@ -61,7 +60,6 @@ public class ModifierOrdererTest {
   public void everythingIncludingDefault() throws FormatterException {
     assertThat(
             ModifierOrderer.reorderModifiers(
-                "",
                 "strictfp native synchronized volatile transient final static default abstract"
                     + " private protected public"))
         .isEqualTo(
@@ -82,7 +80,7 @@ public class ModifierOrdererTest {
     int start = input.indexOf(substring);
     int end = start + substring.length();
     String output =
-        ModifierOrderer.reorderModifiers("", input, Arrays.asList(Range.closedOpen(start, end)));
+        ModifierOrderer.reorderModifiers(input, Arrays.asList(Range.closedOpen(start, end)));
     assertThat(output).contains("public static int a;");
     assertThat(output).contains("static public int b;");
   }
@@ -100,7 +98,7 @@ public class ModifierOrdererTest {
     int start = input.indexOf(substring);
     int end = start + substring.length();
     String output =
-        ModifierOrderer.reorderModifiers("", input, Arrays.asList(Range.closedOpen(start, end)));
+        ModifierOrderer.reorderModifiers(input, Arrays.asList(Range.closedOpen(start, end)));
     assertThat(output).contains("public\n  static int a;");
   }
 }

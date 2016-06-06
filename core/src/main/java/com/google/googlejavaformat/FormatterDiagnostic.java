@@ -18,26 +18,18 @@ import com.google.common.base.Preconditions;
 
 /** An error that prevented formatting from succeeding. */
 public class FormatterDiagnostic {
-  private final String filename;
   private final int lineNumber;
   private final String message;
   private final int column;
 
-  public FormatterDiagnostic(String filename, int lineNumber, int column, String message) {
+  public FormatterDiagnostic(int lineNumber, int column, String message) {
     Preconditions.checkArgument(lineNumber >= 0);
     Preconditions.checkArgument(column >= 0);
-    Preconditions.checkNotNull(filename);
     Preconditions.checkNotNull(message);
 
-    this.filename = filename;
     this.lineNumber = lineNumber;
     this.column = column;
     this.message = message;
-  }
-
-  /** Returns the name of the file that was processed. */
-  public String filename() {
-    return filename;
   }
 
   /** Returns the line number on which the error occurred. */
@@ -58,7 +50,6 @@ public class FormatterDiagnostic {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append(filename).append(':');
     sb.append(lineNumber).append(':');
     // internal column numbers are 0-based, but diagnostics use 1-based indexing by convention
     sb.append(column + 1).append(':');

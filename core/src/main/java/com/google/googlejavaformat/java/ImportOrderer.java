@@ -35,8 +35,8 @@ class ImportOrderer {
    *
    * @throws FormatterException if the input could not be parsed.
    */
-  static String reorderImports(String filename, String text) throws FormatterException {
-    return new ImportOrderer(filename, text).reorderImports();
+  static String reorderImports(String text) throws FormatterException {
+    return new ImportOrderer(text).reorderImports();
   }
 
   /**
@@ -57,9 +57,9 @@ class ImportOrderer {
   private final String text;
   private final ImmutableList<Tok> toks;
 
-  private ImportOrderer(String filename, String text) throws FormatterException {
+  private ImportOrderer(String text) throws FormatterException {
     this.text = text;
-    JavaInput javaInput = new JavaInput(filename, text);
+    JavaInput javaInput = new JavaInput(text);
     try {
       this.toks = javaInput.buildToks(text, CLASS_START);
     } catch (InvalidInputException e) {
