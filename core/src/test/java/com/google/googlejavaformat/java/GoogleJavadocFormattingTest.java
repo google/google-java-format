@@ -36,6 +36,19 @@ public final class GoogleJavadocFormattingTest {
           new JavaFormatterOptions(JavadocFormatter.GOOGLE, Style.GOOGLE, SortImports.NO));
 
   @Test
+  public void notJavadoc() {
+    String[] input = {
+      "/**/", //
+      "class Test {}",
+    };
+    String[] expected = {
+      "/**/", //
+      "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void empty() {
     String[] input = {
       "/***/", //
@@ -410,6 +423,21 @@ public final class GoogleJavadocFormattingTest {
       " *",
       " * <p>def",
       " */",
+      "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void significantAsterisks() {
+    String[] input = {
+      "/** *", //
+      " * *",
+      " */",
+      "class Test {}",
+    };
+    String[] expected = {
+      "/** * * */", //
       "class Test {}",
     };
     doFormatTest(input, expected);

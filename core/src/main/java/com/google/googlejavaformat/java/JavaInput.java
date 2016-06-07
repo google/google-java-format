@@ -141,7 +141,7 @@ public final class JavaInput extends Input {
 
     @Override
     public boolean isJavadocComment() {
-      return text.startsWith("/**");
+      return text.startsWith("/**") && text.length() > 4;
     }
 
     @Override
