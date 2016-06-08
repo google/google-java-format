@@ -87,6 +87,8 @@ public class JavaFormatterOptions {
   private final JavadocFormatter javadocFormatter;
   private final Style style;
 
+  /** @deprecated use {@link #builder()} instead of constructing instances directly. */
+  @Deprecated // TODO(cushon): migrate to builder and make private
   public JavaFormatterOptions(JavadocFormatter javadocFormatter, Style style) {
     this.javadocFormatter = javadocFormatter;
     this.style = style;
@@ -105,5 +107,37 @@ public class JavaFormatterOptions {
   /** Returns the multiplier for the unit of indent */
   public int indentationMultiplier() {
     return style.indentationMultiplier();
+  }
+
+  /** Returns the default formatting options. */
+  public static JavaFormatterOptions defaultOptions() {
+    return builder().build();
+  }
+
+  /** Returns a builder for {@link JavaFormatterOptions}. */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /** A builder for {@link JavaFormatterOptions}. */
+  public static class Builder {
+    private JavadocFormatter javadocFormatter = JavadocFormatter.NONE;
+    private Style style = Style.GOOGLE;
+
+    private Builder() {}
+
+    public Builder style(Style style) {
+      this.style = style;
+      return this;
+    }
+
+    public Builder javadocFormatter(JavadocFormatter javadocFormatter) {
+      this.javadocFormatter = javadocFormatter;
+      return this;
+    }
+
+    public JavaFormatterOptions build() {
+      return new JavaFormatterOptions(javadocFormatter, style);
+    }
   }
 }

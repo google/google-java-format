@@ -20,7 +20,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteStreams;
 import com.google.googlejavaformat.java.JavaFormatterOptions.JavadocFormatter;
-import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +30,8 @@ import org.junit.runners.JUnit4;
 public final class GoogleJavadocFormattingTest {
 
   private final Formatter formatter =
-      new Formatter(new JavaFormatterOptions(JavadocFormatter.GOOGLE, Style.GOOGLE));
+      new Formatter(
+          JavaFormatterOptions.builder().javadocFormatter(JavadocFormatter.GOOGLE).build());
 
   @Test
   public void notJavadoc() {

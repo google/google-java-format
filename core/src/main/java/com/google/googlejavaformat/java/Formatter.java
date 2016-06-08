@@ -27,8 +27,6 @@ import com.google.googlejavaformat.DocBuilder;
 import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
-import com.google.googlejavaformat.java.JavaFormatterOptions.JavadocFormatter;
-import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
@@ -85,7 +83,7 @@ public final class Formatter {
    * A new Formatter instance with default options.
    */
   public Formatter() {
-    this(new JavaFormatterOptions(JavadocFormatter.NONE, Style.GOOGLE));
+    this(JavaFormatterOptions.defaultOptions());
   }
 
   public Formatter(JavaFormatterOptions options) {

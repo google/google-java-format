@@ -22,7 +22,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.ByteStreams;
-import com.google.googlejavaformat.java.JavaFormatterOptions.JavadocFormatter;
+import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -214,11 +214,9 @@ public final class Main {
     }
 
     JavaFormatterOptions options =
-        new JavaFormatterOptions(
-            JavadocFormatter.NONE,
-            argInfo.parameters.aospFlag
-                ? JavaFormatterOptions.Style.AOSP
-                : JavaFormatterOptions.Style.GOOGLE);
+        JavaFormatterOptions.builder()
+            .style(argInfo.parameters.aospFlag ? Style.AOSP : Style.GOOGLE)
+            .build();
 
     if (argInfo.parameters.stdinStdoutFlag) {
       return formatStdin(argInfo, options, sortImports);
