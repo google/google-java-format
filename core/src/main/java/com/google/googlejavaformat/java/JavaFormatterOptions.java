@@ -42,12 +42,6 @@ public class JavaFormatterOptions {
 
   static final int DEFAULT_MAX_LINE_LENGTH = 100;
 
-  public enum SortImports {
-    NO,
-    ONLY,
-    ALSO
-  }
-
   public enum Style {
 
     /** The default Google Java Style configuration. */
@@ -92,13 +86,10 @@ public class JavaFormatterOptions {
 
   private final JavadocFormatter javadocFormatter;
   private final Style style;
-  private final SortImports sortImports;
 
-  public JavaFormatterOptions(
-      JavadocFormatter javadocFormatter, Style style, SortImports sortImports) {
+  public JavaFormatterOptions(JavadocFormatter javadocFormatter, Style style) {
     this.javadocFormatter = javadocFormatter;
     this.style = style;
-    this.sortImports = sortImports;
   }
 
   /** Returns the Javadoc formatter. */
@@ -114,9 +105,5 @@ public class JavaFormatterOptions {
   /** Returns the multiplier for the unit of indent */
   public int indentationMultiplier() {
     return style.indentationMultiplier();
-  }
-
-  public SortImports sortImports() {
-    return sortImports;
   }
 }

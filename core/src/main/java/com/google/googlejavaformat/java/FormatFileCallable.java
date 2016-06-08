@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
-import com.google.googlejavaformat.java.JavaFormatterOptions.SortImports;
+import com.google.googlejavaformat.java.Main.SortImports;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -34,18 +34,21 @@ public class FormatFileCallable implements Callable<String> {
   private final ImmutableList<Integer> offsets;
   private final ImmutableList<Integer> lengths;
   private final JavaFormatterOptions options;
+  private final SortImports sortImports;
 
   public FormatFileCallable(
       RangeSet<Integer> lineRanges,
       List<Integer> offsets,
       List<Integer> lengths,
       String input,
-      JavaFormatterOptions options) {
+      JavaFormatterOptions options,
+      SortImports sortImports) {
     this.input = input;
     this.lineRanges = ImmutableRangeSet.copyOf(lineRanges);
     this.offsets = ImmutableList.copyOf(offsets);
     this.lengths = ImmutableList.copyOf(lengths);
     this.options = options;
+    this.sortImports = sortImports;
   }
 
   @Override
@@ -53,9 +56,9 @@ public class FormatFileCallable implements Callable<String> {
 
     // TODO(cushon): figure out how to integrate import ordering into Formatter
     String inputString = input;
-    if (options.sortImports() != SortImports.NO) {
+    if (sortImports != SortImports.NO) {
       inputString = ImportOrderer.reorderImports(inputString);
-      if (options.sortImports() == SortImports.ONLY) {
+      if (sortImports == SortImports.ONLY) {
         return inputString;
       }
     }

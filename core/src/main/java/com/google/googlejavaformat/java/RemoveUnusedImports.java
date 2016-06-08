@@ -25,7 +25,6 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.java.JavaFormatterOptions.JavadocFormatter;
-import com.google.googlejavaformat.java.JavaFormatterOptions.SortImports;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 
 import org.eclipse.jdt.core.JavaCore;
@@ -216,8 +215,7 @@ public class RemoveUnusedImports {
     if (!fixedRanges.isEmpty()) {
       try {
         result =
-            new Formatter(
-                    new JavaFormatterOptions(JavadocFormatter.GOOGLE, Style.GOOGLE, SortImports.NO))
+            new Formatter(new JavaFormatterOptions(JavadocFormatter.GOOGLE, Style.GOOGLE))
                 .formatSource(result, fixedRanges.asRanges());
       } catch (FormatterException e) {
         // javadoc reformatting is best-effort

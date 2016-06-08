@@ -23,7 +23,6 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.ByteStreams;
 import com.google.googlejavaformat.java.JavaFormatterOptions.JavadocFormatter;
-import com.google.googlejavaformat.java.JavaFormatterOptions.SortImports;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -55,6 +54,12 @@ public final class Main {
   private static final Splitter COMMA_SPLITTER = Splitter.on(',');
   private static final Splitter COLON_SPLITTER = Splitter.on(':');
   private static final String STDIN_FILENAME = "<stdin>";
+
+  enum SortImports {
+    NO,
+    ONLY,
+    ALSO
+  }
 
   @Parameters(separators = "=")
   private static final class FormatterParameters {
@@ -213,17 +218,16 @@ public final class Main {
             JavadocFormatter.NONE,
             argInfo.parameters.aospFlag
                 ? JavaFormatterOptions.Style.AOSP
-                : JavaFormatterOptions.Style.GOOGLE,
-            sortImports);
+                : JavaFormatterOptions.Style.GOOGLE);
 
     if (argInfo.parameters.stdinStdoutFlag) {
-      return formatStdin(argInfo, options);
+      return formatStdin(argInfo, options, sortImports);
     } else {
-      return formatFiles(argInfo, options);
+      return formatFiles(argInfo, options, sortImports);
     }
   }
 
-  private int formatFiles(ArgInfo argInfo, JavaFormatterOptions options) {
+  private int formatFiles(ArgInfo argInfo, JavaFormatterOptions options, SortImports sortImports) {
     int numThreads = Math.min(MAX_THREADS, argInfo.parameters.fileNamesFlag.size());
     ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
 
@@ -251,7 +255,8 @@ public final class Main {
                   argInfo.parameters.offsetFlags,
                   argInfo.parameters.lengthFlags,
                   input,
-                  options)));
+                  options,
+                  sortImports)));
     }
 
     boolean allOk = true;
@@ -290,7 +295,7 @@ public final class Main {
     return allOk ? 0 : 1;
   }
 
-  private int formatStdin(ArgInfo argInfo, JavaFormatterOptions options) {
+  private int formatStdin(ArgInfo argInfo, JavaFormatterOptions options, SortImports sortImports) {
     String input;
     try {
       input = new String(ByteStreams.toByteArray(inStream), UTF_8);
@@ -304,7 +309,8 @@ public final class Main {
                   argInfo.parameters.offsetFlags,
                   argInfo.parameters.lengthFlags,
                   input,
-                  options)
+                  options,
+                  sortImports)
               .call();
       outWriter.write(output);
       return 0;
