@@ -241,7 +241,7 @@ public final class Main {
       try {
         input = new String(Files.readAllBytes(path), UTF_8);
       } catch (IOException e) {
-        errWriter.write(fileName + ": could not read file: " + e.getMessage());
+        errWriter.println(fileName + ": could not read file: " + e.getMessage());
         return 1;
       }
       inputs.put(path, input);
@@ -271,6 +271,7 @@ public final class Main {
           errWriter.println(result.getKey() + ":" + e.getCause().getMessage());
         } else {
           errWriter.println(result.getKey() + ": error: " + e.getCause().getMessage());
+          e.getCause().printStackTrace(errWriter);
         }
         allOk = false;
         continue;
@@ -282,7 +283,7 @@ public final class Main {
         try {
           Files.write(result.getKey(), formatted.getBytes(UTF_8));
         } catch (IOException e) {
-          errWriter.write(result.getKey() + ": could not write file: " + e.getMessage());
+          errWriter.println(result.getKey() + ": could not write file: " + e.getMessage());
           allOk = false;
           continue;
         }
@@ -315,6 +316,7 @@ public final class Main {
     } catch (FormatterException e) {
       errWriter.println(STDIN_FILENAME + ":" + e.getMessage());
       return 1;
+      // TODO(cpovirk): Catch other types of exception (as we do in the formatFiles case).
     }
   }
 
