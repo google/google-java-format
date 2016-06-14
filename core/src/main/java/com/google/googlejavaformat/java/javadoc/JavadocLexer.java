@@ -47,6 +47,7 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.DOTALL;
 import static java.util.regex.Pattern.compile;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.PeekingIterator;
 import com.google.googlejavaformat.java.javadoc.Token.Type;
@@ -100,7 +101,7 @@ final class JavadocLexer {
     token = new Token(END_JAVADOC, "*/");
     tokens.add(token);
 
-    return joinAdjacentLiteralTokens(tokens.build());
+    return inferParagraphTags(joinAdjacentLiteralsAndAdjacentWhitespace(tokens.build()));
   }
 
   private Token readToken() {
@@ -204,10 +205,19 @@ final class JavadocLexer {
   }
 
   /**
-   * Join together adjacent literal tokens, as in {@code ["<b>", "foo", "</b>"] => ["<b>foo</b>"]}.
-   * See {@link #LITERAL_PATTERN} for discussion of why those tokens are separate to begin with.
+   * Join together adjacent literal tokens, and join together adjacent whitespace tokens.
+   *
+   * <p>For literal tokens, this means something like {@code ["<b>", "foo", "</b>"] =>
+   * ["<b>foo</b>"]}. See {@link #LITERAL_PATTERN} for discussion of why those tokens are separate
+   * to begin with.
+   *
+   * <p>Whitespace tokens are treated analogously. We don't really "want" to join whitespace tokens,
+   * but in the course of joining literals, we incidentally join whitespace, too. We do take
+   * advantage of the joining later on: It simplifies {@link #inferParagraphTags}.
+   *
+   * <p>Note that we do <i>not</i> merge a literal token and a whitespace token together.
    */
-  private static ImmutableList<Token> joinAdjacentLiteralTokens(List<Token> input) {
+  private static ImmutableList<Token> joinAdjacentLiteralsAndAdjacentWhitespace(List<Token> input) {
     /*
      * Note: Our final token is always END_JAVADOC. This saves us some trouble:
      *
@@ -238,9 +248,9 @@ final class JavadocLexer {
         continue;
       }
 
-      boolean seenWhitespace = tokens.peek().getType() == WHITESPACE;
+      StringBuilder seenWhitespace = new StringBuilder();
       while (tokens.peek().getType() == WHITESPACE) {
-        tokens.next();
+        seenWhitespace.append(tokens.next().getValue());
       }
 
       if (tokens.peek().getType() == LITERAL && tokens.peek().getValue().startsWith("@")) {
@@ -254,8 +264,8 @@ final class JavadocLexer {
       output.add(new Token(LITERAL, accumulated.toString()));
       accumulated.setLength(0);
 
-      if (seenWhitespace) {
-        output.add(new Token(WHITESPACE, " "));
+      if (seenWhitespace.length() > 0) {
+        output.add(new Token(WHITESPACE, seenWhitespace.toString()));
       }
 
       // We have another token coming, possibly of type OTHER. Leave it for the next iteration.
@@ -266,6 +276,49 @@ final class JavadocLexer {
      * /[^ -]-/, as in "non-\nblocking."
      */
     return output.build();
+  }
+
+  /**
+   * Where the input has two consecutive line breaks between literals, insert a {@code <p>} tag
+   * between the literals.
+   *
+   * <p>This method must be called after {@link #joinAdjacentLiteralsAndAdjacentWhitespace}, as it
+   * assumes that adjacent whitespace tokens have already been joined.
+   */
+  private static ImmutableList<Token> inferParagraphTags(List<Token> input) {
+    ImmutableList.Builder<Token> output = ImmutableList.builder();
+
+    for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
+      if (tokens.peek().getType() == LITERAL) {
+        output.add(tokens.next());
+
+        if (tokens.peek().getType() == WHITESPACE
+            && hasMultipleNewlines(tokens.peek().getValue())) {
+          output.add(tokens.next());
+
+          if (tokens.peek().getType() == LITERAL) {
+            output.add(new Token(PARAGRAPH_OPEN_TAG, "<p>"));
+          }
+        }
+      } else {
+        // TODO(cpovirk): Or just `continue` from the <p> case and move this out of the `else`?
+        output.add(tokens.next());
+      }
+    }
+
+    return output.build();
+
+    /*
+     * Note: We do not want to insert <p> tags inside <pre>. Fortunately, the formatter gets that
+     * right without special effort on our part. The reason: Line breaks inside a <pre> section are
+     * of type FORCED_NEWLINE rather than WHITESPACE.
+     */
+  }
+
+  private static final CharMatcher NEWLINE = CharMatcher.is('\n');
+
+  private static boolean hasMultipleNewlines(String s) {
+    return NEWLINE.countIn(s) > 1;
   }
 
   /*
@@ -305,9 +358,9 @@ final class JavadocLexer {
    * in a later step. There's a similar story for braces. I'm not sure I actually need to exclude @
    * or *. TODO(cpovirk): Try removing them.
    *
-   * Thanks to the "rejoin" step in joinAdjacentLiteralTokens(), we could get away with matching
-   * only one character here. That would eliminate the need for the regex entirely. That might be
-   * faster or slower than what we do now.
+   * Thanks to the "rejoin" step in joinAdjacentLiteralsAndAdjacentWhitespace(), we could get away
+   * with matching only one character here. That would eliminate the need for the regex entirely.
+   * That might be faster or slower than what we do now.
    */
   private static final Pattern LITERAL_PATTERN = compile("^.[^ \t\n@<{}*]*");
 

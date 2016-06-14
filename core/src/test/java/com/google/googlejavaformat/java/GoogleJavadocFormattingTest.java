@@ -939,6 +939,58 @@ public final class GoogleJavadocFormattingTest {
   }
 
   @Test
+  public void inferParagraphTags() {
+    String[] input = {
+      "/**",
+      " *",
+      " *",
+      " * foo",
+      " * foo",
+      " *",
+      " *",
+      " * foo",
+      " *",
+      " * bar",
+      " *",
+      " * <pre>",
+      " *",
+      " * baz",
+      " *",
+      " * </pre>",
+      " *",
+      " * <ul>",
+      " * <li>foo",
+      " *",
+      " * bar",
+      " * </ul>",
+      " *",
+      " *",
+      " */",
+      "class Test {}",
+    };
+    String[] expected = {
+      "/**",
+      " * foo foo",
+      " *",
+      " * <p>foo",
+      " *",
+      " * <p>bar <pre>",
+      " *",
+      " * baz",
+      " *",
+      " * </pre>",
+      " *",
+      " * <ul>",
+      " * <li>foo",
+      " *     <p>bar",
+      " * </ul>",
+      " */",
+      "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void paragraphTagNewlines() throws Exception {
     String input =
         new String(
