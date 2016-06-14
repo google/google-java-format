@@ -115,6 +115,7 @@ public final class GoogleJavadocFormatter {
           break;
         case PARAGRAPH_CLOSE_TAG:
         case LIST_ITEM_CLOSE_TAG:
+        case OPTIONAL_LINE_BREAK:
           break;
         default:
           throw new AssertionError(token.getType());

@@ -555,6 +555,71 @@ public final class GoogleJavadocFormattingTest {
   }
 
   @Test
+  public void links() {
+    String[] input = {
+      "/**",
+      " * 456789012 456789012 456789012 456789012 456789012 456789012 456789012 456789012 "
+          + "456789012 4567 <a",
+      " * href=foo>foo</a>.",
+      " *",
+      " * <p>789012 456789012 456789012 456789012 456789012 456789012 456789012 456789 "
+          + "<a href=foo>",
+      " * foo</a>.",
+      " *",
+      " * <p>789012 456789012 456789012 456789012 456789012 456789012 456789012 4567890 "
+          + "<a href=foo>",
+      " * foo</a>.",
+      " *",
+      " * <p><a href=foo>",
+      " * foo</a>.",
+      " *",
+      " * <p>foo <a href=bar>",
+      " * bar</a>.",
+      " *",
+      " * <p>foo-<a href=bar>",
+      " * bar</a>.",
+      " *",
+      " * <p>foo<a href=bar>",
+      " * bar</a>.",
+      " *",
+      " * <p><a href=foo>foo</a> bar.",
+      " */",
+      "class Test {}",
+    };
+    String[] expected = {
+      "/**",
+      " * 456789012 456789012 456789012 456789012 456789012 456789012 456789012 456789012 "
+          + "456789012 4567 <a",
+      " * href=foo>foo</a>.",
+      " *",
+      " * <p>789012 456789012 456789012 456789012 456789012 456789012 456789012 456789 "
+          + "<a href=foo>foo</a>.",
+      " *",
+      " * <p>789012 456789012 456789012 456789012 456789012 456789012 456789012 4567890 "
+          + "<a href=foo>",
+      " * foo</a>.",
+      " *",
+      " * <p><a href=foo>foo</a>.",
+      " *",
+      " * <p>foo <a href=bar>bar</a>.",
+      " *",
+      " * <p>foo-<a href=bar>bar</a>.",
+      " *",
+      /*
+       * In this next case, we've removed a space from the output. Fortunately, the depot doesn't
+       * appear to contain any occurrences of this pattern. And if it does, the better fix is to
+       * insert a space before <a href> rather than after.
+       */
+      " * <p>foo<a href=bar>bar</a>.",
+      " *",
+      " * <p><a href=foo>foo</a> bar.",
+      " */",
+      "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void heading() {
     String[] input = {
       "/**", //

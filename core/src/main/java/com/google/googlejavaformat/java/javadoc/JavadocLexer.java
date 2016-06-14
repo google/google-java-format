@@ -35,6 +35,7 @@ import static com.google.googlejavaformat.java.javadoc.Token.Type.LIST_OPEN_TAG;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.LITERAL;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.MOE_BEGIN_STRIP_COMMENT;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.MOE_END_STRIP_COMMENT;
+import static com.google.googlejavaformat.java.javadoc.Token.Type.OPTIONAL_LINE_BREAK;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_CLOSE_TAG;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_OPEN_TAG;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.PRE_CLOSE_TAG;
@@ -101,7 +102,11 @@ final class JavadocLexer {
     token = new Token(END_JAVADOC, "*/");
     tokens.add(token);
 
-    return inferParagraphTags(joinAdjacentLiteralsAndAdjacentWhitespace(tokens.build()));
+    ImmutableList<Token> result = tokens.build();
+    result = joinAdjacentLiteralsAndAdjacentWhitespace(result);
+    result = inferParagraphTags(result);
+    result = optionalizeSpacesAfterLinks(result);
+    return result;
   }
 
   private Token readToken() {
@@ -302,6 +307,38 @@ final class JavadocLexer {
         }
       } else {
         // TODO(cpovirk): Or just `continue` from the <p> case and move this out of the `else`?
+        output.add(tokens.next());
+      }
+    }
+
+    return output.build();
+
+    /*
+     * Note: We do not want to insert <p> tags inside <pre>. Fortunately, the formatter gets that
+     * right without special effort on our part. The reason: Line breaks inside a <pre> section are
+     * of type FORCED_NEWLINE rather than WHITESPACE.
+     */
+  }
+
+  /**
+   * Replaces whitespace after a {@code href=...>} token with an "optional link break." This allows
+   * us to output either {@code <a href=foo>foo</a>} or {@code <a href=foo>\nfoo</a>}, depending on
+   * how much space we have left on the line.
+   *
+   * <p>This method must be called after {@link #joinAdjacentLiteralsAndAdjacentWhitespace}, as it
+   * assumes that adjacent whitespace tokens have already been joined.
+   */
+  private static ImmutableList<Token> optionalizeSpacesAfterLinks(List<Token> input) {
+    ImmutableList.Builder<Token> output = ImmutableList.builder();
+
+    for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
+      if (tokens.peek().getType() == LITERAL && tokens.peek().getValue().matches("^href=[^>]*>")) {
+        output.add(tokens.next());
+
+        if (tokens.peek().getType() == WHITESPACE) {
+          output.add(new Token(OPTIONAL_LINE_BREAK, tokens.next().getValue()));
+        }
+      } else {
         output.add(tokens.next());
       }
     }

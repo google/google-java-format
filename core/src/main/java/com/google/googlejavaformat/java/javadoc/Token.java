@@ -75,6 +75,16 @@ final class Token {
      */
     FORCED_NEWLINE,
     /**
+     * Token that permits but does not force a line break. The way that we accomplish this is
+     * somewhat indirect: As far as {@link JavadocWriter} is concerned, this token is meaningless.
+     * But its mere existence prevents {@link JavadocLexer} from joining two {@link #LITERAL} tokens
+     * that would otherwise be adjacent. Since this token is not real whitespace, the writer may end
+     * up writing the literals together with no space between, just as if they'd been joined.
+     * However, if they don't fit together on the line, the writer will write the first one, start a
+     * new line, and write the second. Hence, the token acts as an optional line break.
+     */
+    OPTIONAL_LINE_BREAK,
+    /**
      * Anything else: {@code foo}, {@code <b>}, {@code {@code foo}} etc. {@link JavadocLexer}
      * sometimes creates adjacent literal tokens, which it then merges into a single, larger literal
      * token before returning its output.
