@@ -87,9 +87,7 @@ public class JavaFormatterOptions {
   private final JavadocFormatter javadocFormatter;
   private final Style style;
 
-  /** @deprecated use {@link #builder()} instead of constructing instances directly. */
-  @Deprecated // TODO(cushon): migrate to builder and make private
-  public JavaFormatterOptions(JavadocFormatter javadocFormatter, Style style) {
+  private JavaFormatterOptions(JavadocFormatter javadocFormatter, Style style) {
     this.javadocFormatter = javadocFormatter;
     this.style = style;
   }
