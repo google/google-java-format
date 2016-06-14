@@ -92,6 +92,12 @@ public final class GoogleJavadocFormatter {
         case TABLE_CLOSE_TAG:
           output.writeTableClose(token);
           break;
+        case MOE_BEGIN_STRIP_COMMENT:
+          output.requestMoeBeginStripComment(token);
+          break;
+        case MOE_END_STRIP_COMMENT:
+          output.writeMoeEndStripComment(token);
+          break;
         case HTML_COMMENT:
           output.writeHtmlComment(token);
           break;

@@ -56,6 +56,10 @@ final class Token {
     PRE_CLOSE_TAG,
     TABLE_OPEN_TAG,
     TABLE_CLOSE_TAG,
+    /** {@code <!-- MOE：begin_intracomment_strip -->} */
+    MOE_BEGIN_STRIP_COMMENT,
+    /** {@code <!-- MOE：end_intracomment_strip -->} */
+    MOE_END_STRIP_COMMENT,
     HTML_COMMENT,
     // TODO(cpovirk): Support <hr> (probably a blank line before and after).
     BR_TAG,

@@ -54,6 +54,8 @@ final class JavadocWriter {
   private int remainingOnLine;
   private boolean atStartOfLine;
   private RequestedWhitespace requestedWhitespace = NONE;
+  private Token requestedMoeBeginStripComment;
+  private int indentForMoeEndStripComment;
   private boolean wroteAnythingSignificant;
 
   JavadocWriter(int blockIndent, JavaFormatterOptions options) {
@@ -68,6 +70,11 @@ final class JavadocWriter {
    */
   void requestWhitespace() {
     requestWhitespace(WHITESPACE);
+  }
+
+  void requestMoeBeginStripComment(Token token) {
+    // We queue this up so that we can put it after any requested whitespace.
+    requestedMoeBeginStripComment = checkNotNull(token);
   }
 
   void writeBeginJavadoc() {
@@ -199,6 +206,16 @@ final class JavadocWriter {
     requestBlankLine();
   }
 
+  void writeMoeEndStripComment(Token token) {
+    writeLineBreakNoAutoIndent();
+    appendSpaces(indentForMoeEndStripComment);
+
+    // Or maybe just "output.append(token.getValue())?" I'm kind of surprised this is so easy.
+    writeToken(token);
+
+    requestNewline();
+  }
+
   void writeHtmlComment(Token token) {
     requestNewline();
 
@@ -254,6 +271,10 @@ final class JavadocWriter {
   }
 
   private void writeToken(Token token) {
+    if (requestedMoeBeginStripComment != null) {
+      requestNewline();
+    }
+
     if (requestedWhitespace == BLANK_LINE && (continuingListItemCount > 0 || continuingFooterTag)) {
       /*
        * We don't write blank lines inside lists or footer tags, even in cases where we otherwise
@@ -285,6 +306,15 @@ final class JavadocWriter {
     if (!atStartOfLine && needWhitespace) {
       output.append(" ");
       remainingOnLine--;
+    }
+
+    if (requestedMoeBeginStripComment != null) {
+      output.append(requestedMoeBeginStripComment.getValue());
+      requestedMoeBeginStripComment = null;
+      indentForMoeEndStripComment = innerIndent();
+      requestNewline();
+      writeToken(token);
+      return;
     }
 
     output.append(token.getValue());

@@ -107,6 +107,119 @@ public final class GoogleJavadocFormattingTest {
   }
 
   @Test
+  public void moeComments() {
+    String[] input = {
+      "/**",
+      " * Deatomizes the given user.",
+      " * <!-- MOE:begin_intracomment_strip -->",
+      " * See go/deatomizer-v5 for the design doc.",
+      " * <!-- MOE:end_intracomment_strip -->",
+      " * To reatomize, call {@link reatomize}.",
+      " *",
+      " * <!-- MOE:begin_intracomment_strip -->",
+      " * <p>This method is used in the Google teleporter.",
+      " *",
+      " * <p>Yes, we have a teleporter.",
+      " * <!-- MOE:end_intracomment_strip -->",
+      " *",
+      " * @param user the person to teleport.",
+      " *     <!-- MOE:begin_intracomment_strip -->",
+      " *     Users must sign go/deatomize-waiver ahead of time.",
+      " *     <!-- MOE:end_intracomment_strip -->",
+      " * <!-- MOE:begin_intracomment_strip -->",
+      " * @deprecated Sometimes turns the user into a goat.",
+      " * <!-- MOE:end_intracomment_strip -->",
+      " */",
+      "class Test {}",
+    };
+    String[] expected = {
+      "/**",
+      " * Deatomizes the given user.",
+      " * <!-- MOE:begin_intracomment_strip -->",
+      " * See go/deatomizer-v5 for the design doc.",
+      " * <!-- MOE:end_intracomment_strip -->",
+      " * To reatomize, call {@link reatomize}.",
+      " *",
+      " * <!-- MOE:begin_intracomment_strip -->",
+      " * <p>This method is used in the Google teleporter.",
+      " *",
+      " * <p>Yes, we have a teleporter.",
+      " * <!-- MOE:end_intracomment_strip -->",
+      " *",
+      " * @param user the person to teleport.",
+      " *     <!-- MOE:begin_intracomment_strip -->",
+      " *     Users must sign go/deatomize-waiver ahead of time.",
+      " *     <!-- MOE:end_intracomment_strip -->",
+      " * <!-- MOE:begin_intracomment_strip -->",
+      " * @deprecated Sometimes turns the user into a goat.",
+      " * <!-- MOE:end_intracomment_strip -->",
+      " */",
+      "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void moeCommentBeginOnlyInMiddleOfDoc() {
+    // We don't really care what happens here so long as we don't explode.
+    String[] input = {
+      "/**", //
+      " * Foo.",
+      " * <!-- MOE:begin_intracomment_strip -->",
+      " * Bar.",
+      " */",
+      "class Test {}",
+    };
+    String[] expected = {
+      "/**", //
+      " * Foo.",
+      " * <!-- MOE:begin_intracomment_strip -->",
+      " * Bar.",
+      " */",
+      "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void moeCommentBeginOnlyAtEndOfDoc() {
+    // We don't really care what happens here so long as we don't explode.
+    // TODO(cpovirk): OK, maybe try to leave it in....
+    String[] input = {
+      "/**", //
+      " * Foo.",
+      " * <!-- MOE:begin_intracomment_strip -->",
+      " */",
+      "class Test {}",
+    };
+    String[] expected = {
+      "/** Foo. */", //
+      "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void moeCommentEndOnly() {
+    // We don't really care what happens here so long as we don't explode.
+    String[] input = {
+      "/**", //
+      " * Foo.",
+      " * <!-- MOE:end_intracomment_strip -->",
+      " */",
+      "class Test {}",
+    };
+    String[] expected = {
+      "/**", //
+      " * Foo.",
+      " * <!-- MOE:end_intracomment_strip -->",
+      " */",
+      "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void tableMostlyUntouched() {
     String[] input = {
       "/**",
