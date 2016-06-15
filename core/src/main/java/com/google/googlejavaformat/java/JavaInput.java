@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Iterables.getLast;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
@@ -313,7 +314,10 @@ public final class JavaInput extends Input {
   /** Lex the input and build the list of toks. */
   private ImmutableList<Tok> buildToks(String text) throws FormatterException {
     try {
-      return buildToks(text, ImmutableSet.<Integer>of());
+      ImmutableList<Tok> toks = buildToks(text, ImmutableSet.<Integer>of());
+      kN = getLast(toks).getIndex();
+      computeRanges(toks);
+      return toks;
     } catch (InvalidInputException e) {
       // jdt's scanner elects not to produce error messages, so we don't either
       //
@@ -330,11 +334,11 @@ public final class JavaInput extends Input {
    * @param stopIds a set of Eclipse token names which should cause lexing to stop. If one of these
    *     is found, the returned list will include tokens up to but not including that token.
    */
-  ImmutableList<Tok> buildToks(String text, ImmutableSet<Integer> stopIds)
+  static ImmutableList<Tok> buildToks(String text, ImmutableSet<Integer> stopIds)
       throws InvalidInputException, FormatterException {
     stopIds =
         ImmutableSet.<Integer>builder().addAll(stopIds).add(ITerminalSymbols.TokenNameEOF).build();
-    kN = 0;
+    int kN = 0;
     IScanner scanner = ToolFactory.createScanner(true, true, true, "1.8");
     scanner.setSource(text.toCharArray());
     int textLength = text.length();
@@ -440,10 +444,7 @@ public final class JavaInput extends Input {
         ++charI;
       }
     }
-    toks.add(
-        new Tok(kN++, "", "", charI, columnI, true, ITerminalSymbols.TokenNameEOF)); // EOF tok.
-    --kN; // Don't count EOF tok.
-    computeRanges(toks);
+    toks.add(new Tok(kN, "", "", charI, columnI, true, ITerminalSymbols.TokenNameEOF)); // EOF tok.
     return ImmutableList.copyOf(toks);
   }
 

@@ -59,9 +59,8 @@ class ImportOrderer {
 
   private ImportOrderer(String text) throws FormatterException {
     this.text = text;
-    JavaInput javaInput = new JavaInput(text);
     try {
-      this.toks = javaInput.buildToks(text, CLASS_START);
+      this.toks = JavaInput.buildToks(text, CLASS_START);
     } catch (InvalidInputException e) {
       FormatterException formatterException = new FormatterException(e.getMessage());
       formatterException.initCause(e);
