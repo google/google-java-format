@@ -54,7 +54,7 @@ public class MainTest {
       throw new AssertionError("Expected UsageException to be thrown");
     } catch (UsageException e) {
 
-      String usage = e.usage();
+      String usage = e.getMessage();
 
 
       // Check that doc links are included.

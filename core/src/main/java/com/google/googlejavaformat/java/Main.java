@@ -16,18 +16,9 @@ package com.google.googlejavaformat.java;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.ObjectArrays;
-import com.google.common.collect.Range;
-import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.ByteStreams;
+import com.google.googlejavaformat.java.CommandLineOptions.SortImports;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
-
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
-import com.beust.jcommander.Parameters;
 
 import java.io.IOError;
 import java.io.IOException;
@@ -37,9 +28,8 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -51,96 +41,10 @@ import java.util.concurrent.Future;
  */
 public final class Main {
   private static final int MAX_THREADS = 20;
-  private static final Splitter COMMA_SPLITTER = Splitter.on(',');
-  private static final Splitter COLON_SPLITTER = Splitter.on(':');
   private static final String STDIN_FILENAME = "<stdin>";
 
-  enum SortImports {
-    NO,
-    ONLY,
-    ALSO
-  }
-
-  @Parameters(separators = "=")
-  private static final class FormatterParameters {
-    @Parameter(
-      names = {"-i", "-r", "-replace", "--replace"},
-      description = "Send formatted output back to files, not stdout."
-    )
-    boolean iFlag = false;
-
-    @Parameter(
-      names = {"--lines", "-lines", "--line", "-line"},
-      description = "Line range(s) to format, like 5:10 (1-based; default is all)."
-    )
-    final List<String> linesFlags = new ArrayList<>();
-
-    @Parameter(
-      names = {"--offset", "-offset"},
-      description = "Character offset to format (0-based; default is all)."
-    )
-    private final List<Integer> offsetFlags = new ArrayList<>();
-
-    @Parameter(
-      names = {"--length", "-length"},
-      description = "Character length to format."
-    )
-    private final List<Integer> lengthFlags = new ArrayList<>();
-
-    @Parameter(
-      names = {"--aosp", "-aosp", "-a"},
-      description = "Use AOSP style instead of Google Style (4-space indentation)."
-    )
-    boolean aospFlag = false;
-
-    @Parameter(
-      names = {"--version", "-version", "-v"},
-      description = "Print the version."
-    )
-    boolean versionFlag = false;
-
-    @Parameter(
-      names = {"--help", "-help", "-h"},
-      description = "Print an extended usage statement."
-    )
-    boolean helpFlag = false;
-
-    @Parameter(
-      names = {"--sort-imports", "-sort-imports"},
-      description =
-          "Sort import statements. "
-              + "--sort-imports=only to sort imports but do no other formatting. "
-              + "--sort-imports=also to sort imports and do other formatting.",
-      hidden = true
-    )
-    String sortImportsFlag = "";
-
-    // TODO(eaftan): clang-format formats stdin -> stdout when no options are passed.  We should
-    // match that behavior.
-    @Parameter(names = "-", description = "Format stdin -> stdout.")
-    boolean stdinStdoutFlag = false;
-
-    @Parameter(description = "file(s)")
-    final List<String> fileNamesFlag = new ArrayList<>();
-  }
-
-  private static final String[] VERSION = {
+  static final String[] VERSION = {
     "google-java-format: Version " + GoogleJavaFormatVersion.VERSION
-  };
-
-  private static final String[] USAGE =
-      ObjectArrays.concat(
-          VERSION,
-          new String[] {
-            "https://github.com/google/google-java-format",
-          },
-          String.class);
-
-  private static final String[] ADDITIONAL_USAGE = {
-    "If -i is given with -, the result is sent to stdout.",
-    "The --lines, --offset, and --length flags may be given more than once.",
-    "The --offset and --length flags must be given an equal number of times.",
-    "If --lines, --offset, or --length are given, only one file (or -) may be given."
   };
 
   private final PrintWriter outWriter;
@@ -167,7 +71,7 @@ public final class Main {
       Main formatter = new Main(out, err, System.in);
       result = formatter.format(args);
     } catch (UsageException e) {
-      err.print(e.usage());
+      err.print(e.getMessage());
       result = 0;
     } finally {
       err.flush();
@@ -184,54 +88,38 @@ public final class Main {
    * @param args the command-line arguments
    */
   public int format(String... args) throws UsageException {
-    ArgInfo argInfo = ArgInfo.processArgs(args);
-
-    if (argInfo.parameters.versionFlag) {
-      version();
+    CommandLineOptions parameters = processArgs(args);
+    if (parameters.version()) {
+      for (String line : VERSION) {
+        errWriter.println(line);
+      }
       return 0;
     }
-    if (argInfo.parameters.helpFlag) {
-      argInfo.throwUsage();
+    if (parameters.help()) {
+      throw new UsageException();
     }
-    SortImports sortImports;
-    switch (argInfo.parameters.sortImportsFlag) {
-      case "":
-        sortImports = SortImports.NO;
-        break;
-      case "only":
-        sortImports = SortImports.ONLY;
-        break;
-      case "also":
-        sortImports = SortImports.ALSO;
-        break;
-      default:
-        errWriter.println("Invalid value for --sort-imports. Should be \"only\" or \"also\".");
-        return 1;
-    }
-    if (sortImports != SortImports.NO && argInfo.isSelection()) {
+    if (parameters.sortImports() != SortImports.NO && parameters.isSelection()) {
       errWriter.println("--sort-imports can currently only apply to the whole file");
       return 1;
     }
 
     JavaFormatterOptions options =
-        JavaFormatterOptions.builder()
-            .style(argInfo.parameters.aospFlag ? Style.AOSP : Style.GOOGLE)
-            .build();
+        JavaFormatterOptions.builder().style(parameters.aosp() ? Style.AOSP : Style.GOOGLE).build();
 
-    if (argInfo.parameters.stdinStdoutFlag) {
-      return formatStdin(argInfo, options, sortImports);
+    if (parameters.stdin()) {
+      return formatStdin(parameters, options);
     } else {
-      return formatFiles(argInfo, options, sortImports);
+      return formatFiles(parameters, options);
     }
   }
 
-  private int formatFiles(ArgInfo argInfo, JavaFormatterOptions options, SortImports sortImports) {
-    int numThreads = Math.min(MAX_THREADS, argInfo.parameters.fileNamesFlag.size());
+  private int formatFiles(CommandLineOptions parameters, JavaFormatterOptions options) {
+    int numThreads = Math.min(MAX_THREADS, parameters.files().size());
     ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
 
     Map<Path, String> inputs = new LinkedHashMap<>();
     Map<Path, Future<String>> results = new LinkedHashMap<>();
-    for (String fileName : argInfo.parameters.fileNamesFlag) {
+    for (String fileName : parameters.files()) {
       if (!fileName.endsWith(".java")) {
         errWriter.println("Skipping non-Java file: " + fileName);
         continue;
@@ -245,16 +133,7 @@ public final class Main {
         return 1;
       }
       inputs.put(path, input);
-      results.put(
-          path,
-          executorService.submit(
-              new FormatFileCallable(
-                  parseRangeSet(argInfo.parameters.linesFlags),
-                  argInfo.parameters.offsetFlags,
-                  argInfo.parameters.lengthFlags,
-                  input,
-                  options,
-                  sortImports)));
+      results.put(path, executorService.submit(new FormatFileCallable(parameters, input, options)));
     }
 
     boolean allOk = true;
@@ -276,7 +155,7 @@ public final class Main {
         allOk = false;
         continue;
       }
-      if (argInfo.parameters.iFlag) {
+      if (parameters.inPlace()) {
         if (formatted.equals(inputs.get(result.getKey()))) {
           continue; // preserve original file
         }
@@ -294,7 +173,7 @@ public final class Main {
     return allOk ? 0 : 1;
   }
 
-  private int formatStdin(ArgInfo argInfo, JavaFormatterOptions options, SortImports sortImports) {
+  private int formatStdin(CommandLineOptions parameters, JavaFormatterOptions options) {
     String input;
     try {
       input = new String(ByteStreams.toByteArray(inStream), UTF_8);
@@ -302,15 +181,7 @@ public final class Main {
       throw new IOError(e);
     }
     try {
-      String output =
-          new FormatFileCallable(
-                  parseRangeSet(argInfo.parameters.linesFlags),
-                  argInfo.parameters.offsetFlags,
-                  argInfo.parameters.lengthFlags,
-                  input,
-                  options,
-                  sortImports)
-              .call();
+      String output = new FormatFileCallable(parameters, input, options).call();
       outWriter.write(output);
       return 0;
     } catch (FormatterException e) {
@@ -320,114 +191,35 @@ public final class Main {
     }
   }
 
-  static class ArgInfo {
-    public final FormatterParameters parameters;
-    private final JCommander jCommander;
-
-    public static ArgInfo processArgs(String... args) throws UsageException {
-      FormatterParameters parameters = new FormatterParameters();
-      JCommander jCommander = new JCommander(parameters);
-      ArgInfo argInfo = new ArgInfo(parameters, jCommander);
-
-      jCommander.setProgramName("google-java-format");
-      try {
-        jCommander.parse(args);
-      } catch (ParameterException ignored) {
-        argInfo.throwUsage();
-      }
-
-      int filesToFormat = parameters.fileNamesFlag.size();
-      if (parameters.stdinStdoutFlag) {
-        filesToFormat++;
-      }
-
-      if (parameters.iFlag && parameters.fileNamesFlag.isEmpty()) {
-        argInfo.throwUsage();
-      }
-      if (argInfo.isSelection() && filesToFormat != 1) {
-        argInfo.throwUsage();
-      }
-      if (parameters.offsetFlags.size() != parameters.lengthFlags.size()) {
-        argInfo.throwUsage();
-      }
-      if (filesToFormat <= 0 && !parameters.versionFlag && !parameters.helpFlag) {
-        argInfo.throwUsage();
-      }
-
-      return argInfo;
+  /** Parses and validates command-line flags. */
+  public static CommandLineOptions processArgs(String... args) throws UsageException {
+    CommandLineOptions parameters;
+    try {
+      parameters = CommandLineOptionsParser.parse(Arrays.asList(args));
+    } catch (IllegalArgumentException e) {
+      throw new UsageException(e.getMessage());
+    } catch (Throwable t) {
+      t.printStackTrace();
+      throw new UsageException(t.getMessage());
+    }
+    int filesToFormat = parameters.files().size();
+    if (parameters.stdin()) {
+      filesToFormat++;
     }
 
-    boolean isSelection() {
-      return !parameters.linesFlags.isEmpty()
-          || !parameters.offsetFlags.isEmpty()
-          || !parameters.lengthFlags.isEmpty();
+    if (parameters.inPlace() && parameters.files().isEmpty()) {
+      throw new UsageException("in-place formatting was requested but no files were provided");
     }
-
-    private ArgInfo(FormatterParameters parameters, JCommander jCommander) {
-      this.parameters = parameters;
-      this.jCommander = jCommander;
+    if (parameters.isSelection() && filesToFormat != 1) {
+      throw new UsageException("partial formatting is only support for a single file");
     }
-
-    public void throwUsage() throws UsageException {
-      StringBuilder builder = new StringBuilder();
-      addLines(builder, USAGE);
-      jCommander.usage(builder);
-      addLines(builder, ADDITIONAL_USAGE);
-      throw new UsageException(builder.toString());
+    if (parameters.offsets().size() != parameters.lengths().size()) {
+      throw new UsageException(
+          String.format("-offsets and -lengths flags must be provided in matching pairs"));
     }
-
-    private static void addLines(StringBuilder builder, String[] lines) {
-      for (String line : lines) {
-        builder.append(line);
-        builder.append(System.lineSeparator());
-      }
+    if (filesToFormat <= 0 && !parameters.version() && !parameters.help()) {
+      throw new UsageException("no files were provided");
     }
-  }
-
-  private void version() {
-    for (String line : VERSION) {
-      errWriter.println(line);
-    }
-  }
-
-  /**
-   * Parse multiple --lines flags, like {"1:12,14,20:36", "40:45,50"}. Multiple ranges can be given
-   * with multiple --lines flags or separated by commas. A single line can be set by a single
-   * number. Line numbers are {@code 1}-based, but are converted to the {@code 0}-based numbering
-   * used internally by google-java-format.
-   *
-   * @param linesFlags a list of command-line flags
-   * @return the {@link RangeSet} of line numbers, converted to {@code 0}-based
-   */
-  private static RangeSet<Integer> parseRangeSet(List<String> linesFlags) {
-    RangeSet<Integer> result = TreeRangeSet.create();
-    for (String linesFlag : linesFlags) {
-      for (String range : COMMA_SPLITTER.split(linesFlag)) {
-        result.add(parseRange(range));
-      }
-    }
-    return result;
-  }
-
-  /**
-   * Parse a range, as in "1:12" or "42". Line numbers provided are {@code 1}-based, but are
-   * converted here to {@code 0}-based.
-   *
-   * @param arg the command-line argument
-   * @return the {@link RangeSet} of line numbers, converted to {@code 0}-based
-   */
-  private static Range<Integer> parseRange(String arg) {
-    List<String> args = COLON_SPLITTER.splitToList(arg);
-    switch (args.size()) {
-      case 1:
-        int line = Integer.parseInt(args.get(0)) - 1;
-        return Range.closedOpen(line, line + 1);
-      case 2:
-        int line0 = Integer.parseInt(args.get(0)) - 1;
-        int line1 = Integer.parseInt(args.get(1)) - 1;
-        return Range.closedOpen(line0, line1 + 1);
-      default:
-        throw new IllegalArgumentException(arg);
-    }
+    return parameters;
   }
 }

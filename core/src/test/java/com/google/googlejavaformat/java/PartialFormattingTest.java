@@ -943,9 +943,7 @@ public final class PartialFormattingTest {
     StringWriter err = new StringWriter();
 
     Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
-    String[] args = {
-      "-lines=23:27", "-lines=1:1", "-lines=31:35", "-lines=52:63", "-lines=1:1", path.toString()
-    };
+    String[] args = {"-lines=23:27", "-lines=31:35", "-lines=52:63", "-lines=1:1", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expectedOutput);
   }

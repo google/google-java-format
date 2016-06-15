@@ -16,8 +16,6 @@ package com.google.googlejavaformat.java;
 
 import static org.junit.Assert.fail;
 
-import com.google.googlejavaformat.java.Main.ArgInfo;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -33,22 +31,22 @@ public class CommandLineFlagsTest {
   @Test
   public void formatInPlaceRequiresAtLeastOneFile() {
     try {
-      ArgInfo.processArgs("-i");
+      Main.processArgs("-i");
       fail();
     } catch (UsageException e) {
       // expected
     }
 
     try {
-      ArgInfo.processArgs("-i", "-");
+      Main.processArgs("-i", "-");
       fail();
     } catch (UsageException e) {
       // expected
     }
 
     try {
-      ArgInfo.processArgs("-i", "Foo.java");
-      ArgInfo.processArgs("-i", "Foo.java", "Bar.java");
+      Main.processArgs("-i", "Foo.java");
+      Main.processArgs("-i", "Foo.java", "Bar.java");
     } catch (UsageException e) {
       fail();
     }
@@ -57,40 +55,40 @@ public class CommandLineFlagsTest {
   @Test
   public void formatASubsetRequiresExactlyOneFile() {
     try {
-      ArgInfo.processArgs("-lines", "10", "Foo.java");
+      Main.processArgs("-lines", "10", "Foo.java");
     } catch (UsageException e) {
       fail();
     }
 
     try {
-      ArgInfo.processArgs("-lines", "10");
-      fail();
-    } catch (UsageException e) {
-      // expected
-    }
-
-    try {
-      ArgInfo.processArgs("-lines", "10", "Foo.java", "Bar.java");
+      Main.processArgs("-lines", "10");
       fail();
     } catch (UsageException e) {
       // expected
     }
 
     try {
-      ArgInfo.processArgs("-offset", "10", "-length", "10", "Foo.java");
-    } catch (UsageException e) {
-      fail();
-    }
-
-    try {
-      ArgInfo.processArgs("-offset", "10", "-length", "10");
+      Main.processArgs("-lines", "10", "Foo.java", "Bar.java");
       fail();
     } catch (UsageException e) {
       // expected
     }
 
     try {
-      ArgInfo.processArgs("-offset", "10", "-length", "10", "Foo.java", "Bar.java");
+      Main.processArgs("-offset", "10", "-length", "10", "Foo.java");
+    } catch (UsageException e) {
+      fail();
+    }
+
+    try {
+      Main.processArgs("-offset", "10", "-length", "10");
+      fail();
+    } catch (UsageException e) {
+      // expected
+    }
+
+    try {
+      Main.processArgs("-offset", "10", "-length", "10", "Foo.java", "Bar.java");
       fail();
     } catch (UsageException e) {
       // expected
@@ -102,20 +100,20 @@ public class CommandLineFlagsTest {
   @Test
   public void numberOfOffsetsMustMatchNumberOfLengths() {
     try {
-      ArgInfo.processArgs("-offset", "10", "-length", "20", "Foo.java");
+      Main.processArgs("-offset", "10", "-length", "20", "Foo.java");
     } catch (UsageException e) {
       fail();
     }
 
     try {
-      ArgInfo.processArgs("-offset", "10", "-length", "20", "-offset", "50", "Foo.java");
+      Main.processArgs("-offset", "10", "-length", "20", "-offset", "50", "Foo.java");
       fail();
     } catch (UsageException e) {
       // expected
     }
 
     try {
-      ArgInfo.processArgs("-offset", "10", "-length", "20", "-length", "50", "Foo.java");
+      Main.processArgs("-offset", "10", "-length", "20", "-length", "50", "Foo.java");
       fail();
     } catch (UsageException e) {
       // expected
@@ -125,26 +123,26 @@ public class CommandLineFlagsTest {
   @Test
   public void noFilesToFormatRequiresEitherHelpOrVersion() {
     try {
-      ArgInfo.processArgs("-version");
+      Main.processArgs("-version");
     } catch (UsageException e) {
       fail();
     }
 
     try {
-      ArgInfo.processArgs("-help");
+      Main.processArgs("-help");
     } catch (UsageException e) {
       fail();
     }
 
     try {
-      ArgInfo.processArgs();
+      Main.processArgs();
       fail();
     } catch (UsageException e) {
       // expected
     }
 
     try {
-      ArgInfo.processArgs("-aosp");
+      Main.processArgs("-aosp");
       fail();
     } catch (UsageException e) {
       // expected

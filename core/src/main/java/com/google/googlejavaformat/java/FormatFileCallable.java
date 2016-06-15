@@ -14,14 +14,11 @@
 
 package com.google.googlejavaformat.java;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
-import com.google.googlejavaformat.java.Main.SortImports;
+import com.google.googlejavaformat.java.CommandLineOptions.SortImports;
 
-import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -30,25 +27,14 @@ import java.util.concurrent.Callable;
  */
 public class FormatFileCallable implements Callable<String> {
   private final String input;
-  private final ImmutableRangeSet<Integer> lineRanges;
-  private final ImmutableList<Integer> offsets;
-  private final ImmutableList<Integer> lengths;
+  private final CommandLineOptions parameters;
   private final JavaFormatterOptions options;
-  private final SortImports sortImports;
 
   public FormatFileCallable(
-      RangeSet<Integer> lineRanges,
-      List<Integer> offsets,
-      List<Integer> lengths,
-      String input,
-      JavaFormatterOptions options,
-      SortImports sortImports) {
+      CommandLineOptions parameters, String input, JavaFormatterOptions options) {
     this.input = input;
-    this.lineRanges = ImmutableRangeSet.copyOf(lineRanges);
-    this.offsets = ImmutableList.copyOf(offsets);
-    this.lengths = ImmutableList.copyOf(lengths);
+    this.parameters = parameters;
     this.options = options;
-    this.sortImports = sortImports;
   }
 
   @Override
@@ -56,9 +42,9 @@ public class FormatFileCallable implements Callable<String> {
 
     // TODO(cushon): figure out how to integrate import ordering into Formatter
     String inputString = input;
-    if (sortImports != SortImports.NO) {
+    if (parameters.sortImports() != SortImports.NO) {
       inputString = ImportOrderer.reorderImports(inputString);
-      if (sortImports == SortImports.ONLY) {
+      if (parameters.sortImports() == SortImports.ONLY) {
         return inputString;
       }
     }
@@ -70,15 +56,18 @@ public class FormatFileCallable implements Callable<String> {
   private RangeSet<Integer> characterRanges(String input) {
     final RangeSet<Integer> characterRanges = TreeRangeSet.create();
 
-    if (lineRanges.isEmpty() && offsets.isEmpty()) {
+    if (parameters.lines().isEmpty() && parameters.offsets().isEmpty()) {
       characterRanges.add(Range.closedOpen(0, input.length()));
       return characterRanges;
     }
 
-    characterRanges.addAll(Formatter.lineRangesToCharRanges(input, lineRanges));
+    characterRanges.addAll(Formatter.lineRangesToCharRanges(input, parameters.lines()));
 
-    for (int i = 0; i < offsets.size(); i++) {
-      characterRanges.add(Range.closedOpen(offsets.get(i), offsets.get(i) + lengths.get(i)));
+    for (int i = 0; i < parameters.offsets().size(); i++) {
+      characterRanges.add(
+          Range.closedOpen(
+              parameters.offsets().get(i),
+              parameters.offsets().get(i) + parameters.lengths().get(i)));
     }
 
     return characterRanges;
