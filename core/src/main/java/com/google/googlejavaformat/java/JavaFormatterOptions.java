@@ -119,7 +119,7 @@ public class JavaFormatterOptions {
 
   /** A builder for {@link JavaFormatterOptions}. */
   public static class Builder {
-    private JavadocFormatter javadocFormatter = JavadocFormatter.NONE;
+    private JavadocFormatter javadocFormatter = JavadocFormatter.GOOGLE;
     private Style style = Style.GOOGLE;
 
     private Builder() {}

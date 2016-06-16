@@ -1143,7 +1143,9 @@ public final class PartialFormattingTest {
     String output = new Formatter().formatSource(Joiner.on('\n').join(lines));
     String[] expected = {
       "class D {", //
-      "  /** */",
+      "  /**",
+      "   *",
+      "   */",
       "  F() {}",
       "}",
       "",

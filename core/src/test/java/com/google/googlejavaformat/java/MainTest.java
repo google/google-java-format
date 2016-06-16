@@ -17,6 +17,7 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 
@@ -26,6 +27,8 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ProcessBuilder.Redirect;
@@ -120,5 +123,47 @@ public class MainTest {
     String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
     assertThat(err).contains("Usage: google-java-format");
     assertThat(process.exitValue()).isEqualTo(0);
+  }
+
+  // end to end javadoc formatting test
+  @Test
+  public void javadoc() throws Exception {
+    String[] input = {
+      "/**",
+      " * graph",
+      " *",
+      " * graph",
+      " *",
+      " * @param foo lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do"
+          + " eiusmod tempor incididunt ut labore et dolore magna aliqua",
+      " */",
+      "class Test {",
+      "  /**",
+      "   * creates entropy",
+      "   */",
+      "  public static void main(String... args) {}",
+      "}",
+    };
+    String[] expected = {
+      "/**",
+      " * graph",
+      " *",
+      " * <p>graph",
+      " *",
+      " * @param foo lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do"
+          + " eiusmod tempor",
+      " *     incididunt ut labore et dolore magna aliqua",
+      " */",
+      "class Test {",
+      "  /** creates entropy */",
+      "  public static void main(String... args) {}",
+      "}",
+      "",
+    };
+    InputStream in = new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(System.err, true), in);
+    assertThat(main.format("-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
   }
 }
