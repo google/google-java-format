@@ -68,10 +68,12 @@ public class JavaFormatterOptions {
         return text;
       }
     },
+    /** @deprecated prefer {@link GOOGLE} */
+    @Deprecated
     ECLIPSE {
       @Override
       public String format(JavaFormatterOptions options, String text, int column0) {
-        return EclipseJavadocFormatter.formatJavadoc(text, column0, options);
+        return GOOGLE.format(options, text, column0);
       }
     },
     GOOGLE {
