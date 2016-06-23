@@ -28,14 +28,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Entry point for formatting Javadoc with the Google formatter.
+ * Entry point for formatting Javadoc.
  *
  * <p>This stateless class reads tokens from the stateful lexer and translates them to "requests"
  * and "writes" to the stateful writer. It also munges tokens into "standardized" forms. Finally, it
  * performs postprocessing to convert the written Javadoc to a one-liner if possible or to leave a
  * single blank line if it's empty.
  */
-public final class GoogleJavadocFormatter {
+public final class JavadocFormatter {
   /**
    * Formats the given Javadoc comment, which must start with ∕✱✱ and end with ✱∕. The output will
    * start and end with the same characters.
@@ -168,5 +168,5 @@ public final class GoogleJavadocFormatter {
     return input;
   }
 
-  private GoogleJavadocFormatter() {}
+  private JavadocFormatter() {}
 }

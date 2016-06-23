@@ -19,19 +19,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteStreams;
-import com.google.googlejavaformat.java.JavaFormatterOptions.JavadocFormatter;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Tests formatting javadoc with the Google formatter. */
+/** Tests formatting javadoc. */
 @RunWith(JUnit4.class)
-public final class GoogleJavadocFormattingTest {
+public final class JavadocFormattingTest {
 
-  private final Formatter formatter =
-      new Formatter(
-          JavaFormatterOptions.builder().javadocFormatter(JavadocFormatter.GOOGLE).build());
+  private final Formatter formatter = new Formatter();
 
   @Test
   public void notJavadoc() {

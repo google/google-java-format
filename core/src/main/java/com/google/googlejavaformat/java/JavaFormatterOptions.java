@@ -15,7 +15,6 @@
 package com.google.googlejavaformat.java;
 
 import com.google.errorprone.annotations.Immutable;
-import com.google.googlejavaformat.java.javadoc.GoogleJavadocFormatter;
 
 /**
  * Options for a google-java-format invocation.
@@ -61,42 +60,10 @@ public class JavaFormatterOptions {
     }
   }
 
-  public enum JavadocFormatter {
-    NONE {
-      @Override
-      public String format(JavaFormatterOptions options, String text, int column0) {
-        return text;
-      }
-    },
-    /** @deprecated prefer {@link GOOGLE} */
-    @Deprecated
-    ECLIPSE {
-      @Override
-      public String format(JavaFormatterOptions options, String text, int column0) {
-        return GOOGLE.format(options, text, column0);
-      }
-    },
-    GOOGLE {
-      @Override
-      public String format(JavaFormatterOptions options, String text, int column0) {
-        return GoogleJavadocFormatter.formatJavadoc(text, column0, options);
-      }
-    };
-
-    public abstract String format(JavaFormatterOptions options, String text, int column0);
-  }
-
-  private final JavadocFormatter javadocFormatter;
   private final Style style;
 
-  private JavaFormatterOptions(JavadocFormatter javadocFormatter, Style style) {
-    this.javadocFormatter = javadocFormatter;
+  private JavaFormatterOptions(Style style) {
     this.style = style;
-  }
-
-  /** Returns the Javadoc formatter. */
-  public JavadocFormatter javadocFormatter() {
-    return javadocFormatter;
   }
 
   /** Returns the maximum formatted width */
@@ -121,7 +88,6 @@ public class JavaFormatterOptions {
 
   /** A builder for {@link JavaFormatterOptions}. */
   public static class Builder {
-    private JavadocFormatter javadocFormatter = JavadocFormatter.GOOGLE;
     private Style style = Style.GOOGLE;
 
     private Builder() {}
@@ -131,13 +97,8 @@ public class JavaFormatterOptions {
       return this;
     }
 
-    public Builder javadocFormatter(JavadocFormatter javadocFormatter) {
-      this.javadocFormatter = javadocFormatter;
-      return this;
-    }
-
     public JavaFormatterOptions build() {
-      return new JavaFormatterOptions(javadocFormatter, style);
+      return new JavaFormatterOptions(style);
     }
   }
 }

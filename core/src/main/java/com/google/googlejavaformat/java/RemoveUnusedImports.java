@@ -24,7 +24,6 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
-import com.google.googlejavaformat.java.JavaFormatterOptions.JavadocFormatter;
 
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
@@ -213,12 +212,7 @@ public class RemoveUnusedImports {
     // and removing imports won't usually affect javadoc.
     if (!fixedRanges.isEmpty()) {
       try {
-        result =
-            new Formatter(
-                    JavaFormatterOptions.builder()
-                        .javadocFormatter(JavadocFormatter.GOOGLE)
-                        .build())
-                .formatSource(result, fixedRanges.asRanges());
+        result = new Formatter().formatSource(result, fixedRanges.asRanges());
       } catch (FormatterException e) {
         // javadoc reformatting is best-effort
       }

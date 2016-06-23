@@ -19,6 +19,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.googlejavaformat.CommentsHelper;
 import com.google.googlejavaformat.Input.Tok;
+import com.google.googlejavaformat.java.javadoc.JavadocFormatter;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -42,7 +43,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
     }
     String text = tok.getOriginalText();
     if (tok.isJavadocComment()) {
-      text = options.javadocFormatter().format(options, text, column0);
+      text = JavadocFormatter.formatJavadoc(text, column0, options);
     }
     List<String> lines = new ArrayList<>();
     for (String line : NEWLINE_SPLITTER.split(text)) {
