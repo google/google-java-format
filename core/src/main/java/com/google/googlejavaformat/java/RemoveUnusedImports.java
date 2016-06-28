@@ -16,6 +16,7 @@
 
 package com.google.googlejavaformat.java;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
@@ -50,6 +51,14 @@ import java.util.Set;
  * fully qualified names.
  */
 public class RemoveUnusedImports {
+
+  /** Configuration for javadoc-only imports. */
+  public enum JavadocOnlyImports {
+    /** Remove imports that are only used in javadoc, and fully qualify any {@code @link} tags. */
+    REMOVE,
+    /** Keep imports that are only used in javadoc. */
+    KEEP
+  }
 
   // Visits an AST, recording all simple names that could refer to imported
   // types and also any javadoc references that could refer to imported
@@ -125,12 +134,15 @@ public class RemoveUnusedImports {
     }
   }
 
-  public static String removeUnusedImports(final String contents) {
+  public static String removeUnusedImports(
+      final String contents, JavadocOnlyImports javadocOnlyImports) {
     CompilationUnit unit = parse(contents);
     UnusedImportScanner scanner = new UnusedImportScanner();
     unit.accept(scanner);
     return applyReplacements(
-        contents, buildReplacements(unit, scanner.usedNames, scanner.usedInJavadoc));
+        contents,
+        buildReplacements(
+            contents, unit, scanner.usedNames, scanner.usedInJavadoc, javadocOnlyImports));
   }
 
   private static CompilationUnit parse(String source) {
@@ -148,7 +160,11 @@ public class RemoveUnusedImports {
 
   /** Construct replacements to fix unused imports. */
   private static RangeMap<Integer, String> buildReplacements(
-      CompilationUnit unit, Set<String> usedNames, Multimap<String, ASTNode> usedInJavadoc) {
+      String contents,
+      CompilationUnit unit,
+      Set<String> usedNames,
+      Multimap<String, ASTNode> usedInJavadoc,
+      JavadocOnlyImports javadocOnlyImports) {
     RangeMap<Integer, String> replacements = TreeRangeMap.create();
     for (ImportDeclaration importTree : (List<ImportDeclaration>) unit.imports()) {
       String simpleName =
@@ -158,12 +174,18 @@ public class RemoveUnusedImports {
       if (usedNames.contains(simpleName)) {
         continue;
       }
+      if (usedInJavadoc.containsKey(simpleName) && javadocOnlyImports == JavadocOnlyImports.KEEP) {
+        continue;
+      }
       // delete the import
-      replacements.put(
-          Range.closedOpen(
-              importTree.getStartPosition(),
-              importTree.getStartPosition() + importTree.getLength()),
-          "");
+      int endPosition = importTree.getStartPosition() + importTree.getLength();
+      endPosition = Math.max(CharMatcher.isNot(' ').indexIn(contents, endPosition), endPosition);
+      String sep = System.lineSeparator();
+      if (endPosition + sep.length() < contents.length()
+          && contents.subSequence(endPosition, endPosition + sep.length()).equals(sep)) {
+        endPosition += sep.length();
+      }
+      replacements.put(Range.closedOpen(importTree.getStartPosition(), endPosition), "");
       // fully qualify any javadoc references with the same simple name as a deleted
       // non-static import
       if (!importTree.isStatic()) {

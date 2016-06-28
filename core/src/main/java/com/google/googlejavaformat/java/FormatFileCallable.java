@@ -18,6 +18,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.java.CommandLineOptions.SortImports;
+import com.google.googlejavaformat.java.RemoveUnusedImports.JavadocOnlyImports;
 
 import java.util.concurrent.Callable;
 
@@ -47,6 +48,14 @@ public class FormatFileCallable implements Callable<String> {
       if (parameters.sortImports() == SortImports.ONLY) {
         return inputString;
       }
+    }
+
+    if (parameters.fixImportsOnly()) {
+      return RemoveUnusedImports.removeUnusedImports(
+          inputString,
+          parameters.removeJavadocOnlyImports()
+              ? JavadocOnlyImports.REMOVE
+              : JavadocOnlyImports.KEEP);
     }
 
     return new Formatter(options)

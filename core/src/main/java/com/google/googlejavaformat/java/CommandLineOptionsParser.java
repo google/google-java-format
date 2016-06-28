@@ -85,6 +85,12 @@ final class CommandLineOptionsParser {
         case "-h":
           optionsBuilder.help(true);
           break;
+        case "--fix-imports-only":
+          optionsBuilder.fixImportsOnly(true);
+          break;
+        case "--experimental-remove-javadoc-only-imports":
+          optionsBuilder.removeJavadocOnlyImports(true);
+          break;
         case "--sort-imports":
         case "-sort-imports":
           optionsBuilder.sortImports(parseSortImports(flag, getValue(flag, it, value)));

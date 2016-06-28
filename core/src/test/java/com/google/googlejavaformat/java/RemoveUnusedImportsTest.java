@@ -15,6 +15,9 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.googlejavaformat.java.RemoveUnusedImports.JavadocOnlyImports.KEEP;
+import static com.google.googlejavaformat.java.RemoveUnusedImports.JavadocOnlyImports.REMOVE;
+import static com.google.googlejavaformat.java.RemoveUnusedImports.removeUnusedImports;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -36,6 +39,16 @@ public class RemoveUnusedImportsTest {
         {
           "import java.util.List;",
           "import java.util.ArrayList;",
+          "",
+          "class Test {",
+          "  /** could be an {@link ArrayList} */",
+          "  List<String> xs;",
+          "}",
+        },
+        {
+          "import java.util.List;",
+          "import java.util.ArrayList;",
+          "",
           "class Test {",
           "  /** could be an {@link ArrayList} */",
           "  List<String> xs;",
@@ -52,11 +65,17 @@ public class RemoveUnusedImportsTest {
       },
       {
         {
-          "import java.util.ArrayList;", "/** {@link ArrayList#add} */", "class Test {}",
+          "import java.util.ArrayList;", //
+          "/** {@link ArrayList#add} */",
+          "class Test {}",
         },
         {
-          "", //
-          "/** {@link java.util.ArrayList#add} */",
+          "import java.util.ArrayList;", //
+          "/** {@link ArrayList#add} */",
+          "class Test {}",
+        },
+        {
+          "/** {@link java.util.ArrayList#add} */", //
           "class Test {}",
         }
       },
@@ -72,26 +91,54 @@ public class RemoveUnusedImportsTest {
           "}",
         },
         {
-          "", //
-          "",
-          "",
+          "import a.A;", //
           "class Test {",
+          "  /** a",
+          "   * {@link A} */",
+          "  void f() {}",
+          "}",
+        },
+        {
+          "class Test {", //
           "  /** a {@link a.A} */",
           "  void f() {}",
+          "}",
+        }
+      },
+      {
+        {
+          "import a.A;import a.B;", //
+          "import a.C; // hello",
+          "class Test {",
+          "  B b;",
+          "}",
+        },
+        {
+          "import a.B;", //
+          "// hello",
+          "class Test {",
+          "  B b;",
+          "}",
+        },
+        {
+          "import a.B;", //
+          "// hello",
+          "class Test {",
+          "  B b;",
           "}",
         }
       },
     };
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[][] inputAndOutput : inputsOutputs) {
-      assertThat(inputAndOutput.length).isEqualTo(2);
+      assertThat(inputAndOutput.length).isEqualTo(3);
       String[] input = inputAndOutput[0];
       String[] output = inputAndOutput[1];
-      if (output.length == 0) {
-        output = input;
-      }
+      String[] outputFixJavadoc = inputAndOutput[2];
       String[] parameters = {
-        Joiner.on('\n').join(input) + '\n', Joiner.on('\n').join(output) + '\n',
+        Joiner.on('\n').join(input) + '\n',
+        Joiner.on('\n').join(output) + '\n',
+        Joiner.on('\n').join(outputFixJavadoc) + '\n',
       };
       builder.add(parameters);
     }
@@ -100,15 +147,21 @@ public class RemoveUnusedImportsTest {
 
   private final String input;
   private final String expected;
+  private final String expectedFixJavadoc;
 
-  public RemoveUnusedImportsTest(String input, String expected) {
+  public RemoveUnusedImportsTest(String input, String expected, String expectedFixJavadoc) {
     this.input = input;
     this.expected = expected;
+    this.expectedFixJavadoc = expectedFixJavadoc;
   }
 
   @Test
   public void removeUnused() throws FormatterException {
-    String actual = RemoveUnusedImports.removeUnusedImports(input);
-    assertThat(actual).isEqualTo(expected);
+    assertThat(removeUnusedImports(input, KEEP)).isEqualTo(expected);
+  }
+
+  @Test
+  public void fixJavadoc() throws FormatterException {
+    assertThat(removeUnusedImports(input, REMOVE)).isEqualTo(expectedFixJavadoc);
   }
 }

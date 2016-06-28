@@ -60,6 +60,15 @@ abstract class CommandLineOptions {
   /** Format input from stdin. */
   abstract boolean stdin();
 
+  /** Fix imports, but do no formatting. */
+  abstract boolean fixImportsOnly();
+
+  /**
+   * When fixing imports, remove imports that are used only in javadoc and fully-qualify any
+   * {@code @link} tags referring to the imported types.
+   */
+  abstract boolean removeJavadocOnlyImports();
+
   /** Returns true if partial formatting was selected. */
   boolean isSelection() {
     return !lines().isEmpty() || !offsets().isEmpty() || !lengths().isEmpty();
@@ -72,7 +81,9 @@ abstract class CommandLineOptions {
         .version(false)
         .help(false)
         .sortImports(SortImports.NO)
-        .stdin(false);
+        .stdin(false)
+        .fixImportsOnly(false)
+        .removeJavadocOnlyImports(false);
   }
 
   @AutoValue.Builder
@@ -96,6 +107,10 @@ abstract class CommandLineOptions {
     abstract Builder sortImports(SortImports sortImports);
 
     abstract Builder stdin(boolean stdin);
+
+    abstract Builder fixImportsOnly(boolean fixImportsOnly);
+
+    abstract Builder removeJavadocOnlyImports(boolean removeJavadocOnlyImports);
 
     abstract CommandLineOptions build();
   }

@@ -166,4 +166,53 @@ public class MainTest {
     assertThat(main.format("-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
   }
+
+  // end to end import fixing test
+  @Test
+  public void imports() throws Exception {
+    String[] input = {
+      "import java.util.ArrayList;",
+      "import java.util.LinkedList;",
+      "import java.util.List;",
+      "class Test {",
+      "  /**",
+      "   * May be an {@link ArrayList}.",
+      "   */",
+      "  public static List<String> names;",
+      "}",
+    };
+    {
+      String[] expected = {
+        "import java.util.ArrayList;",
+        "import java.util.List;",
+        "class Test {",
+        "  /**",
+        "   * May be an {@link ArrayList}.",
+        "   */",
+        "  public static List<String> names;",
+        "}",
+      };
+      InputStream in = new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8));
+      StringWriter out = new StringWriter();
+      Main main = new Main(new PrintWriter(out, true), new PrintWriter(System.err, true), in);
+      assertThat(main.format("-", "--fix-imports-only")).isEqualTo(0);
+      assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
+    }
+    {
+      String[] expected = {
+        "import java.util.List;",
+        "class Test {",
+        "  /** May be an {@link java.util.ArrayList}. */",
+        "  public static List<String> names;",
+        "}",
+      };
+      InputStream in = new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8));
+      StringWriter out = new StringWriter();
+      Main main = new Main(new PrintWriter(out, true), new PrintWriter(System.err, true), in);
+      assertThat(
+              main.format("-", "--fix-imports-only", "--experimental-remove-javadoc-only-imports"))
+          .isEqualTo(0);
+      assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
+    }
+  }
 }
