@@ -59,7 +59,7 @@ import java.util.regex.Pattern;
 /** Lexer for the Javadoc formatter. */
 final class JavadocLexer {
   /** Takes a Javadoc comment, including ∕✱✱ and ✱∕, and returns tokens, including ∕✱✱ and ✱∕. */
-  static ImmutableList<Token> lex(String input) {
+  static ImmutableList<Token> lex(String input) throws LexException {
     /*
      * TODO(cpovirk): In theory, we should interpret Unicode escapes (yet output them in their
      * original form). This would mean mean everything from an encoded ∕✱✱ to an encoded <pre> tag,
@@ -88,7 +88,7 @@ final class JavadocLexer {
     this.input = checkNotNull(input);
   }
 
-  private ImmutableList<Token> generateTokens() {
+  private ImmutableList<Token> generateTokens() throws LexException {
     ImmutableList.Builder<Token> tokens = ImmutableList.builder();
 
     Token token = new Token(BEGIN_JAVADOC, "/**");
@@ -97,6 +97,10 @@ final class JavadocLexer {
     while (!input.isExhausted()) {
       token = readToken();
       tokens.add(token);
+    }
+
+    if (braceDepth.isPositive() || preDepth.isPositive() || tableDepth.isPositive()) {
+      throw new LexException();
     }
 
     token = new Token(END_JAVADOC, "*/");
@@ -109,13 +113,13 @@ final class JavadocLexer {
     return result;
   }
 
-  private Token readToken() {
+  private Token readToken() throws LexException {
     Type type = consumeToken();
     String value = input.readAndResetRecorded();
     return new Token(type, value);
   }
 
-  private Type consumeToken() {
+  private Type consumeToken() throws LexException {
     boolean preserveExistingFormatting = preDepth.isPositive() || tableDepth.isPositive();
 
     if (input.tryConsumeRegex(NEWLINE_PATTERN)) {
@@ -134,6 +138,9 @@ final class JavadocLexer {
      * https://github.com/google/google-java-format/issues/7#issuecomment-197383926
      */
     if (!somethingSinceNewline && input.tryConsumeRegex(FOOTER_TAG_PATTERN)) {
+      if (braceDepth.isPositive() || preDepth.isPositive() || tableDepth.isPositive()) {
+        throw new LexException();
+      }
       somethingSinceNewline = true;
       return FOOTER_JAVADOC_TAG_START;
     }
@@ -436,4 +443,6 @@ final class JavadocLexer {
       return value > 0;
     }
   }
+
+  static class LexException extends Exception {}
 }

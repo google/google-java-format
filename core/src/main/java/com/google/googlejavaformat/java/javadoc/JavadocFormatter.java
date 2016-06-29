@@ -20,8 +20,10 @@ import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_OPEN
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.compile;
 
+import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.java.JavaCommentsHelper;
 import com.google.googlejavaformat.java.JavaFormatterOptions;
+import com.google.googlejavaformat.java.javadoc.JavadocLexer.LexException;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -41,7 +43,13 @@ public final class JavadocFormatter {
    * start and end with the same characters.
    */
   public static String formatJavadoc(String input, int blockIndent, JavaFormatterOptions options) {
-    String result = render(lex(input), blockIndent, options);
+    ImmutableList<Token> tokens;
+    try {
+      tokens = lex(input);
+    } catch (LexException e) {
+      return input;
+    }
+    String result = render(tokens, blockIndent, options);
     return makeSingleLineIfPossible(blockIndent, result, options);
   }
 
