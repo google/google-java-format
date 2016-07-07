@@ -35,7 +35,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.MemberRef;
-import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.MethodRef;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TagElement;
@@ -46,9 +46,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Removes unused imports from a source file. Imports that are only used in
- * javadoc are also removed, and the references in javadoc are replaced with
- * fully qualified names.
+ * Removes unused imports from a source file. Imports that are only used in javadoc are also
+ * removed, and the references in javadoc are replaced with fully qualified names.
  */
 public class RemoveUnusedImports {
 
@@ -111,13 +110,17 @@ public class RemoveUnusedImports {
 
     private void recordReference(ASTNode reference) {
       if (reference instanceof SimpleName) {
-        usedInJavadoc.put(((SimpleName) reference).getIdentifier(), reference);
+        recordSimpleName(reference);
       } else if (reference instanceof MemberRef) {
-        MemberRef memberRef = (MemberRef) reference;
-        Name qualifier = memberRef.getQualifier();
-        if (qualifier instanceof SimpleName) {
-          usedInJavadoc.put(((SimpleName) qualifier).getIdentifier(), reference);
-        }
+        recordSimpleName(((MemberRef) reference).getQualifier());
+      } else if (reference instanceof MethodRef) {
+        recordSimpleName(((MethodRef) reference).getQualifier());
+      }
+    }
+
+    private void recordSimpleName(ASTNode typeReference) {
+      if (typeReference instanceof SimpleName) {
+        usedInJavadoc.put(((SimpleName) typeReference).getIdentifier(), typeReference);
       }
     }
 
@@ -191,11 +194,6 @@ public class RemoveUnusedImports {
       if (!importTree.isStatic()) {
         for (ASTNode doc : usedInJavadoc.get(simpleName)) {
           String replaceWith = importTree.getName().toString();
-          String ref = doc.toString();
-          int idx = ref.indexOf('#');
-          if (idx > 0) {
-            replaceWith += ref.substring(idx);
-          }
           Range<Integer> range =
               Range.closedOpen(doc.getStartPosition(), doc.getStartPosition() + doc.getLength());
           replacements.put(range, replaceWith);

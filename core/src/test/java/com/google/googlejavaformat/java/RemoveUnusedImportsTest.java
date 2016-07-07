@@ -66,16 +66,18 @@ public class RemoveUnusedImportsTest {
       {
         {
           "import java.util.ArrayList;", //
-          "/** {@link ArrayList#add} */",
+          "import java.util.Collection;",
+          "/** {@link ArrayList#add} {@link Collection#remove(Object)} */",
           "class Test {}",
         },
         {
           "import java.util.ArrayList;", //
-          "/** {@link ArrayList#add} */",
+          "import java.util.Collection;",
+          "/** {@link ArrayList#add} {@link Collection#remove(Object)} */",
           "class Test {}",
         },
         {
-          "/** {@link java.util.ArrayList#add} */", //
+          "/** {@link java.util.ArrayList#add} {@link java.util.Collection#remove(Object)} */",
           "class Test {}",
         }
       },
