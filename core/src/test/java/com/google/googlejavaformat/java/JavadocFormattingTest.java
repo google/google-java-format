@@ -50,10 +50,20 @@ public final class JavadocFormattingTest {
       "class Test {}",
     };
     String[] expected = {
+      "/** */", "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void emptyMultipleLines() {
+    String[] input = {
       "/**", //
-      " *",
       " */",
       "class Test {}",
+    };
+    String[] expected = {
+      "/** */", "class Test {}",
     };
     doFormatTest(input, expected);
   }
@@ -65,10 +75,7 @@ public final class JavadocFormattingTest {
       "class Test {}",
     };
     String[] expected = {
-      "/**", //
-      " *",
-      " */",
-      "class Test {}",
+      "/** */", "class Test {}",
     };
     doFormatTest(input, expected);
   }

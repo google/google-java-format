@@ -21,7 +21,6 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.compile;
 
 import com.google.common.collect.ImmutableList;
-import com.google.googlejavaformat.java.JavaCommentsHelper;
 import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.google.googlejavaformat.java.javadoc.JavadocLexer.LexException;
 
@@ -153,24 +152,19 @@ public final class JavadocFormatter {
   private static final Token STANDARD_P_TOKEN = new Token(PARAGRAPH_OPEN_TAG, "<p>");
   private static final Pattern SIMPLE_TAG_PATTERN = compile("^<\\w+\\s*/?\\s*>", CASE_INSENSITIVE);
 
-  private static final Pattern ONE_CONTENT_LINE_PATTERN = compile(" */[*][*]\n *[*] (.+)\n *[*]/");
+  private static final Pattern ONE_CONTENT_LINE_PATTERN = compile(" */[*][*]\n *[*] (.*)\n *[*]/");
 
   /**
    * Returns the given string or a one-line version of it (e.g., "∕✱✱ Tests for foos. ✱∕") if it
    * fits on one line.
-   *
-   * <p>Exception: It would be weird to collapse empty Javadoc to a one-liner, especially the
-   * one-liner that this method would produce, since it has two consecutive spaces ("∕✱✱ ✱∕"). The
-   * user probably intends to go back to fill it in. It seems more natural to leave a blank Javadoc
-   * line for that. Doing so may also draw attention to the empty comment. So we don't produce
-   * one-liners in that case (thanks to the {@code .+} in the pattern. We do leave behind trailing
-   * whitespace on the blank line, but {@link JavaCommentsHelper} will remove it.
    */
   private static String makeSingleLineIfPossible(
       int blockIndent, String input, JavaFormatterOptions options) {
     int oneLinerContentLength = options.maxLineLength() - "/**  */".length() - blockIndent;
     Matcher matcher = ONE_CONTENT_LINE_PATTERN.matcher(input);
-    if (matcher.matches() && matcher.group(1).length() <= oneLinerContentLength) {
+    if (matcher.matches() && matcher.group(1).isEmpty()) {
+      return "/** */";
+    } else if (matcher.matches() && matcher.group(1).length() <= oneLinerContentLength) {
       return "/** " + matcher.group(1) + " */";
     }
     return input;
