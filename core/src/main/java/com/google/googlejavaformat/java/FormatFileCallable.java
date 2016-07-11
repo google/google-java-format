@@ -17,7 +17,6 @@ package com.google.googlejavaformat.java;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
-import com.google.googlejavaformat.java.CommandLineOptions.SortImports;
 import com.google.googlejavaformat.java.RemoveUnusedImports.JavadocOnlyImports;
 
 import java.util.concurrent.Callable;
@@ -40,15 +39,7 @@ public class FormatFileCallable implements Callable<String> {
 
   @Override
   public String call() throws FormatterException {
-
-    // TODO(cushon): figure out how to integrate import ordering into Formatter
     String inputString = input;
-    if (parameters.sortImports() != SortImports.NO) {
-      inputString = ImportOrderer.reorderImports(inputString);
-      if (parameters.sortImports() == SortImports.ONLY) {
-        return inputString;
-      }
-    }
 
     if (parameters.fixImportsOnly()) {
       inputString =

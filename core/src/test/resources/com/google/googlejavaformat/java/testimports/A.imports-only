@@ -9,4 +9,19 @@ import javax.annotations.Nullable;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-@RunWith( JUnit4.class ) public class SomeTest  {}
+@RunWith( JUnit4.class ) public class SomeTest  {
+
+  <T> check(@Nullable List<T> x) {
+    Preconditions.checkNodeNull(x);
+  }
+
+  void f() {
+    List<String> xs = null;
+    assertThat(xs).isNull();
+    try {
+      check(xs);
+      fail();
+    } catch (NullPointerException e) {
+    }
+  }
+}

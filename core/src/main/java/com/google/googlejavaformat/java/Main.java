@@ -17,7 +17,6 @@ package com.google.googlejavaformat.java;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.ByteStreams;
-import com.google.googlejavaformat.java.CommandLineOptions.SortImports;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 
 import java.io.IOError;
@@ -97,10 +96,6 @@ public final class Main {
     }
     if (parameters.help()) {
       throw new UsageException();
-    }
-    if (parameters.sortImports() != SortImports.NO && parameters.isSelection()) {
-      errWriter.println("--sort-imports can currently only apply to the whole file");
-      return 1;
     }
 
     JavaFormatterOptions options =

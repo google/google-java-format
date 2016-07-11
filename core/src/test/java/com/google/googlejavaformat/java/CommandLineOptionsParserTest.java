@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.Range;
-import com.google.googlejavaformat.java.CommandLineOptions.SortImports;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,7 +42,6 @@ public class CommandLineOptionsParserTest {
     assertThat(options.offsets()).isEmpty();
     assertThat(options.inPlace()).isFalse();
     assertThat(options.version()).isFalse();
-    assertThat(options.sortImports()).isEqualTo(SortImports.NO);
   }
 
   @Test

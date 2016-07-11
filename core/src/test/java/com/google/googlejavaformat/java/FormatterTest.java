@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -253,15 +254,13 @@ public final class FormatterTest {
   @Test
   public void importOrderingWithoutFormatting() throws IOException, UsageException {
     importOrdering(
-        "--sort-imports=only",
-        "com/google/googlejavaformat/java/testimports/A.imports-only");
+        "--fix-imports-only", "com/google/googlejavaformat/java/testimports/A.imports-only");
   }
 
+  @Ignore // re-enable when import fixing is on by default
   @Test
   public void importOrderingAndFormatting() throws IOException, UsageException {
-    importOrdering(
-        "--sort-imports=also",
-        "com/google/googlejavaformat/java/testimports/A.imports-and-formatting");
+    importOrdering(null, "com/google/googlejavaformat/java/testimports/A.imports-and-formatting");
   }
 
   private void importOrdering(String sortArg, String outputResourceName)
@@ -277,7 +276,11 @@ public final class FormatterTest {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
     Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
-    main.format(new String[] {sortArg, "-i", path.toString()});
+    String[] args =
+        sortArg != null
+            ? new String[] {sortArg, "-i", path.toString()}
+            : new String[] {"-i", path.toString()};
+    main.format(args);
 
     assertThat(err.toString()).isEmpty();
     assertThat(out.toString()).isEmpty();

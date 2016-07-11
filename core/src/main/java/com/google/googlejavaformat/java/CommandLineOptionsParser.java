@@ -17,7 +17,6 @@ package com.google.googlejavaformat.java;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
-import com.google.googlejavaformat.java.CommandLineOptions.SortImports;
 
 import java.util.Iterator;
 import java.util.List;
@@ -91,10 +90,6 @@ final class CommandLineOptionsParser {
         case "--experimental-remove-javadoc-only-imports":
           optionsBuilder.removeJavadocOnlyImports(true);
           break;
-        case "--sort-imports":
-        case "-sort-imports":
-          optionsBuilder.sortImports(parseSortImports(flag, getValue(flag, it, value)));
-          break;
         case "-":
           optionsBuilder.stdin(true);
           break;
@@ -103,20 +98,6 @@ final class CommandLineOptionsParser {
       }
     }
     return optionsBuilder.build();
-  }
-
-  private static SortImports parseSortImports(String flag, String value) {
-    switch (value) {
-      case "only":
-        return SortImports.ONLY;
-      case "also":
-        return SortImports.ALSO;
-      case "none":
-        return SortImports.NO;
-      default:
-        throw new IllegalArgumentException(
-            String.format("Invalid value for %s: %s. Should be \"only\" or \"also\"", flag, value));
-    }
   }
 
   private static Integer parseInteger(Iterator<String> it, String flag, String value) {

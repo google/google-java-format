@@ -74,16 +74,6 @@ public class MainTest {
   }
 
   @Test
-  public void cantImportSortRangeYet() throws UsageException {
-    StringWriter out = new StringWriter();
-    StringWriter err = new StringWriter();
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
-    assertThat(main.format("-sort-imports=only", "-lines=5:10", "-")).isEqualTo(1);
-    assertThat(err.toString()).contains(
-        "--sort-imports can currently only apply to the whole file");
-  }
-
-  @Test
   public void version() throws UsageException {
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();

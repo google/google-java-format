@@ -12,4 +12,19 @@ import javax.annotations.Nullable;
 import static org.junit.Assert.fail;
 import static com.google.truth.Truth.assertThat;
 
-@RunWith( JUnit4.class ) public class SomeTest  {}
+@RunWith( JUnit4.class ) public class SomeTest  {
+
+  <T> check(@Nullable List<T> x) {
+    Preconditions.checkNodeNull(x);
+  }
+
+  void f() {
+    List<String> xs = null;
+    assertThat(xs).isNull();
+    try {
+      check(xs);
+      fail();
+    } catch (NullPointerException e) {
+    }
+  }
+}

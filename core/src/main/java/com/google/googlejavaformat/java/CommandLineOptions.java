@@ -22,14 +22,6 @@ import com.google.common.collect.ImmutableRangeSet;
 @AutoValue
 abstract class CommandLineOptions {
 
-  enum SortImports {
-    NO,
-    /** Sort imports, but perform no formatting. */
-    ONLY,
-    /** Sort imports in addition to regular formatting. */
-    ALSO
-  }
-
   /** The files to format. */
   abstract ImmutableList<String> files();
 
@@ -54,9 +46,6 @@ abstract class CommandLineOptions {
   /** Print usage information. */
   abstract boolean help();
 
-  /** Sort imports. */
-  abstract SortImports sortImports();
-
   /** Format input from stdin. */
   abstract boolean stdin();
 
@@ -80,7 +69,6 @@ abstract class CommandLineOptions {
         .aosp(false)
         .version(false)
         .help(false)
-        .sortImports(SortImports.NO)
         .stdin(false)
         .fixImportsOnly(false)
         .removeJavadocOnlyImports(false);
@@ -103,8 +91,6 @@ abstract class CommandLineOptions {
     abstract Builder version(boolean version);
 
     abstract Builder help(boolean help);
-
-    abstract Builder sortImports(SortImports sortImports);
 
     abstract Builder stdin(boolean stdin);
 
