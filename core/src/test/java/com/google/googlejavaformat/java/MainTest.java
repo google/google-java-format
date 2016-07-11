@@ -171,9 +171,9 @@ public class MainTest {
   @Test
   public void imports() throws Exception {
     String[] input = {
-      "import java.util.ArrayList;",
       "import java.util.LinkedList;",
       "import java.util.List;",
+      "import java.util.ArrayList;",
       "class Test {",
       "  /**",
       "   * May be an {@link ArrayList}.",

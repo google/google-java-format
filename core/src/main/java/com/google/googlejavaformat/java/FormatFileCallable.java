@@ -51,11 +51,14 @@ public class FormatFileCallable implements Callable<String> {
     }
 
     if (parameters.fixImportsOnly()) {
-      return RemoveUnusedImports.removeUnusedImports(
-          inputString,
-          parameters.removeJavadocOnlyImports()
-              ? JavadocOnlyImports.REMOVE
-              : JavadocOnlyImports.KEEP);
+      inputString =
+          RemoveUnusedImports.removeUnusedImports(
+              inputString,
+              parameters.removeJavadocOnlyImports()
+                  ? JavadocOnlyImports.REMOVE
+                  : JavadocOnlyImports.KEEP);
+      inputString = ImportOrderer.reorderImports(inputString);
+      return inputString;
     }
 
     return new Formatter(options)
