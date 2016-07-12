@@ -21,13 +21,11 @@ import static com.google.googlejavaformat.java.RemoveUnusedImports.removeUnusedI
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-
+import java.util.Collection;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
-import java.util.Collection;
 
 /** {@link RemoveUnusedImports}Test */
 @RunWith(Parameterized.class)
@@ -128,6 +126,64 @@ public class RemoveUnusedImportsTest {
           "class Test {",
           "  B b;",
           "}",
+        },
+      },
+      {
+        {
+          "import a.A;",
+          "import b.B;",
+          "import c.C;",
+          "import d.D;",
+          "import e.E;",
+          "import f.F;",
+          "/**",
+          " * {@link A} {@linkplain B} {@see c.C} {@value D#FOO}",
+          " *",
+          " * @exception E",
+          " * @throws F",
+          " */",
+          "class Test {",
+          "}",
+        },
+        {
+          "import a.A;",
+          "import b.B;",
+          "import d.D;",
+          "import e.E;",
+          "import f.F;",
+          "/**",
+          " * {@link A} {@linkplain B} {@see c.C} {@value D#FOO}",
+          " *",
+          " * @exception E",
+          " * @throws F",
+          " */",
+          "class Test {",
+          "}",
+        },
+        {
+          "/**",
+          " * {@link a.A} {@linkplain b.B} {@see c.C} {@value d.D#FOO}",
+          " *",
+          " * @exception e.E",
+          " * @throws f.F",
+          " */",
+          "class Test {}",
+        }
+      },
+      {
+        {
+          "import java.util.Map;",
+          "/** {@link Map.Entry#containsKey(Object)} } */",
+          "class Test {}",
+        },
+        {
+          "import java.util.Map;",
+          "/** {@link Map.Entry#containsKey(Object)} } */",
+          "class Test {}",
+        },
+        {
+          "/** {@link java.util.Map.Entry#containsKey(Object)} } */", //
+          "class Test {}",
         }
       },
     };

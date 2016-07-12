@@ -25,7 +25,10 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
-
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -36,14 +39,10 @@ import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.MemberRef;
 import org.eclipse.jdt.core.dom.MethodRef;
+import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TagElement;
-
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Removes unused imports from a source file. Imports that are only used in javadoc are also
@@ -98,9 +97,11 @@ public class RemoveUnusedImports {
         return;
       }
       switch (node.getTagName()) {
+        case "@exception":
         case "@link":
-        case "@see":
+        case "@linkplain":
         case "@throws":
+        case "@value":
           recordReference(Iterables.<ASTNode>getFirst(node.fragments(), null));
           break;
         default:
@@ -110,7 +111,7 @@ public class RemoveUnusedImports {
 
     private void recordReference(ASTNode reference) {
       if (reference instanceof SimpleName) {
-        recordSimpleName(reference);
+        recordSimpleName((Name) reference);
       } else if (reference instanceof MemberRef) {
         recordSimpleName(((MemberRef) reference).getQualifier());
       } else if (reference instanceof MethodRef) {
@@ -118,9 +119,13 @@ public class RemoveUnusedImports {
       }
     }
 
-    private void recordSimpleName(ASTNode typeReference) {
-      if (typeReference instanceof SimpleName) {
-        usedInJavadoc.put(((SimpleName) typeReference).getIdentifier(), typeReference);
+    private void recordSimpleName(Name name) {
+      while (name.isQualifiedName()) {
+        name = ((QualifiedName) name).getQualifier();
+      }
+      String identifier = ((SimpleName) name).getIdentifier();
+      if (Character.isUpperCase(identifier.charAt(0))) {
+        usedInJavadoc.put(identifier, name);
       }
     }
 
