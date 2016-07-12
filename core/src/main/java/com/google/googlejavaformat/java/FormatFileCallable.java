@@ -40,15 +40,14 @@ public class FormatFileCallable implements Callable<String> {
   @Override
   public String call() throws FormatterException {
     String inputString = input;
-
+    inputString =
+        RemoveUnusedImports.removeUnusedImports(
+            inputString,
+            parameters.removeJavadocOnlyImports()
+                ? JavadocOnlyImports.REMOVE
+                : JavadocOnlyImports.KEEP);
+    inputString = ImportOrderer.reorderImports(inputString);
     if (parameters.fixImportsOnly()) {
-      inputString =
-          RemoveUnusedImports.removeUnusedImports(
-              inputString,
-              parameters.removeJavadocOnlyImports()
-                  ? JavadocOnlyImports.REMOVE
-                  : JavadocOnlyImports.KEEP);
-      inputString = ImportOrderer.reorderImports(inputString);
       return inputString;
     }
 

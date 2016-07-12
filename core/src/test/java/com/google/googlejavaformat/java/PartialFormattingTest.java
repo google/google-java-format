@@ -553,7 +553,6 @@ public final class PartialFormattingTest {
                 " */",
                 "",
                 "import com.google.googlejavaformat.FormatterDiagnostic;",
-                "",
                 "import java.util.List;",
                 "",
                 "/** Checked exception class for formatter errors. */",

@@ -140,6 +140,10 @@ public class RemoveUnusedImports {
   public static String removeUnusedImports(
       final String contents, JavadocOnlyImports javadocOnlyImports) {
     CompilationUnit unit = parse(contents);
+    if (unit == null) {
+      // error handling is done during formatting
+      return contents;
+    }
     UnusedImportScanner scanner = new UnusedImportScanner();
     unit.accept(scanner);
     return applyReplacements(
@@ -156,6 +160,7 @@ public class RemoveUnusedImports {
     parser.setCompilerOptions(options);
     CompilationUnit unit = (CompilationUnit) parser.createAST(null);
     if (unit.getMessages().length > 0) {
+      // error handling is done during formatting
       return null;
     }
     return unit;

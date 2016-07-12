@@ -20,7 +20,6 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
 
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -257,7 +256,6 @@ public final class FormatterTest {
         "--fix-imports-only", "com/google/googlejavaformat/java/testimports/A.imports-only");
   }
 
-  @Ignore // re-enable when import fixing is on by default
   @Test
   public void importOrderingAndFormatting() throws IOException, UsageException {
     importOrdering(null, "com/google/googlejavaformat/java/testimports/A.imports-and-formatting");
