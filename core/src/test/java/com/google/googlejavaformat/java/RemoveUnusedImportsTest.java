@@ -186,6 +186,20 @@ public class RemoveUnusedImportsTest {
           "class Test {}",
         }
       },
+      {
+        {
+          "/** {@link #containsKey(Object)} } */", //
+          "class Test {}",
+        },
+        {
+          "/** {@link #containsKey(Object)} } */", //
+          "class Test {}",
+        },
+        {
+          "/** {@link #containsKey(Object)} } */", //
+          "class Test {}",
+        }
+      },
     };
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[][] inputAndOutput : inputsOutputs) {

@@ -120,12 +120,14 @@ public class RemoveUnusedImports {
     }
 
     private void recordSimpleName(Name name) {
-      while (name.isQualifiedName()) {
+      while (name instanceof QualifiedName) {
         name = ((QualifiedName) name).getQualifier();
       }
-      String identifier = ((SimpleName) name).getIdentifier();
-      if (Character.isUpperCase(identifier.charAt(0))) {
-        usedInJavadoc.put(identifier, name);
+      if (name instanceof SimpleName) {
+        String identifier = ((SimpleName) name).getIdentifier();
+        if (Character.isUpperCase(identifier.charAt(0))) {
+          usedInJavadoc.put(identifier, name);
+        }
       }
     }
 
