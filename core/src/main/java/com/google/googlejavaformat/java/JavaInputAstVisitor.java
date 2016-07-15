@@ -510,6 +510,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.open(ZERO);
     for (int i = 0; i < dimensions; i++) {
       builder.breakOp();
+      Dimension dimension = (Dimension) node.getType().dimensions().get(i);
+      if (!dimension.annotations().isEmpty()) {
+        builder.breakToFill(" ");
+        builder.open(ZERO);
+        visitAnnotations(dimension.annotations(), BreakOrNot.NO, BreakOrNot.NO);
+        builder.breakToFill(" ");
+        builder.close();
+      }
       token("[");
       if (i < node.dimensions().size()) {
         ((Expression) node.dimensions().get(i)).accept(this);
