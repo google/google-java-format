@@ -55,7 +55,9 @@ class TheTrain {
   int z;
 
   /**
-   * This is (was) malformed javadoc. <pre>
+   * This is (was) malformed javadoc.
+   *
+   * <pre>
    * System.err.println
    * </pre>
    */

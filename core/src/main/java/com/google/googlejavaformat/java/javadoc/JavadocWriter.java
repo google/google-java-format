@@ -185,6 +185,8 @@ final class JavadocWriter {
   }
 
   void writePreOpen(Token token) {
+    requestBlankLine();
+
     writeToken(token);
   }
 

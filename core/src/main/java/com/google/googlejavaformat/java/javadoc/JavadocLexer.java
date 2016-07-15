@@ -52,8 +52,10 @@ import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.PeekingIterator;
 import com.google.googlejavaformat.java.javadoc.Token.Type;
-
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 /** Lexer for the Javadoc formatter. */
@@ -110,6 +112,7 @@ final class JavadocLexer {
     result = joinAdjacentLiteralsAndAdjacentWhitespace(result);
     result = inferParagraphTags(result);
     result = optionalizeSpacesAfterLinks(result);
+    result = deindentPreCodeBlocks(result);
     return result;
   }
 
@@ -357,6 +360,98 @@ final class JavadocLexer {
      * right without special effort on our part. The reason: Line breaks inside a <pre> section are
      * of type FORCED_NEWLINE rather than WHITESPACE.
      */
+  }
+
+  /**
+   * Adjust indentation inside `<pre>{@code` blocks.
+   *
+   * <p>Also trim leading and trailing blank lines, and move the trailing `}` to its own line.
+   */
+  private static ImmutableList<Token> deindentPreCodeBlocks(List<Token> input) {
+    ImmutableList.Builder<Token> output = ImmutableList.builder();
+    for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
+      if (tokens.peek().getType() != PRE_OPEN_TAG) {
+        output.add(tokens.next());
+        continue;
+      }
+
+      output.add(tokens.next());
+      List<Token> initialNewlines = new ArrayList<>();
+      while (tokens.hasNext() && tokens.peek().getType() == FORCED_NEWLINE) {
+        initialNewlines.add(tokens.next());
+      }
+      if (tokens.peek().getType() != LITERAL
+          || !tokens.peek().getValue().matches("[ \t]*[{]@code")) {
+        output.addAll(initialNewlines);
+        output.add(tokens.next());
+        continue;
+      }
+
+      deindentPreCodeBlock(output, tokens);
+    }
+    return output.build();
+  }
+
+  private static void deindentPreCodeBlock(
+      ImmutableList.Builder<Token> output, PeekingIterator<Token> tokens) {
+    Deque<Token> saved = new ArrayDeque<>();
+    output.add(new Token(LITERAL, tokens.next().getValue().trim()));
+    while (tokens.hasNext() && tokens.peek().getType() != PRE_CLOSE_TAG) {
+      Token token = tokens.next();
+      saved.addLast(token);
+    }
+    while (!saved.isEmpty() && saved.peekFirst().getType() == FORCED_NEWLINE) {
+      saved.removeFirst();
+    }
+    while (!saved.isEmpty() && saved.peekLast().getType() == FORCED_NEWLINE) {
+      saved.removeLast();
+    }
+    if (saved.isEmpty()) {
+      return;
+    }
+
+    // move the trailing `}` to its own line
+    Token last = saved.peekLast();
+    boolean trailingBrace = false;
+    if (last.getType() == LITERAL && last.getValue().endsWith("}")) {
+      saved.removeLast();
+      if (last.length() > 1) {
+        saved.addLast(
+            new Token(LITERAL, last.getValue().substring(0, last.getValue().length() - 1)));
+        saved.addLast(new Token(FORCED_NEWLINE, null));
+      }
+      trailingBrace = true;
+    }
+
+    int trim = -1;
+    for (Token token : saved) {
+      if (token.getType() == LITERAL) {
+        int idx = CharMatcher.isNot(' ').indexIn(token.getValue());
+        if (idx != -1 && (trim == -1 || idx < trim)) {
+          trim = idx;
+        }
+      }
+    }
+
+    output.add(new Token(FORCED_NEWLINE, "\n"));
+    for (Token token : saved) {
+      if (token.getType() == LITERAL) {
+        output.add(
+            new Token(
+                LITERAL,
+                trim > 0 && token.length() > trim
+                    ? token.getValue().substring(trim)
+                    : token.getValue()));
+      } else {
+        output.add(token);
+      }
+    }
+
+    if (trailingBrace) {
+      output.add(new Token(LITERAL, "}"));
+    } else {
+      output.add(new Token(FORCED_NEWLINE, "\n"));
+    }
   }
 
   private static final CharMatcher NEWLINE = CharMatcher.is('\n');

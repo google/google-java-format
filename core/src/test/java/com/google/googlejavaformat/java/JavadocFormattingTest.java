@@ -19,7 +19,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteStreams;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -270,6 +269,8 @@ public final class JavadocFormattingTest {
      */
     String[] input = {
       "/**", //
+      " * Example:",
+      " *",
       " *  <pre>",
       "*    1 2<br>    3   ",
       " *4 5 6",
@@ -280,6 +281,8 @@ public final class JavadocFormattingTest {
     };
     String[] expected = {
       "/**", //
+      " * Example:",
+      " *",
       " * <pre>",
       " *    1 2<br>    3",
       " * 4 5 6",
@@ -306,9 +309,11 @@ public final class JavadocFormattingTest {
     };
     String[] expected = {
       "/**",
-      " * Example: <pre>   {@code",
+      " * Example:",
       " *",
-      " *   Abc.def(foo, 7, true); // blah}</pre>",
+      " * <pre>{@code",
+      " * Abc.def(foo, 7, true); // blah",
+      " * }</pre>",
       " */",
       "class Test {}",
     };
@@ -319,6 +324,8 @@ public final class JavadocFormattingTest {
   public void preNotWrapped() {
     String[] input = {
       "/**",
+      " * Example:",
+      " *",
       " * <pre>",
       " * 456789012 456789012 456789012 456789012 456789012 456789012 456789012 456789012 "
           + "456789012 45678901",
@@ -328,6 +335,8 @@ public final class JavadocFormattingTest {
     };
     String[] expected = {
       "/**",
+      " * Example:",
+      " *",
       " * <pre>",
       " * 456789012 456789012 456789012 456789012 456789012 456789012 456789012 456789012 "
           + "456789012 45678901",
@@ -342,6 +351,8 @@ public final class JavadocFormattingTest {
   public void javaCodeInPre() {
     String[] input = {
       "/**",
+      " * Example:",
+      " *",
       " *<pre>",
       " * aaaaa    |   a  |   +",
       " * \"bbbb    |   b  |  \"",
@@ -351,6 +362,8 @@ public final class JavadocFormattingTest {
     };
     String[] expected = {
       "/**",
+      " * Example:",
+      " *",
       " * <pre>",
       " * aaaaa    |   a  |   +",
       " * \"bbbb    |   b  |  \"",
@@ -1043,7 +1056,9 @@ public final class JavadocFormattingTest {
       " *",
       " * <p>foo",
       " *",
-      " * <p>bar <pre>",
+      " * <p>bar",
+      " *",
+      " * <pre>",
       " *",
       " * baz",
       " *",
