@@ -1554,7 +1554,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   public boolean visit(PrimitiveType node) {
     sync(node);
     beforeAnnotatableType(node);
-    token(node.toString());
+    token(node.getPrimitiveTypeCode().toString());
     return false;
   }
 
