@@ -53,9 +53,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.PeekingIterator;
 import com.google.googlejavaformat.java.javadoc.Token.Type;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 /** Lexer for the Javadoc formatter. */
@@ -67,8 +67,18 @@ final class JavadocLexer {
      * original form). This would mean mean everything from an encoded ∕✱✱ to an encoded <pre> tag,
      * so we'll probably never bother.
      */
-    return new JavadocLexer(new CharStream(stripJavadocBeginAndEnd(input))).generateTokens();
+    input = stripJavadocBeginAndEnd(input);
+    input = normalizeLineEndings(input);
+    return new JavadocLexer(new CharStream(input)).generateTokens();
   }
+
+  /** The lexer crashes on windows line endings, so for now just normalize to `\n`. */
+  // TODO(cushon): use the platform line separator for output
+  private static String normalizeLineEndings(String input) {
+    return NON_UNIX_LINE_ENDING.matcher(input).replaceAll("\n");
+  }
+
+  private static final Pattern NON_UNIX_LINE_ENDING = Pattern.compile("\r\n?");
 
   private static String stripJavadocBeginAndEnd(String input) {
     /*

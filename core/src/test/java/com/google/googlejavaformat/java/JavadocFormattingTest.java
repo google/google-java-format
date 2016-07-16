@@ -19,6 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteStreams;
+import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -1268,6 +1269,17 @@ public final class JavadocFormattingTest {
       assertThat(actual).isEqualTo(Joiner.on('\n').join(expected) + "\n");
     } catch (FormatterException e) {
       throw new AssertionError(e);
+    }
+  }
+
+  @Test
+  public void windowsLineSeparator() throws FormatterException {
+    String[] input = {
+      "/**", " * hello", " *", " * <p>world", " */", "class Test {}",
+    };
+    for (String separator : Arrays.asList("\r", "\r\n")) {
+      String actual = formatter.formatSource(Joiner.on(separator).join(input));
+      assertThat(actual).isEqualTo(Joiner.on('\n').join(input) + "\n");
     }
   }
 }
