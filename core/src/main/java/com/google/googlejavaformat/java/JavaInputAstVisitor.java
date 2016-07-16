@@ -1386,11 +1386,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(NameQualifiedType node) {
     sync(node);
-    beforeAnnotatableType(node);
     builder.open(plusFour);
     node.getQualifier().accept(this);
-    builder.breakOp();
     token(".");
+    builder.breakOp();
+    beforeAnnotatableType(node);
     visit(node.getName());
     builder.close();
     return false;
