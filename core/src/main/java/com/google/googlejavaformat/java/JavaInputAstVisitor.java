@@ -1565,10 +1565,10 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     sync(node);
     builder.open(plusFour);
     // Collapse chains of "." operators.
-    ArrayDeque<SimpleName> stack = new ArrayDeque<>();
+    ArrayDeque<QualifiedType> stack = new ArrayDeque<>();
     Type qualifier;
     while (true) {
-      stack.add(node.getName());
+      stack.addFirst(node);
       qualifier = node.getQualifier();
       if (qualifier.getNodeType() != ASTNode.QUALIFIED_TYPE) {
         break;
@@ -1579,7 +1579,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     do {
       builder.breakOp();
       token(".");
-      visit(stack.removeLast());
+      QualifiedType name = stack.removeFirst();
+      visitAnnotations(name.annotations(), BreakOrNot.NO, BreakOrNot.YES);
+      visit(name.getName());
     } while (!stack.isEmpty());
     builder.close();
     return false;
