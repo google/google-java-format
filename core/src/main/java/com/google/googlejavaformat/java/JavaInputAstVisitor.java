@@ -14,12 +14,16 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.collect.Iterables.getLast;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
-import com.google.common.collect.HashMultimap;
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.PeekingIterator;
 import com.google.googlejavaformat.CloseOp;
 import com.google.googlejavaformat.Doc;
 import com.google.googlejavaformat.Doc.FillMode;
@@ -30,7 +34,16 @@ import com.google.googlejavaformat.OpenOp;
 import com.google.googlejavaformat.OpsBuilder;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output.BreakTag;
-
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -129,17 +142,6 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
 import org.eclipse.jdt.core.dom.WildcardType;
-
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * An extension of {@link OpsBuilder}, implementing a visit pattern for Eclipse AST nodes to build a
@@ -2931,7 +2933,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.open(plusIndent);
     token("(");
     if (!arguments.isEmpty()) {
-      if (argumentsArePaired(arguments)) {
+      if (argumentsAreTabular(arguments) == 2) {
         builder.forcedBreak();
         builder.open(ZERO);
         boolean first = true;
@@ -3048,36 +3050,63 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return stringLiteral[0] && formatString[0];
   }
 
-  private boolean argumentsArePaired(List<Expression> arguments) {
-    int n = arguments.size();
-    if (n % 2 != 0 || n < 4) {
-      return false;
+  /** Returns the number of columns if the arguments arg laid out in a grid, or else {@code -1}. */
+  private int argumentsAreTabular(List<Expression> arguments) {
+    if (arguments.isEmpty()) {
+      return -1;
     }
-    List<Expression> firsts = new ArrayList<>();
-    List<Expression> seconds = new ArrayList<>();
-    for (int i = 0; i < n; i++) {
-      (i % 2 == 0 ? firsts : seconds).add(arguments.get(i));
+    List<List<Expression>> rows = new ArrayList<>();
+    PeekingIterator<Expression> it = Iterators.peekingIterator(arguments.iterator());
+    int start0 = actualColumn(it.peek());
+    {
+      List<Expression> row = new ArrayList<>();
+      row.add(it.next());
+      while (it.hasNext() && actualColumn(it.peek()) > start0) {
+        row.add(it.next());
+      }
+      if (!it.hasNext() || row.size() == 1) {
+        return -1;
+      }
+      rows.add(row);
     }
-    Integer firstColumn0 = actualColumn(firsts.get(0));
-    if (firstColumn0 == null) {
-      return false;
+    while (it.hasNext()) {
+      List<Expression> row = new ArrayList<>();
+      int start = actualColumn(it.peek());
+      if (start != start0) {
+        return -1;
+      }
+      row.add(it.next());
+      while (it.hasNext() && actualColumn(it.peek()) > start0) {
+        row.add(it.next());
+      }
+      rows.add(row);
     }
-    for (int i = 1; i < n / 2; i++) {
-      Integer firstColumnI = actualColumn(firsts.get(i));
-      if (!firstColumn0.equals(firstColumnI)) {
-        return false;
+    int size0 = rows.get(0).size();
+    if (!expressionsAreParallel(rows, 0, rows.size())) {
+      return -1;
+    }
+    for (int i = 1; i < size0; i++) {
+      if (!expressionsAreParallel(rows, i, rows.size() / 2 + 1)) {
+        return -1;
       }
     }
-    for (int i = 0; i < n / 2; i++) {
-      Integer secondColumnI = actualColumn(seconds.get(i));
-      if (secondColumnI == null) {
-        return false;
+    // if there are only two rows, they must be the same length
+    if (rows.size() == 2) {
+      if (size0 == rows.get(1).size()) {
+        return size0;
       }
-      if (!(firstColumn0 < secondColumnI)) {
-        return false;
+      return -1;
+    }
+    // allow a ragged trailing row for >= 3 columns
+    for (int i = 1; i < rows.size() - 1; i++) {
+      if (size0 != rows.get(i).size()) {
+        return -1;
       }
     }
-    return expressionsAreParallel(firsts, n / 2) && expressionsAreParallel(seconds, n / 4 + 1);
+    if (size0 < getLast(rows).size()) {
+      return -1;
+    }
+    return size0;
   }
 
   private Integer actualColumn(Expression expression) {
@@ -3085,13 +3114,18 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return positionToColumnMap.get(builder.actualStartColumn(expression.getStartPosition()));
   }
 
-  private static boolean expressionsAreParallel(List<Expression> expressions, int atLeastM) {
-    Multimap<Integer, Expression> map = HashMultimap.create();
-    for (Expression expression : expressions) {
-      map.put(expression.getNodeType(), expression);
+  /** Returns true if {@code atLeastM} of the expressions in the given column are the same kind. */
+  private static boolean expressionsAreParallel(
+      List<List<Expression>> rows, int column, int atLeastM) {
+    Multiset<Integer> nodeTypes = HashMultiset.create();
+    for (List<Expression> row : rows) {
+      if (column >= row.size()) {
+        continue;
+      }
+      nodeTypes.add(row.get(column).getNodeType());
     }
-    for (Integer nodeType : map.keys()) {
-      if (map.get(nodeType).size() >= atLeastM) {
+    for (Multiset.Entry<Integer> nodeType : nodeTypes.entrySet()) {
+      if (nodeType.getCount() >= atLeastM) {
         return true;
       }
     }
