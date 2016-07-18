@@ -200,6 +200,26 @@ public class RemoveUnusedImportsTest {
           "class Test {}",
         }
       },
+      {
+        {
+          "import java.util.*;",
+          "class Test {",
+          "  List<String> xs;",
+          "}",
+        },
+        {
+          "import java.util.*;",
+          "class Test {",
+          "  List<String> xs;",
+          "}",
+        },
+        {
+          "import java.util.*;",
+          "class Test {",
+          "  List<String> xs;",
+          "}",
+        }
+      },
     };
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[][] inputAndOutput : inputsOutputs) {

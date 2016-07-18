@@ -186,6 +186,9 @@ public class RemoveUnusedImports {
           importTree.getName() instanceof QualifiedName
               ? ((QualifiedName) importTree.getName()).getName().toString()
               : importTree.getName().toString();
+      if (importTree.isOnDemand()) {
+        continue;
+      }
       if (usedNames.contains(simpleName)) {
         continue;
       }
