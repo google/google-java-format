@@ -126,8 +126,9 @@ class Test {
     in = edu.oswego.cs.dl.util.concurrent.F.class,
     enable = false,
     methods = {
-      "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo", "foo",
-      "foo", "foo",
+      "foo", "foo", "foo", "foo", "foo",
+      "foo", "foo", "foo", "foo", "foo",
+      "foo", "foo", "foo", "foo", "foo",
     }
   ),
   @Mirror(

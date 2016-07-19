@@ -539,9 +539,38 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   @Override
   public boolean visit(ArrayInitializer node) {
     sync(node);
-    if (node.expressions().isEmpty()) {
+    List<Expression> expressions = node.expressions();
+    int cols;
+    if (expressions.isEmpty()) {
       tokenBreakTrailingComment("{", plusTwo);
       builder.blankLineWanted(BlankLineWanted.NO);
+      token("}", plusTwo);
+    } else if ((cols = argumentsAreTabular(expressions)) != -1) {
+      builder.open(plusTwo);
+      token("{");
+      builder.forcedBreak();
+      boolean first = true;
+      for (Iterable<Expression> row : Iterables.partition(expressions, cols)) {
+        if (!first) {
+          builder.forcedBreak();
+        }
+        builder.open(
+            row.iterator().next().getNodeType() == ASTNode.ARRAY_INITIALIZER ? ZERO : plusFour);
+        boolean firstInRow = true;
+        for (Expression item : row) {
+          if (!firstInRow) {
+            token(",");
+            builder.breakToFill(" ");
+          }
+          item.accept(this);
+          firstInRow = false;
+        }
+        builder.guessToken(",");
+        builder.close();
+        first = false;
+      }
+      builder.breakOp(minusTwo);
+      builder.close();
       token("}", plusTwo);
     } else {
       // Special-case the formatting of array initializers inside annotations
@@ -549,12 +578,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       boolean inMemberValuePair =
           node.getParent().getNodeType() == ASTNode.MEMBER_VALUE_PAIR
               || node.getParent().getNodeType() == ASTNode.SINGLE_MEMBER_ANNOTATION;
-      boolean shortItems = hasOnlyShortItems(node.expressions());
+      boolean shortItems = hasOnlyShortItems(expressions);
       boolean allowFilledElementsOnOwnLine = shortItems || !inMemberValuePair;
 
       builder.open(plusTwo);
       tokenBreakTrailingComment("{", plusTwo);
-      builder.blankLineWanted(BlankLineWanted.NO);
       boolean hasTrailingComma = hasTrailingToken(builder.getInput(), node.expressions(), ",");
       builder.breakOp(hasTrailingComma ? FillMode.FORCED : FillMode.UNIFIED, "", ZERO);
       if (allowFilledElementsOnOwnLine) {
@@ -562,7 +590,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       }
       boolean first = true;
       FillMode fillMode = shortItems ? FillMode.INDEPENDENT : FillMode.UNIFIED;
-      for (Expression expression : (List<Expression>) node.expressions()) {
+      for (Expression expression : expressions) {
         if (!first) {
           token(",");
           builder.breakOp(fillMode, " ", ZERO);
@@ -575,7 +603,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.close();
       }
       builder.breakOp(minusTwo);
-      builder.blankLineWanted(BlankLineWanted.NO);
       builder.close();
       token("}", plusTwo);
     }
@@ -3481,11 +3508,12 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         input.getPositionTokenMap().ceilingEntry(position);
     return ceilingEntry == null
         ? Optional.<JavaInput.Token>absent()
-        : Optional.of(ceilingEntry.getValue());
+        : Optional.<Input.Token>of(ceilingEntry.getValue());
   }
 
   /**
    * Does this list of {@link ASTNode}s ends with the specified token?
+   *
    * @param input the {@link Input}
    * @param nodes list of {@link ASTNode}s
    * @return whether the list has an extra trailing comma
