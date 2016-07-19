@@ -51,6 +51,9 @@ public final class UsageException extends Exception {
     "    --version, -version, -v",
     "Print the version.",
     "    Default: false",
+    "Fix import order and remove any unused imports, but do no other formatting.",
+    "    Default: false",
+    "    --fix-imports-only",
   };
 
   private static final String[] ADDITIONAL_USAGE = {

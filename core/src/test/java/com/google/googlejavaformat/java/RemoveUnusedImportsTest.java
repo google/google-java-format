@@ -202,19 +202,19 @@ public class RemoveUnusedImportsTest {
       },
       {
         {
-          "import java.util.*;",
+          "import java.util.*;", //
           "class Test {",
           "  List<String> xs;",
           "}",
         },
         {
-          "import java.util.*;",
+          "import java.util.*;", //
           "class Test {",
           "  List<String> xs;",
           "}",
         },
         {
-          "import java.util.*;",
+          "import java.util.*;", //
           "class Test {",
           "  List<String> xs;",
           "}",
