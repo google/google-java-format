@@ -54,6 +54,8 @@ final class Token {
     BLOCKQUOTE_CLOSE_TAG,
     PRE_OPEN_TAG,
     PRE_CLOSE_TAG,
+    CODE_OPEN_TAG,
+    CODE_CLOSE_TAG,
     TABLE_OPEN_TAG,
     TABLE_CLOSE_TAG,
     /** {@code <!-- MOE：begin_intracomment_strip -->} */

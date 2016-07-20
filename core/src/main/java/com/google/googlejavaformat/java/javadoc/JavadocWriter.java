@@ -196,6 +196,14 @@ final class JavadocWriter {
     requestBlankLine();
   }
 
+  void writeCodeOpen(Token token) {
+    writeToken(token);
+  }
+
+  void writeCodeClose(Token token) {
+    writeToken(token);
+  }
+
   void writeTableOpen(Token token) {
     requestBlankLine();
 

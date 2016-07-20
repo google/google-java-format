@@ -23,7 +23,6 @@ import static java.util.regex.Pattern.compile;
 import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.google.googlejavaformat.java.javadoc.JavadocLexer.LexException;
-
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -92,6 +91,12 @@ public final class JavadocFormatter {
           break;
         case PRE_CLOSE_TAG:
           output.writePreClose(token);
+          break;
+        case CODE_OPEN_TAG:
+          output.writeCodeOpen(token);
+          break;
+        case CODE_CLOSE_TAG:
+          output.writeCodeClose(token);
           break;
         case TABLE_OPEN_TAG:
           output.writeTableOpen(token);

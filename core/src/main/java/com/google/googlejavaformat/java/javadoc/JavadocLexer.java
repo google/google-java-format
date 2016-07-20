@@ -22,6 +22,8 @@ import static com.google.googlejavaformat.java.javadoc.Token.Type.BEGIN_JAVADOC;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.BLOCKQUOTE_CLOSE_TAG;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.BLOCKQUOTE_OPEN_TAG;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.BR_TAG;
+import static com.google.googlejavaformat.java.javadoc.Token.Type.CODE_CLOSE_TAG;
+import static com.google.googlejavaformat.java.javadoc.Token.Type.CODE_OPEN_TAG;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.END_JAVADOC;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.FOOTER_JAVADOC_TAG_START;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.FORCED_NEWLINE;
@@ -93,6 +95,7 @@ final class JavadocLexer {
   private final CharStream input;
   private final NestingCounter braceDepth = new NestingCounter();
   private final NestingCounter preDepth = new NestingCounter();
+  private final NestingCounter codeDepth = new NestingCounter();
   private final NestingCounter tableDepth = new NestingCounter();
   private boolean somethingSinceNewline;
 
@@ -111,9 +114,7 @@ final class JavadocLexer {
       tokens.add(token);
     }
 
-    if (braceDepth.isPositive() || preDepth.isPositive() || tableDepth.isPositive()) {
-      throw new LexException();
-    }
+    checkMatchingTags();
 
     token = new Token(END_JAVADOC, "*/");
     tokens.add(token);
@@ -133,7 +134,8 @@ final class JavadocLexer {
   }
 
   private Type consumeToken() throws LexException {
-    boolean preserveExistingFormatting = preDepth.isPositive() || tableDepth.isPositive();
+    boolean preserveExistingFormatting =
+        preDepth.isPositive() || tableDepth.isPositive() || codeDepth.isPositive();
 
     if (input.tryConsumeRegex(NEWLINE_PATTERN)) {
       somethingSinceNewline = false;
@@ -151,9 +153,7 @@ final class JavadocLexer {
      * https://github.com/google/google-java-format/issues/7#issuecomment-197383926
      */
     if (!somethingSinceNewline && input.tryConsumeRegex(FOOTER_TAG_PATTERN)) {
-      if (braceDepth.isPositive() || preDepth.isPositive() || tableDepth.isPositive()) {
-        throw new LexException();
-      }
+      checkMatchingTags();
       somethingSinceNewline = true;
       return FOOTER_JAVADOC_TAG_START;
     }
@@ -182,6 +182,12 @@ final class JavadocLexer {
     } else if (input.tryConsumeRegex(PRE_CLOSE_PATTERN)) {
       preDepth.decrementIfPositive();
       return PRE_CLOSE_TAG;
+    } else if (input.tryConsumeRegex(CODE_OPEN_PATTERN)) {
+      codeDepth.increment();
+      return CODE_OPEN_TAG;
+    } else if (input.tryConsumeRegex(CODE_CLOSE_PATTERN)) {
+      codeDepth.decrementIfPositive();
+      return CODE_CLOSE_TAG;
     } else if (input.tryConsumeRegex(TABLE_OPEN_PATTERN)) {
       tableDepth.increment();
       return TABLE_OPEN_TAG;
@@ -227,6 +233,15 @@ final class JavadocLexer {
       return LITERAL;
     }
     throw new AssertionError();
+  }
+
+  private void checkMatchingTags() throws LexException {
+    if (braceDepth.isPositive()
+        || preDepth.isPositive()
+        || tableDepth.isPositive()
+        || codeDepth.isPositive()) {
+      throw new LexException();
+    }
   }
 
   /**
@@ -478,8 +493,11 @@ final class JavadocLexer {
    * stripping it now: It otherwise might confuse our line-length count, which we use for wrapping.
    */
   private static final Pattern NEWLINE_PATTERN = compile("^[ \t]*\n[ \t]*[*]?[ \t]?");
+
   // We ensure elsewhere that we match this only at the beginning of a line.
-  private static final Pattern FOOTER_TAG_PATTERN = compile("^@\\w*");
+  // Only match tags that start with a lowercase letter, to avoid false matches on unescaped
+  // annotations inside code blocks.
+  private static final Pattern FOOTER_TAG_PATTERN = compile("^@[a-z]\\w*");
   private static final Pattern MOE_BEGIN_STRIP_COMMENT_PATTERN =
       compile("^<!--\\s*MOE:begin_intracomment_strip\\s*-->");
   private static final Pattern MOE_END_STRIP_COMMENT_PATTERN =
@@ -487,6 +505,8 @@ final class JavadocLexer {
   private static final Pattern HTML_COMMENT_PATTERN = fullCommentPattern();
   private static final Pattern PRE_OPEN_PATTERN = openTagPattern("pre");
   private static final Pattern PRE_CLOSE_PATTERN = closeTagPattern("pre");
+  private static final Pattern CODE_OPEN_PATTERN = openTagPattern("code");
+  private static final Pattern CODE_CLOSE_PATTERN = closeTagPattern("code");
   private static final Pattern TABLE_OPEN_PATTERN = openTagPattern("table");
   private static final Pattern TABLE_CLOSE_PATTERN = closeTagPattern("table");
   private static final Pattern LIST_OPEN_PATTERN = openTagPattern("ul|ol|dl");
