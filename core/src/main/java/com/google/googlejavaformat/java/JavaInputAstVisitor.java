@@ -2960,7 +2960,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.open(plusIndent);
     token("(");
     if (!arguments.isEmpty()) {
-      if (argumentsAreTabular(arguments) == 2) {
+      if (arguments.size() % 2 == 0 && argumentsAreTabular(arguments) == 2) {
         builder.forcedBreak();
         builder.open(ZERO);
         boolean first = true;
