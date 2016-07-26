@@ -135,6 +135,7 @@ final class JavadocWriter {
     }
     writeToken(token);
 
+    // TODO(cushon): only if continuingListItemCount == 0?
     requestBlankLine();
   }
 
@@ -143,7 +144,9 @@ final class JavadocWriter {
 
     if (continuingListItemOfInnermostList) {
       continuingListItemOfInnermostList = false;
-      continuingListItemCount--;
+      if (continuingListItemCount > 0) {
+        continuingListItemCount--;
+      }
     }
     writeToken(token);
     continuingListItemOfInnermostList = true;
