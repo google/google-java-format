@@ -949,14 +949,15 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       }
       builder.close();
       builder.close();
-      builder.open(ZERO);
-      if (node.bodyDeclarations().isEmpty()) {
-        builder.guessToken(";");
-      } else {
+      if (builder.peekToken().equals(Optional.of(";"))) {
+        builder.open(plusTwo);
         token(";");
         builder.forcedBreak();
-        addBodyDeclarations(node.bodyDeclarations(), BracesOrNot.NO, FirstDeclarationsOrNot.NO);
+        dropEmptyDeclarations();
+        builder.close();
       }
+      builder.open(ZERO);
+      addBodyDeclarations(node.bodyDeclarations(), BracesOrNot.NO, FirstDeclarationsOrNot.NO);
       builder.forcedBreak();
       builder.blankLineWanted(BlankLineWanted.NO);
       token("}", plusTwo);
