@@ -543,7 +543,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     int cols;
     if (expressions.isEmpty()) {
       tokenBreakTrailingComment("{", plusTwo);
-      builder.blankLineWanted(BlankLineWanted.NO);
+      if (builder.peekToken().equals(Optional.of(","))) {
+        token(",");
+      }
       token("}", plusTwo);
     } else if ((cols = argumentsAreTabular(expressions)) != -1) {
       builder.open(plusTwo);

@@ -299,4 +299,10 @@ public final class FormatterTest {
     assertThat(new Formatter().formatSource("/*\n * my comment */"))
         .isEqualTo("/*\n * my comment */\n");
   }
+
+  @Test
+  public void testEmptyArray() throws Exception {
+    assertThat(new Formatter().formatSource("class T { int x[] = {,}; }"))
+        .isEqualTo("class T {\n  int x[] = {,};\n}\n");
+  }
 }
