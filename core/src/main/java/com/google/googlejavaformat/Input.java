@@ -17,8 +17,7 @@ package com.google.googlejavaformat;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
-import java.util.NavigableMap;
+import com.google.common.collect.ImmutableRangeMap;
 
 /**
  * An input to the formatter.
@@ -48,17 +47,14 @@ public abstract class Input extends InputOutput {
      */
     int getColumn();
 
-    /**
-     * Return the {@code Tok}'s text.
-     * @return its text
-     */
+    /** The {@code Tok}'s text. */
     String getText();
 
-    /**
-     * Return the {@code Tok}'s original text (before processing Unicode escapes).
-     * @return its original text
-     */
+    /** The {@code Tok}'s original text (before processing escapes). */
     String getOriginalText();
+
+    /** The length of the {@code Tok}'s original text. */
+    int length();
 
     /** Is the {@code Tok} a newline? */
     boolean isNewline();
@@ -105,12 +101,8 @@ public abstract class Input extends InputOutput {
    */
   public abstract ImmutableList<? extends Token> getTokens();
 
-  /**
-   * Get the navigable map from position to {@link Token}. Used to look for tokens following a given
-   * one.
-   * @return the navigable map from position to {@link Token}
-   */
-  public abstract NavigableMap<Integer, ? extends Token> getPositionTokenMap();
+  /** A map from [start, end] position ranges to {@link Token}s. */
+  public abstract ImmutableRangeMap<Integer, ? extends Token> getPositionTokenMap();
 
   public abstract ImmutableMap<Integer, Integer> getPositionToColumnMap();
 

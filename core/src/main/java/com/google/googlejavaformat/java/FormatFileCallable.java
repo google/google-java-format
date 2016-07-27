@@ -18,7 +18,6 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.java.RemoveUnusedImports.JavadocOnlyImports;
-
 import java.util.concurrent.Callable;
 
 /**
@@ -66,10 +65,13 @@ public class FormatFileCallable implements Callable<String> {
     characterRanges.addAll(Formatter.lineRangesToCharRanges(input, parameters.lines()));
 
     for (int i = 0; i < parameters.offsets().size(); i++) {
+      Integer length = parameters.lengths().get(i);
+      if (length == 0) {
+        // 0 stands for "format the line under the cursor"
+        length = 1;
+      }
       characterRanges.add(
-          Range.closedOpen(
-              parameters.offsets().get(i),
-              parameters.offsets().get(i) + parameters.lengths().get(i)));
+          Range.closedOpen(parameters.offsets().get(i), parameters.offsets().get(i) + length));
     }
 
     return characterRanges;

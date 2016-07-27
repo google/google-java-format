@@ -19,13 +19,6 @@ import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
-
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +28,11 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * Integration test for google-java-format.
@@ -304,5 +302,11 @@ public final class FormatterTest {
   public void testEmptyArray() throws Exception {
     assertThat(new Formatter().formatSource("class T { int x[] = {,}; }"))
         .isEqualTo("class T {\n  int x[] = {,};\n}\n");
+  }
+
+  @Test
+  public void stringEscapeLength() throws Exception {
+    assertThat(new Formatter().formatSource("class T {{ f(\"\\\"\"); }}"))
+        .isEqualTo("class T {\n  {\n    f(\"\\\"\");\n  }\n}\n");
   }
 }

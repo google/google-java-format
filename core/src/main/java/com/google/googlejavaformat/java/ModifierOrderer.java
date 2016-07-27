@@ -121,7 +121,7 @@ public class ModifierOrderer {
         }
         mods.add(mod);
         modifierTokens.add(token);
-        end = token.getTok().getPosition() + token.getTok().getOriginalText().length();
+        end = token.getTok().getPosition() + token.getTok().length();
       }
 
       if (!Ordering.natural().isOrdered(mods)) {

@@ -462,7 +462,7 @@ public abstract class Doc {
 
     @Override
     float computeWidth() {
-      return token.getTok().getOriginalText().length();
+      return token.getTok().length();
     }
 
     @Override
@@ -711,12 +711,10 @@ public abstract class Doc {
         if (idx > 0) {
           return idx;
         } else {
-          return tok.getOriginalText().length();
+          return tok.length();
         }
       }
-      return tok.getOriginalText().contains("\n")
-          ? Float.POSITIVE_INFINITY
-          : (float) tok.getOriginalText().length();
+      return tok.getOriginalText().contains("\n") ? Float.POSITIVE_INFINITY : (float) tok.length();
     }
 
     @Override

@@ -3494,10 +3494,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   /** Does this {@link BodyDeclaration} have JavaDoc preceding it? */
   private boolean hasJavaDoc(BodyDeclaration bodyDeclaration) {
     int position = bodyDeclaration.getStartPosition();
-    Map.Entry<Integer, ? extends Input.Token> entry =
-        builder.getInput().getPositionTokenMap().ceilingEntry(position);
-    if (entry != null) {
-      for (Input.Tok tok : entry.getValue().getToksBefore()) {
+    Input.Token token = builder.getInput().getPositionTokenMap().get(position);
+    if (token != null) {
+      for (Input.Tok tok : token.getToksBefore()) {
         if (tok.getText().startsWith("/**")) {
           return true;
         }
@@ -3507,11 +3506,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   }
 
   private static Optional<? extends Input.Token> getNextToken(Input input, int position) {
-    Map.Entry<Integer, ? extends Input.Token> ceilingEntry =
-        input.getPositionTokenMap().ceilingEntry(position);
-    return ceilingEntry == null
-        ? Optional.<JavaInput.Token>absent()
-        : Optional.<Input.Token>of(ceilingEntry.getValue());
+    return Optional.fromNullable(input.getPositionTokenMap().get(position));
   }
 
   /**

@@ -24,7 +24,6 @@ import com.google.googlejavaformat.Indent.Const;
 import com.google.googlejavaformat.Input.Tok;
 import com.google.googlejavaformat.Input.Token;
 import com.google.googlejavaformat.Output.BreakTag;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,18 +35,18 @@ public final class OpsBuilder {
 
   /** @return the actual size of the AST node at position, including comments. */
   public int actualSize(int position, int length) {
-    Token startToken = input.getPositionTokenMap().floorEntry(position).getValue();
+    Token startToken = input.getPositionTokenMap().get(position);
     int start = startToken.getTok().getPosition();
     for (Tok tok : startToken.getToksBefore()) {
       if (tok.isComment()) {
         start = Math.min(start, tok.getPosition());
       }
     }
-    Token endToken = input.getPositionTokenMap().lowerEntry(position + length).getValue();
-    int end = endToken.getTok().getPosition() + endToken.getTok().getText().length();
+    Token endToken = input.getPositionTokenMap().get(position + length - 1);
+    int end = endToken.getTok().getPosition() + endToken.getTok().length();
     for (Tok tok : endToken.getToksAfter()) {
       if (tok.isComment()) {
-        end = Math.max(end, tok.getPosition() + tok.getText().length());
+        end = Math.max(end, tok.getPosition() + tok.length());
       }
     }
     return end - start;
@@ -55,7 +54,7 @@ public final class OpsBuilder {
 
   /** @return the start column of the token at {@code position}, including leading comments. */
   public Integer actualStartColumn(int position) {
-    Token startToken = input.getPositionTokenMap().floorEntry(position).getValue();
+    Token startToken = input.getPositionTokenMap().get(position);
     int start = startToken.getTok().getPosition();
     int line0 = input.getLineNumber(start);
     for (Tok tok : startToken.getToksBefore()) {
@@ -349,13 +348,25 @@ public final class OpsBuilder {
     ops.add(Doc.Break.make(fillMode, flat, plusIndent, optionalTag));
   }
 
+  private int lastPartialFormatBoundary = -1;
+
   /**
    * Make the boundary of a region that can be partially formatted. The
    * boundary will be included in the following region, e.g.:
    * [[boundary0, boundary1), [boundary1, boundary2), ...].
    */
   public void markForPartialFormat() {
-    output.markForPartialFormat(getI(input.getTokens().get(tokenI)));
+    if (lastPartialFormatBoundary == -1) {
+      lastPartialFormatBoundary = tokenI;
+      return;
+    }
+    if (tokenI == lastPartialFormatBoundary) {
+      return;
+    }
+    Token start = input.getTokens().get(lastPartialFormatBoundary);
+    Token end = input.getTokens().get(tokenI - 1);
+    output.markForPartialFormat(start, end);
+    lastPartialFormatBoundary = tokenI;
   }
 
   /**
@@ -390,6 +401,7 @@ public final class OpsBuilder {
    * @return the list of {@link Op}s
    */
   public final ImmutableList<Op> build() {
+    markForPartialFormat();
     // Rewrite the ops to insert comments.
     Multimap<Integer, Op> tokOps = ArrayListMultimap.create();
     int opsN = ops.size();
@@ -504,9 +516,9 @@ public final class OpsBuilder {
       Op op = ops.get(i);
       if (afterForcedBreak
           && (op instanceof Doc.Space
-              || op instanceof Doc.Break
+              || (op instanceof Doc.Break
                   && ((Doc.Break) op).getPlusIndent() == 0
-                  && " ".equals(((Doc) op).getFlat()))) {
+                  && " ".equals(((Doc) op).getFlat())))) {
         continue;
       }
       newOps.add(op);

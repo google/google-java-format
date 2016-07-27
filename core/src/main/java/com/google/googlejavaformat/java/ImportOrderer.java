@@ -136,7 +136,7 @@ class ImportOrderer {
       tail = "";
     } else {
       Tok lastTok = toks.get(toks.size() - 1);
-      int tailStart = lastTok.getPosition() + lastTok.getOriginalText().length();
+      int tailStart = lastTok.getPosition() + lastTok.length();
       tail = text.substring(tailStart);
     }
 

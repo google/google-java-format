@@ -28,15 +28,12 @@ import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Input.Token;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableSet;
-import java.util.TreeSet;
 
 /*
  * Throughout this file, {@code i} is an index for input lines, {@code j} is an index for output
@@ -58,7 +55,7 @@ public final class JavaOutput extends Output {
   private final JavaInput javaInput; // Used to follow along while emitting the output.
   private final CommentsHelper commentsHelper; // Used to re-flow comments.
   private final Map<Integer, BlankLineWanted> blankLines = new HashMap<>(); // Info on blank lines.
-  private final NavigableSet<Integer> partialFormatBoundaries = new TreeSet<>();
+  private final RangeSet<Integer> partialFormatRanges = TreeRangeSet.create();
 
   private final List<String> mutableLines = new ArrayList<>();
   private final int kN; // The number of tokens or comments in the input, excluding the EOF.
@@ -89,8 +86,10 @@ public final class JavaOutput extends Output {
   }
 
   @Override
-  public void markForPartialFormat(int k) {
-    partialFormatBoundaries.add(k);
+  public void markForPartialFormat(Token start, Token end) {
+    int lo = JavaOutput.startTok(start).getIndex();
+    int hi = JavaOutput.endTok(end).getIndex();
+    partialFormatRanges.add(Range.closed(lo, hi));
   }
 
   // TODO(jdd): Add invariant.
@@ -233,7 +232,12 @@ public final class JavaOutput extends Output {
     RangeSet<Integer> breakableRanges = TreeRangeSet.create();
     RangeSet<Integer> iRangeSet = iRangeSet0.subRangeSet(Range.closed(0, javaInput.getkN()));
     for (Range<Integer> iRange : iRangeSet.asRanges()) {
-      breakableRanges.add(expandToBreakableRegions(iRange.canonical(DiscreteDomain.integers())));
+      Range<Integer> range = expandToBreakableRegions(iRange.canonical(DiscreteDomain.integers()));
+      if (range.equals(EMPTY_RANGE)) {
+        // the range contains only whitespace
+        continue;
+      }
+      breakableRanges.add(range);
     }
 
     // Construct replacements for each reformatted region.
@@ -285,7 +289,7 @@ public final class JavaOutput extends Output {
       String trailingLine = i < getLineCount() ? getLine(i) : null;
 
       int replaceTo =
-          Math.min(endTok.getPosition() + endTok.getText().length(), javaInput.getText().length());
+          Math.min(endTok.getPosition() + endTok.length(), javaInput.getText().length());
       // If the formatted ranged ended in the trailing trivia of the last token before EOF,
       // format all the way up to EOF to deal with trailing whitespace correctly.
       if (endTok.getIndex() == javaInput.getkN() - 1) {
@@ -336,10 +340,12 @@ public final class JavaOutput extends Output {
     int hiTok = iRange.upperEndpoint() - 1;
 
     // Expand the token indices to formattable boundaries (e.g. edges of statements).
-    loTok = firstNonNull(partialFormatBoundaries.floor(loTok), partialFormatBoundaries.first());
-    hiTok = firstNonNull(partialFormatBoundaries.higher(hiTok), partialFormatBoundaries.last() + 1);
-
-    return Range.closedOpen(loTok, hiTok);
+    if (!partialFormatRanges.contains(loTok) || !partialFormatRanges.contains(hiTok)) {
+      return EMPTY_RANGE;
+    }
+    loTok = partialFormatRanges.rangeContaining(loTok).lowerEndpoint();
+    hiTok = partialFormatRanges.rangeContaining(hiTok).upperEndpoint();
+    return Range.closedOpen(loTok, hiTok + 1);
   }
 
   public static String applyReplacements(String input, List<Replacement> replacements) {

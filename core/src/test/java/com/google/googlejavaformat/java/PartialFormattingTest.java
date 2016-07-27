@@ -20,14 +20,8 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Range;
-
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +29,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * Tests formatting parts of files.
@@ -1116,18 +1115,29 @@ public final class PartialFormattingTest {
 
     int line2Start = input.indexOf(line2);
     int nonWhitespaceLine2Start = input.indexOf("System.err");
-    int start = -1;
+    int start;
+    // formatting a range that touches non-whitespace characters in line2 should format line2
     for (start = nonWhitespaceLine2Start; start >= line2Start; start--) {
       Range<Integer> range = Range.closedOpen(start, nonWhitespaceLine2Start + 1);
       String output = new Formatter().formatSource(input, ImmutableList.of(range));
-      assertEquals("bad output", expectedFormatLine2, output);
+      assertThat(output).isEqualTo(expectedFormatLine2);
     }
+    // formatting a range that touches whitespace characters between line1 and line2 should
+    // not result in any formatting
     assertThat(input.charAt(start)).isEqualTo('\n');
+    int line1End = input.indexOf(line1) + line1.length() - 1;
+    for (; start >= line1End; start--) {
+      Range<Integer> range = Range.closedOpen(start, line2Start);
+      String output = new Formatter().formatSource(input, ImmutableList.of(range));
+      assertThat(output).isEqualTo(input);
+    }
+    // formatting a range that touches non-whitespace characters in line1 should format line1
+    assertThat(input.charAt(start + 1)).isEqualTo('\n');
     int line1Start = input.indexOf(line1);
     for (; start >= line1Start; start--) {
       Range<Integer> range = Range.closedOpen(start, line2Start);
       String output = new Formatter().formatSource(input, ImmutableList.of(range));
-      assertEquals("bad output", expectedFormatLine1, output);
+      assertThat(output).isEqualTo(expectedFormatLine1);
     }
   }
 
@@ -1208,5 +1218,86 @@ public final class PartialFormattingTest {
     String[] args = {"-lines", "3", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
+  }
+
+  @Test
+  public void endOfLine() throws Exception {
+    String[] input = {
+      "class foo {",
+      "  foo(",
+      "      int aaaaaaaaaaaaaaa,",
+      "      int ccccccccccccc) {",
+      "    int a = 0;",
+      "    int c = 0;",
+      "  }",
+      "}",
+    };
+    String[] expected = {
+      "class foo {",
+      "  foo(int aaaaaaaaaaaaaaa, int ccccccccccccc) {",
+      "    int a = 0;",
+      "    int c = 0;",
+      "  }",
+      "}",
+    };
+    String in = Joiner.on("\n").join(input);
+    // request partial formatting of the end of the first parameter
+    assertThat(in.substring(44, 45)).isEqualTo(",");
+
+    assertThat(new Formatter().formatSource(in, ImmutableList.of(Range.closedOpen(44, 44))))
+        .isEqualTo(Joiner.on("\n").join(expected));
+
+    assertThat(formatMain(Joiner.on("\n").join(input), "-offset", "44", "-length", "0"))
+        .isEqualTo(Joiner.on("\n").join(expected));
+  }
+
+  private String formatMain(String input, String... args) throws Exception {
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Test.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    assertThat(main.format(ObjectArrays.concat(args, path.toString()))).isEqualTo(0);
+    return out.toString();
+  }
+
+  // formatting the newlinea after a statement is a no-op
+  @Test
+  public void endOfLineStatement() throws Exception {
+    String[] input = {
+      "class foo {{", //
+      "  int a = 0; ",
+      "  int c = 0;",
+      "}}",
+    };
+    String[] expected = {
+      "class foo {{", //
+      "    int a = 0;",
+      "  int c = 0;",
+      "}}",
+    };
+    String in = Joiner.on("\n").join(input);
+    int idx = in.indexOf(';');
+    assertThat(new Formatter().formatSource(in, ImmutableList.of(Range.closedOpen(idx, idx))))
+        .isEqualTo(Joiner.on("\n").join(expected));
+  }
+
+  // formatting trailing whitespace at the end of the line doesn't format the line on either side
+  @Test
+  public void endOfLineStatementNewline() throws Exception {
+    String[] input = {
+      "class foo {{", //
+      "  int a = 0; ",
+      "  int c = 0;",
+      "}}",
+    };
+    String in = Joiner.on("\n").join(input);
+    int idx = in.indexOf(';');
+    assertThat(
+            new Formatter().formatSource(in, ImmutableList.of(Range.closedOpen(idx + 1, idx + 1))))
+        .isEqualTo(in);
   }
 }

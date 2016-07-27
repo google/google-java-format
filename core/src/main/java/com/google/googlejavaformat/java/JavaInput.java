@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getLast;
 
@@ -22,26 +21,24 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
 import com.google.common.base.Verify;
 import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.Input;
-
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.compiler.IScanner;
 import org.eclipse.jdt.core.compiler.ITerminalSymbols;
 import org.eclipse.jdt.core.compiler.InvalidInputException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
 
 /**
  * {@code JavaInput} extends {@link Input} to represent a Java input document.
@@ -109,6 +106,11 @@ public final class JavaInput extends Input {
     @Override
     public String getOriginalText() {
       return originalText;
+    }
+
+    @Override
+    public int length() {
+      return originalText.length();
     }
 
     @Override
@@ -247,13 +249,14 @@ public final class JavaInput extends Input {
 
   private final ImmutableMap<Integer, Integer> positionToColumnMap; // Map Tok position to column.
   private final ImmutableList<Token> tokens; // The Tokens for this input.
-  private final ImmutableSortedMap<Integer, Token> positionTokenMap; // Map position to Token.
+  private final ImmutableRangeMap<Integer, Token> positionTokenMap; // Map position to Token.
 
   /** Map from Tok index to the associated Token. */
   private final Token[] kToToken;
 
   /**
    * Input constructor.
+   *
    * @param text the input text
    * @throws FormatterException if the input cannot be parsed
    */
@@ -264,11 +267,16 @@ public final class JavaInput extends Input {
     ImmutableList<Tok> toks = buildToks(text);
     positionToColumnMap = makePositionToColumnMap(toks);
     tokens = buildTokens(toks);
-    ImmutableSortedMap.Builder<Integer, Token> locationTokenMap = ImmutableSortedMap.naturalOrder();
+    ImmutableRangeMap.Builder<Integer, Token> tokenLocations = ImmutableRangeMap.builder();
     for (Token token : tokens) {
-      locationTokenMap.put(JavaOutput.startPosition(token), token);
+      Input.Tok end = JavaOutput.endTok(token);
+      int upper = end.getPosition();
+      if (!end.getText().isEmpty()) {
+        upper += end.length() - 1;
+      }
+      tokenLocations.put(Range.closed(JavaOutput.startTok(token).getPosition(), upper), token);
     }
-    positionTokenMap = locationTokenMap.build();
+    positionTokenMap = tokenLocations.build();
 
     // adjust kN for EOF
     kToToken = new Token[kN + 1];
@@ -388,7 +396,7 @@ public final class JavaInput extends Input {
         strings.add(originalTokText);
       } else if (Character.isJavaIdentifierStart(tokText0)
           || Character.isDigit(tokText0)
-          || tokText0 == '.' && tokText.length() > 1 && Character.isDigit(tokText.charAt(1))) {
+          || (tokText0 == '.' && tokText.length() > 1 && Character.isDigit(tokText.charAt(1)))) {
         // Identifier, keyword, or numeric literal (a dot may begin a number, as in .2D).
         isToken = true;
         isNumbered = true;
@@ -466,7 +474,7 @@ public final class JavaInput extends Input {
       ImmutableList.Builder<Tok> toksAfter = ImmutableList.builder();
       OUTER:
       while (k < kN && !toks.get(k).isToken()) {
-        // Don't attach inline comments to leading '('s, e.g. for `f(/*flag1=*/true).
+        // Don't attach inline comments to certain leading tokens, e.g. for `f(/*flag1=*/true).
         //
         // Attaching inline comments to the right token is hard, and this barely
         // scratches the surface. But it's enough to do a better job with parameter
@@ -478,6 +486,14 @@ public final class JavaInput extends Input {
             case "(":
             case "<":
             case ".":
+              break OUTER;
+            default:
+              break;
+          }
+        }
+        if (toks.get(k).isJavadocComment()) {
+          switch (tok.getText()) {
+            case ";":
               break OUTER;
             default:
               break;
@@ -555,21 +571,28 @@ public final class JavaInput extends Input {
               "error: invalid length %d, offset + length (%d) is outside the file",
               length, requiredLength));
     }
-    if (length <= 0) {
-      return Formatter.EMPTY_RANGE;
+    if (length < 0) {
+      return EMPTY_RANGE;
     }
-    NavigableMap<Integer, JavaInput.Token> map = getPositionTokenMap();
-    Map.Entry<Integer, JavaInput.Token> tokenEntryLo =
-        firstNonNull(map.floorEntry(offset), map.firstEntry());
-    Map.Entry<Integer, JavaInput.Token> tokenEntryHi =
-        firstNonNull(map.floorEntry(offset + length - 1), map.lastEntry());
+    if (length == 0) {
+      // 0 stands for "format the line under the cursor"
+      length = 1;
+    }
+    ImmutableCollection<Token> enclosed =
+        getPositionTokenMap()
+            .subRangeMap(Range.closedOpen(offset, offset + length))
+            .asMapOfRanges()
+            .values();
+    if (enclosed.isEmpty()) {
+      return EMPTY_RANGE;
+    }
     return Range.closedOpen(
-        tokenEntryLo.getValue().getTok().getIndex(),
-        tokenEntryHi.getValue().getTok().getIndex() + 1);
+        enclosed.iterator().next().getTok().getIndex(), getLast(enclosed).getTok().getIndex() + 1);
   }
 
   /**
    * Get the number of toks.
+   *
    * @return the number of toks, including the EOF tok
    */
   int getkN() {
@@ -597,10 +620,11 @@ public final class JavaInput extends Input {
    * Get the navigable map from position to {@link Token}. Used to look for tokens following a given
    * one, and to implement the --offset and --length flags to reformat a character range in the
    * input file.
+   *
    * @return the navigable map from position to {@link Token}
    */
   @Override
-  public NavigableMap<Integer, Token> getPositionTokenMap() {
+  public ImmutableRangeMap<Integer, Token> getPositionTokenMap() {
     return positionTokenMap;
   }
 

@@ -64,11 +64,8 @@ public abstract class Output extends InputOutput {
    */
   public abstract void blankLine(int k, BlankLineWanted wanted);
 
-  /**
-   * Marks the boundary of a region that can be partially formatted.
-   * @param k the token index
-   */
-  public abstract void markForPartialFormat(int k);
+  /** Marks a region that can be partially formatted. */
+  public abstract void markForPartialFormat(Input.Token start, Input.Token end);
 
   /**
    * Get the {@link CommentsHelper}.
