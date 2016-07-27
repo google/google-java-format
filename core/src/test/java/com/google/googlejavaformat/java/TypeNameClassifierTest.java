@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Splitter;
 import com.google.googlejavaformat.java.TypeNameClassifier.JavaCaseFormat;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;

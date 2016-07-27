@@ -23,9 +23,6 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.googlejavaformat.Input.Tok;
 import com.google.googlejavaformat.Input.Token;
-
-import org.eclipse.jdt.core.compiler.ITerminalSymbols;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,8 +30,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
 import javax.lang.model.element.Modifier;
+import org.eclipse.jdt.core.compiler.ITerminalSymbols;
 
 /** Fixes sequences of modifiers to be in JLS order. */
 public class ModifierOrderer {

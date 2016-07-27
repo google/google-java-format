@@ -32,11 +32,10 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.impl.CheckUtil;
 import com.intellij.util.IncorrectOperationException;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A {@link CodeStyleManager} implementation which formats .java files with google-java-format.

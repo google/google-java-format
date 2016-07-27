@@ -17,7 +17,6 @@ package com.google.googlejavaformat.java;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.FormatterDiagnostic;
-
 import java.util.List;
 
 /** Checked exception class for formatter errors. */

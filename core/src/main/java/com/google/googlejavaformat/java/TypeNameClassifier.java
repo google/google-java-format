@@ -15,7 +15,6 @@
 package com.google.googlejavaformat.java;
 
 import com.google.common.base.Verify;
-
 import java.util.List;
 
 /**

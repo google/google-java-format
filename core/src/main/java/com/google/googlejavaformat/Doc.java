@@ -19,7 +19,6 @@ import com.google.common.base.Optional;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.Output.BreakTag;
-
 import java.util.ArrayList;
 import java.util.List;
 

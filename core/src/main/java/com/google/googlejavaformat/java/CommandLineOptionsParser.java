@@ -17,7 +17,6 @@ package com.google.googlejavaformat.java;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
-
 import java.util.Iterator;
 import java.util.List;
 

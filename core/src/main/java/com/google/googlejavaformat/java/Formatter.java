@@ -27,19 +27,17 @@ import com.google.googlejavaformat.DocBuilder;
 import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
-
-import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTParser;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.Message;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Message;
 
 /**
  * This is google-java-format, a new Java formatter that follows the Google Java Style Guide quite

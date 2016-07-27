@@ -23,7 +23,6 @@ import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.testFramework.fixtures.LightCodeInsightFixtureTestCase;
-
 import java.net.URL;
 import java.net.URLClassLoader;
 
