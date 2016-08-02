@@ -23,37 +23,34 @@ public final class UsageException extends Exception {
 
   private static final Joiner NEWLINE_JOINER = Joiner.on(System.lineSeparator());
 
-  private static final String[] USAGE = {
+  private static final String[] DOCS_LINK = {
     "https://github.com/google/google-java-format",
+  };
+
+  private static final String[] USAGE = {
+    "",
     "Usage: google-java-format [options] file(s)",
+    "",
     "Options:",
-    "    -",
-    "Format stdin -> stdout.",
-    "    Default: false",
-    "    --aosp, -aosp, -a",
-    "Use AOSP style instead of Google Style (4-space indentation).",
-    "Default: false",
-    "    --help, -help, -h",
-    "Print an extended usage statement.",
-    "    Default: false",
-    "    --length, -length",
-    "Character length to format.",
-    "Default: []",
-    "    --lines, -lines, --line, -line",
-    "Line range(s) to format, like 5:10 (1-based; default is all).",
-    "Default: []",
-    "    --offset, -offset",
-    "Character offset to format (0-based; default is all).",
-    "Default: []",
-    "    -i, -r, -replace, --replace",
-    "Send formatted output back to files, not stdout.",
-    "    Default: false",
-    "    --version, -version, -v",
-    "Print the version.",
-    "    Default: false",
-    "Fix import order and remove any unused imports, but do no other formatting.",
-    "    Default: false",
-    "    --fix-imports-only",
+    "  -i, -r, -replace, --replace",
+    "    Send formatted output back to files, not stdout.",
+    "  -",
+    "    Format stdin -> stdout",
+    "  --aosp, -aosp, -a",
+    "    Use AOSP style instead of Google Style (4-space indentation)",
+    "  --fix-imports-only",
+    "    Fix import order and remove any unused imports, but do no other formatting.",
+    "  --length, -length",
+    "    Character length to format.",
+    "  --lines, -lines, --line, -line",
+    "    Line range(s) to format, like 5:10 (1-based; default is all).",
+    "  --offset, -offset",
+    "    Character offset to format (0-based; default is all).",
+    "  --help, -help, -h",
+    "    Print this usage statement",
+    "  --version, -version, -v",
+    "    Print the version.",
+    "",
   };
 
   private static final String[] ADDITIONAL_USAGE = {
@@ -73,12 +70,14 @@ public final class UsageException extends Exception {
 
   private static String buildMessage(String message) {
     StringBuilder builder = new StringBuilder();
-    appendLines(builder, Main.VERSION);
     if (message != null) {
       builder.append(message).append('\n');
     }
     appendLines(builder, USAGE);
     appendLines(builder, ADDITIONAL_USAGE);
+    appendLines(builder, new String[] {""});
+    appendLines(builder, Main.VERSION);
+    appendLines(builder, DOCS_LINK);
     return builder.toString();
   }
 

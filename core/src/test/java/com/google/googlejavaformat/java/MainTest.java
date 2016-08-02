@@ -57,7 +57,6 @@ public class MainTest {
 
       String usage = e.getMessage();
 
-
       // Check that doc links are included.
       assertThat(usage).contains("https://github.com/google/google-java-format");
       assertThat(usage).contains("Usage: google-java-format");
