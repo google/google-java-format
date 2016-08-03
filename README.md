@@ -5,7 +5,9 @@
 
 [Google Java Style]: https://google.github.io/styleguide/javaguide.html
 
-## Using the formatter from the command-line
+## Using the formatter
+
+### from the command-line
 
 [Download the formatter](https://github.com/google/google-java-format/releases)
 and run it with:
@@ -26,7 +28,12 @@ To reformat changed lines in a specific patch, use
 formatting. This is a deliberate design decision to unify our code formatting on
 a single format.*
 
-## Using the formatter in code-generators
+### IntelliJ
+
+A [google-java-format IntelliJ plugin](https://plugins.jetbrains.com/plugin/8527)
+is available from the plugin repository.
+
+### as a library
 
 The formatter can be used in software which generates java to output more
 legible java code. Just include the library in your maven/gradle/etc.
