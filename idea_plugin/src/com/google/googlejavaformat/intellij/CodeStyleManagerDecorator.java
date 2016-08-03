@@ -33,15 +33,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Decorates the {@link CodeStyleManager} abstract class by delegating to a concrete
- * implementation instance (likely IJ's default instance).
+ * Decorates the {@link CodeStyleManager} abstract class by delegating to a concrete implementation
+ * instance (likely IJ's default instance).
  *
  * @author bcsf@google.com (Brian Chang)
  */
 @SuppressWarnings("deprecation")
-abstract class CodeStyleManagerDecorator extends CodeStyleManager {
-  @NotNull
-  private final CodeStyleManager delegate;
+class CodeStyleManagerDecorator extends CodeStyleManager {
+  @NotNull private final CodeStyleManager delegate;
 
   protected CodeStyleManagerDecorator(@NotNull CodeStyleManager delegate) {
     this.delegate = delegate;
@@ -89,6 +88,12 @@ abstract class CodeStyleManagerDecorator extends CodeStyleManager {
   public void reformatText(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
       throws IncorrectOperationException {
     delegate.reformatText(file, ranges);
+  }
+
+  @Override
+  public void reformatTextWithContext(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
+      throws IncorrectOperationException {
+    delegate.reformatTextWithContext(file, ranges);
   }
 
   @Override

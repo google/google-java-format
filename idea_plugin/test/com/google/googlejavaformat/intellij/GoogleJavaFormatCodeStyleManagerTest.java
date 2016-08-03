@@ -23,6 +23,7 @@ import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.testFramework.fixtures.LightCodeInsightFixtureTestCase;
+
 import java.net.URL;
 import java.net.URLClassLoader;
 
@@ -42,7 +43,9 @@ public class GoogleJavaFormatCodeStyleManagerTest extends LightCodeInsightFixtur
               "If you see a SecurityException while running this test from within IJ,\n"
                   + "unfortunately you'll need to somehow remove ecj.jar from your classpath,\n"
                   + "as it will cause a cert conflict with org.eclipse.jdt.core.jar.\n"
-                  + "e.g. if " + url.getPath() + " is in IDEA_HOME/lib, temporarily relocate it");
+                  + "e.g. if "
+                  + url.getPath()
+                  + " is in IDEA_HOME/lib, temporarily relocate it");
         }
       }
     }
@@ -58,18 +61,21 @@ public class GoogleJavaFormatCodeStyleManagerTest extends LightCodeInsightFixtur
         "public class Test {public static void main(String[]args){System.out.println();}}");
     final int startOffset = 0;
     final int endOffset = myFixture.getFile().getTextLength();
-    ApplicationManager.getApplication().runWriteAction(new Runnable() {
-      @Override
-      public void run() {
-        googleJavaFormat.reformatText(myFixture.getFile(), startOffset, endOffset);
-      }
-    });
-    myFixture.checkResult(join(
-        "public class Test {",
-        "  public static void main(String[] args) {",
-        "    System.out.println();",
-        "  }",
-        "}"));
+    ApplicationManager.getApplication()
+        .runWriteAction(
+            new Runnable() {
+              @Override
+              public void run() {
+                googleJavaFormat.reformatText(myFixture.getFile(), startOffset, endOffset);
+              }
+            });
+    myFixture.checkResult(
+        join(
+            "public class Test {",
+            "  public static void main(String[] args) {",
+            "    System.out.println();",
+            "  }",
+            "}"));
   }
 
   public void testDontFormatNonJavaFile() {
@@ -81,12 +87,14 @@ public class GoogleJavaFormatCodeStyleManagerTest extends LightCodeInsightFixtur
         "public class Test {public static void main(String[]args){System.out.println();}}");
     final int startOffset = 0;
     final int endOffset = myFixture.getFile().getTextLength();
-    ApplicationManager.getApplication().runWriteAction(new Runnable() {
-      @Override
-      public void run() {
-        googleJavaFormat.reformatText(myFixture.getFile(), startOffset, endOffset);
-      }
-    });
+    ApplicationManager.getApplication()
+        .runWriteAction(
+            new Runnable() {
+              @Override
+              public void run() {
+                googleJavaFormat.reformatText(myFixture.getFile(), startOffset, endOffset);
+              }
+            });
     myFixture.checkResult(
         "public class Test {public static void main(String[]args){System.out.println();}}");
   }
@@ -95,12 +103,13 @@ public class GoogleJavaFormatCodeStyleManagerTest extends LightCodeInsightFixtur
     CodeStyleManager codeStyleManager = CodeStyleManager.getInstance(getProject());
     final GoogleJavaFormatCodeStyleManager googleJavaFormat =
         new GoogleJavaFormatCodeStyleManager(codeStyleManager);
-    String content = join(
-        "public class Test {",
-        "  int a=0;",
-        "  int b=1;",
-        "  int c=2;",
-        "}");
+    String content =
+        join(
+            "public class Test {", //
+            "  int a=0;",
+            "  int b=1;",
+            "  int c=2;",
+            "}");
     myFixture.configureByText(StdFileTypes.JAVA, content);
     int aLineStart = content.indexOf("int a");
     int aLineEnd = content.indexOf("\n", aLineStart);
@@ -108,18 +117,21 @@ public class GoogleJavaFormatCodeStyleManagerTest extends LightCodeInsightFixtur
     int cLineEnd = content.indexOf("\n", cLineStart);
     final ImmutableList<TextRange> ranges =
         ImmutableList.of(new TextRange(aLineStart, aLineEnd), new TextRange(cLineStart, cLineEnd));
-    ApplicationManager.getApplication().runWriteAction(new Runnable() {
-      @Override
-      public void run() {
-        googleJavaFormat.reformatText(myFixture.getFile(), ranges);
-      }
-    });
-    myFixture.checkResult(join(
-        "public class Test {",
-        "  int a = 0;",
-        "  int b=1;",
-        "  int c = 2;",
-        "}"));
+    ApplicationManager.getApplication()
+        .runWriteAction(
+            new Runnable() {
+              @Override
+              public void run() {
+                googleJavaFormat.reformatText(myFixture.getFile(), ranges);
+              }
+            });
+    myFixture.checkResult(
+        join(
+            "public class Test {", //
+            "  int a = 0;",
+            "  int b=1;",
+            "  int c = 2;",
+            "}"));
   }
 
   private static String join(String... lines) {

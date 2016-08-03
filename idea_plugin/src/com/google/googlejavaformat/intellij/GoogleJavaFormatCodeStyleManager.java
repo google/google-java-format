@@ -43,10 +43,11 @@ import org.jetbrains.annotations.NotNull;
  *
  * @author bcsf@google.com (Brian Chang)
  */
-public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
+class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
+
   private final Formatter formatter = new Formatter();
 
-  public GoogleJavaFormatCodeStyleManager(@NotNull CodeStyleManager original) {
+  GoogleJavaFormatCodeStyleManager(@NotNull CodeStyleManager original) {
     super(original);
   }
 
@@ -61,12 +62,22 @@ public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator 
   }
 
   @Override
-  public void reformatText(@NotNull PsiFile file, @NotNull Collection<TextRange> textRanges)
+  public void reformatText(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
       throws IncorrectOperationException {
     if (StdFileTypes.JAVA.equals(file.getFileType())) {
-      formatInternal(file, convertToRanges(textRanges));
+      formatInternal(file, convertToRanges(ranges));
     } else {
-      super.reformatText(file, textRanges);
+      super.reformatText(file, ranges);
+    }
+  }
+
+  @Override
+  public void reformatTextWithContext(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
+      throws IncorrectOperationException {
+    if (StdFileTypes.JAVA.equals(file.getFileType())) {
+      formatInternal(file, convertToRanges(ranges));
+    } else {
+      super.reformatTextWithContext(file, ranges);
     }
   }
 
@@ -91,19 +102,20 @@ public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator 
   }
 
   private void performReplacements(
-      final Document document,
-      final List<Replacement> reverseSortedReplacements) {
-    WriteCommandAction.runWriteCommandAction(getProject(), new Runnable() {
-      @Override
-      public void run() {
-        for (Replacement replacement : reverseSortedReplacements) {
-          Range<Integer> range = replacement.getReplaceRange();
-          document.replaceString(
-              range.lowerEndpoint(), range.upperEndpoint(), replacement.getReplacementString());
-        }
-        PsiDocumentManager.getInstance(getProject()).commitDocument(document);
-      }
-    });
+      final Document document, final List<Replacement> reverseSortedReplacements) {
+    WriteCommandAction.runWriteCommandAction(
+        getProject(),
+        new Runnable() {
+          @Override
+          public void run() {
+            for (Replacement replacement : reverseSortedReplacements) {
+              Range<Integer> range = replacement.getReplaceRange();
+              document.replaceString(
+                  range.lowerEndpoint(), range.upperEndpoint(), replacement.getReplacementString());
+            }
+            PsiDocumentManager.getInstance(getProject()).commitDocument(document);
+          }
+        });
   }
 
   private static List<Range<Integer>> convertToRanges(Collection<TextRange> textRanges) {

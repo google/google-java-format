@@ -1,0 +1,27 @@
+<idea-plugin version="2">
+  <id>google-java-format</id>
+  <name>google-java-format</name>
+  <version>1.0</version>
+  <vendor url="https://github.com/google/google-java-format">
+    Google
+  </vendor>
+
+  <description><![CDATA[
+      Formats Java source code to comply with Google Style.
+    ]]></description>
+
+  <idea-version since-build="141.0"/>
+
+  <extensions defaultExtensionNs="com.intellij">
+  </extensions>
+
+  <actions>
+    <action
+            id="GoogleJavaFormat"
+            class="com.google.googlejavaformat.intellij.GoogleJavaFormatAction"
+            text="Reformat with google-java-format">
+      <add-to-group group-id="CodeFormatGroup" anchor="last"/>
+    </action>
+  </actions>
+
+</idea-plugin>
