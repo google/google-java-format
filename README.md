@@ -33,6 +33,15 @@ a single format.*
 A [google-java-format IntelliJ plugin](https://plugins.jetbrains.com/plugin/8527)
 is available from the plugin repository.
 
+The plugin adds a `Reformat with google-java-format` action to the Code menu.
+The first time the action is used, the plugin substitutes the default
+CodeStyleManager with an implementation that uses `google-java-format` on Java
+files. Until IntelliJ is restarted, the `Reformat code` action will also
+`google-java-format`.
+
+There is an [open bug](https://devnet.jetbrains.com/thread/464297) against
+IntelliJ to add support for configuring external formatters.
+
 ### as a library
 
 The formatter can be used in software which generates java to output more
