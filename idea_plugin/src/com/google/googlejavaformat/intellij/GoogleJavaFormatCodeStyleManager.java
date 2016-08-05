@@ -43,11 +43,11 @@ import org.jetbrains.annotations.NotNull;
  *
  * @author bcsf@google.com (Brian Chang)
  */
-class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
+public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
 
   private final Formatter formatter = new Formatter();
 
-  GoogleJavaFormatCodeStyleManager(@NotNull CodeStyleManager original) {
+  public GoogleJavaFormatCodeStyleManager(@NotNull CodeStyleManager original) {
     super(original);
   }
 
