@@ -182,17 +182,8 @@ public class RemoveUnusedImports {
       JavadocOnlyImports javadocOnlyImports) {
     RangeMap<Integer, String> replacements = TreeRangeMap.create();
     for (ImportDeclaration importTree : (List<ImportDeclaration>) unit.imports()) {
-      String simpleName =
-          importTree.getName() instanceof QualifiedName
-              ? ((QualifiedName) importTree.getName()).getName().toString()
-              : importTree.getName().toString();
-      if (importTree.isOnDemand()) {
-        continue;
-      }
-      if (usedNames.contains(simpleName)) {
-        continue;
-      }
-      if (usedInJavadoc.containsKey(simpleName) && javadocOnlyImports == JavadocOnlyImports.KEEP) {
+      String simpleName = getSimpleName(importTree);
+      if (!isUnused(unit, usedNames, usedInJavadoc, javadocOnlyImports, importTree, simpleName)) {
         continue;
       }
       // delete the import
@@ -216,6 +207,42 @@ public class RemoveUnusedImports {
       }
     }
     return replacements;
+  }
+
+  private static String getSimpleName(ImportDeclaration importTree) {
+    return importTree.getName() instanceof QualifiedName
+        ? ((QualifiedName) importTree.getName()).getName().toString()
+        : importTree.getName().toString();
+  }
+
+  private static boolean isUnused(
+      CompilationUnit unit,
+      Set<String> usedNames,
+      Multimap<String, ASTNode> usedInJavadoc,
+      JavadocOnlyImports javadocOnlyImports,
+      ImportDeclaration importTree,
+      String simpleName) {
+    if (unit.getPackage() != null) {
+      String qualifier =
+          importTree.isOnDemand()
+              ? importTree.getName().toString()
+              : importTree.getName() instanceof QualifiedName
+                  ? ((QualifiedName) importTree.getName()).getQualifier().toString()
+                  : null;
+      if (unit.getPackage().getName().toString().equals(qualifier)) {
+        return true;
+      }
+    }
+    if (importTree.isOnDemand()) {
+      return false;
+    }
+    if (usedNames.contains(simpleName)) {
+      return false;
+    }
+    if (usedInJavadoc.containsKey(simpleName) && javadocOnlyImports == JavadocOnlyImports.KEEP) {
+      return false;
+    }
+    return true;
   }
 
   /** Applies the replacements to the given source, and re-format any edited javadoc. */

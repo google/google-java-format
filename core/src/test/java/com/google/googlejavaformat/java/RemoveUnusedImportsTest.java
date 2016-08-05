@@ -220,6 +220,40 @@ public class RemoveUnusedImportsTest {
           "}",
         }
       },
+      {
+        {
+          "package com.foo;",
+          "import static com.foo.Outer.A;",
+          "import com.foo.*;",
+          "import com.foo.B;",
+          "import com.bar.C;",
+          "class Test {",
+          "  A a;",
+          "  B b;",
+          "  C c;",
+          "}",
+        },
+        {
+          "package com.foo;",
+          "import static com.foo.Outer.A;",
+          "import com.bar.C;",
+          "class Test {",
+          "  A a;",
+          "  B b;",
+          "  C c;",
+          "}",
+        },
+        {
+          "package com.foo;",
+          "import static com.foo.Outer.A;",
+          "import com.bar.C;",
+          "class Test {",
+          "  A a;",
+          "  B b;",
+          "  C c;",
+          "}",
+        }
+      },
     };
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[][] inputAndOutput : inputsOutputs) {
