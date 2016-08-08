@@ -34,15 +34,19 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.ArrayType;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.MemberRef;
 import org.eclipse.jdt.core.dom.MethodRef;
+import org.eclipse.jdt.core.dom.MethodRefParameter;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.TagElement;
+import org.eclipse.jdt.core.dom.Type;
 
 /**
  * Removes unused imports from a source file. Imports that are only used in javadoc are also
@@ -115,7 +119,22 @@ public class RemoveUnusedImports {
       } else if (reference instanceof MemberRef) {
         recordSimpleName(((MemberRef) reference).getQualifier());
       } else if (reference instanceof MethodRef) {
-        recordSimpleName(((MethodRef) reference).getQualifier());
+        recordMethodRef((MethodRef) reference);
+      }
+    }
+
+    private void recordMethodRef(MethodRef methodRef) {
+      recordSimpleName(methodRef.getQualifier());
+      for (MethodRefParameter parameter : (List<MethodRefParameter>) methodRef.parameters()) {
+        recordTypeRef(parameter.getType());
+      }
+    }
+
+    private void recordTypeRef(Type type) {
+      if (type instanceof SimpleType) {
+        recordSimpleName(((SimpleType) type).getName());
+      } else if (type instanceof ArrayType) {
+        recordTypeRef(((ArrayType) type).getElementType());
       }
     }
 

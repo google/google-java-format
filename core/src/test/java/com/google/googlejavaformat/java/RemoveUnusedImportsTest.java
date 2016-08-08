@@ -254,6 +254,40 @@ public class RemoveUnusedImportsTest {
           "}",
         }
       },
+      {
+        {
+          "import java.util.Map;", //
+          "import java.util.Map.Entry;",
+          "/** {@link #foo(Map.Entry[])} */",
+          "public class Test {}",
+        },
+        {
+          "import java.util.Map;", //
+          "/** {@link #foo(Map.Entry[])} */",
+          "public class Test {}",
+        },
+        {
+          "/** {@link #foo(java.util.Map.Entry[])} */", //
+          "public class Test {}",
+        }
+      },
+      {
+        {
+          "import java.util.List;",
+          "import java.util.Collection;",
+          "/** {@link java.util.List#containsAll(Collection)} */",
+          "public class Test {}",
+        },
+        {
+          "import java.util.Collection;",
+          "/** {@link java.util.List#containsAll(Collection)} */",
+          "public class Test {}",
+        },
+        {
+          "/** {@link java.util.List#containsAll(java.util.Collection)} */", //
+          "public class Test {}",
+        },
+      },
     };
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[][] inputAndOutput : inputsOutputs) {
