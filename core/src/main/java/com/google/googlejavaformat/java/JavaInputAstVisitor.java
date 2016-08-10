@@ -1463,8 +1463,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       first = false;
     }
     builder.breakOp(FillMode.UNIFIED, "", minusTwo, Optional.<BreakTag>absent());
-    token(")");
     builder.close();
+    token(")", plusTwo);
     builder.close();
     return false;
   }
