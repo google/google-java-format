@@ -76,6 +76,12 @@
       <artifactId>truth</artifactId>
       <version>0.26</version>
     </dependency>
+    <dependency>
+      <groupId>com.google.testing.compile</groupId>
+      <artifactId>compile-testing</artifactId>
+      <version>0.8</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
