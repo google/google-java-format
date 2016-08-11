@@ -386,7 +386,8 @@ public class ImportOrdererTest {
         throw e;
       }
       assertThat(reordered).endsWith("\n");
-      assertThat(e.getMessage()).isEqualTo(reordered.substring(2, reordered.length() - 1));
+      assertThat(e.getMessage())
+          .isEqualTo("error: " + reordered.substring(2, reordered.length() - 1));
     }
   }
 }

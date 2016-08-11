@@ -25,6 +25,7 @@ import com.google.errorprone.annotations.Immutable;
 import com.google.googlejavaformat.Doc;
 import com.google.googlejavaformat.DocBuilder;
 import com.google.googlejavaformat.FormatterDiagnostic;
+import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
 import java.io.IOException;
@@ -89,18 +90,15 @@ public final class Formatter {
   }
 
   /**
-   * Construct a {@code Formatter} given a Java compilation unit. Parses the code; builds a
-   * {@link JavaInput} and the corresponding {@link JavaOutput}.
+   * Construct a {@code Formatter} given a Java compilation unit. Parses the code; builds a {@link
+   * JavaInput} and the corresponding {@link JavaOutput}.
+   *
    * @param javaInput the input, a Java compilation unit
    * @param javaOutput the {@link JavaOutput}
    * @param options the {@link JavaFormatterOptions}
-   * @param errors mutable list to receive errors
    */
-  static void format(
-      JavaInput javaInput,
-      JavaOutput javaOutput,
-      JavaFormatterOptions options,
-      List<FormatterDiagnostic> errors) {
+  static void format(JavaInput javaInput, JavaOutput javaOutput, JavaFormatterOptions options)
+      throws FormatterException {
     ASTParser parser = ASTParser.newParser(AST.JLS8);
     parser.setSource(javaInput.getText().toCharArray());
     @SuppressWarnings("unchecked") // safe by specification
@@ -110,12 +108,13 @@ public final class Formatter {
     CompilationUnit unit = (CompilationUnit) parser.createAST(null);
     javaInput.setCompilationUnit(unit);
     if (unit.getMessages().length > 0) {
+      List<FormatterDiagnostic> errors = new ArrayList<>();
       for (Message message : unit.getMessages()) {
         errors.add(javaInput.createDiagnostic(message.getStartPosition(), message.getMessage()));
       }
-      return;
+      throw new FormatterException(errors);
     }
-    OpsBuilder builder = new OpsBuilder(javaInput, javaOutput, errors);
+    OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
     new JavaInputAstVisitor(builder, options.indentationMultiplier()).visit(unit);
     builder.sync(javaInput.getText().length());
@@ -182,10 +181,10 @@ public final class Formatter {
 
     JavaInput javaInput = new JavaInput(input);
     JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
-    List<FormatterDiagnostic> errors = new ArrayList<>();
-    format(javaInput, javaOutput, options, errors);
-    if (!errors.isEmpty()) {
-      throw new FormatterException(errors);
+    try {
+      format(javaInput, javaOutput, options);
+    } catch (FormattingError e) {
+      throw new FormatterException(e.diagnostic());
     }
     RangeSet<Integer> tokenRangeSet = javaInput.characterRangesToTokenRanges(characterRanges);
     return javaOutput.getFormatReplacements(tokenRangeSet);

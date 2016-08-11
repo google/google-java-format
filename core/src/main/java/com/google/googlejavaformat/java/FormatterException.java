@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.FormatterDiagnostic;
 import java.util.List;
@@ -24,15 +23,18 @@ public final class FormatterException extends Exception {
 
   private ImmutableList<FormatterDiagnostic> diagnostics;
 
-  FormatterException(String message) {
-    super(message);
+  public FormatterException(String message) {
+    this(FormatterDiagnostic.create(message));
   }
 
-  public FormatterException(List<FormatterDiagnostic> diagnostics) {
-    super(Joiner.on('\n').join(diagnostics));
+  public FormatterException(FormatterDiagnostic diagnostic) {
+    this(ImmutableList.of(diagnostic));
+  }
+
+  public FormatterException(Iterable<FormatterDiagnostic> diagnostics) {
+    super(diagnostics.iterator().next().toString());
     this.diagnostics = ImmutableList.copyOf(diagnostics);
   }
-
   public List<FormatterDiagnostic> diagnostics() {
     return diagnostics;
   }

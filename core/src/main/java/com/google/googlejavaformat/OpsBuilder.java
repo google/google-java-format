@@ -144,7 +144,6 @@ public final class OpsBuilder {
   private final Input input;
   private final List<Op> ops = new ArrayList<>();
   private final Output output;
-  private final List<FormatterDiagnostic> errors;
   private static final Indent.Const ZERO = Indent.Const.ZERO;
 
   private int tokenI = 0;
@@ -152,14 +151,13 @@ public final class OpsBuilder {
 
   /**
    * The {@code OpsBuilder} constructor.
+   *
    * @param input the {@link Input}, used for retrieve information from the AST
    * @param output the {@link Output}, used here only to record blank-line information
-   * @param errors mutable list to receive errors
    */
-  public OpsBuilder(Input input, Output output, List<FormatterDiagnostic> errors) {
+  public OpsBuilder(Input input, Output output) {
     this.input = input;
     this.output = output;
-    this.errors = errors; // Assignment of mutable collection.
   }
 
   /** Get the {@code OpsBuilder}'s {@link Input}. */
@@ -255,7 +253,7 @@ public final class OpsBuilder {
        * (for example) we're guessing at an optional token.
        */
       if (realOrImaginary.isReal()) {
-        errors.add(
+        throw new FormattingError(
             input.createDiagnostic(
                 inputPosition, String.format("generated extra token \"%s\"", token)));
       }
@@ -550,7 +548,6 @@ public final class OpsBuilder {
     return MoreObjects.toStringHelper(this)
         .add("input", input)
         .add("ops", ops)
-        .add("errors", errors)
         .add("output", output)
         .add("tokenI", tokenI)
         .add("inputPosition", inputPosition)

@@ -124,7 +124,7 @@ public abstract class Input extends InputOutput {
    * character offsets to numbers.
    * */
   public FormatterDiagnostic createDiagnostic(int inputPosition, String message) {
-    return new FormatterDiagnostic(
+    return FormatterDiagnostic.create(
         getLineNumber(inputPosition), getColumnNumber(inputPosition), message);
   }
 }

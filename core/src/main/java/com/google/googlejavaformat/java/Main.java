@@ -17,6 +17,7 @@ package com.google.googlejavaformat.java;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.ByteStreams;
+import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import java.io.IOError;
 import java.io.IOException;
@@ -141,7 +142,9 @@ public final class Main {
         continue;
       } catch (ExecutionException e) {
         if (e.getCause() instanceof FormatterException) {
-          errWriter.println(result.getKey() + ":" + e.getCause().getMessage());
+          for (FormatterDiagnostic diagnostic : ((FormatterException) e.getCause()).diagnostics()) {
+            errWriter.println(result.getKey() + ":" + diagnostic.toString());
+          }
         } else {
           errWriter.println(result.getKey() + ": error: " + e.getCause().getMessage());
           e.getCause().printStackTrace(errWriter);
@@ -179,7 +182,9 @@ public final class Main {
       outWriter.write(output);
       return 0;
     } catch (FormatterException e) {
-      errWriter.println(STDIN_FILENAME + ":" + e.getMessage());
+      for (FormatterDiagnostic diagnostic : e.diagnostics()) {
+        errWriter.println(STDIN_FILENAME + ":" + diagnostic.toString());
+      }
       return 1;
       // TODO(cpovirk): Catch other types of exception (as we do in the formatFiles case).
     }
