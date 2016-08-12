@@ -42,8 +42,13 @@ import org.jetbrains.annotations.Nullable;
 class CodeStyleManagerDecorator extends CodeStyleManager {
   @NotNull private final CodeStyleManager delegate;
 
-  protected CodeStyleManagerDecorator(@NotNull CodeStyleManager delegate) {
+  CodeStyleManagerDecorator(@NotNull CodeStyleManager delegate) {
     this.delegate = delegate;
+  }
+
+  @NotNull
+  CodeStyleManager getDelegate() {
+    return delegate;
   }
 
   @Override

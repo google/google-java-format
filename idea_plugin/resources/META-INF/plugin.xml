@@ -10,18 +10,19 @@
       Formats Java source code to comply with Google Style.
     ]]></description>
 
-  <idea-version since-build="141.0"/>
+  <idea-version since-build="141.0" until-build="163.0"/>
+
+  <project-components>
+    <component>
+      <implementation-class>com.google.googlejavaformat.intellij.GoogleJavaFormatSettings</implementation-class>
+      <loadForDefaultProject/>
+    </component>
+  </project-components>
 
   <extensions defaultExtensionNs="com.intellij">
+    <projectConfigurable instance="com.google.googlejavaformat.intellij.GoogleJavaFormatConfigurable"
+                         id="google-java-format.settings"
+                         displayName="google-java-format Settings"/>
   </extensions>
-
-  <actions>
-    <action
-            id="GoogleJavaFormat"
-            class="com.google.googlejavaformat.intellij.GoogleJavaFormatAction"
-            text="Reformat with google-java-format">
-      <add-to-group group-id="CodeFormatGroup" anchor="last"/>
-    </action>
-  </actions>
 
 </idea-plugin>
