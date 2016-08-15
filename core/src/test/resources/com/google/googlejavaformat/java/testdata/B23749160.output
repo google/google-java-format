@@ -28,7 +28,7 @@ class B23749160 {
             anyInt(), anyInt(), anyInt()))
         .then();
 
-    private static final List<Integer> XXXXXXXX =
+    final List<Integer> XXXXXXXX =
         ImmutableList.of(
             XXXXXXX, //
             XXXXXXX, //

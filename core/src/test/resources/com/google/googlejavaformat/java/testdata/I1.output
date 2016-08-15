@@ -1,50 +1,50 @@
 class Test {
-  private CreationMechanism creationMechanism;
-  private @Nullable String creationUserAgent;
-  private ClientId clientId;
-  private @Nullable String
-      creationUserAgentXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
-  private Token externalId;
+  final CreationMechanism creationMechanism;
+  final @Nullable String creationUserAgent;
+  final ClientId clientId;
+  final @Nullable String
+      creationUserAgentXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
+  final Token externalId;
 
   {
-    private CreationMechanism creationMechanism;
-    private @Nullable String creationUserAgent;
-    private ClientId clientId;
-    private @Nullable String
+    final CreationMechanism creationMechanism;
+    final @Nullable String creationUserAgent;
+    final ClientId clientId;
+    final @Nullable String
         creationUserAgentXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
-    private Token externalId;
+    final Token externalId;
   }
 }
 
 class Test {
-  private CreationMechanism creationMechanism;
-  @Nullable private String creationUserAgent;
-  private ClientId clientId;
+  final CreationMechanism creationMechanism;
+  @Nullable final String creationUserAgent;
+  final ClientId clientId;
 
   @Nullable
-  private String creationUserAgentXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
+  final String creationUserAgentXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
 
-  private Token externalId;
+  final Token externalId;
 
   {
-    private CreationMechanism creationMechanism;
-    @Nullable private String creationUserAgent;
-    private ClientId clientId;
+    final CreationMechanism creationMechanism;
+    @Nullable final String creationUserAgent;
+    final ClientId clientId;
     @Nullable
-    private String creationUserAgentXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
-    private Token externalId;
+    final String creationUserAgentXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
+    final Token externalId;
   }
 }
 
 class Test {
 
-  @Nullable private String creationUserAgent;
+  @Nullable final String creationUserAgent;
 
   {
-    @Nullable private String creationUserAgent;
+    @Nullable final String creationUserAgent;
   }
 
   {
-    @Nullable private String creationUserAgent;
+    @Nullable final String creationUserAgent;
   }
 }

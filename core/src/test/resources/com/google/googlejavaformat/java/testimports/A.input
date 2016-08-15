@@ -14,7 +14,7 @@ import static com.google.truth.Truth.assertThat;
 
 @RunWith( JUnit4.class ) public class SomeTest  {
 
-  <T> check(@Nullable List<T> x) {
+  <T> void check(@Nullable List<T> x) {
     Preconditions.checkNodeNull(x);
   }
 
