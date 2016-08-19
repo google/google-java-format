@@ -36,9 +36,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/**
- * Tests for {@link Main}.
- */
+/** Tests for {@link Main}. */
 @RunWith(JUnit4.class)
 public class MainTest {
 
@@ -201,5 +199,53 @@ public class MainTest {
           .isEqualTo(0);
       assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
     }
+  }
+
+  // test that -lines handling works with import removal
+  @Test
+  public void importRemovalLines() throws Exception {
+    String[] input = {
+      "import java.util.ArrayList;",
+      "import java.util.List;",
+      "class Test {",
+      "ArrayList<String> a = new ArrayList<>();",
+      "ArrayList<String> b = new ArrayList<>();",
+      "}",
+    };
+    String[] expected = {
+      "import java.util.ArrayList;",
+      "class Test {",
+      "  ArrayList<String> a = new ArrayList<>();",
+      "ArrayList<String> b = new ArrayList<>();",
+      "}",
+    };
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(System.err, true),
+            new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8)));
+    assertThat(main.format("-", "-lines", "4")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
+  }
+
+  // test that errors are reported on the right line when imports are removed
+  @Test
+  public void importRemoveErrorParseError() throws Exception {
+    String[] input = {
+      "import java.util.ArrayList;", //
+      "import java.util.List;",
+      "class Test {",
+      "}}",
+    };
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(err, true),
+            new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8)));
+    assertThat(main.format("-")).isEqualTo(1);
+    assertThat(err.toString()).contains("<stdin>:4:2: error: Syntax error");
   }
 }

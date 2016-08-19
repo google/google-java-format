@@ -38,20 +38,25 @@ public class FormatFileCallable implements Callable<String> {
 
   @Override
   public String call() throws FormatterException {
-    String inputString = input;
-    inputString =
+    if (parameters.fixImportsOnly()) {
+      return fixImports(input);
+    }
+
+    String formatted =
+        new Formatter(options).formatSource(input, characterRanges(input).asRanges());
+    formatted = fixImports(formatted);
+    return formatted;
+  }
+
+  private String fixImports(String input) throws FormatterException {
+    input =
         RemoveUnusedImports.removeUnusedImports(
-            inputString,
+            input,
             parameters.removeJavadocOnlyImports()
                 ? JavadocOnlyImports.REMOVE
                 : JavadocOnlyImports.KEEP);
-    inputString = ImportOrderer.reorderImports(inputString);
-    if (parameters.fixImportsOnly()) {
-      return inputString;
-    }
-
-    return new Formatter(options)
-        .formatSource(inputString, characterRanges(inputString).asRanges());
+    input = ImportOrderer.reorderImports(input);
+    return input;
   }
 
   private RangeSet<Integer> characterRanges(String input) {
