@@ -104,6 +104,7 @@ public class RemoveUnusedImports {
         case "@exception":
         case "@link":
         case "@linkplain":
+        case "@see":
         case "@throws":
         case "@value":
           recordReference(Iterables.<ASTNode>getFirst(node.fragments(), null));
