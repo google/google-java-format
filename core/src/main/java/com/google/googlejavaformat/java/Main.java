@@ -119,6 +119,10 @@ public final class Main {
         errWriter.println("Skipping non-Java file: " + fileName);
         continue;
       }
+      // https://github.com/google/google-java-format/issues/75
+      if (fileName.endsWith("module-info.java")) {
+        continue;
+      }
       Path path = Paths.get(fileName);
       String input;
       try {
