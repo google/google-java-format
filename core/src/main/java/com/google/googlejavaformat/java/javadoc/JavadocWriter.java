@@ -50,7 +50,7 @@ final class JavadocWriter {
    */
   private boolean continuingListItemOfInnermostList;
   private boolean continuingFooterTag;
-  private int continuingListItemCount;
+  private final NestingCounter continuingListItemCount = new NestingCounter();
   private int remainingOnLine;
   private boolean atStartOfLine;
   private RequestedWhitespace requestedWhitespace = NONE;
@@ -102,7 +102,7 @@ final class JavadocWriter {
      * currently know which of those tags are open.
      */
     continuingListItemOfInnermostList = false;
-    continuingListItemCount = 0;
+    continuingListItemCount.reset();
 
     if (!wroteAnythingSignificant) {
       // Javadoc consists solely of tags. This is frowned upon in general but OK for @Overrides.
@@ -130,9 +130,7 @@ final class JavadocWriter {
   void writeListClose(Token token) {
     requestNewline();
 
-    if (continuingListItemCount > 0) {
-      continuingListItemCount--;
-    }
+    continuingListItemCount.decrementIfPositive();
     writeToken(token);
 
     // TODO(cushon): only if continuingListItemCount == 0?
@@ -144,13 +142,11 @@ final class JavadocWriter {
 
     if (continuingListItemOfInnermostList) {
       continuingListItemOfInnermostList = false;
-      if (continuingListItemCount > 0) {
-        continuingListItemCount--;
-      }
+      continuingListItemCount.decrementIfPositive();
     }
     writeToken(token);
     continuingListItemOfInnermostList = true;
-    continuingListItemCount++;
+    continuingListItemCount.increment();
   }
 
   void writeHeaderOpen(Token token) {
@@ -288,7 +284,8 @@ final class JavadocWriter {
       requestNewline();
     }
 
-    if (requestedWhitespace == BLANK_LINE && (continuingListItemCount > 0 || continuingFooterTag)) {
+    if (requestedWhitespace == BLANK_LINE
+        && (continuingListItemCount.isPositive() || continuingFooterTag)) {
       /*
        * We don't write blank lines inside lists or footer tags, even in cases where we otherwise
        * would (e.g., before a <p> tag). Justification: We don't write blank lines _between_ list
@@ -381,7 +378,7 @@ final class JavadocWriter {
   }
 
   private int innerIndent() {
-    int innerIndent = continuingListItemCount * 4;
+    int innerIndent = continuingListItemCount.value() * 4;
     if (continuingFooterTag) {
       innerIndent += 4;
     }

@@ -545,29 +545,5 @@ final class JavadocLexer {
     return compile(format("^</(?:%s)\\b[^>]*>", namePattern), CASE_INSENSITIVE);
   }
 
-  private static final class NestingCounter {
-    private int value;
-
-    void increment() {
-      value++;
-    }
-
-    void incrementIfPositive() {
-      if (value > 0) {
-        value++;
-      }
-    }
-
-    void decrementIfPositive() {
-      if (value > 0) {
-        value--;
-      }
-    }
-
-    boolean isPositive() {
-      return value > 0;
-    }
-  }
-
   static class LexException extends Exception {}
 }
