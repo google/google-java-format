@@ -24,17 +24,15 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.googlejavaformat.java.JavaInput.Tok;
 import org.eclipse.jdt.core.compiler.InvalidInputException;
 
-/**
- * Orders imports in Java source code.
- */
-class ImportOrderer {
+/** Orders imports in Java source code. */
+public class ImportOrderer {
   /**
-   * Reorder the inputs in {@code input}, a complete Java program. On success, another complete
-   * Java program is returned, which is the same as the original except the imports are in order.
+   * Reorder the inputs in {@code input}, a complete Java program. On success, another complete Java
+   * program is returned, which is the same as the original except the imports are in order.
    *
    * @throws FormatterException if the input could not be parsed.
    */
-  static String reorderImports(String text) throws FormatterException {
+  public static String reorderImports(String text) throws FormatterException {
     ImmutableList<Tok> toks;
     try {
       toks = JavaInput.buildToks(text, CLASS_START);
