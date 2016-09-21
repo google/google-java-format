@@ -21,6 +21,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.java.Formatter;
 import com.google.googlejavaformat.java.FormatterException;
+import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.google.googlejavaformat.java.Replacement;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
@@ -45,10 +46,16 @@ import org.jetbrains.annotations.NotNull;
  */
 public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
 
-  private final Formatter formatter = new Formatter();
+  private final Formatter formatter;
 
   public GoogleJavaFormatCodeStyleManager(@NotNull CodeStyleManager original) {
+    this(original, JavaFormatterOptions.defaultOptions());
+  }
+
+  public GoogleJavaFormatCodeStyleManager(
+      @NotNull CodeStyleManager original, @NotNull JavaFormatterOptions formatterOptions) {
     super(original);
+    formatter = new Formatter(formatterOptions);
   }
 
   @Override

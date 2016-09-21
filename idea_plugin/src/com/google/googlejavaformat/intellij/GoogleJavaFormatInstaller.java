@@ -16,6 +16,7 @@
 
 package com.google.googlejavaformat.intellij;
 
+import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import org.picocontainer.MutablePicoContainer;
@@ -30,14 +31,17 @@ public final class GoogleJavaFormatInstaller {
 
   private GoogleJavaFormatInstaller() {}
 
-  public static void installFormatter(Project project, boolean useGoogleFormatter) {
+  public static void installFormatter(
+      Project project, boolean useGoogleFormatter, JavaFormatterOptions javaFormatterOptions) {
     CodeStyleManager currentManager = CodeStyleManager.getInstance(project);
     CodeStyleManager newManager = null;
 
     if (useGoogleFormatter) {
-      if (!(currentManager instanceof GoogleJavaFormatCodeStyleManager)) {
-        newManager = new GoogleJavaFormatCodeStyleManager(currentManager);
+      if (currentManager instanceof GoogleJavaFormatCodeStyleManager) {
+        // Recreate from delegate, updating the javaFormatterOptions as needed.
+        currentManager = ((GoogleJavaFormatCodeStyleManager) currentManager).getDelegate();
       }
+      newManager = new GoogleJavaFormatCodeStyleManager(currentManager, javaFormatterOptions);
     } else {
       if (currentManager instanceof GoogleJavaFormatCodeStyleManager) {
         newManager = ((GoogleJavaFormatCodeStyleManager) currentManager).getDelegate();
@@ -49,5 +53,9 @@ public final class GoogleJavaFormatInstaller {
       container.unregisterComponent(CODE_STYLE_MANAGER_KEY);
       container.registerComponentInstance(CODE_STYLE_MANAGER_KEY, newManager);
     }
+  }
+
+  public static void installFormatter(Project project, boolean useGoogleFormatter) {
+    installFormatter(project, useGoogleFormatter, JavaFormatterOptions.defaultOptions());
   }
 }
