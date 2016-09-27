@@ -83,8 +83,15 @@ class GoogleJavaFormatSettings extends AbstractProjectComponent
   }
 
   private void updateFormatterState() {
-    GoogleJavaFormatInstaller.installFormatter(
-        myProject, enabled, this.formatterStyle.getJavaFormatterOptions());
+    if (enabled) {
+      GoogleJavaFormatInstaller.installFormatter(
+          myProject,
+          (delegate) ->
+              new GoogleJavaFormatCodeStyleManager(
+                  delegate, formatterStyle.getJavaFormatterOptions()));
+    } else {
+      GoogleJavaFormatInstaller.removeFormatter(myProject);
+    }
   }
 
   static class State {

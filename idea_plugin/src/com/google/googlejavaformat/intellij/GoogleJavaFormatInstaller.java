@@ -16,7 +16,6 @@
 
 package com.google.googlejavaformat.intellij;
 
-import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import org.picocontainer.MutablePicoContainer;
@@ -32,30 +31,28 @@ public final class GoogleJavaFormatInstaller {
   private GoogleJavaFormatInstaller() {}
 
   public static void installFormatter(
-      Project project, boolean useGoogleFormatter, JavaFormatterOptions javaFormatterOptions) {
+      Project project, GoogleJavaFormatCodeStyleManagerFactory factory) {
     CodeStyleManager currentManager = CodeStyleManager.getInstance(project);
-    CodeStyleManager newManager = null;
 
-    if (useGoogleFormatter) {
-      if (currentManager instanceof GoogleJavaFormatCodeStyleManager) {
-        // Recreate from delegate, updating the javaFormatterOptions as needed.
-        currentManager = ((GoogleJavaFormatCodeStyleManager) currentManager).getDelegate();
-      }
-      newManager = new GoogleJavaFormatCodeStyleManager(currentManager, javaFormatterOptions);
-    } else {
-      if (currentManager instanceof GoogleJavaFormatCodeStyleManager) {
-        newManager = ((GoogleJavaFormatCodeStyleManager) currentManager).getDelegate();
-      }
+    if (currentManager instanceof GoogleJavaFormatCodeStyleManager) {
+      currentManager = ((GoogleJavaFormatCodeStyleManager) currentManager).getDelegate();
     }
 
+    setManager(project, factory.createFormatter(currentManager));
+  }
+
+  public static void removeFormatter(Project project) {
+    CodeStyleManager currentManager = CodeStyleManager.getInstance(project);
+    if (currentManager instanceof GoogleJavaFormatCodeStyleManager) {
+      setManager(project, ((GoogleJavaFormatCodeStyleManager) currentManager).getDelegate());
+    }
+  }
+
+  private static void setManager(Project project, CodeStyleManager newManager) {
     if (newManager != null) {
       MutablePicoContainer container = (MutablePicoContainer) project.getPicoContainer();
       container.unregisterComponent(CODE_STYLE_MANAGER_KEY);
       container.registerComponentInstance(CODE_STYLE_MANAGER_KEY, newManager);
     }
-  }
-
-  public static void installFormatter(Project project, boolean useGoogleFormatter) {
-    installFormatter(project, useGoogleFormatter, JavaFormatterOptions.defaultOptions());
   }
 }

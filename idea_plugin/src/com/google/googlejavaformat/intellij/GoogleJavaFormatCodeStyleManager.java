@@ -16,8 +16,9 @@
 
 package com.google.googlejavaformat.intellij;
 
+import static java.util.Comparator.comparing;
+
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.java.Formatter;
 import com.google.googlejavaformat.java.FormatterException;
@@ -34,8 +35,8 @@ import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.impl.CheckUtil;
 import com.intellij.util.IncorrectOperationException;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -48,10 +49,6 @@ public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator 
 
   private final Formatter formatter;
 
-  public GoogleJavaFormatCodeStyleManager(@NotNull CodeStyleManager original) {
-    this(original, JavaFormatterOptions.defaultOptions());
-  }
-
   public GoogleJavaFormatCodeStyleManager(
       @NotNull CodeStyleManager original, @NotNull JavaFormatterOptions formatterOptions) {
     super(original);
@@ -61,7 +58,7 @@ public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator 
   @Override
   public void reformatText(@NotNull PsiFile file, int startOffset, int endOffset)
       throws IncorrectOperationException {
-    if (StdFileTypes.JAVA.equals(file.getFileType())) {
+    if (StdFileTypes.JAVA.equals(file.getFileType()) && useGoogleFormatterForFile(file)) {
       formatInternal(file, ImmutableList.of(Range.closedOpen(startOffset, endOffset)));
     } else {
       super.reformatText(file, startOffset, endOffset);
@@ -71,7 +68,7 @@ public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator 
   @Override
   public void reformatText(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
       throws IncorrectOperationException {
-    if (StdFileTypes.JAVA.equals(file.getFileType())) {
+    if (StdFileTypes.JAVA.equals(file.getFileType()) && useGoogleFormatterForFile(file)) {
       formatInternal(file, convertToRanges(ranges));
     } else {
       super.reformatText(file, ranges);
@@ -81,11 +78,15 @@ public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator 
   @Override
   public void reformatTextWithContext(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
       throws IncorrectOperationException {
-    if (StdFileTypes.JAVA.equals(file.getFileType())) {
+    if (StdFileTypes.JAVA.equals(file.getFileType()) && useGoogleFormatterForFile(file)) {
       formatInternal(file, convertToRanges(ranges));
     } else {
       super.reformatTextWithContext(file, ranges);
     }
+  }
+
+  protected boolean useGoogleFormatterForFile(@NotNull PsiFile file) {
+    return true;
   }
 
   private void formatInternal(PsiFile file, List<Range<Integer>> ranges)
@@ -97,11 +98,14 @@ public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator 
     Document document = PsiDocumentManager.getInstance(getProject()).getDocument(file);
     if (document != null) {
       try {
-        ImmutableList<Replacement> replacements =
-            formatter.getFormatReplacements(document.getText(), ranges);
-        List<Replacement> reverseSortedReplacements =
-            Ordering.from(REPLACEMENT_COMPARATOR).reverse().sortedCopy(replacements);
-        performReplacements(document, reverseSortedReplacements);
+        List<Replacement> replacements =
+            formatter
+                .getFormatReplacements(document.getText(), ranges)
+                .stream()
+                .sorted(
+                    comparing((Replacement r) -> r.getReplaceRange().lowerEndpoint()).reversed())
+                .collect(Collectors.toList());
+        performReplacements(document, replacements);
       } catch (FormatterException e) {
         // Do not format on errors
       }
@@ -112,16 +116,13 @@ public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator 
       final Document document, final List<Replacement> reverseSortedReplacements) {
     WriteCommandAction.runWriteCommandAction(
         getProject(),
-        new Runnable() {
-          @Override
-          public void run() {
-            for (Replacement replacement : reverseSortedReplacements) {
-              Range<Integer> range = replacement.getReplaceRange();
-              document.replaceString(
-                  range.lowerEndpoint(), range.upperEndpoint(), replacement.getReplacementString());
-            }
-            PsiDocumentManager.getInstance(getProject()).commitDocument(document);
+        () -> {
+          for (Replacement replacement : reverseSortedReplacements) {
+            Range<Integer> range = replacement.getReplaceRange();
+            document.replaceString(
+                range.lowerEndpoint(), range.upperEndpoint(), replacement.getReplacementString());
           }
+          PsiDocumentManager.getInstance(getProject()).commitDocument(document);
         });
   }
 
@@ -132,12 +133,4 @@ public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator 
     }
     return ranges.build();
   }
-
-  private static final Comparator<Replacement> REPLACEMENT_COMPARATOR =
-      new Comparator<Replacement>() {
-        @Override
-        public int compare(Replacement o1, Replacement o2) {
-          return o1.getReplaceRange().lowerEndpoint() - o2.getReplaceRange().lowerEndpoint();
-        }
-      };
 }
