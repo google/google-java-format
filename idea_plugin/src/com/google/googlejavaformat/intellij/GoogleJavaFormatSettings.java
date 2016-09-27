@@ -32,12 +32,13 @@ class GoogleJavaFormatSettings extends AbstractProjectComponent
     implements PersistentStateComponent<GoogleJavaFormatSettings.State> {
 
   private boolean enabled = false;
+  private FormatterStyle formatterStyle = FormatterStyle.GOOGLE;
 
   protected GoogleJavaFormatSettings(Project project) {
     super(project);
   }
 
-  public static GoogleJavaFormatSettings getInstance(Project project) {
+  static GoogleJavaFormatSettings getInstance(Project project) {
     return PeriodicalTasksCloser.getInstance()
         .safeGetComponent(project, GoogleJavaFormatSettings.class);
   }
@@ -47,32 +48,63 @@ class GoogleJavaFormatSettings extends AbstractProjectComponent
   public State getState() {
     State state = new State();
     state.setEnabled(enabled);
+    state.setStyle(formatterStyle);
     return state;
   }
 
   @Override
   public void loadState(State state) {
     setEnabled(state.isEnabled());
+    setStyle(state.getStyle());
   }
 
-  public boolean isEnabled() {
+  boolean isEnabled() {
     return enabled;
   }
 
-  public void setEnabled(boolean enabled) {
+  void setEnabled(boolean enabled) {
     this.enabled = enabled;
-    GoogleJavaFormatInstaller.installFormatter(myProject, enabled);
+    updateFormatterState();
+  }
+
+  FormatterStyle getStyle() {
+    return formatterStyle;
+  }
+
+  void setStyle(FormatterStyle formatterStyle) {
+    // formatterStyle can be null when users upgrade to the first version of the plugin with style
+    // support (since it was never saved before). If so, keep the default value.
+    if (formatterStyle == null) {
+      this.formatterStyle = FormatterStyle.GOOGLE;
+    } else {
+      this.formatterStyle = formatterStyle;
+    }
+    updateFormatterState();
+  }
+
+  private void updateFormatterState() {
+    GoogleJavaFormatInstaller.installFormatter(
+        myProject, enabled, this.formatterStyle.getJavaFormatterOptions());
   }
 
   static class State {
     private boolean enabled = false;
+    private FormatterStyle formatterStyle = FormatterStyle.GOOGLE;
 
-    public boolean isEnabled() {
+    boolean isEnabled() {
       return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    void setEnabled(boolean enabled) {
       this.enabled = enabled;
+    }
+
+    FormatterStyle getStyle() {
+      return formatterStyle;
+    }
+
+    void setStyle(FormatterStyle formatterStyle) {
+      this.formatterStyle = formatterStyle;
     }
   }
 }
