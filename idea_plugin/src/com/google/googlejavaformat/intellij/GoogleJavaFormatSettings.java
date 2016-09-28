@@ -16,6 +16,7 @@
 
 package com.google.googlejavaformat.intellij;
 
+import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.intellij.lifecycle.PeriodicalTasksCloser;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
@@ -31,8 +32,7 @@ import org.jetbrains.annotations.Nullable;
 class GoogleJavaFormatSettings extends AbstractProjectComponent
     implements PersistentStateComponent<GoogleJavaFormatSettings.State> {
 
-  private boolean enabled = false;
-  private FormatterStyle formatterStyle = FormatterStyle.GOOGLE;
+  private State state = new State();
 
   protected GoogleJavaFormatSettings(Project project) {
     super(project);
@@ -46,72 +46,43 @@ class GoogleJavaFormatSettings extends AbstractProjectComponent
   @Nullable
   @Override
   public State getState() {
-    State state = new State();
-    state.setEnabled(enabled);
-    state.setStyle(formatterStyle);
     return state;
   }
 
   @Override
   public void loadState(State state) {
-    setEnabled(state.isEnabled());
-    setStyle(state.getStyle());
+    this.state = state;
   }
 
   boolean isEnabled() {
-    return enabled;
+    return state.enabled;
   }
 
   void setEnabled(boolean enabled) {
-    this.enabled = enabled;
-    updateFormatterState();
+    state.enabled = enabled;
   }
 
-  FormatterStyle getStyle() {
-    return formatterStyle;
+  JavaFormatterOptions.Style getStyle() {
+    return state.style;
   }
 
-  void setStyle(FormatterStyle formatterStyle) {
-    // formatterStyle can be null when users upgrade to the first version of the plugin with style
-    // support (since it was never saved before). If so, keep the default value.
-    if (formatterStyle == null) {
-      this.formatterStyle = FormatterStyle.GOOGLE;
-    } else {
-      this.formatterStyle = formatterStyle;
-    }
+  void setStyle(JavaFormatterOptions.Style style) {
+    state.style = style;
     updateFormatterState();
   }
 
   private void updateFormatterState() {
-    if (enabled) {
+    if (state.enabled) {
       GoogleJavaFormatInstaller.installFormatter(
           myProject,
-          (delegate) ->
-              new GoogleJavaFormatCodeStyleManager(
-                  delegate, formatterStyle.getJavaFormatterOptions()));
+          (delegate) -> new BasicGoogleJavaFormatCodeStyleManager(delegate, state.style));
     } else {
       GoogleJavaFormatInstaller.removeFormatter(myProject);
     }
   }
 
   static class State {
-    private boolean enabled = false;
-    private FormatterStyle formatterStyle = FormatterStyle.GOOGLE;
-
-    boolean isEnabled() {
-      return enabled;
-    }
-
-    void setEnabled(boolean enabled) {
-      this.enabled = enabled;
-    }
-
-    FormatterStyle getStyle() {
-      return formatterStyle;
-    }
-
-    void setStyle(FormatterStyle formatterStyle) {
-      this.formatterStyle = formatterStyle;
-    }
+    public boolean enabled = false;
+    public JavaFormatterOptions.Style style = JavaFormatterOptions.Style.GOOGLE;
   }
 }

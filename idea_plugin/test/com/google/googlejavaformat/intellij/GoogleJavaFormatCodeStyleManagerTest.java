@@ -24,7 +24,6 @@ import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.testFramework.fixtures.LightCodeInsightFixtureTestCase;
-
 import java.net.URL;
 import java.net.URLClassLoader;
 
@@ -56,8 +55,8 @@ public class GoogleJavaFormatCodeStyleManagerTest extends LightCodeInsightFixtur
   public void testFormatFile() {
     CodeStyleManager codeStyleManager = CodeStyleManager.getInstance(getProject());
     final GoogleJavaFormatCodeStyleManager googleJavaFormat =
-        new GoogleJavaFormatCodeStyleManager(
-            codeStyleManager, JavaFormatterOptions.defaultOptions());
+        new BasicGoogleJavaFormatCodeStyleManager(
+            codeStyleManager, JavaFormatterOptions.Style.GOOGLE);
     myFixture.configureByText(
         StdFileTypes.JAVA,
         "public class Test {public static void main(String[]args){System.out.println();}}");
@@ -79,8 +78,8 @@ public class GoogleJavaFormatCodeStyleManagerTest extends LightCodeInsightFixtur
   public void testDontFormatNonJavaFile() {
     CodeStyleManager codeStyleManager = CodeStyleManager.getInstance(getProject());
     final GoogleJavaFormatCodeStyleManager googleJavaFormat =
-        new GoogleJavaFormatCodeStyleManager(
-            codeStyleManager, JavaFormatterOptions.defaultOptions());
+        new BasicGoogleJavaFormatCodeStyleManager(
+            codeStyleManager, JavaFormatterOptions.Style.GOOGLE);
     myFixture.configureByText(
         StdFileTypes.PLAIN_TEXT,
         "public class Test {public static void main(String[]args){System.out.println();}}");
@@ -96,8 +95,8 @@ public class GoogleJavaFormatCodeStyleManagerTest extends LightCodeInsightFixtur
   public void testFormatRanges() {
     CodeStyleManager codeStyleManager = CodeStyleManager.getInstance(getProject());
     final GoogleJavaFormatCodeStyleManager googleJavaFormat =
-        new GoogleJavaFormatCodeStyleManager(
-            codeStyleManager, JavaFormatterOptions.defaultOptions());
+        new BasicGoogleJavaFormatCodeStyleManager(
+            codeStyleManager, JavaFormatterOptions.Style.GOOGLE);
     String content =
         join(
             "public class Test {", //

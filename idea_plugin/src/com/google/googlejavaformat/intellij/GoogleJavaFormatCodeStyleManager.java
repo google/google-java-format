@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.java.Formatter;
 import com.google.googlejavaformat.java.FormatterException;
-import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.google.googlejavaformat.java.Replacement;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
@@ -36,6 +35,7 @@ import com.intellij.psi.impl.CheckUtil;
 import com.intellij.util.IncorrectOperationException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
@@ -45,21 +45,19 @@ import org.jetbrains.annotations.NotNull;
  *
  * @author bcsf@google.com (Brian Chang)
  */
-public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
+public abstract class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
 
-  private final Formatter formatter;
-
-  public GoogleJavaFormatCodeStyleManager(
-      @NotNull CodeStyleManager original, @NotNull JavaFormatterOptions formatterOptions) {
+  public GoogleJavaFormatCodeStyleManager(@NotNull CodeStyleManager original) {
     super(original);
-    formatter = new Formatter(formatterOptions);
   }
 
   @Override
   public void reformatText(@NotNull PsiFile file, int startOffset, int endOffset)
       throws IncorrectOperationException {
-    if (StdFileTypes.JAVA.equals(file.getFileType()) && useGoogleFormatterForFile(file)) {
-      formatInternal(file, ImmutableList.of(Range.closedOpen(startOffset, endOffset)));
+    Optional<Formatter> formatter = getFormatterForFile(file);
+    if (formatter.isPresent() && StdFileTypes.JAVA.equals(file.getFileType())) {
+      formatInternal(
+          formatter.get(), file, ImmutableList.of(Range.closedOpen(startOffset, endOffset)));
     } else {
       super.reformatText(file, startOffset, endOffset);
     }
@@ -68,8 +66,9 @@ public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator 
   @Override
   public void reformatText(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
       throws IncorrectOperationException {
-    if (StdFileTypes.JAVA.equals(file.getFileType()) && useGoogleFormatterForFile(file)) {
-      formatInternal(file, convertToRanges(ranges));
+    Optional<Formatter> formatter = getFormatterForFile(file);
+    if (formatter.isPresent() && StdFileTypes.JAVA.equals(file.getFileType())) {
+      formatInternal(formatter.get(), file, convertToRanges(ranges));
     } else {
       super.reformatText(file, ranges);
     }
@@ -78,18 +77,21 @@ public class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator 
   @Override
   public void reformatTextWithContext(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
       throws IncorrectOperationException {
-    if (StdFileTypes.JAVA.equals(file.getFileType()) && useGoogleFormatterForFile(file)) {
-      formatInternal(file, convertToRanges(ranges));
+    Optional<Formatter> formatter = getFormatterForFile(file);
+    if (formatter.isPresent() && StdFileTypes.JAVA.equals(file.getFileType())) {
+      formatInternal(formatter.get(), file, convertToRanges(ranges));
     } else {
       super.reformatTextWithContext(file, ranges);
     }
   }
 
-  protected boolean useGoogleFormatterForFile(@NotNull PsiFile file) {
-    return true;
-  }
+  /**
+   * Get the {@link Formatter} to be used with the given file, or absent to use the built-in
+   * IntelliJ formatter.
+   */
+  protected abstract Optional<Formatter> getFormatterForFile(PsiFile file);
 
-  private void formatInternal(PsiFile file, List<Range<Integer>> ranges)
+  private void formatInternal(Formatter formatter, PsiFile file, List<Range<Integer>> ranges)
       throws IncorrectOperationException {
     ApplicationManager.getApplication().assertWriteAccessAllowed();
     PsiDocumentManager.getInstance(getProject()).commitAllDocuments();

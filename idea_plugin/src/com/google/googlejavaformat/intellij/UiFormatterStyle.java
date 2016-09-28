@@ -18,20 +18,20 @@ package com.google.googlejavaformat.intellij;
 
 import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
+import java.util.Arrays;
+import java.util.Objects;
 
-/**
- * Configuration options for the formatting style.
- */
-public enum FormatterStyle {
+/** Configuration options for the formatting style. */
+public enum UiFormatterStyle {
   GOOGLE("Default Google Java style", Style.GOOGLE),
   AOSP("Android Open Source Project (AOSP) style", Style.AOSP);
 
   private final String description;
-  private final JavaFormatterOptions javaFormatterOptions;
+  private final JavaFormatterOptions.Style style;
 
-  FormatterStyle(String description, JavaFormatterOptions.Style style) {
+  UiFormatterStyle(String description, JavaFormatterOptions.Style style) {
     this.description = description;
-    this.javaFormatterOptions = JavaFormatterOptions.builder().style(style).build();
+    this.style = style;
   }
 
   @Override
@@ -39,7 +39,14 @@ public enum FormatterStyle {
     return description;
   }
 
-  public JavaFormatterOptions getJavaFormatterOptions() {
-    return javaFormatterOptions;
+  public JavaFormatterOptions.Style convert() {
+    return style;
+  }
+
+  static UiFormatterStyle convert(JavaFormatterOptions.Style style) {
+    return Arrays.stream(UiFormatterStyle.values())
+        .filter(value -> Objects.equals(value.style, style))
+        .findFirst()
+        .get();
   }
 }
