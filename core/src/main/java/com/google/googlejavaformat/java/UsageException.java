@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Joiner;
 
 /** Checked exception class for formatter command-line usage errors. */
-public final class UsageException extends Exception {
+final class UsageException extends Exception {
 
   private static final Joiner NEWLINE_JOINER = Joiner.on(System.lineSeparator());
 
@@ -32,12 +32,14 @@ public final class UsageException extends Exception {
     "Usage: google-java-format [options] file(s)",
     "",
     "Options:",
+    "  @<filename>",
+    "    Read options and files from file.",
     "  -i, -r, -replace, --replace",
     "    Send formatted output back to files, not stdout.",
     "  -",
     "    Format stdin -> stdout",
     "  --aosp, -aosp, -a",
-    "    Use AOSP style instead of Google Style (4-space indentation)",
+    "    Use AOSP style instead of Google Style (4-space indentation).",
     "  --fix-imports-only",
     "    Fix import order and remove any unused imports, but do no other formatting.",
     "  --skip-sorting-imports",
@@ -56,7 +58,7 @@ public final class UsageException extends Exception {
     "  --offset, -offset",
     "    Character offset to format (0-based; default is all).",
     "  --help, -help, -h",
-    "    Print this usage statement",
+    "    Print this usage statement.",
     "  --version, -version, -v",
     "    Print the version.",
     "",
