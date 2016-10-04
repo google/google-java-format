@@ -52,9 +52,7 @@ public class ModifierOrderer {
       case ITerminalSymbols.TokenNamestatic:
         return Modifier.STATIC;
       case ITerminalSymbols.TokenNamedefault:
-        // TODO(cushon): handle default
-        // return Modifier.DEFAULT;
-        return null;
+        return Modifier.DEFAULT;
       case ITerminalSymbols.TokenNamefinal:
         return Modifier.FINAL;
       case ITerminalSymbols.TokenNametransient:
