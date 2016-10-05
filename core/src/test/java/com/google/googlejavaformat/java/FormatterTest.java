@@ -16,8 +16,10 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Range;
 import com.google.common.io.CharStreams;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -28,6 +30,7 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -308,5 +311,17 @@ public final class FormatterTest {
   public void stringEscapeLength() throws Exception {
     assertThat(new Formatter().formatSource("class T {{ f(\"\\\"\"); }}"))
         .isEqualTo("class T {\n  {\n    f(\"\\\"\");\n  }\n}\n");
+  }
+
+  @Test
+  public void nonUnixStyleFails() throws Exception {
+    String win = "class T {\r\n}\r\n";
+    try {
+      new Formatter().formatSource(win, Collections.singleton(Range.closedOpen(0, win.length())));
+      fail("Windows-style line separator should fail!");
+    } catch (IllegalArgumentException exception) {
+      assertThat(exception)
+          .hasMessage("Expected input with Unix-style line separator, but got: WINDOWS");
+    }
   }
 }
