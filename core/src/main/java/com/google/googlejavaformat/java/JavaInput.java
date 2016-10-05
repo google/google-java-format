@@ -30,6 +30,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.Input;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -38,21 +39,18 @@ import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.compiler.IScanner;
 import org.eclipse.jdt.core.compiler.ITerminalSymbols;
 import org.eclipse.jdt.core.compiler.InvalidInputException;
-import org.eclipse.jdt.core.dom.CompilationUnit;
 
-/**
- * {@code JavaInput} extends {@link Input} to represent a Java input document.
- */
+/** {@code JavaInput} extends {@link Input} to represent a Java input document. */
 public final class JavaInput extends Input {
   /**
    * A {@code JavaInput} is a sequence of {@link Tok}s that cover the Java input. A {@link Tok} is
-   * either a token (if {@code isToken()}), or a non-token, which is a comment (if
-   * {@code isComment()}) or a newline (if {@code isNewline()}) or a maximal sequence of other
-   * whitespace characters (if {@code isSpaces()}). Each {@link Tok} contains a sequence of
-   * characters, an index (sequential starting at {@code 0} for tokens and comments, else
-   * {@code -1}), and an Eclipse-compatible ({@code 0}-origin) position in the input. The
-   * concatenation of the texts of all the {@link Tok}s equals the input. Each Input ends with a
-   * token EOF {@link Tok}, with empty text.
+   * either a token (if {@code isToken()}), or a non-token, which is a comment (if {@code
+   * isComment()}) or a newline (if {@code isNewline()}) or a maximal sequence of other whitespace
+   * characters (if {@code isSpaces()}). Each {@link Tok} contains a sequence of characters, an
+   * index (sequential starting at {@code 0} for tokens and comments, else {@code -1}), and an
+   * Eclipse-compatible ({@code 0}-origin) position in the input. The concatenation of the texts of
+   * all the {@link Tok}s equals the input. Each Input ends with a token EOF {@link Tok}, with empty
+   * text.
    *
    * <p>A {@code /*} comment possibly contains newlines; a {@code //} comment does not contain the
    * terminating newline character, but is followed by a newline {@link Tok}.
@@ -68,6 +66,7 @@ public final class JavaInput extends Input {
 
     /**
      * The {@code Tok} constructor.
+     *
      * @param index its index
      * @param originalText its original text, before removing Unicode escapes
      * @param text its text after removing Unicode escapes
@@ -164,8 +163,8 @@ public final class JavaInput extends Input {
     }
 
     /**
-     * The token id used by the eclipse scanner. See
-     * {@link org.eclipse.jdt.core.compiler.ITerminalSymbols} for possible values.
+     * The token id used by the eclipse scanner. See {@link
+     * org.eclipse.jdt.core.compiler.ITerminalSymbols} for possible values.
      */
     public int id() {
       return id;
@@ -186,6 +185,7 @@ public final class JavaInput extends Input {
 
     /**
      * Token constructor.
+     *
      * @param toksBefore the earlier non-token {link Tok}s assigned to this {@code Token}
      * @param tok this token {@link Tok}
      * @param toksAfter the later non-token {link Tok}s assigned to this {@code Token}
@@ -198,6 +198,7 @@ public final class JavaInput extends Input {
 
     /**
      * Get the token's {@link Tok}.
+     *
      * @return the token's {@link Tok}
      */
     @Override
@@ -207,6 +208,7 @@ public final class JavaInput extends Input {
 
     /**
      * Get the earlier {@link Tok}s assigned to this {@code Token}.
+     *
      * @return the earlier {@link Tok}s assigned to this {@code Token}
      */
     @Override
@@ -216,6 +218,7 @@ public final class JavaInput extends Input {
 
     /**
      * Get the later {@link Tok}s assigned to this {@code Token}.
+     *
      * @return the later {@link Tok}s assigned to this {@code Token}
      */
     @Override
@@ -307,6 +310,7 @@ public final class JavaInput extends Input {
 
   /**
    * Get the input text.
+   *
    * @return the input text
    */
   @Override
@@ -513,6 +517,7 @@ public final class JavaInput extends Input {
   /**
    * Returns the lowest line number the {@link Token} or one of its {@code tokBefore}s lies on in
    * the {@code JavaInput}.
+   *
    * @param token the {@link Token}
    * @return the {@code 0}-based line number
    */
@@ -536,6 +541,7 @@ public final class JavaInput extends Input {
   /**
    * Returns the highest line number the {@link Token} or one of its {@code tokAfter}s lies on in
    * the {@code JavaInput}.
+   *
    * @param token the {@link Token}
    * @return the {@code 0}-based line number
    */
@@ -558,6 +564,7 @@ public final class JavaInput extends Input {
 
   /**
    * Convert from an offset and length flag pair to a token range.
+   *
    * @param offset the {@code 0}-based offset in characters
    * @param length the length in characters
    * @return the {@code 0}-based {@link Range} of tokens
@@ -601,6 +608,7 @@ public final class JavaInput extends Input {
 
   /**
    * Get the Token by index.
+   *
    * @param k the token index
    */
   Token getToken(int k) {
@@ -609,6 +617,7 @@ public final class JavaInput extends Input {
 
   /**
    * Get the input tokens.
+   *
    * @return the input tokens
    */
   @Override
@@ -636,23 +645,23 @@ public final class JavaInput extends Input {
         .toString();
   }
 
-  private CompilationUnit unit;
+  private JCCompilationUnit unit;
 
   @Override
   public int getLineNumber(int inputPosition) {
     Verify.verifyNotNull(unit, "Expected compilation unit to be set.");
-    return unit.getLineNumber(inputPosition);
+    return unit.getLineMap().getLineNumber(inputPosition);
   }
 
   @Override
   public int getColumnNumber(int inputPosition) {
     Verify.verifyNotNull(unit, "Expected compilation unit to be set.");
-    return unit.getColumnNumber(inputPosition);
+    return unit.getLineMap().getColumnNumber(inputPosition);
   }
 
   // TODO(cushon): refactor JavaInput so the CompilationUnit can be passed into
   // the constructor.
-  public void setCompilationUnit(CompilationUnit unit) {
+  public void setCompilationUnit(JCCompilationUnit unit) {
     this.unit = unit;
   }
 

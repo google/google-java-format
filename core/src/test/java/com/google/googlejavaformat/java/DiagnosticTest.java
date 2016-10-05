@@ -32,9 +32,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/**
- * Tests for error reporting.
- */
+/** Tests for error reporting. */
 @RunWith(JUnit4.class)
 public class DiagnosticTest {
   @Rule public TemporaryFolder testFolder = new TemporaryFolder();
@@ -66,8 +64,7 @@ public class DiagnosticTest {
 
     int result = main.format(path.toString());
     assertThat(stdout.toString()).isEmpty();
-    assertThat(stderr.toString())
-        .contains("InvalidSyntax.java:2:18: error: Syntax error on token \"NumPrinter\"");
+    assertThat(stderr.toString()).contains("InvalidSyntax.java:2:29: error: <identifier> expected");
     assertThat(result).isEqualTo(1);
   }
 
@@ -85,7 +82,8 @@ public class DiagnosticTest {
 
     int result = main.format(path.toString());
     assertThat(stdout.toString()).isEmpty();
-    assertThat(stderr.toString()).contains("InvalidSyntax.java:1:1: error: Invalid unicode");
+    assertThat(stderr.toString())
+        .contains("InvalidSyntax.java:1:35: error: illegal unicode escape");
     assertThat(result).isEqualTo(1);
   }
 
@@ -107,7 +105,7 @@ public class DiagnosticTest {
 
     int result = main.format(pathOne.toString(), pathTwo.toString());
     assertThat(stdout.toString()).isEqualTo(two);
-    assertThat(stderr.toString()).contains("One.java:1:11: error: Syntax error, insert \"}\"");
+    assertThat(stderr.toString()).contains("One.java:1:13: error: reached end of file");
     assertThat(result).isEqualTo(1);
   }
 
@@ -129,7 +127,8 @@ public class DiagnosticTest {
 
     int result = main.format("-i", pathOne.toString(), pathTwo.toString());
     assertThat(stdout.toString()).isEmpty();
-    assertThat(stderr.toString()).contains("One.java:1:13: error: Syntax error on token \"}\"");
+    assertThat(stderr.toString())
+        .contains("One.java:1:14: error: class, interface, or enum expected");
     assertThat(result).isEqualTo(1);
     // don't edit files with parse errors
     assertThat(Files.readAllLines(pathOne, UTF_8)).containsExactly("class One {}}");
@@ -152,8 +151,7 @@ public class DiagnosticTest {
     int exitCode = main.format(args);
 
     assertThat(exitCode).isEqualTo(1);
-    assertThat(err.toString())
-        .contains("A.java:2:4: error: Syntax error, insert \";\" to complete BlockStatements");
+    assertThat(err.toString()).contains("A.java:2:6: error: ';' expected");
   }
 
   @Test
@@ -168,8 +166,7 @@ public class DiagnosticTest {
     int exitCode = main.format(args);
 
     assertThat(exitCode).isEqualTo(1);
-    assertThat(err.toString())
-        .contains("<stdin>:2:4: error: Syntax error, insert \";\" to complete BlockStatements");
+    assertThat(err.toString()).contains("<stdin>:2:6: error: ';' expected");
   }
 
   @Test
@@ -188,7 +185,7 @@ public class DiagnosticTest {
     int exitCode = main.format(args);
 
     assertThat(exitCode).isEqualTo(1);
-    assertThat(err.toString()).contains("A.java:2:4: error: Invalid character constant");
+    assertThat(err.toString()).contains("A.java:2:5: error: unclosed character literal");
   }
 
   @Test
@@ -202,6 +199,6 @@ public class DiagnosticTest {
     int exitCode = main.format(args);
 
     assertThat(exitCode).isEqualTo(1);
-    assertThat(err.toString()).contains("<stdin>:2:4: error: Invalid character constant");
+    assertThat(err.toString()).contains("<stdin>:2:5: error: unclosed character literal");
   }
 }

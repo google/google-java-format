@@ -14,16 +14,44 @@
 
 package com.google.googlejavaformat;
 
+import static java.util.Locale.ENGLISH;
+
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
+
 /** An unchecked formatting error. */
 public class FormattingError extends Error {
 
-  private final FormatterDiagnostic diagnostic;
+  private final ImmutableList<FormatterDiagnostic> diagnostics;
 
   public FormattingError(FormatterDiagnostic diagnostic) {
-    this.diagnostic = diagnostic;
+    this(ImmutableList.of(diagnostic));
   }
 
-  public FormatterDiagnostic diagnostic() {
-    return diagnostic;
+  public FormattingError(Iterable<FormatterDiagnostic> diagnostics) {
+    this.diagnostics = ImmutableList.copyOf(diagnostics);
   }
+
+  public ImmutableList<FormatterDiagnostic> diagnostics() {
+    return diagnostics;
+  }
+
+  public static FormattingError fromJavacDiagnostics(
+      Iterable<Diagnostic<? extends JavaFileObject>> diagnostics) {
+    return new FormattingError(Iterables.transform(diagnostics, TO_FORMATTER_DIAGNOSTIC));
+  }
+
+  private static final Function<Diagnostic<?>, FormatterDiagnostic> TO_FORMATTER_DIAGNOSTIC =
+      new Function<Diagnostic<?>, FormatterDiagnostic>() {
+        @Override
+        public FormatterDiagnostic apply(Diagnostic<?> input) {
+          return FormatterDiagnostic.create(
+              (int) input.getLineNumber(),
+              (int) input.getColumnNumber(),
+              input.getMessage(ENGLISH));
+        }
+      };
 }

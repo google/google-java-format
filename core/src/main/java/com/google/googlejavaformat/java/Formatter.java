@@ -14,8 +14,12 @@
 
 package com.google.googlejavaformat.java;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
@@ -24,21 +28,30 @@ import com.google.common.io.CharSource;
 import com.google.errorprone.annotations.Immutable;
 import com.google.googlejavaformat.Doc;
 import com.google.googlejavaformat.DocBuilder;
-import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.parser.JavacParser;
+import com.sun.tools.javac.parser.ParserFactory;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Options;
+import java.io.File;
+import java.io.IOError;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTParser;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.Message;
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
+import javax.tools.StandardLocation;
 
 /**
  * This is google-java-format, a new Java formatter that follows the Google Java Style Guide quite
@@ -68,19 +81,37 @@ import org.eclipse.jdt.core.dom.Message;
  * <p>Instances of the formatter are immutable and thread-safe.
  *
  * <p>[1] Nelson, Greg, and John DeTreville. Personal communication.
+ *
  * <p>[2] Oppen, Derek C. "Prettyprinting". ACM Transactions on Programming Languages and Systems,
- *        Volume 2 Issue 4, Oct. 1980, pp. 465–483.
+ * Volume 2 Issue 4, Oct. 1980, pp. 465–483.
  */
 @Immutable
 public final class Formatter {
 
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
 
+  private static final Predicate<Diagnostic<?>> ERROR_DIAGNOSTIC =
+      new Predicate<Diagnostic<?>>() {
+        @Override
+        public boolean apply(Diagnostic<?> input) {
+          if (input.getKind() != Diagnostic.Kind.ERROR) {
+            return false;
+          }
+          switch (input.getCode()) {
+            case "compiler.err.invalid.meth.decl.ret.type.req":
+              // accept constructor-like method declarations that don't match the name of their
+              // enclosing class
+              return false;
+            default:
+              break;
+          }
+          return true;
+        }
+      };
+
   private final JavaFormatterOptions options;
 
-  /**
-   * A new Formatter instance with default options.
-   */
+  /** A new Formatter instance with default options. */
   public Formatter() {
     this(JavaFormatterOptions.defaultOptions());
   }
@@ -97,26 +128,47 @@ public final class Formatter {
    * @param javaOutput the {@link JavaOutput}
    * @param options the {@link JavaFormatterOptions}
    */
-  static void format(JavaInput javaInput, JavaOutput javaOutput, JavaFormatterOptions options)
-      throws FormatterException {
-    ASTParser parser = ASTParser.newParser(AST.JLS8);
-    parser.setSource(javaInput.getText().toCharArray());
-    @SuppressWarnings("unchecked") // safe by specification
-    Map<String, String> parserOptions = JavaCore.getOptions();
-    JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, parserOptions);
-    parser.setCompilerOptions(parserOptions);
-    CompilationUnit unit = (CompilationUnit) parser.createAST(null);
+  static void format(
+      final JavaInput javaInput, JavaOutput javaOutput, JavaFormatterOptions options) {
+    Context context = new Context();
+    DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+    context.put(DiagnosticListener.class, diagnostics);
+    Options.instance(context).put("allowStringFolding", "false");
+    JCCompilationUnit unit;
+    JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
+    try {
+      fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, ImmutableList.<File>of());
+    } catch (IOException e) {
+      // impossible
+      throw new IOError(e);
+    }
+    SimpleJavaFileObject source =
+        new SimpleJavaFileObject(URI.create("source"), JavaFileObject.Kind.SOURCE) {
+          @Override
+          public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+            return javaInput.getText();
+          }
+        };
+    Log.instance(context).useSource(source);
+    ParserFactory parserFactory = ParserFactory.instance(context);
+    JavacParser parser =
+        parserFactory.newParser(
+            javaInput.getText(),
+            /*keepDocComments=*/ true,
+            /*keepEndPos=*/ true,
+            /*keepLineMap=*/ true);
+    unit = parser.parseCompilationUnit();
+    unit.sourcefile = source;
+
     javaInput.setCompilationUnit(unit);
-    if (unit.getMessages().length > 0) {
-      List<FormatterDiagnostic> errors = new ArrayList<>();
-      for (Message message : unit.getMessages()) {
-        errors.add(javaInput.createDiagnostic(message.getStartPosition(), message.getMessage()));
-      }
-      throw new FormatterException(errors);
+    Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
+        Iterables.filter(diagnostics.getDiagnostics(), ERROR_DIAGNOSTIC);
+    if (!Iterables.isEmpty(errorDiagnostics)) {
+      throw FormattingError.fromJavacDiagnostics(errorDiagnostics);
     }
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
-    new JavaInputAstVisitor(builder, options.indentationMultiplier()).visit(unit);
+    new JavaInputAstVisitor(builder, options.indentationMultiplier()).scan(unit, null);
     builder.sync(javaInput.getText().length());
     builder.drain();
     Doc doc = new DocBuilder().withOps(builder.build()).build();
@@ -184,7 +236,7 @@ public final class Formatter {
     try {
       format(javaInput, javaOutput, options);
     } catch (FormattingError e) {
-      throw new FormatterException(e.diagnostic());
+      throw new FormatterException(e.diagnostics());
     }
     RangeSet<Integer> tokenRangeSet = javaInput.characterRangesToTokenRanges(characterRanges);
     return javaOutput.getFormatReplacements(tokenRangeSet);
@@ -193,8 +245,7 @@ public final class Formatter {
   static final CharMatcher NEWLINE = CharMatcher.is('\n');
 
   /**
-   * Converts zero-indexed, [closed, open) line ranges in the given source file to character
-   * ranges.
+   * Converts zero-indexed, [closed, open) line ranges in the given source file to character ranges.
    */
   public static RangeSet<Integer> lineRangesToCharRanges(
       String input, RangeSet<Integer> lineRanges) {

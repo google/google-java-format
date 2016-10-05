@@ -34,14 +34,11 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/**
- * Integration test for google-java-format.
- */
+/** Integration test for google-java-format. */
 @RunWith(JUnit4.class)
 public final class FormatterTest {
 
-  @Rule
-  public TemporaryFolder testFolder = new TemporaryFolder();
+  @Rule public TemporaryFolder testFolder = new TemporaryFolder();
 
   @Test
   public void testFormatAosp() throws Exception {
@@ -50,16 +47,17 @@ public final class FormatterTest {
         "class A{void b(){while(true){weCanBeCertainThatThisWillEndUpGettingWrapped("
             + "because, it, is, just, so, very, very, very, very, looong);}}}";
     String expectedOutput =
-        Joiner.on("\n").join(
-            "class A {",
-            "    void b() {",
-            "        while (true) {",
-            "            weCanBeCertainThatThisWillEndUpGettingWrapped(",
-            "                    because, it, is, just, so, very, very, very, very, looong);",
-            "        }",
-            "    }",
-            "}",
-            "");
+        Joiner.on("\n")
+            .join(
+                "class A {",
+                "    void b() {",
+                "        while (true) {",
+                "            weCanBeCertainThatThisWillEndUpGettingWrapped(",
+                "                    because, it, is, just, so, very, very, very, very, looong);",
+                "        }",
+                "    }",
+                "}",
+                "");
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("A.java");
@@ -225,26 +223,28 @@ public final class FormatterTest {
     assertThat(output).isEqualTo(expect);
   }
 
-  private static final String UNORDERED_IMPORTS = Joiner.on('\n').join(
-      "import com.google.common.base.Preconditions;",
-      "",
-      "import static org.junit.Assert.fail;",
-      "import static com.google.truth.Truth.assertThat;",
-      "",
-      "import org.junit.runners.JUnit4;",
-      "import org.junit.runner.RunWith;",
-      "",
-      "import java.util.List;",
-      "",
-      "import javax.annotations.Nullable;");
+  private static final String UNORDERED_IMPORTS =
+      Joiner.on('\n')
+          .join(
+              "import com.google.common.base.Preconditions;",
+              "",
+              "import static org.junit.Assert.fail;",
+              "import static com.google.truth.Truth.assertThat;",
+              "",
+              "import org.junit.runners.JUnit4;",
+              "import org.junit.runner.RunWith;",
+              "",
+              "import java.util.List;",
+              "",
+              "import javax.annotations.Nullable;");
 
   @Test
   public void importsNotReorderedByDefault() throws FormatterException {
-    String input = "package com.google.example;\n" + UNORDERED_IMPORTS
-        + "\npublic class ExampleTest {}\n";
+    String input =
+        "package com.google.example;\n" + UNORDERED_IMPORTS + "\npublic class ExampleTest {}\n";
     String output = new Formatter().formatSource(input);
-    String expect = "package com.google.example;\n\n" + UNORDERED_IMPORTS
-        + "\n\npublic class ExampleTest {}\n";
+    String expect =
+        "package com.google.example;\n\n" + UNORDERED_IMPORTS + "\n\npublic class ExampleTest {}\n";
     assertThat(output).isEqualTo(expect);
   }
 

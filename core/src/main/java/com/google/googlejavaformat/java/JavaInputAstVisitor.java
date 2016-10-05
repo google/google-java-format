@@ -15,9 +15,46 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.collect.Iterables.getLast;
+import static com.google.common.collect.Iterables.getOnlyElement;
+import static com.google.googlejavaformat.Doc.FillMode.INDEPENDENT;
+import static com.google.googlejavaformat.Doc.FillMode.UNIFIED;
+import static com.google.googlejavaformat.Indent.If.make;
+import static com.google.googlejavaformat.OpsBuilder.BlankLineWanted.PRESERVE;
+import static com.google.googlejavaformat.OpsBuilder.BlankLineWanted.YES;
+import static com.google.googlejavaformat.java.Trees.getEndPosition;
+import static com.google.googlejavaformat.java.Trees.getLength;
+import static com.google.googlejavaformat.java.Trees.getMethodName;
+import static com.google.googlejavaformat.java.Trees.getSourceForNode;
+import static com.google.googlejavaformat.java.Trees.getStartPosition;
+import static com.google.googlejavaformat.java.Trees.operatorName;
+import static com.google.googlejavaformat.java.Trees.precedence;
+import static com.google.googlejavaformat.java.Trees.skipParen;
+import static com.sun.source.tree.Tree.Kind.ANNOTATION;
+import static com.sun.source.tree.Tree.Kind.ANNOTATION_TYPE;
+import static com.sun.source.tree.Tree.Kind.ASSIGNMENT;
+import static com.sun.source.tree.Tree.Kind.BLOCK;
+import static com.sun.source.tree.Tree.Kind.CLASS;
+import static com.sun.source.tree.Tree.Kind.ENUM;
+import static com.sun.source.tree.Tree.Kind.EXTENDS_WILDCARD;
+import static com.sun.source.tree.Tree.Kind.IDENTIFIER;
+import static com.sun.source.tree.Tree.Kind.IF;
+import static com.sun.source.tree.Tree.Kind.INTERFACE;
+import static com.sun.source.tree.Tree.Kind.MEMBER_SELECT;
+import static com.sun.source.tree.Tree.Kind.METHOD_INVOCATION;
+import static com.sun.source.tree.Tree.Kind.NEW_ARRAY;
+import static com.sun.source.tree.Tree.Kind.NEW_CLASS;
+import static com.sun.source.tree.Tree.Kind.PLUS;
+import static com.sun.source.tree.Tree.Kind.STRING_LITERAL;
+import static com.sun.source.tree.Tree.Kind.UNARY_MINUS;
+import static com.sun.source.tree.Tree.Kind.UNARY_PLUS;
+import static com.sun.source.tree.Tree.Kind.UNION_TYPE;
+import static com.sun.source.tree.Tree.Kind.VARIABLE;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
+import com.google.common.base.Verify;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -27,6 +64,7 @@ import com.google.common.collect.PeekingIterator;
 import com.google.googlejavaformat.CloseOp;
 import com.google.googlejavaformat.Doc;
 import com.google.googlejavaformat.Doc.FillMode;
+import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Indent;
 import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Op;
@@ -34,121 +72,83 @@ import com.google.googlejavaformat.OpenOp;
 import com.google.googlejavaformat.OpsBuilder;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output.BreakTag;
+import com.google.googlejavaformat.java.DimensionHelpers.SortedDims;
+import com.google.googlejavaformat.java.DimensionHelpers.TypeWithDims;
+import com.sun.source.tree.AnnotatedTypeTree;
+import com.sun.source.tree.AnnotationTree;
+import com.sun.source.tree.ArrayAccessTree;
+import com.sun.source.tree.ArrayTypeTree;
+import com.sun.source.tree.AssertTree;
+import com.sun.source.tree.AssignmentTree;
+import com.sun.source.tree.BinaryTree;
+import com.sun.source.tree.BlockTree;
+import com.sun.source.tree.BreakTree;
+import com.sun.source.tree.CaseTree;
+import com.sun.source.tree.CatchTree;
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.CompoundAssignmentTree;
+import com.sun.source.tree.ConditionalExpressionTree;
+import com.sun.source.tree.ContinueTree;
+import com.sun.source.tree.DoWhileLoopTree;
+import com.sun.source.tree.EmptyStatementTree;
+import com.sun.source.tree.EnhancedForLoopTree;
+import com.sun.source.tree.ExpressionStatementTree;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.ForLoopTree;
+import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.IfTree;
+import com.sun.source.tree.ImportTree;
+import com.sun.source.tree.InstanceOfTree;
+import com.sun.source.tree.IntersectionTypeTree;
+import com.sun.source.tree.LabeledStatementTree;
+import com.sun.source.tree.LambdaExpressionTree;
+import com.sun.source.tree.LiteralTree;
+import com.sun.source.tree.MemberReferenceTree;
+import com.sun.source.tree.MemberSelectTree;
+import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ModifiersTree;
+import com.sun.source.tree.NewArrayTree;
+import com.sun.source.tree.NewClassTree;
+import com.sun.source.tree.ParameterizedTypeTree;
+import com.sun.source.tree.ParenthesizedTree;
+import com.sun.source.tree.PrimitiveTypeTree;
+import com.sun.source.tree.ReturnTree;
+import com.sun.source.tree.StatementTree;
+import com.sun.source.tree.SwitchTree;
+import com.sun.source.tree.SynchronizedTree;
+import com.sun.source.tree.ThrowTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.tree.TryTree;
+import com.sun.source.tree.TypeCastTree;
+import com.sun.source.tree.TypeParameterTree;
+import com.sun.source.tree.UnaryTree;
+import com.sun.source.tree.UnionTypeTree;
+import com.sun.source.tree.VariableTree;
+import com.sun.source.tree.WhileLoopTree;
+import com.sun.source.tree.WildcardTree;
+import com.sun.source.util.TreePath;
+import com.sun.source.util.TreePathScanner;
+import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.TreeScanner;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
-import org.eclipse.jdt.core.dom.AnnotatableType;
-import org.eclipse.jdt.core.dom.Annotation;
-import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
-import org.eclipse.jdt.core.dom.AnnotationTypeMemberDeclaration;
-import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
-import org.eclipse.jdt.core.dom.ArrayAccess;
-import org.eclipse.jdt.core.dom.ArrayCreation;
-import org.eclipse.jdt.core.dom.ArrayInitializer;
-import org.eclipse.jdt.core.dom.ArrayType;
-import org.eclipse.jdt.core.dom.AssertStatement;
-import org.eclipse.jdt.core.dom.Assignment;
-import org.eclipse.jdt.core.dom.Block;
-import org.eclipse.jdt.core.dom.BodyDeclaration;
-import org.eclipse.jdt.core.dom.BooleanLiteral;
-import org.eclipse.jdt.core.dom.BreakStatement;
-import org.eclipse.jdt.core.dom.CastExpression;
-import org.eclipse.jdt.core.dom.CatchClause;
-import org.eclipse.jdt.core.dom.CharacterLiteral;
-import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
-import org.eclipse.jdt.core.dom.ClassInstanceCreation;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.ConditionalExpression;
-import org.eclipse.jdt.core.dom.ConstructorInvocation;
-import org.eclipse.jdt.core.dom.ContinueStatement;
-import org.eclipse.jdt.core.dom.CreationReference;
-import org.eclipse.jdt.core.dom.Dimension;
-import org.eclipse.jdt.core.dom.DoStatement;
-import org.eclipse.jdt.core.dom.EmptyStatement;
-import org.eclipse.jdt.core.dom.EnhancedForStatement;
-import org.eclipse.jdt.core.dom.EnumConstantDeclaration;
-import org.eclipse.jdt.core.dom.EnumDeclaration;
-import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.ExpressionMethodReference;
-import org.eclipse.jdt.core.dom.ExpressionStatement;
-import org.eclipse.jdt.core.dom.FieldAccess;
-import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.ForStatement;
-import org.eclipse.jdt.core.dom.IExtendedModifier;
-import org.eclipse.jdt.core.dom.IfStatement;
-import org.eclipse.jdt.core.dom.ImportDeclaration;
-import org.eclipse.jdt.core.dom.InfixExpression;
-import org.eclipse.jdt.core.dom.Initializer;
-import org.eclipse.jdt.core.dom.InstanceofExpression;
-import org.eclipse.jdt.core.dom.IntersectionType;
-import org.eclipse.jdt.core.dom.LabeledStatement;
-import org.eclipse.jdt.core.dom.LambdaExpression;
-import org.eclipse.jdt.core.dom.MarkerAnnotation;
-import org.eclipse.jdt.core.dom.MemberValuePair;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.Modifier;
-import org.eclipse.jdt.core.dom.Name;
-import org.eclipse.jdt.core.dom.NameQualifiedType;
-import org.eclipse.jdt.core.dom.NormalAnnotation;
-import org.eclipse.jdt.core.dom.NullLiteral;
-import org.eclipse.jdt.core.dom.NumberLiteral;
-import org.eclipse.jdt.core.dom.PackageDeclaration;
-import org.eclipse.jdt.core.dom.ParameterizedType;
-import org.eclipse.jdt.core.dom.ParenthesizedExpression;
-import org.eclipse.jdt.core.dom.PostfixExpression;
-import org.eclipse.jdt.core.dom.PrefixExpression;
-import org.eclipse.jdt.core.dom.PrimitiveType;
-import org.eclipse.jdt.core.dom.QualifiedName;
-import org.eclipse.jdt.core.dom.QualifiedType;
-import org.eclipse.jdt.core.dom.ReturnStatement;
-import org.eclipse.jdt.core.dom.SimpleName;
-import org.eclipse.jdt.core.dom.SimpleType;
-import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
-import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
-import org.eclipse.jdt.core.dom.Statement;
-import org.eclipse.jdt.core.dom.StringLiteral;
-import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
-import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
-import org.eclipse.jdt.core.dom.SuperFieldAccess;
-import org.eclipse.jdt.core.dom.SuperMethodInvocation;
-import org.eclipse.jdt.core.dom.SuperMethodReference;
-import org.eclipse.jdt.core.dom.SwitchCase;
-import org.eclipse.jdt.core.dom.SwitchStatement;
-import org.eclipse.jdt.core.dom.SynchronizedStatement;
-import org.eclipse.jdt.core.dom.ThisExpression;
-import org.eclipse.jdt.core.dom.ThrowStatement;
-import org.eclipse.jdt.core.dom.TryStatement;
-import org.eclipse.jdt.core.dom.Type;
-import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.eclipse.jdt.core.dom.TypeDeclarationStatement;
-import org.eclipse.jdt.core.dom.TypeLiteral;
-import org.eclipse.jdt.core.dom.TypeMethodReference;
-import org.eclipse.jdt.core.dom.TypeParameter;
-import org.eclipse.jdt.core.dom.UnionType;
-import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
-import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
-import org.eclipse.jdt.core.dom.WhileStatement;
-import org.eclipse.jdt.core.dom.WildcardType;
+import javax.lang.model.element.Name;
 
 /**
- * An extension of {@link OpsBuilder}, implementing a visit pattern for Eclipse AST nodes to build a
- * sequence of {@link Op}s.
+ * An AST visitor that builds a stream of {@link Op}s to format from the given {@link
+ * CompilationUnitTree}.
  */
-@SuppressWarnings({"unchecked", "rawtypes"}) // jdt uses rawtypes extensively
-public final class JavaInputAstVisitor extends ASTVisitor {
+public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
+
   /** Direction for Annotations (usually VERTICAL). */
   enum Direction {
     VERTICAL,
@@ -257,33 +257,6 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
   }
 
-  /** Position in a list of declarations. */
-  enum DeclarationPosition {
-    FIRST,
-    INTERIOR,
-    LAST;
-
-    static EnumSet<DeclarationPosition> getPositionInParent(ASTNode node) {
-      EnumSet<DeclarationPosition> position = EnumSet.noneOf(DeclarationPosition.class);
-      StructuralPropertyDescriptor locationInParent = node.getLocationInParent();
-      if (locationInParent instanceof ChildListPropertyDescriptor) {
-        List<ASTNode> propertyList =
-            (List<ASTNode>) node.getParent().getStructuralProperty(locationInParent);
-        int idx = propertyList.indexOf(node);
-        if (idx == 0) {
-          position.add(DeclarationPosition.FIRST);
-        }
-        if (idx == propertyList.size() - 1) {
-          position.add(DeclarationPosition.LAST);
-        }
-        if (position.isEmpty()) {
-          position.add(DeclarationPosition.INTERIOR);
-        }
-      }
-      return position;
-    }
-  }
-
   private final OpsBuilder builder;
 
   private static final Indent.Const ZERO = Indent.Const.ZERO;
@@ -310,38 +283,16 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   }
 
   private static final ImmutableList<Op> EMPTY_LIST = ImmutableList.of();
-  private static final Map<String, Integer> PRECEDENCE = new HashMap<>();
 
   /**
-   * Allow multi-line filling (of array initializers, argument lists, and boolean
-   * expressions) for items with length less than or equal to this threshold.
+   * Allow multi-line filling (of array initializers, argument lists, and boolean expressions) for
+   * items with length less than or equal to this threshold.
    */
   private static final int MAX_ITEM_LENGTH_FOR_FILLING = 10;
 
-  static {
-    PRECEDENCE.put("*", 10);
-    PRECEDENCE.put("/", 10);
-    PRECEDENCE.put("%", 10);
-    PRECEDENCE.put("+", 9);
-    PRECEDENCE.put("-", 9);
-    PRECEDENCE.put("<<", 8);
-    PRECEDENCE.put(">>", 8);
-    PRECEDENCE.put(">>>", 8);
-    PRECEDENCE.put("<", 7);
-    PRECEDENCE.put(">", 7);
-    PRECEDENCE.put("<=", 7);
-    PRECEDENCE.put(">=", 7);
-    PRECEDENCE.put("==", 6);
-    PRECEDENCE.put("!=", 6);
-    PRECEDENCE.put("&", 5);
-    PRECEDENCE.put("^", 4);
-    PRECEDENCE.put("|", 3);
-    PRECEDENCE.put("&&", 2);
-    PRECEDENCE.put("||", 1);
-  }
-
   /**
    * The {@code Visitor} constructor.
+   *
    * @param builder the {@link OpsBuilder}
    */
   public JavaInputAstVisitor(OpsBuilder builder, int indentMultiplier) {
@@ -361,185 +312,169 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return inExpression.peekLast();
   }
 
-  /** Pre-visits {@link ASTNode}s. */
   @Override
-  public void preVisit(ASTNode node) {
-    inExpression.addLast(node instanceof Expression || inExpression.peekLast());
+  public Void scan(Tree tree, Void unused) {
+    inExpression.addLast(tree instanceof ExpressionTree || inExpression.peekLast());
+    int previous = builder.depth();
+    try {
+      super.scan(tree, null);
+    } catch (FormattingError e) {
+      throw e;
+    } catch (Throwable t) {
+      throw new FormattingError(builder.diagnostic(Throwables.getStackTraceAsString(t)));
+    } finally {
+      inExpression.removeLast();
+    }
+    builder.checkClosed(previous);
+    return null;
   }
 
-  /** Post-visits {@link ASTNode}s. */
   @Override
-  public void postVisit(ASTNode node) {
-    inExpression.removeLast();
-  }
-
-  /** Visitor method for a {@link CompilationUnit}. */
-  @Override
-  public boolean visit(CompilationUnit node) {
+  public Void visitCompilationUnit(CompilationUnitTree node, Void unused) {
     boolean first = true;
-    if (node.getPackage() != null) {
+    if (node.getPackageName() != null) {
       markForPartialFormat();
-      visit(node.getPackage());
+      visitPackage(node.getPackageName(), node.getPackageAnnotations());
       builder.forcedBreak();
       first = false;
     }
-    if (!node.imports().isEmpty()) {
+    if (!node.getImports().isEmpty()) {
       if (!first) {
         builder.blankLineWanted(BlankLineWanted.YES);
       }
-      for (ImportDeclaration importDeclaration : (List<ImportDeclaration>) node.imports()) {
+      for (ImportTree importDeclaration : node.getImports()) {
         markForPartialFormat();
-        builder.blankLineWanted(BlankLineWanted.PRESERVE);
-        visit(importDeclaration);
+        builder.blankLineWanted(PRESERVE);
+        scan(importDeclaration, null);
         builder.forcedBreak();
       }
       first = false;
     }
-    for (AbstractTypeDeclaration type : (List<AbstractTypeDeclaration>) node.types()) {
+    dropEmptyDeclarations();
+    for (Tree type : node.getTypeDecls()) {
       if (!first) {
         builder.blankLineWanted(BlankLineWanted.YES);
       }
-      dropEmptyDeclarations();
       markForPartialFormat();
-      type.accept(this);
+      scan(type, null);
       builder.forcedBreak();
       first = false;
+      dropEmptyDeclarations();
     }
-    dropEmptyDeclarations();
     // set a partial format marker at EOF to make sure we can format the entire file
     markForPartialFormat();
-    return false;
+    return null;
   }
 
   /** Skips over extra semi-colons at the top-level, or in a class member declaration lists. */
   private void dropEmptyDeclarations() {
-    while (builder.peekToken().equals(Optional.of(";"))) {
-      token(";");
+    if (builder.peekToken().equals(Optional.of(";"))) {
+      while (builder.peekToken().equals(Optional.of(";"))) {
+        markForPartialFormat();
+        token(";");
+      }
     }
   }
 
-  /** Visitor method for {@link AnnotationTypeDeclaration}s. */
   @Override
-  public boolean visit(AnnotationTypeDeclaration node) {
+  public Void visitClass(ClassTree tree, Void unused) {
+    switch (tree.getKind()) {
+      case ANNOTATION_TYPE:
+        visitAnnotationType(tree);
+        break;
+      case CLASS:
+      case INTERFACE:
+        visitClassDeclaration(tree);
+        break;
+      case ENUM:
+        visitEnumDeclaration(tree);
+        break;
+      default:
+        throw new AssertionError(tree.getKind());
+    }
+    return null;
+  }
+
+  public void visitAnnotationType(ClassTree node) {
     sync(node);
     builder.open(ZERO);
-    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
+    visitAndBreakModifiers(node.getModifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
     builder.open(ZERO);
     token("@");
     token("interface");
     builder.breakOp(" ");
-    visit(node.getName());
+    visit(node.getSimpleName());
     builder.close();
     builder.close();
-    if (node.bodyDeclarations() == null) {
+    if (node.getMembers() == null) {
       builder.open(plusFour);
       token(";");
       builder.close();
     } else {
-      addBodyDeclarations(node.bodyDeclarations(), BracesOrNot.YES, FirstDeclarationsOrNot.YES);
+      addBodyDeclarations(node.getMembers(), BracesOrNot.YES, FirstDeclarationsOrNot.YES);
     }
     builder.guessToken(";");
-    return false;
   }
 
-  /** Visitor method for {@link AnnotationTypeMemberDeclaration}s. */
   @Override
-  public boolean visit(AnnotationTypeMemberDeclaration node) {
-    sync(node);
-    declareOne(
-        node,
-        Direction.VERTICAL,
-        node.modifiers(),
-        node.getType(),
-        VarArgsOrNot.NO,
-        ImmutableList.<Annotation>of(),
-        node.getName(),
-        "()",
-        ImmutableList.<Dimension>of(),
-        "default",
-        Optional.fromNullable(node.getDefault()),
-        Optional.of(";"),
-        ReceiverParameter.NO);
-    return false;
-  }
-
-  /** Visitor method for {@link AnonymousClassDeclaration}s. */
-  @Override
-  public boolean visit(AnonymousClassDeclaration node) {
-    sync(node);
-    addBodyDeclarations(node.bodyDeclarations(), BracesOrNot.YES, FirstDeclarationsOrNot.YES);
-    return false;
-  }
-
-  // TODO(jdd): Get rid of instanceof?
-
-  /** Visitor method for {@link ArrayAccess}es. */
-  @Override
-  public boolean visit(ArrayAccess node) {
+  public Void visitArrayAccess(ArrayAccessTree node, Void unused) {
     sync(node);
     builder.open(plusFour);
     // Collapse chains of ArrayAccess nodes.
-    ArrayDeque<Expression> stack = new ArrayDeque<>();
-    Expression array;
+    ArrayDeque<ExpressionTree> stack = new ArrayDeque<>();
+    ExpressionTree array;
     while (true) {
       stack.addLast(node.getIndex());
-      array = node.getArray();
-      if (!(array instanceof ArrayAccess)) {
+      array = node.getExpression();
+      if (!(array instanceof ArrayAccessTree)) {
         break;
       }
-      node = (ArrayAccess) array;
+      node = (ArrayAccessTree) array;
     }
-    array.accept(this);
+    scan(array, null);
     do {
       token("[");
       builder.breakToFill();
-      stack.removeLast().accept(this);
+      scan(stack.removeLast(), null);
       token("]");
     } while (!stack.isEmpty());
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link ArrayCreation}s. */
   @Override
-  public boolean visit(ArrayCreation node) {
-    sync(node);
-    builder.open(plusFour);
-    token("new");
-    builder.space();
-    visitArrayType(node.getType(), DimensionsOrNot.NO);
-    int dimensions = node.getType().getDimensions();
-    builder.open(ZERO);
-    for (int i = 0; i < dimensions; i++) {
-      builder.breakOp();
-      Dimension dimension = (Dimension) node.getType().dimensions().get(i);
-      if (!dimension.annotations().isEmpty()) {
-        builder.breakToFill(" ");
-        builder.open(ZERO);
-        visitAnnotations(dimension.annotations(), BreakOrNot.NO, BreakOrNot.NO);
-        builder.breakToFill(" ");
-        builder.close();
-      }
-      token("[");
-      if (i < node.dimensions().size()) {
-        ((Expression) node.dimensions().get(i)).accept(this);
-      }
-      token("]");
-    }
-    builder.close();
-    builder.close();
-    if (node.getInitializer() != null) {
+  public Void visitNewArray(NewArrayTree node, Void unused) {
+    if (node.getType() != null) {
+      builder.open(plusFour);
+      token("new");
       builder.space();
-      visit(node.getInitializer());
+
+      TypeWithDims extractedDims = DimensionHelpers.extractDims(node.getType(), SortedDims.YES);
+      Tree base = extractedDims.node;
+
+      ArrayDeque<ExpressionTree> dimExpressions =
+          new ArrayDeque<ExpressionTree>(node.getDimensions());
+
+      ArrayDeque<List<AnnotationTree>> annotations = new ArrayDeque<>();
+      annotations.addAll((List<List<AnnotationTree>>) node.getDimAnnotations());
+      annotations.addAll(extractedDims.dims);
+
+      scan(base, null);
+      builder.open(ZERO);
+      maybeAddDims(dimExpressions, annotations);
+      builder.close();
+      builder.close();
     }
-    return false;
+    if (node.getInitializers() != null) {
+      if (node.getType() != null) {
+        builder.space();
+      }
+      visitArrayInitializer(node.getInitializers());
+    }
+    return null;
   }
 
-  /** Visitor method for {@link ArrayInitializer}s. */
-  @Override
-  public boolean visit(ArrayInitializer node) {
-    sync(node);
-    List<Expression> expressions = node.expressions();
+  public boolean visitArrayInitializer(List<? extends ExpressionTree> expressions) {
     int cols;
     if (expressions.isEmpty()) {
       tokenBreakTrailingComment("{", plusTwo);
@@ -552,19 +487,18 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       token("{");
       builder.forcedBreak();
       boolean first = true;
-      for (Iterable<Expression> row : Iterables.partition(expressions, cols)) {
+      for (Iterable<? extends ExpressionTree> row : Iterables.partition(expressions, cols)) {
         if (!first) {
           builder.forcedBreak();
         }
-        builder.open(
-            row.iterator().next().getNodeType() == ASTNode.ARRAY_INITIALIZER ? ZERO : plusFour);
+        builder.open(row.iterator().next().getKind() == NEW_ARRAY ? ZERO : plusFour);
         boolean firstInRow = true;
-        for (Expression item : row) {
+        for (ExpressionTree item : row) {
           if (!firstInRow) {
             token(",");
             builder.breakToFill(" ");
           }
-          item.accept(this);
+          scan(item, null);
           firstInRow = false;
         }
         builder.guessToken(",");
@@ -577,27 +511,37 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     } else {
       // Special-case the formatting of array initializers inside annotations
       // to more eagerly use a one-per-line layout.
-      boolean inMemberValuePair =
-          node.getParent().getNodeType() == ASTNode.MEMBER_VALUE_PAIR
-              || node.getParent().getNodeType() == ASTNode.SINGLE_MEMBER_ANNOTATION;
+      boolean inMemberValuePair = false;
+      // walk up past the enclosing NewArrayTree (and maybe an enclosing AssignmentTree)
+      TreePath path = getCurrentPath();
+      for (int i = 0; i < 2; i++) {
+        if (path == null) {
+          break;
+        }
+        if (path.getLeaf().getKind() == ANNOTATION) {
+          inMemberValuePair = true;
+          break;
+        }
+        path = path.getParentPath();
+      }
       boolean shortItems = hasOnlyShortItems(expressions);
       boolean allowFilledElementsOnOwnLine = shortItems || !inMemberValuePair;
 
       builder.open(plusTwo);
       tokenBreakTrailingComment("{", plusTwo);
-      boolean hasTrailingComma = hasTrailingToken(builder.getInput(), node.expressions(), ",");
+      boolean hasTrailingComma = hasTrailingToken(builder.getInput(), expressions, ",");
       builder.breakOp(hasTrailingComma ? FillMode.FORCED : FillMode.UNIFIED, "", ZERO);
       if (allowFilledElementsOnOwnLine) {
         builder.open(ZERO);
       }
       boolean first = true;
       FillMode fillMode = shortItems ? FillMode.INDEPENDENT : FillMode.UNIFIED;
-      for (Expression expression : expressions) {
+      for (ExpressionTree expression : expressions) {
         if (!first) {
           token(",");
           builder.breakOp(fillMode, " ", ZERO);
         }
-        expression.accept(this);
+        scan(expression, null);
         first = false;
       }
       builder.guessToken(",");
@@ -611,9 +555,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return false;
   }
 
-  private boolean hasOnlyShortItems(List<Expression> expressions) {
-    for (Expression expression : expressions) {
-      if (builder.actualSize(expression.getStartPosition(), expression.getLength())
+  private boolean hasOnlyShortItems(List<? extends ExpressionTree> expressions) {
+    for (ExpressionTree expression : expressions) {
+      int startPosition = getStartPosition(expression);
+      if (builder.actualSize(
+              startPosition, getEndPosition(expression, getCurrentPath()) - startPosition)
           >= MAX_ITEM_LENGTH_FOR_FILLING) {
         return false;
       }
@@ -621,67 +567,77 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return true;
   }
 
-  /** Visitor method for {@link ArrayType}s. */
   @Override
-  public boolean visit(ArrayType node) {
+  public Void visitArrayType(ArrayTypeTree node, Void unused) {
     sync(node);
-    visitArrayType(node, DimensionsOrNot.YES);
-    return false;
+    visitAnnotatedArrayType(node);
+    return null;
   }
 
-  /** Visitor method for {@link AssertStatement}s. */
+  private void visitAnnotatedArrayType(Tree node) {
+    TypeWithDims extractedDims = DimensionHelpers.extractDims(node, SortedDims.YES);
+    builder.open(plusFour);
+    scan(extractedDims.node, null);
+    ArrayDeque<List<AnnotationTree>> dims = new ArrayDeque<>(extractedDims.dims);
+    maybeAddDims(dims);
+    Verify.verify(dims.isEmpty());
+    builder.close();
+  }
+
   @Override
-  public boolean visit(AssertStatement node) {
+  public Void visitAssert(AssertTree node, Void unused) {
     sync(node);
     builder.open(ZERO);
     token("assert");
     builder.space();
-    builder.open(node.getMessage() == null ? ZERO : plusFour);
-    node.getExpression().accept(this);
-    if (node.getMessage() != null) {
+    builder.open(node.getDetail() == null ? ZERO : plusFour);
+    scan(node.getCondition(), null);
+    if (node.getDetail() != null) {
       builder.breakOp(" ");
       token(":");
       builder.space();
-      node.getMessage().accept(this);
+      scan(node.getDetail(), null);
     }
     builder.close();
     builder.close();
     token(";");
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link Assignment}s. */
   @Override
-  public boolean visit(Assignment node) {
+  public Void visitAssignment(AssignmentTree node, Void unused) {
     sync(node);
     builder.open(plusFour);
-    node.getLeftHandSide().accept(this);
+    scan(node.getVariable(), null);
     builder.space();
-    builder.op(node.getOperator().toString());
+    splitToken(operatorName(node));
     builder.breakOp(" ");
-    node.getRightHandSide().accept(this);
+    scan(node.getExpression(), null);
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link Block}s. */
   @Override
-  public boolean visit(Block node) {
-    visitBlock(node, CollapseEmptyOrNot.YES, AllowLeadingBlankLine.NO, AllowTrailingBlankLine.NO);
-    return false;
+  public Void visitBlock(BlockTree node, Void unused) {
+    visitBlock(node, CollapseEmptyOrNot.NO, AllowLeadingBlankLine.NO, AllowTrailingBlankLine.NO);
+    return null;
   }
 
-  /** Visitor method for {@link BooleanLiteral}s. */
   @Override
-  public boolean visit(BooleanLiteral node) {
+  public Void visitCompoundAssignment(CompoundAssignmentTree node, Void unused) {
     sync(node);
-    token(node.toString());
-    return false;
+    builder.open(plusFour);
+    scan(node.getVariable(), null);
+    builder.space();
+    splitToken(operatorName(node));
+    builder.breakOp(" ");
+    scan(node.getExpression(), null);
+    builder.close();
+    return null;
   }
 
-  /** Visitor method for {@link BreakStatement}s. */
   @Override
-  public boolean visit(BreakStatement node) {
+  public Void visitBreak(BreakTree node, Void unused) {
     sync(node);
     builder.open(plusFour);
     token("break");
@@ -691,85 +647,63 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     builder.close();
     token(";");
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link CastExpression}s. */
   @Override
-  public boolean visit(CastExpression node) {
+  public Void visitTypeCast(TypeCastTree node, Void unused) {
     sync(node);
     builder.open(plusFour);
     token("(");
-    node.getType().accept(this);
+    scan(node.getType(), null);
     token(")");
     builder.breakOp(" ");
-    node.getExpression().accept(this);
+    scan(node.getExpression(), null);
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link CharacterLiteral}s. */
   @Override
-  public boolean visit(CharacterLiteral node) {
-    sync(node);
-    token(node.getEscapedValue());
-    return false;
-  }
-
-  /** Visitor method for {@link ClassInstanceCreation}s. */
-  @Override
-  public boolean visit(ClassInstanceCreation node) {
+  public Void visitNewClass(NewClassTree node, Void unused) {
     sync(node);
     builder.open(ZERO);
-    if (node.getExpression() != null) {
-      node.getExpression().accept(this);
+    if (node.getEnclosingExpression() != null) {
+      scan(node.getEnclosingExpression(), null);
       builder.breakOp();
       token(".");
     }
     token("new");
     builder.space();
-    addTypeArguments(node.typeArguments(), plusFour);
-    node.getType().accept(this);
-    addArguments(node.arguments(), plusFour);
+    addTypeArguments(node.getTypeArguments(), plusFour);
+    scan(node.getIdentifier(), null);
+    addArguments(node.getArguments(), plusFour);
     builder.close();
-    if (node.getAnonymousClassDeclaration() != null) {
-      visit(node.getAnonymousClassDeclaration());
+    if (node.getClassBody() != null) {
+      addBodyDeclarations(
+          node.getClassBody().getMembers(), BracesOrNot.YES, FirstDeclarationsOrNot.YES);
     }
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link ConditionalExpression}s. */
   @Override
-  public boolean visit(ConditionalExpression node) {
+  public Void visitConditionalExpression(ConditionalExpressionTree node, Void unused) {
     sync(node);
     builder.open(plusFour);
-    node.getExpression().accept(this);
+    scan(node.getCondition(), null);
     builder.breakOp(" ");
     token("?");
     builder.space();
-    node.getThenExpression().accept(this);
+    scan(node.getTrueExpression(), null);
     builder.breakOp(" ");
     token(":");
     builder.space();
-    node.getElseExpression().accept(this);
+    scan(node.getFalseExpression(), null);
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link ConstructorInvocation}s. */
   @Override
-  public boolean visit(ConstructorInvocation node) {
-    sync(node);
-    addTypeArguments(node.typeArguments(), plusFour);
-    token("this");
-    addArguments(node.arguments(), plusFour);
-    token(";");
-    return false;
-  }
-
-  /** Visitor method for {@link ContinueStatement}s. */
-  @Override
-  public boolean visit(ContinueStatement node) {
+  public Void visitContinue(ContinueTree node, Void unused) {
     sync(node);
     builder.open(plusFour);
     token("continue");
@@ -779,49 +713,19 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     token(";");
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link CreationReference}s. */
   @Override
-  public boolean visit(CreationReference node) {
-    sync(node);
-    builder.open(plusFour);
-    node.getType().accept(this);
-    builder.breakOp();
-    builder.op("::");
-    addTypeArguments(node.typeArguments(), plusFour);
-    token("new");
-    builder.close();
-    return false;
-  }
-
-  /** Visitor method for {@link Dimension}s. */
-  @Override
-  public boolean visit(Dimension node) {
-    sync(node);
-    if (!node.annotations().isEmpty()) {
-      builder.open(ZERO);
-      visitAnnotations(node.annotations(), BreakOrNot.NO, BreakOrNot.NO);
-      builder.breakToFill(" ");
-      builder.close();
-    }
-    token("[");
-    token("]");
-    return false;
-  }
-
-  /** Visitor method for {@link DoStatement}s. */
-  @Override
-  public boolean visit(DoStatement node) {
+  public Void visitDoWhileLoop(DoWhileLoopTree node, Void unused) {
     sync(node);
     token("do");
     visitStatement(
-        node.getBody(),
+        node.getStatement(),
         CollapseEmptyOrNot.YES,
         AllowLeadingBlankLine.YES,
         AllowTrailingBlankLine.YES);
-    if (node.getBody().getNodeType() == ASTNode.BLOCK) {
+    if (node.getStatement().getKind() == BLOCK) {
       builder.space();
     } else {
       builder.breakOp(" ");
@@ -829,23 +733,21 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     token("while");
     builder.space();
     token("(");
-    node.getExpression().accept(this);
+    scan(skipParen(node.getCondition()), null);
     token(")");
     token(";");
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link EmptyStatement}s. */
   @Override
-  public boolean visit(EmptyStatement node) {
+  public Void visitEmptyStatement(EmptyStatementTree node, Void unused) {
     sync(node);
-    builder.guessToken(";");
-    return false;
+    dropEmptyDeclarations();
+    return null;
   }
 
-  /** Visitor method for {@link EnhancedForStatement}s. */
   @Override
-  public boolean visit(EnhancedForStatement node) {
+  public Void visitEnhancedForLoop(EnhancedForLoopTree node, Void unused) {
     sync(node);
     builder.open(ZERO);
     token("for");
@@ -853,56 +755,53 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     token("(");
     builder.open(ZERO);
     visitToDeclare(
-        Direction.HORIZONTAL, node.getParameter(), Optional.of(node.getExpression()), ":");
+        DeclarationKind.NONE,
+        Direction.HORIZONTAL,
+        node.getVariable(),
+        Optional.of(node.getExpression()),
+        ":",
+        Optional.<String>absent());
     builder.close();
     token(")");
     builder.close();
     visitStatement(
-        node.getBody(),
+        node.getStatement(),
         CollapseEmptyOrNot.YES,
         AllowLeadingBlankLine.YES,
         AllowTrailingBlankLine.NO);
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link EnumConstantDeclaration}s. */
-  @Override
-  public boolean visit(EnumConstantDeclaration node) {
-    sync(node);
-    markForPartialFormat();
-    List<Op> breaks =
-        visitModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
-    if (!breaks.isEmpty()) {
-      builder.open(ZERO);
-      builder.addAll(breaks);
-      builder.close();
+  private void visitEnumConstantDeclaration(VariableTree enumConstant) {
+    for (AnnotationTree annotation : enumConstant.getModifiers().getAnnotations()) {
+      scan(annotation, null);
+      builder.forcedBreak();
     }
-    visit(node.getName());
-    if (node.arguments().isEmpty()) {
+    visit(enumConstant.getName());
+    NewClassTree init = ((NewClassTree) enumConstant.getInitializer());
+    if (init.getArguments().isEmpty()) {
       builder.guessToken("(");
       builder.guessToken(")");
     } else {
-      addArguments(node.arguments(), plusFour);
+      addArguments(init.getArguments(), plusFour);
     }
-    if (node.getAnonymousClassDeclaration() != null) {
-      visit(node.getAnonymousClassDeclaration());
+    if (init.getClassBody() != null) {
+      addBodyDeclarations(
+          init.getClassBody().getMembers(), BracesOrNot.YES, FirstDeclarationsOrNot.YES);
     }
-    return false;
   }
 
-  /** Visitor method for {@link EnumDeclaration}s. */
-  @Override
-  public boolean visit(EnumDeclaration node) {
+  public boolean visitEnumDeclaration(ClassTree node) {
     sync(node);
     builder.open(ZERO);
-    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
+    visitAndBreakModifiers(node.getModifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
     builder.open(plusFour);
     token("enum");
     builder.breakOp(" ");
-    visit(node.getName());
+    visit(node.getSimpleName());
     builder.close();
     builder.close();
-    if (!node.superInterfaceTypes().isEmpty()) {
+    if (!node.getImplementsClause().isEmpty()) {
       builder.open(plusFour);
       builder.breakOp(" ");
       builder.open(plusFour);
@@ -910,12 +809,12 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.breakOp(" ");
       builder.open(ZERO);
       boolean first = true;
-      for (Type superInterfaceType : (List<Type>) node.superInterfaceTypes()) {
+      for (Tree superInterfaceType : node.getImplementsClause()) {
         if (!first) {
           token(",");
           builder.breakToFill(" ");
         }
-        superInterfaceType.accept(this);
+        scan(superInterfaceType, null);
         first = false;
       }
       builder.close();
@@ -924,7 +823,19 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     builder.space();
     tokenBreakTrailingComment("{", plusTwo);
-    if (node.enumConstants().isEmpty() && node.bodyDeclarations().isEmpty()) {
+    ArrayList<VariableTree> enumConstants = new ArrayList<>();
+    ArrayList<Tree> members = new ArrayList<>();
+    for (Tree member : node.getMembers()) {
+      if (member instanceof JCTree.JCVariableDecl) {
+        JCTree.JCVariableDecl variableDecl = (JCTree.JCVariableDecl) member;
+        if ((variableDecl.mods.flags & Flags.ENUM) == Flags.ENUM) {
+          enumConstants.add(variableDecl);
+          continue;
+        }
+      }
+      members.add(member);
+    }
+    if (enumConstants.isEmpty() && members.isEmpty()) {
       builder.open(ZERO);
       builder.blankLineWanted(BlankLineWanted.NO);
       token("}");
@@ -935,14 +846,14 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.forcedBreak();
       builder.open(ZERO);
       boolean first = true;
-      for (EnumConstantDeclaration enumConstant :
-          (List<EnumConstantDeclaration>) node.enumConstants()) {
+      for (VariableTree enumConstant : enumConstants) {
         if (!first) {
           token(",");
           builder.forcedBreak();
           builder.blankLineWanted(BlankLineWanted.PRESERVE);
         }
-        visit(enumConstant);
+        markForPartialFormat();
+        visitEnumConstantDeclaration(enumConstant);
         first = false;
       }
       if (builder.peekToken().or("").equals(",")) {
@@ -959,7 +870,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.close();
       }
       builder.open(ZERO);
-      addBodyDeclarations(node.bodyDeclarations(), BracesOrNot.NO, FirstDeclarationsOrNot.NO);
+      addBodyDeclarations(members, BracesOrNot.NO, FirstDeclarationsOrNot.NO);
       builder.forcedBreak();
       builder.blankLineWanted(BlankLineWanted.NO);
       token("}", plusTwo);
@@ -969,115 +880,157 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return false;
   }
 
-  /** Visitor method for {@link ExpressionMethodReference}s. */
   @Override
-  public boolean visit(ExpressionMethodReference node) {
+  public Void visitMemberReference(MemberReferenceTree node, Void unused) {
     sync(node);
     builder.open(plusFour);
-    node.getExpression().accept(this);
+    scan(node.getQualifierExpression(), null);
     builder.breakOp();
     builder.op("::");
-    if (!node.typeArguments().isEmpty()) {
-      addTypeArguments(node.typeArguments(), plusFour);
+    addTypeArguments(node.getTypeArguments(), plusFour);
+    switch (node.getMode()) {
+      case INVOKE:
+        visit(node.getName());
+        break;
+      case NEW:
+        token("new");
+        break;
+      default:
+        throw new AssertionError(node.getMode());
     }
-    visit(node.getName());
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link ExpressionStatement}s. */
   @Override
-  public boolean visit(ExpressionStatement node) {
+  public Void visitExpressionStatement(ExpressionStatementTree node, Void unused) {
     sync(node);
-    node.getExpression().accept(this);
+    scan(node.getExpression(), null);
     token(";");
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link FieldAccess}es. */
   @Override
-  public boolean visit(FieldAccess node) {
+  public Void visitVariable(VariableTree node, Void unused) {
     sync(node);
-    visitDot(node);
-    return false;
+    visitVariables(
+        ImmutableList.of(node),
+        DeclarationKind.NONE,
+        fieldAnnotationDirection(node.getModifiers()));
+    return null;
   }
 
-  /** Visitor method for {@link FieldDeclaration}s. */
-  @Override
-  public boolean visit(FieldDeclaration node) {
-    sync(node);
-    markForPartialFormat();
-    addDeclaration(
-        node,
-        node.modifiers(),
-        node.getType(),
-        node.fragments(),
-        fieldAnnotationDirection(node.modifiers()));
-    return false;
+  void visitVariables(
+      List<VariableTree> fragments,
+      DeclarationKind declarationKind,
+      Direction annotationDirection) {
+    if (fragments.size() == 1) {
+      VariableTree fragment = fragments.get(0);
+      declareOne(
+          declarationKind,
+          annotationDirection,
+          Optional.of(fragment.getModifiers()),
+          fragment.getType(),
+          VarArgsOrNot.NO,
+          ImmutableList.<AnnotationTree>of(),
+          fragment.getName(),
+          "",
+          "=",
+          Optional.fromNullable(fragment.getInitializer()),
+          Optional.of(";"),
+          Optional.<ExpressionTree>absent(),
+          Optional.fromNullable(variableFragmentDims(true, 0, fragment.getType())));
+
+    } else {
+      declareMany(fragments, annotationDirection);
+    }
   }
 
-  /** Visitor method for {@link ForStatement}s. */
+  private TypeWithDims variableFragmentDims(boolean first, int leadingDims, Tree type) {
+    if (type == null) {
+      return null;
+    }
+    if (first) {
+      return DimensionHelpers.extractDims(type, SortedDims.YES);
+    }
+    TypeWithDims dims = DimensionHelpers.extractDims(type, SortedDims.NO);
+    return new TypeWithDims(
+        null, leadingDims > 0 ? dims.dims.subList(0, dims.dims.size() - leadingDims) : dims.dims);
+  }
+
   @Override
-  public boolean visit(ForStatement node) {
+  public Void visitForLoop(ForLoopTree node, Void unused) {
     sync(node);
     token("for");
     builder.space();
     token("(");
     builder.open(plusFour);
-    builder.open(node.initializers().size() <= 1 ? ZERO : plusFour);
-    boolean first = true;
-    for (Expression initializer : (List<Expression>) node.initializers()) {
-      if (!first) {
-        token(",");
-        builder.breakToFill(" ");
+    builder.open(node.getInitializer().size() <= 1 ? ZERO : plusFour);
+    if (!node.getInitializer().isEmpty()) {
+      if (node.getInitializer().get(0).getKind() == VARIABLE) {
+        PeekingIterator<StatementTree> it =
+            Iterators.<StatementTree>peekingIterator(node.getInitializer().iterator());
+        visitVariables(
+            variableFragments(it, it.next()), DeclarationKind.NONE, Direction.HORIZONTAL);
+      } else {
+        boolean first = true;
+        builder.open(ZERO);
+        for (StatementTree t : node.getInitializer()) {
+          if (!first) {
+            token(",");
+            builder.breakOp(" ");
+          }
+          scan(((ExpressionStatementTree) t).getExpression(), null);
+          first = false;
+        }
+        token(";");
+        builder.close();
       }
-      initializer.accept(this);
-      first = false;
+    } else {
+      token(";");
     }
     builder.close();
-    token(";");
     builder.breakOp(" ");
-    if (node.getExpression() != null) {
-      node.getExpression().accept(this);
+    if (node.getCondition() != null) {
+      scan(node.getCondition(), null);
     }
     token(";");
     builder.breakOp(" ");
-    if (!node.updaters().isEmpty()) {
-      builder.open(node.updaters().size() <= 1 ? ZERO : plusFour);
+    if (!node.getUpdate().isEmpty()) {
+      builder.open(node.getUpdate().size() <= 1 ? ZERO : plusFour);
       boolean firstUpdater = true;
-      for (Expression updater : (List<Expression>) node.updaters()) {
+      for (ExpressionStatementTree updater : node.getUpdate()) {
         if (!firstUpdater) {
           token(",");
           builder.breakToFill(" ");
         }
-        updater.accept(this);
+        scan(updater.getExpression(), null);
         firstUpdater = false;
       }
+      builder.guessToken(";");
       builder.close();
     }
     builder.close();
     token(")");
     visitStatement(
-        node.getBody(),
+        node.getStatement(),
         CollapseEmptyOrNot.YES,
         AllowLeadingBlankLine.YES,
         AllowTrailingBlankLine.NO);
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link IfStatement}s. */
   @Override
-  public boolean visit(IfStatement node) {
+  public Void visitIf(IfTree node, Void unused) {
     sync(node);
     // Collapse chains of else-ifs.
-    List<Expression> expressions = new ArrayList<>();
-    List<Statement> statements = new ArrayList<>();
+    List<ExpressionTree> expressions = new ArrayList<>();
+    List<StatementTree> statements = new ArrayList<>();
     while (true) {
-      expressions.add(node.getExpression());
+      expressions.add(node.getCondition());
       statements.add(node.getThenStatement());
-      if (node.getElseStatement() != null
-          && node.getElseStatement().getNodeType() == ASTNode.IF_STATEMENT) {
-        node = (IfStatement) node.getElseStatement();
+      if (node.getElseStatement() != null && node.getElseStatement().getKind() == IF) {
+        node = (IfTree) node.getElseStatement();
       } else {
         break;
       }
@@ -1099,7 +1052,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       token("if");
       builder.space();
       token("(");
-      expressions.get(i).accept(this);
+      scan(skipParen(expressions.get(i)), null);
       token(")");
       // An empty block can collapse to "{}" if there are no if/else or else clauses
       boolean onlyClause = expressionsN == 1 && node.getElseStatement() == null;
@@ -1110,7 +1063,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           CollapseEmptyOrNot.valueOf(onlyClause),
           AllowLeadingBlankLine.YES,
           AllowTrailingBlankLine.valueOf(trailingClauses));
-      followingBlock = statements.get(i).getNodeType() == ASTNode.BLOCK;
+      followingBlock = statements.get(i).getKind() == BLOCK;
       first = false;
     }
     if (node.getElseStatement() != null) {
@@ -1127,12 +1080,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           AllowTrailingBlankLine.NO);
     }
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link ImportDeclaration}s. */
   @Override
-  public boolean visit(ImportDeclaration node) {
+  public Void visitImport(ImportTree node, Void unused) {
     sync(node);
     token("import");
     builder.space();
@@ -1140,121 +1092,100 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       token("static");
       builder.space();
     }
-    visitName(node.getName(), BreakOrNot.NO);
-    if (node.isOnDemand()) {
-      token(".");
-      token("*");
-    }
+    visitName(node.getQualifiedIdentifier(), BreakOrNot.NO);
     token(";");
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link InfixExpression}s. */
   @Override
-  public boolean visit(InfixExpression node) {
+  public Void visitBinary(BinaryTree node, Void unused) {
     sync(node);
     /*
      * Collect together all operators with same precedence to clean up indentation. Eclipse's
      * extended operands help a little (to collect together the same operator), but they're applied
      * inconsistently, and don't apply to other operators of the same precedence.
      */
-    List<Expression> operands = new ArrayList<>();
+    List<ExpressionTree> operands = new ArrayList<>();
     List<String> operators = new ArrayList<>();
-    walkInfix(PRECEDENCE.get(node.getOperator().toString()), node, operands, operators);
-    FillMode fillMode = hasOnlyShortItems(operands) ? FillMode.INDEPENDENT : FillMode.UNIFIED;
+    walkInfix(precedence(node), node, operands, operators);
+    FillMode fillMode = hasOnlyShortItems(operands) ? INDEPENDENT : UNIFIED;
     builder.open(plusFour);
-    operands.get(0).accept(this);
+    scan(operands.get(0), null);
     int operatorsN = operators.size();
     for (int i = 0; i < operatorsN; i++) {
       builder.breakOp(fillMode, " ", ZERO);
       builder.op(operators.get(i));
       builder.space();
-      operands.get(i + 1).accept(this);
+      scan(operands.get(i + 1), null);
     }
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link Initializer}s. */
   @Override
-  public boolean visit(Initializer node) {
-    sync(node);
-    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
-    node.getBody().accept(this);
-    builder.guessToken(";");
-    return false;
-  }
-
-  /** Visitor method for {@link InstanceofExpression}s. */
-  @Override
-  public boolean visit(InstanceofExpression node) {
+  public Void visitInstanceOf(InstanceOfTree node, Void unused) {
     sync(node);
     builder.open(plusFour);
-    node.getLeftOperand().accept(this);
+    scan(node.getExpression(), null);
     builder.breakOp(" ");
     builder.open(ZERO);
     token("instanceof");
     builder.breakOp(" ");
-    node.getRightOperand().accept(this);
+    scan(node.getType(), null);
     builder.close();
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link IntersectionType}s. */
   @Override
-  public boolean visit(IntersectionType node) {
+  public Void visitIntersectionType(IntersectionTypeTree node, Void unused) {
     sync(node);
     builder.open(plusFour);
-    List<Type> types = new ArrayList<>();
-    walkIntersectionTypes(types, node);
     boolean first = true;
-    for (Type type : types) {
+    for (Tree type : node.getBounds()) {
       if (!first) {
         builder.breakToFill(" ");
         token("&");
         builder.space();
       }
-      type.accept(this);
+      scan(type, null);
       first = false;
     }
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link LabeledStatement}s. */
   @Override
-  public boolean visit(LabeledStatement node) {
+  public Void visitLabeledStatement(LabeledStatementTree node, Void unused) {
     sync(node);
     builder.open(ZERO);
     visit(node.getLabel());
     token(":");
     builder.forcedBreak();
     builder.close();
-    node.getBody().accept(this);
-    return false;
+    scan(node.getStatement(), null);
+    return null;
   }
 
-  /** Visitor method for {@link LambdaExpression}s. */
   @Override
-  public boolean visit(LambdaExpression node) {
+  public Void visitLambdaExpression(LambdaExpressionTree node, Void unused) {
     sync(node);
-    boolean statementBody = node.getBody().getNodeType() == ASTNode.BLOCK;
+    boolean statementBody = node.getBodyKind() == LambdaExpressionTree.BodyKind.STATEMENT;
     builder.open(statementBody ? ZERO : plusFour);
     builder.open(plusFour);
-    if (node.hasParentheses()) {
+    if (builder.peekToken().equals(Optional.of("("))) {
       token("(");
     }
     boolean first = true;
-    for (ASTNode parameter : (List<ASTNode>) node.parameters()) {
+    for (VariableTree parameter : node.getParameters()) {
       if (!first) {
         token(",");
         builder.breakOp(" ");
       }
-      parameter.accept(this);
+      scan(parameter, null);
       first = false;
     }
-    if (node.hasParentheses()) {
+    if (builder.peekToken().equals(Optional.of(")"))) {
       token(")");
     }
     builder.close();
@@ -1265,29 +1196,72 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     } else {
       builder.breakOp(" ");
     }
-    node.getBody().accept(this);
+    scan(node.getBody(), null);
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link MarkerAnnotation}s. */
   @Override
-  public boolean visit(MarkerAnnotation node) {
+  public Void visitAnnotation(AnnotationTree node, Void unused) {
     sync(node);
+
+    if (visitSingleMemberAnnotation(node)) {
+      return null;
+    }
+
     builder.open(ZERO);
     token("@");
-    node.getTypeName().accept(this);
+    scan(node.getAnnotationType(), null);
+    if (!node.getArguments().isEmpty()) {
+      builder.open(plusTwo);
+      token("(");
+      builder.breakOp();
+      boolean first = true;
+
+      // Format the member value pairs one-per-line if any of them are
+      // initialized with arrays.
+      boolean hasArrayInitializer = Iterables.any(node.getArguments(), IS_ARRAY_VALUE);
+      for (ExpressionTree argument : node.getArguments()) {
+        if (!first) {
+          token(",");
+          if (hasArrayInitializer) {
+            builder.forcedBreak();
+          } else {
+            builder.breakOp(" ");
+          }
+        }
+        visitAnnotationArgument((AssignmentTree) argument);
+        first = false;
+      }
+      builder.breakOp(UNIFIED, "", minusTwo, Optional.<BreakTag>absent());
+      builder.close();
+      token(")", plusTwo);
+      builder.close();
+      return null;
+
+    } else if (builder.peekToken().equals(Optional.of("("))) {
+      token("(");
+      token(")");
+    }
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link MemberValuePair}s. */
-  @Override
-  public boolean visit(MemberValuePair node) {
-    boolean isArrayInitializer = node.getValue().getNodeType() == ASTNode.ARRAY_INITIALIZER;
+  private static final Predicate<ExpressionTree> IS_ARRAY_VALUE =
+      new Predicate<ExpressionTree>() {
+        @Override
+        public boolean apply(ExpressionTree argument) {
+          ExpressionTree expression = ((AssignmentTree) argument).getExpression();
+          return expression instanceof NewArrayTree
+              && ((NewArrayTree) expression).getType() == null;
+        }
+      };
+
+  public void visitAnnotationArgument(AssignmentTree node) {
+    boolean isArrayInitializer = node.getExpression().getKind() == NEW_ARRAY;
     sync(node);
     builder.open(isArrayInitializer ? ZERO : plusFour);
-    visit(node.getName());
+    scan(node.getVariable(), null);
     builder.space();
     token("=");
     if (isArrayInitializer) {
@@ -1295,583 +1269,506 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     } else {
       builder.breakOp(" ");
     }
-    node.getValue().accept(this);
+    scan(node.getExpression(), null);
     builder.close();
-    return false;
   }
 
-  /** Visitor method for {@link MethodDeclaration}s. */
   @Override
-  public boolean visit(MethodDeclaration node) {
+  public Void visitAnnotatedType(AnnotatedTypeTree node, Void unused) {
     sync(node);
-    visitAndBreakModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
+    ExpressionTree base = node.getUnderlyingType();
+    if (base instanceof MemberSelectTree) {
+      MemberSelectTree selectTree = (MemberSelectTree) base;
+      scan(selectTree.getExpression(), null);
+      token(".");
+      visitAnnotations(node.getAnnotations(), BreakOrNot.NO, BreakOrNot.NO);
+      builder.breakToFill(" ");
+      visit(selectTree.getIdentifier());
+    } else if (base instanceof ArrayTypeTree) {
+      visitAnnotatedArrayType(node);
+    } else {
+      visitAnnotations(node.getAnnotations(), BreakOrNot.NO, BreakOrNot.NO);
+      builder.breakToFill(" ");
+      scan(base, null);
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitMethod(MethodTree node, Void unused) {
+    sync(node);
+    List<? extends AnnotationTree> annotations = node.getModifiers().getAnnotations();
+    List<? extends AnnotationTree> returnTypeAnnotations = ImmutableList.of();
+
+    if (!node.getTypeParameters().isEmpty() && !annotations.isEmpty()) {
+      int typeParameterStart = getStartPosition(node.getTypeParameters().get(0));
+      for (int i = 0; i < annotations.size(); i++) {
+        if (getStartPosition(annotations.get(i)) > typeParameterStart) {
+          returnTypeAnnotations = annotations.subList(i, annotations.size());
+          annotations = annotations.subList(0, i);
+          break;
+        }
+      }
+    }
+    builder.addAll(
+        visitModifiers(
+            node.getModifiers(), annotations, Direction.VERTICAL, Optional.<BreakTag>absent()));
+
+    Tree baseReturnType = null;
+    ArrayDeque<List<AnnotationTree>> dims = null;
+    if (node.getReturnType() != null) {
+      TypeWithDims extractedDims =
+          DimensionHelpers.extractDims(node.getReturnType(), SortedDims.YES);
+      baseReturnType = extractedDims.node;
+      dims = new ArrayDeque<>(extractedDims.dims);
+    }
 
     builder.open(plusFour);
+    BreakTag breakBeforeName = genSym();
+    BreakTag breakBeforeType = genSym();
+    builder.open(ZERO);
     {
-      BreakTag breakBeforeName = genSym();
-      BreakTag breakBeforeType = genSym();
-      builder.open(ZERO);
-      {
-        boolean first = true;
-        if (!node.typeParameters().isEmpty()) {
-          token("<");
-          typeParametersRest(node.typeParameters(), plusFour);
-          first = false;
+      boolean first = true;
+      if (!node.getTypeParameters().isEmpty()) {
+        token("<");
+        typeParametersRest(node.getTypeParameters(), plusFour);
+        if (!returnTypeAnnotations.isEmpty()) {
+          builder.breakToFill(" ");
+          visitAnnotations(returnTypeAnnotations, BreakOrNot.NO, BreakOrNot.NO);
         }
+        first = false;
+      }
 
-        boolean openedNameAndTypeScope = false;
-        // constructor-like declarations that don't match the name of the enclosing class are
-        // parsed as method declarations with a null return type
-        if (!node.isConstructor() && node.getReturnType2() != null) {
-          if (!first) {
-            builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO, Optional.of(breakBeforeType));
-          } else {
-            first = false;
-          }
-          if (!openedNameAndTypeScope) {
-            builder.open(Indent.If.make(breakBeforeType, plusFour, ZERO));
-            openedNameAndTypeScope = true;
-          }
-          node.getReturnType2().accept(this);
-        }
+      boolean openedNameAndTypeScope = false;
+      // constructor-like declarations that don't match the name of the enclosing class are
+      // parsed as method declarations with a null return type
+      if (baseReturnType != null) {
         if (!first) {
-          builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO, Optional.of(breakBeforeName));
+          builder.breakOp(INDEPENDENT, " ", ZERO, Optional.of(breakBeforeType));
         } else {
           first = false;
         }
         if (!openedNameAndTypeScope) {
-          builder.open(ZERO);
+          builder.open(make(breakBeforeType, plusFour, ZERO));
           openedNameAndTypeScope = true;
         }
-        visit(node.getName());
-        token("(");
-        // end of name and type scope
+        scan(baseReturnType, null);
+        maybeAddDims(dims);
+      }
+      if (!first) {
+        builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO, Optional.of(breakBeforeName));
+      } else {
+        first = false;
+      }
+      if (!openedNameAndTypeScope) {
+        builder.open(ZERO);
+        openedNameAndTypeScope = true;
+      }
+      String name = node.getName().toString();
+      if (name.equals("<init>")) {
+        name = builder.peekToken().get();
+      }
+      token(name);
+      token("(");
+      // end of name and type scope
+      builder.close();
+    }
+    builder.close();
+
+    builder.open(Indent.If.make(breakBeforeName, plusFour, ZERO));
+    builder.open(Indent.If.make(breakBeforeType, plusFour, ZERO));
+    builder.open(ZERO);
+    {
+      if (!node.getParameters().isEmpty() || node.getReceiverParameter() != null) {
+        // Break before args.
+        builder.breakToFill("");
+        visitFormals(Optional.fromNullable(node.getReceiverParameter()), node.getParameters());
+      }
+      token(")");
+      if (dims != null) {
+        maybeAddDims(dims);
+      }
+      if (!node.getThrows().isEmpty()) {
+        builder.breakToFill(" ");
+        builder.open(plusFour);
+        {
+          visitThrowsClause(node.getThrows());
+        }
         builder.close();
       }
-      builder.close();
-
-      builder.open(Indent.If.make(breakBeforeName, plusFour, ZERO));
-      builder.open(Indent.If.make(breakBeforeType, plusFour, ZERO));
-      builder.open(ZERO);
-      {
-        if (!node.parameters().isEmpty() || node.getReceiverType() != null) {
-          // Break before args.
-          builder.breakToFill("");
-          visitFormals(
-              node,
-              Optional.fromNullable(node.getReceiverType()),
-              node.getReceiverQualifier(),
-              node.parameters());
-        }
-        token(")");
-        extraDimensions(plusFour, node.extraDimensions());
-        if (!node.thrownExceptionTypes().isEmpty()) {
-          builder.breakToFill(" ");
-          builder.open(plusFour);
+      if (node.getDefaultValue() != null) {
+        builder.space();
+        token("default");
+        if (node.getDefaultValue().getKind() == Tree.Kind.NEW_ARRAY) {
+          builder.open(minusFour);
           {
-            visitThrowsClause(node.thrownExceptionTypes());
+            builder.space();
+            scan(node.getDefaultValue(), null);
+          }
+          builder.close();
+        } else {
+          builder.open(ZERO);
+          {
+            builder.breakToFill(" ");
+            scan(node.getDefaultValue(), null);
           }
           builder.close();
         }
       }
-      builder.close();
-      builder.close();
-      builder.close();
     }
     builder.close();
-
+    builder.close();
+    builder.close();
     if (node.getBody() == null) {
       token(";");
     } else {
       builder.space();
-      visitBlock(
-          node.getBody(),
-          CollapseEmptyOrNot.YES,
-          AllowLeadingBlankLine.YES,
-          AllowTrailingBlankLine.NO);
+      builder.token("{", Doc.Token.RealOrImaginary.REAL, plusTwo, Optional.<Indent>of(plusTwo));
     }
-    builder.guessToken(";");
+    builder.close();
 
-    return false;
+    if (node.getBody() != null) {
+      methodBody(node);
+    }
+
+    return null;
   }
 
-  /** Visitor method for {@link MethodInvocation}s. */
+  private void methodBody(MethodTree node) {
+    if (node.getBody().getStatements().isEmpty()) {
+      builder.blankLineWanted(BlankLineWanted.NO);
+    } else {
+      builder.open(plusTwo);
+      builder.forcedBreak();
+      builder.blankLineWanted(BlankLineWanted.PRESERVE);
+      visitStatements(node.getBody().getStatements());
+      builder.close();
+      builder.forcedBreak();
+      builder.blankLineWanted(BlankLineWanted.NO);
+      markForPartialFormat();
+    }
+    token("}", plusTwo);
+  }
+
   @Override
-  public boolean visit(MethodInvocation node) {
+  public Void visitMethodInvocation(MethodInvocationTree node, Void unused) {
     sync(node);
     visitDot(node);
-    return false;
+    return null;
   }
 
 
-  /** Visitor method for {@link Modifier}s. */
   @Override
-  public boolean visit(Modifier node) {
+  public Void visitMemberSelect(MemberSelectTree node, Void unused) {
     sync(node);
-    token(node.toString());
-    return false;
+    visitDot(node);
+    return null;
   }
 
-  // TODO(jdd): Collapse chains of "." operators here too.
-
-  /** Visitor method for {@link NameQualifiedType}s. */
   @Override
-  public boolean visit(NameQualifiedType node) {
+  public Void visitLiteral(LiteralTree node, Void unused) {
     sync(node);
-    builder.open(plusFour);
-    node.getQualifier().accept(this);
-    token(".");
-    builder.breakOp();
-    beforeAnnotatableType(node);
-    visit(node.getName());
-    builder.close();
-    return false;
-  }
-
-  /** Visitor method for {@link NormalAnnotation}s. */
-  @Override
-  public boolean visit(NormalAnnotation node) {
-    sync(node);
-    builder.open(ZERO);
-    token("@");
-    node.getTypeName().accept(this);
-    builder.open(plusTwo);
-    token("(");
-    builder.breakOp();
-    boolean first = true;
-
-    // Format the member value pairs one-per-line if any of them are
-    // initialized with arrays.
-    boolean hasArrayInitializer = false;
-    for (MemberValuePair value : (List<MemberValuePair>) node.values()) {
-      if (value.getValue().getNodeType() == ASTNode.ARRAY_INITIALIZER) {
-        hasArrayInitializer = true;
-        break;
-      }
-    }
-
-    for (MemberValuePair value : (List<MemberValuePair>) node.values()) {
-      if (!first) {
-        token(",");
-        if (hasArrayInitializer) {
-          builder.forcedBreak();
-        } else {
-          builder.breakOp(" ");
-        }
-      }
-      value.accept(this);
-      first = false;
-    }
-    builder.breakOp(FillMode.UNIFIED, "", minusTwo, Optional.<BreakTag>absent());
-    builder.close();
-    token(")", plusTwo);
-    builder.close();
-    return false;
-  }
-
-  /** Visitor method for {@link NullLiteral}s. */
-  @Override
-  public boolean visit(NullLiteral node) {
-    sync(node);
-    token(node.toString());
-    return false;
-  }
-
-  /** Visitor method for {@link NumberLiteral}s. */
-  @Override
-  public boolean visit(NumberLiteral node) {
-    sync(node);
-    String value = node.getToken();
-    if (value.startsWith("-")) {
-      // jdt normally parses negative numeric literals as a unary minus on an
-      // unsigned literal, but in the case of Long.MIN_VALUE and
-      // Integer.MIN_VALUE it creates a signed literal without a unary minus
-      // expression.
-      //
-      // Unfortunately in both cases the input token stream will still have
-      // the '-' token followed by an unsigned numeric literal token. We
-      // hack around this by checking for a leading '-' in the text of the
-      // given numeric literal, and emitting two separate tokens if it is
-      // present to match the input stream.
+    String sourceForNode = getSourceForNode(node, getCurrentPath());
+    // A negative numeric literal -n is usually represented as unary minus on n,
+    // but that doesn't work for integer or long MIN_VALUE. The parser works
+    // around that by representing it directly as a singed literal (with no
+    // unary minus), but the lexer still expects two tokens.
+    if (sourceForNode.startsWith("-")) {
       token("-");
-      value = value.substring(1);
+      sourceForNode = sourceForNode.substring(1).trim();
     }
-    token(value);
-    return false;
+    token(sourceForNode);
+    return null;
   }
 
-  /** Visitor method for {@link PackageDeclaration}s. */
-  @Override
-  public boolean visit(PackageDeclaration node) {
-    sync(node);
-    visitAndBreakModifiers(node.annotations(), Direction.VERTICAL, Optional.<BreakTag>absent());
+  private void visitPackage(
+      ExpressionTree packageName, List<? extends AnnotationTree> packageAnnotations) {
+    if (!packageAnnotations.isEmpty()) {
+      for (AnnotationTree annotation : packageAnnotations) {
+        builder.forcedBreak();
+        scan(annotation, null);
+      }
+      builder.forcedBreak();
+    }
     builder.open(plusFour);
     token("package");
     builder.space();
-    visitName(node.getName(), BreakOrNot.NO);
+    visitName(packageName, BreakOrNot.NO);
     builder.close();
     token(";");
-    return false;
   }
 
-  /** Visitor method for {@link ParameterizedType}s. */
   @Override
-  public boolean visit(ParameterizedType node) {
+  public Void visitParameterizedType(ParameterizedTypeTree node, Void unused) {
     sync(node);
-    if (node.typeArguments().isEmpty()) {
-      node.getType().accept(this);
+    if (node.getTypeArguments().isEmpty()) {
+      scan(node.getType(), null);
       token("<");
       token(">");
     } else {
       builder.open(plusFour);
-      node.getType().accept(this);
+      scan(node.getType(), null);
       token("<");
       builder.breakOp();
       builder.open(ZERO);
       boolean first = true;
-      for (Type typeArgument : (List<Type>) node.typeArguments()) {
+      for (Tree typeArgument : node.getTypeArguments()) {
         if (!first) {
           token(",");
           // TODO(cushon): unify breaks
           builder.breakToFill(" ");
         }
-        typeArgument.accept(this);
+        scan(typeArgument, null);
         first = false;
       }
       builder.close();
       builder.close();
       token(">");
     }
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link ParenthesizedExpression}s. */
   @Override
-  public boolean visit(ParenthesizedExpression node) {
-    sync(node);
+  public Void visitParenthesized(ParenthesizedTree node, Void unused) {
     token("(");
-    node.getExpression().accept(this);
+    scan(node.getExpression(), null);
     token(")");
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link PostfixExpression}s. */
   @Override
-  public boolean visit(PostfixExpression node) {
+  public Void visitUnary(UnaryTree node, Void unused) {
     sync(node);
-    node.getOperand().accept(this);
-    builder.op(node.getOperator().toString());
-    return false;
-  }
-
-  /** Visitor method for {@link PrefixExpression}s. */
-  @Override
-  public boolean visit(PrefixExpression node) {
-    sync(node);
-    String op = node.getOperator().toString();
-    builder.op(op);
-    // Keep prefixes unambiguous.
-    Expression operand = node.getOperand();
-    if ((op.equals("+") || op.equals("-"))
-        && operand.getNodeType() == ASTNode.PREFIX_EXPRESSION
-        && ((PrefixExpression) operand).getOperator().toString().startsWith(op)) {
-      builder.space();
-    }
-    operand.accept(this);
-    return false;
-  }
-
-  /** Visitor method for {@link PrimitiveType}s. */
-  @Override
-  public boolean visit(PrimitiveType node) {
-    sync(node);
-    beforeAnnotatableType(node);
-    token(node.getPrimitiveTypeCode().toString());
-    return false;
-  }
-
-  /** Visitor method for {@link QualifiedName}s. */
-  @Override
-  public boolean visit(QualifiedName node) {
-    visitQualifiedName(node, BreakOrNot.YES);
-    return false;
-  }
-
-  // TODO(jdd): Can we share?
-
-  /** Visitor method for {@link QualifiedType}s. */
-  @Override
-  public boolean visit(QualifiedType node) {
-    sync(node);
-    builder.open(plusFour);
-    // Collapse chains of "." operators.
-    ArrayDeque<QualifiedType> stack = new ArrayDeque<>();
-    Type qualifier;
-    while (true) {
-      stack.addFirst(node);
-      qualifier = node.getQualifier();
-      if (qualifier.getNodeType() != ASTNode.QUALIFIED_TYPE) {
-        break;
+    String operatorName = operatorName(node);
+    if (((JCTree) node).getTag().isPostUnaryOp()) {
+      scan(node.getExpression(), null);
+      splitToken(operatorName);
+    } else {
+      splitToken(operatorName);
+      if (ambiguousUnaryOperator(node, operatorName)) {
+        builder.space();
       }
-      node = (QualifiedType) qualifier;
+      scan(node.getExpression(), null);
     }
-    qualifier.accept(this);
-    do {
-      builder.breakOp();
-      token(".");
-      QualifiedType name = stack.removeFirst();
-      visitAnnotations(name.annotations(), BreakOrNot.NO, BreakOrNot.YES);
-      visit(name.getName());
-    } while (!stack.isEmpty());
-    builder.close();
+    return null;
+  }
+
+  private void splitToken(String operatorName) {
+    for (int i = 0; i < operatorName.length(); i++) {
+      token(String.valueOf(operatorName.charAt(i)));
+    }
+  }
+
+  private boolean ambiguousUnaryOperator(UnaryTree node, String operatorName) {
+    switch (node.getKind()) {
+      case UNARY_MINUS:
+      case UNARY_PLUS:
+        break;
+      default:
+        return false;
+    }
+    if (!(node.getExpression() instanceof UnaryTree)) {
+      return false;
+    }
+    JCTree.Tag tag = ((JCTree) node.getExpression()).getTag();
+    if (tag.isPostUnaryOp()) {
+      return false;
+    }
+    if (!operatorName(node).startsWith(operatorName)) {
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public Void visitPrimitiveType(PrimitiveTypeTree node, Void unused) {
+    sync(node);
+    switch (node.getPrimitiveTypeKind()) {
+      case BOOLEAN:
+        token("boolean");
+        break;
+      case BYTE:
+        token("byte");
+        break;
+      case SHORT:
+        token("short");
+        break;
+      case INT:
+        token("int");
+        break;
+      case LONG:
+        token("long");
+        break;
+      case CHAR:
+        token("char");
+        break;
+      case FLOAT:
+        token("float");
+        break;
+      case DOUBLE:
+        token("double");
+        break;
+      case VOID:
+        token("void");
+        break;
+      default:
+        throw new AssertionError(node.getPrimitiveTypeKind());
+    }
+    return null;
+  }
+
+  public boolean visit(Name name) {
+    token(name.toString());
     return false;
   }
 
-  /** Visitor method for {@link ReturnStatement}s. */
   @Override
-  public boolean visit(ReturnStatement node) {
+  public Void visitReturn(ReturnTree node, Void unused) {
     sync(node);
     token("return");
     if (node.getExpression() != null) {
       builder.space();
-      node.getExpression().accept(this);
+      scan(node.getExpression(), null);
     }
     token(";");
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link SimpleName}s. */
-  @Override
-  public boolean visit(SimpleName node) {
-    sync(node);
-    token(node.getIdentifier());
-    return false;
-  }
-
-  /** Visitor method for {@link SimpleType}s. */
-  @Override
-  public boolean visit(SimpleType node) {
-    sync(node);
-    beforeAnnotatableType(node);
-    node.getName().accept(this);
-    return false;
-  }
-
-  /** Visitor method for {@link SingleMemberAnnotation}s. */
-  @Override
-  public boolean visit(SingleMemberAnnotation node) {
-    sync(node);
-    Expression value = node.getValue();
-    boolean isArrayInitializer = value.getNodeType() == ASTNode.ARRAY_INITIALIZER;
+  // TODO(cushon): is this worth special-casing?
+  boolean visitSingleMemberAnnotation(AnnotationTree node) {
+    if (node.getArguments().size() != 1) {
+      return false;
+    }
+    ExpressionTree value = Iterables.getOnlyElement(node.getArguments());
+    if (value.getKind() == ASSIGNMENT) {
+      return false;
+    }
+    boolean isArrayInitializer = value.getKind() == NEW_ARRAY;
     builder.open(isArrayInitializer ? ZERO : plusFour);
     token("@");
-    node.getTypeName().accept(this);
+    scan(node.getAnnotationType(), null);
     token("(");
     if (!isArrayInitializer) {
       builder.breakOp();
     }
-    value.accept(this);
+    scan(value, null);
     builder.close();
     token(")");
-    return false;
+    return true;
   }
 
-  /** Visitor method for {@link SingleVariableDeclaration}s. */
   @Override
-  public boolean visit(SingleVariableDeclaration node) {
-    visitToDeclare(Direction.HORIZONTAL, node, Optional.fromNullable(node.getInitializer()), "=");
-    return false;
-  }
-
-  /** Visitor method for {@link StringLiteral}s. */
-  @Override
-  public boolean visit(StringLiteral node) {
-    sync(node);
-    token(node.getEscapedValue());
-    return false;
-  }
-
-  /** Visitor method for {@link SuperConstructorInvocation}s. */
-  @Override
-  public boolean visit(SuperConstructorInvocation node) {
-    sync(node);
-    if (node.getExpression() != null) {
-      node.getExpression().accept(this);
-      token(".");
-    }
-    addTypeArguments(node.typeArguments(), plusFour);
-    token("super");
-    addArguments(node.arguments(), plusFour);
-    token(";");
-    return false;
-  }
-
-  /** Visitor method for {@link SuperFieldAccess}es. */
-  @Override
-  public boolean visit(SuperFieldAccess node) {
-    sync(node);
-    builder.open(plusFour);
-    if (node.getQualifier() != null) {
-      node.getQualifier().accept(this);
-      builder.breakOp();
-      token(".");
-    }
-    token("super");
-    builder.breakOp();
-    token(".");
-    visit(node.getName());
-    builder.close();
-    return false;
-  }
-
-  /** Visitor method for {@link SuperMethodInvocation}s. */
-  @Override
-  public boolean visit(SuperMethodInvocation node) {
-    sync(node);
-    visitDot(node);
-    return false;
-  }
-
-  /** Visitor method for {@link SuperMethodReference}s. */
-  @Override
-  public boolean visit(SuperMethodReference node) {
-    sync(node);
-    builder.open(plusFour);
-    if (node.getQualifier() != null) {
-      builder.open(plusFour);
-      node.getQualifier().accept(this);
-      builder.breakOp();
-      token(".");
-      builder.close();
-    }
-    token("super");
-    builder.breakOp();
-    builder.op("::");
-    if (!node.typeArguments().isEmpty()) {
-      addTypeArguments(node.typeArguments(), plusFour);
-    }
-    visit(node.getName());
-    builder.close();
-    return false;
-  }
-
-  /** Visitor method for {@link SwitchCase}s. */
-  @Override
-  public boolean visit(SwitchCase node) {
+  public Void visitCase(CaseTree node, Void unused) {
     sync(node);
     markForPartialFormat();
-    if (node.isDefault()) {
+    builder.forcedBreak();
+    if (node.getExpression() == null) {
       token("default", plusTwo);
       token(":");
     } else {
       token("case", plusTwo);
       builder.space();
-      node.getExpression().accept(this);
+      scan(node.getExpression(), null);
       token(":");
     }
-    return false;
+    builder.open(plusTwo);
+    try {
+      // don't partially format within case groups
+      inExpression.addLast(true);
+      visitStatements(node.getStatements());
+    } finally {
+      inExpression.removeLast();
+    }
+    builder.close();
+    return null;
   }
 
-  /** Visitor method for {@link SwitchStatement}s. */
   @Override
-  public boolean visit(SwitchStatement node) {
+  public Void visitSwitch(SwitchTree node, Void unused) {
     sync(node);
     token("switch");
     builder.space();
     token("(");
-    node.getExpression().accept(this);
+    scan(skipParen(node.getExpression()), null);
     token(")");
     builder.space();
     tokenBreakTrailingComment("{", plusTwo);
     builder.blankLineWanted(BlankLineWanted.NO);
-    builder.open(plusFour);
+    builder.open(plusTwo);
     boolean first = true;
-    boolean lastWasSwitchCase = false;
-    for (ASTNode statement : (List<ASTNode>) node.statements()) {
-      if (!first && !lastWasSwitchCase) {
+    for (CaseTree caseTree : node.getCases()) {
+      if (!first) {
         builder.blankLineWanted(BlankLineWanted.PRESERVE);
       }
-      if (statement.getNodeType() == ASTNode.SWITCH_CASE) {
-        builder.open(minusTwo);
-        builder.forcedBreak();
-        visit((SwitchCase) statement);
-        builder.close();
-        lastWasSwitchCase = true;
-      } else {
-        builder.forcedBreak();
-        statement.accept(this);
-        lastWasSwitchCase = false;
-      }
+      scan(caseTree, null);
       first = false;
     }
     builder.close();
     builder.forcedBreak();
     builder.blankLineWanted(BlankLineWanted.NO);
     token("}", plusFour);
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link SynchronizedStatement}s. */
   @Override
-  public boolean visit(SynchronizedStatement node) {
+  public Void visitSynchronized(SynchronizedTree node, Void unused) {
     sync(node);
     token("synchronized");
     builder.space();
     token("(");
     builder.open(plusFour);
     builder.breakOp();
-    node.getExpression().accept(this);
+    scan(skipParen(node.getExpression()), null);
     builder.close();
     token(")");
     builder.space();
-    node.getBody().accept(this);
-    return false;
+    scan(node.getBlock(), null);
+    return null;
   }
 
-  /** Visitor method for {@link ThisExpression}s. */
   @Override
-  public boolean visit(ThisExpression node) {
-    sync(node);
-    if (node.getQualifier() != null) {
-      builder.open(plusFour);
-      node.getQualifier().accept(this);
-      builder.breakOp();
-      token(".");
-      builder.close();
-    }
-    token("this");
-    return false;
-  }
-
-  /** Visitor method for {@link ThrowStatement}s. */
-  @Override
-  public boolean visit(ThrowStatement node) {
+  public Void visitThrow(ThrowTree node, Void unused) {
     sync(node);
     token("throw");
     builder.space();
-    node.getExpression().accept(this);
+    scan(node.getExpression(), null);
     token(";");
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link TryStatement}s. */
   @Override
-  public boolean visit(TryStatement node) {
+  public Void visitTry(TryTree node, Void unused) {
     sync(node);
     builder.open(ZERO);
     token("try");
     builder.space();
-    if (!node.resources().isEmpty()) {
+    if (!node.getResources().isEmpty()) {
       token("(");
-      builder.open(node.resources().size() > 1 ? plusFour : ZERO);
+      builder.open(node.getResources().size() > 1 ? plusFour : ZERO);
       boolean first = true;
-      for (VariableDeclarationExpression resource :
-          (List<VariableDeclarationExpression>) node.resources()) {
+      for (Tree resource : node.getResources()) {
         if (!first) {
-          token(";");
           builder.forcedBreak();
         }
-        visit(resource);
+        VariableTree variableTree = (VariableTree) resource;
+        declareOne(
+            DeclarationKind.PARAMETER,
+            fieldAnnotationDirection(variableTree.getModifiers()),
+            Optional.of(variableTree.getModifiers()),
+            variableTree.getType(),
+            VarArgsOrNot.NO,
+            ImmutableList.<AnnotationTree>of(),
+            variableTree.getName(),
+            "",
+            "=",
+            Optional.fromNullable(variableTree.getInitializer()),
+            Optional.<String>absent(),
+            Optional.<ExpressionTree>absent(),
+            Optional.<TypeWithDims>absent());
+        if (builder.peekToken().equals(Optional.of(";"))) {
+          token(";");
+          builder.space();
+        }
         first = false;
       }
       if (builder.peekToken().equals(Optional.of(";"))) {
@@ -1884,304 +1781,172 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
     // An empty try-with-resources body can collapse to "{}" if there are no trailing catch or
     // finally blocks.
-    boolean trailingClauses = !node.catchClauses().isEmpty() || node.getFinally() != null;
+    boolean trailingClauses = !node.getCatches().isEmpty() || node.getFinallyBlock() != null;
     visitBlock(
-        node.getBody(),
+        node.getBlock(),
         CollapseEmptyOrNot.valueOf(!trailingClauses),
         AllowLeadingBlankLine.YES,
         AllowTrailingBlankLine.valueOf(trailingClauses));
-    for (int i = 0; i < node.catchClauses().size(); i++) {
-      CatchClause catchClause = (CatchClause) node.catchClauses().get(i);
-      trailingClauses = i < node.catchClauses().size() - 1 || node.getFinally() != null;
+    for (int i = 0; i < node.getCatches().size(); i++) {
+      CatchTree catchClause = node.getCatches().get(i);
+      trailingClauses = i < node.getCatches().size() - 1 || node.getFinallyBlock() != null;
       visitCatchClause(catchClause, AllowTrailingBlankLine.valueOf(trailingClauses));
     }
-    if (node.getFinally() != null) {
+    if (node.getFinallyBlock() != null) {
       builder.space();
       token("finally");
       builder.space();
       visitBlock(
-          node.getFinally(),
+          node.getFinallyBlock(),
           CollapseEmptyOrNot.NO,
           AllowLeadingBlankLine.YES,
           AllowTrailingBlankLine.NO);
     }
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link TypeDeclaration}s. */
-  @Override
-  public boolean visit(TypeDeclaration node) {
+  private void maybeToken(String token) {
+    if (builder.peekToken().equals(Optional.of(token))) {
+      token(token);
+      builder.breakToFill(" ");
+    }
+  }
+
+  public void visitClassDeclaration(ClassTree node) {
     sync(node);
     List<Op> breaks =
-        visitModifiers(node.modifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
-    boolean hasSuperclassType = node.getSuperclassType() != null;
-    boolean hasSuperInterfaceTypes = !node.superInterfaceTypes().isEmpty();
+        visitModifiers(node.getModifiers(), Direction.VERTICAL, Optional.<BreakTag>absent());
+    boolean hasSuperclassType = node.getExtendsClause() != null;
+    boolean hasSuperInterfaceTypes = !node.getImplementsClause().isEmpty();
     builder.addAll(breaks);
-    token(node.isInterface() ? "interface" : "class");
+    token(node.getKind() == Tree.Kind.INTERFACE ? "interface" : "class");
     builder.space();
-    visit(node.getName());
-    if (!node.typeParameters().isEmpty()) {
+    visit(node.getSimpleName());
+    if (!node.getTypeParameters().isEmpty()) {
       token("<");
     }
     builder.open(plusFour);
     {
-      if (!node.typeParameters().isEmpty()) {
+      if (!node.getTypeParameters().isEmpty()) {
         typeParametersRest(
-            node.typeParameters(), hasSuperclassType || hasSuperInterfaceTypes ? plusFour : ZERO);
+            node.getTypeParameters(),
+            hasSuperclassType || hasSuperInterfaceTypes ? plusFour : ZERO);
       }
       if (hasSuperclassType) {
         builder.breakToFill(" ");
         token("extends");
         builder.space();
-        node.getSuperclassType().accept(this);
+        scan(node.getExtendsClause(), null);
       }
       if (hasSuperInterfaceTypes) {
         builder.breakToFill(" ");
-        builder.open(node.superInterfaceTypes().size() > 1 ? plusFour : ZERO);
-        token(node.isInterface() ? "extends" : "implements");
+        builder.open(node.getImplementsClause().size() > 1 ? plusFour : ZERO);
+        token(node.getKind() == Tree.Kind.INTERFACE ? "extends" : "implements");
         builder.space();
         boolean first = true;
-        for (Type superInterfaceType : (List<Type>) node.superInterfaceTypes()) {
+        for (Tree superInterfaceType : node.getImplementsClause()) {
           if (!first) {
             token(",");
             builder.breakOp(" ");
           }
-          superInterfaceType.accept(this);
+          scan(superInterfaceType, null);
           first = false;
         }
         builder.close();
       }
     }
     builder.close();
-    if (node.bodyDeclarations() == null) {
+    if (node.getMembers() == null) {
       token(";");
     } else {
-      addBodyDeclarations(node.bodyDeclarations(), BracesOrNot.YES, FirstDeclarationsOrNot.YES);
-      builder.guessToken(";");
+      addBodyDeclarations(node.getMembers(), BracesOrNot.YES, FirstDeclarationsOrNot.YES);
     }
-    return false;
+    dropEmptyDeclarations();
   }
 
-  /** Visitor method for {@link TypeDeclarationStatement}s. */
   @Override
-  public boolean visit(TypeDeclarationStatement node) {
-    sync(node);
-    node.getDeclaration().accept(this);
-    return false;
-  }
-
-  /** Visitor method for {@link TypeLiteral}s. */
-  @Override
-  public boolean visit(TypeLiteral node) {
-    sync(node);
-    builder.open(plusFour);
-    node.getType().accept(this);
-    builder.breakOp();
-    token(".");
-    token("class");
-    builder.close();
-    return false;
-  }
-
-  /** Visitor method for {@link TypeMethodReference}s. */
-  @Override
-  public boolean visit(TypeMethodReference node) {
-    sync(node);
-    builder.open(plusFour);
-    node.getType().accept(this);
-    builder.breakOp();
-    builder.op("::");
-    if (!node.typeArguments().isEmpty()) {
-      addTypeArguments(node.typeArguments(), plusFour);
-    }
-    visit(node.getName());
-    builder.close();
-    return false;
-  }
-
-  /** Visitor method for {@link TypeParameter}s. */
-  @Override
-  public boolean visit(TypeParameter node) {
+  public Void visitTypeParameter(TypeParameterTree node, Void unused) {
     sync(node);
     builder.open(ZERO);
-    visitAndBreakModifiers(node.modifiers(), Direction.HORIZONTAL, Optional.<BreakTag>absent());
+    visitAnnotations(node.getAnnotations(), BreakOrNot.NO, BreakOrNot.YES);
     visit(node.getName());
-    if (!node.typeBounds().isEmpty()) {
+    if (!node.getBounds().isEmpty()) {
       builder.space();
       token("extends");
       builder.open(plusFour);
       builder.breakOp(" ");
       builder.open(plusFour);
       boolean first = true;
-      for (Type typeBound : (List<Type>) node.typeBounds()) {
+      for (Tree typeBound : node.getBounds()) {
         if (!first) {
           builder.breakToFill(" ");
           token("&");
           builder.space();
         }
-        typeBound.accept(this);
+        scan(typeBound, null);
         first = false;
       }
       builder.close();
       builder.close();
     }
     builder.close();
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link UnionType}s. */
   @Override
-  public boolean visit(UnionType node) {
-    sync(node);
-    builder.open(plusFour);
-    List<Type> types = new ArrayList<>();
-    walkUnionTypes(types, node);
-    boolean first = true;
-    for (Type type : types) {
-      if (!first) {
-        builder.breakOp(" ");
-        token("|");
-        builder.space();
-      }
-      type.accept(this);
-      first = false;
-    }
-    builder.close();
-    return false;
+  public Void visitUnionType(UnionTypeTree node, Void unused) {
+    throw new IllegalStateException("expected manual descent into union types");
   }
 
-  /** Visitor method for {@link VariableDeclarationExpression}s. */
   @Override
-  public boolean visit(VariableDeclarationExpression node) {
-    sync(node);
-    builder.open(plusFour);
-    // TODO(jdd): Why no use common method?
-    for (IExtendedModifier modifier : (List<IExtendedModifier>) node.modifiers()) {
-      ((ASTNode) modifier).accept(this);
-      builder.breakToFill(" ");
-    }
-    node.getType().accept(this);
-    if (node.fragments().size() == 1) {
-      builder.breakToFill(" ");
-      visit((VariableDeclarationFragment) node.fragments().get(0));
-    } else {
-      // TODO(jdd): Are the indentations consistent here?
-      builder.breakToFill(" ");
-      builder.open(plusFour);
-      boolean first = true;
-      for (VariableDeclarationFragment fragment :
-          (List<VariableDeclarationFragment>) node.fragments()) {
-        if (!first) {
-          token(",");
-          builder.breakToFill(" ");
-        }
-        visit(fragment);
-        first = false;
-      }
-      builder.close();
-    }
-    builder.close();
-    return false;
-  }
-
-  /** Visitor method for {@link VariableDeclarationFragment}s. */
-  @Override
-  public boolean visit(VariableDeclarationFragment node) {
-    sync(node);
-    // TODO(jdd): Why no open-close?
-    visit(node.getName());
-    extraDimensions(plusFour, node.extraDimensions());
-    if (node.getInitializer() != null) {
-      builder.space();
-      token("=");
-      builder.breakToFill(" ");
-      // TODO(jdd): Why this way.
-      builder.open(ZERO);
-      node.getInitializer().accept(this);
-      builder.close();
-    }
-    return false;
-  }
-
-  // TODO(jdd): Worry about upper and lower bounds.
-
-  /** Visitor method for {@link VariableDeclarationStatement}s. */
-  @Override
-  public boolean visit(VariableDeclarationStatement node) {
-    sync(node);
-    addDeclaration(
-        node,
-        node.modifiers(),
-        node.getType(),
-        node.fragments(),
-        canLocalHaveHorizontalAnnotations(node.modifiers()));
-    return false;
-  }
-
-  /** Visitor method for {@link WhileStatement}s. */
-  @Override
-  public boolean visit(WhileStatement node) {
+  public Void visitWhileLoop(WhileLoopTree node, Void unused) {
     sync(node);
     token("while");
     builder.space();
     token("(");
-    node.getExpression().accept(this);
+    scan(skipParen(node.getCondition()), null);
     token(")");
     visitStatement(
-        node.getBody(),
+        node.getStatement(),
         CollapseEmptyOrNot.YES,
         AllowLeadingBlankLine.YES,
         AllowTrailingBlankLine.NO);
-    return false;
+    return null;
   }
 
-  /** Visitor method for {@link WildcardType}s. */
   @Override
-  public boolean visit(WildcardType node) {
+  public Void visitWildcard(WildcardTree node, Void unused) {
     sync(node);
-    beforeAnnotatableType(node);
     builder.open(ZERO);
     token("?");
     if (node.getBound() != null) {
       builder.open(plusFour);
       builder.space();
-      token(node.isUpperBound() ? "extends" : "super");
+      token(node.getKind() == EXTENDS_WILDCARD ? "extends" : "super");
       builder.breakOp(" ");
-      node.getBound().accept(this);
+      scan(node.getBound(), null);
       builder.close();
     }
     builder.close();
-    return false;
+    return null;
   }
 
   // Helper methods.
 
-  /** Before Visitor methods for {@link Type}. */
-  private void beforeAnnotatableType(AnnotatableType node) {
-    if (!node.annotations().isEmpty()) {
-      builder.open(ZERO);
-      for (Annotation annotation : (List<Annotation>) node.annotations()) {
-        annotation.accept(this);
-        builder.breakOp(" ");
-      }
-      builder.close();
-    }
-  }
-
-  /** Helper method for {@link Annotation}s and declareOne. */
+  /** Helper method for annotations. */
   void visitAnnotations(
-      List<Annotation> annotations, BreakOrNot breakBefore, BreakOrNot breakAfter) {
+      List<? extends AnnotationTree> annotations, BreakOrNot breakBefore, BreakOrNot breakAfter) {
     if (!annotations.isEmpty()) {
       if (breakBefore.isYes()) {
         builder.breakToFill(" ");
       }
       boolean first = true;
-      for (Annotation annotation : annotations) {
+      for (AnnotationTree annotation : annotations) {
         if (!first) {
           builder.breakToFill(" ");
         }
-        annotation.accept(this);
+        scan(annotation, null);
         first = false;
       }
       if (breakAfter.isYes()) {
@@ -2190,20 +1955,26 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
   }
 
-  /**
-   * Helper method for {@link Block}s, {@link CatchClause}s, {@link Statement}s,
-   * {@link TryStatement}s, and {@link WhileStatement}s.
-   */
+  /** Helper method for blocks. */
   private void visitBlock(
-      Block node,
+      BlockTree node,
       CollapseEmptyOrNot collapseEmptyOrNot,
       AllowLeadingBlankLine allowLeadingBlankLine,
       AllowTrailingBlankLine allowTrailingBlankLine) {
     sync(node);
-    if (collapseEmptyOrNot.isYes() && node.statements().isEmpty()) {
-      tokenBreakTrailingComment("{", plusTwo);
-      builder.blankLineWanted(BlankLineWanted.NO);
-      token("}", plusTwo);
+    if (node.isStatic()) {
+      token("static");
+      builder.space();
+    }
+    if (collapseEmptyOrNot.isYes() && node.getStatements().isEmpty()) {
+      if (builder.peekToken().equals(Optional.of(";"))) {
+        // TODO(cushon): is this needed?
+        token(";");
+      } else {
+        tokenBreakTrailingComment("{", plusTwo);
+        builder.blankLineWanted(BlankLineWanted.NO);
+        token("}", plusTwo);
+      }
     } else {
       builder.open(ZERO);
       builder.open(plusTwo);
@@ -2213,16 +1984,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       } else {
         builder.blankLineWanted(BlankLineWanted.PRESERVE);
       }
-      boolean first = true;
-      for (Statement statement : (List<Statement>) node.statements()) {
-        builder.forcedBreak();
-        if (!first) {
-          builder.blankLineWanted(BlankLineWanted.PRESERVE);
-        }
-        first = false;
-        markForPartialFormat();
-        statement.accept(this);
-      }
+      visitStatements(node.getStatements());
       builder.close();
       builder.forcedBreak();
       builder.close();
@@ -2236,86 +1998,90 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
   }
 
-  /**
-   * Helper method for {@link DoStatement}s, {@link EnhancedForStatement}s, {@link ForStatement}s,
-   * {@link IfStatement}s, and WhileStatements.
-   */
+  /** Helper method for statements. */
   private void visitStatement(
-      Statement node,
+      StatementTree node,
       CollapseEmptyOrNot collapseEmptyOrNot,
       AllowLeadingBlankLine allowLeadingBlank,
       AllowTrailingBlankLine allowTrailingBlank) {
     sync(node);
-    switch (node.getNodeType()) {
-      case ASTNode.BLOCK:
+    switch (node.getKind()) {
+      case BLOCK:
         builder.space();
-        visitBlock((Block) node, collapseEmptyOrNot, allowLeadingBlank, allowTrailingBlank);
+        visitBlock((BlockTree) node, collapseEmptyOrNot, allowLeadingBlank, allowTrailingBlank);
         break;
       default:
-        // TODO(jdd): Fix.
         builder.open(plusTwo);
         builder.breakOp(" ");
-        node.accept(this);
+        scan(node, null);
         builder.close();
     }
   }
 
-  /** Helper method for {@link ArrayCreation}s and {@link ArrayType}s. */
-  private void visitArrayType(ArrayType node, DimensionsOrNot includeDimensions) {
-    if (includeDimensions.isYes() && !node.dimensions().isEmpty()) {
-      builder.open(plusFour);
-    }
-    node.getElementType().accept(this);
-    if (includeDimensions.isYes()) {
-      for (Dimension dimension : (List<Dimension>) node.dimensions()) {
-        builder.breakToFill(dimension.annotations().isEmpty() ? "" : " ");
-        visit(dimension);
+  private void visitStatements(List<? extends StatementTree> statements) {
+    boolean first = true;
+    PeekingIterator<StatementTree> it =
+        Iterators.<StatementTree>peekingIterator(statements.iterator());
+    dropEmptyDeclarations();
+    while (it.hasNext()) {
+      StatementTree tree = it.next();
+      builder.forcedBreak();
+      if (!first) {
+        builder.blankLineWanted(BlankLineWanted.PRESERVE);
       }
-    }
-    if (includeDimensions.isYes() && !node.dimensions().isEmpty()) {
-      builder.close();
+      markForPartialFormat();
+      first = false;
+      List<VariableTree> fragments = variableFragments(it, tree);
+      if (!fragments.isEmpty()) {
+        visitVariables(
+            fragments,
+            DeclarationKind.NONE,
+            canLocalHaveHorizontalAnnotations(fragments.get(0).getModifiers()));
+      } else {
+        scan(tree, null);
+      }
     }
   }
 
-  /**
-   * Helper methods for {@link AnnotationTypeDeclaration}s,
-   * {@link AnnotationTypeMemberDeclaration}s, {@link EnumDeclaration}s, {@link Initializer}s,
-   * {@link MethodDeclaration}s, {@link PackageDeclaration}s, and {@link TypeParameter}s. Output
-   * combined modifiers and annotations and the trailing break.
-   * @param modifiers a list of {@link IExtendedModifier}s, which can include annotations
-   * @param annotationDirection direction of annotations
-   * @param declarationAnnotationBreak a tag for the {code Break} after any declaration annotations.
-   */
+  /** Output combined modifiers and annotations and the trailing break. */
   void visitAndBreakModifiers(
-      List<IExtendedModifier> modifiers,
+      ModifiersTree modifiers,
       Direction annotationDirection,
       Optional<BreakTag> declarationAnnotationBreak) {
     builder.addAll(visitModifiers(modifiers, annotationDirection, declarationAnnotationBreak));
   }
 
-  /**
-   * Helper method for {@link EnumConstantDeclaration}s, {@link TypeDeclaration}s, and
-   * {@code visitAndBreakModifiers}. Output combined modifiers and annotations and returns the
-   * trailing break.
-   * @param modifiers a list of {@link IExtendedModifier}s, which can include annotations
-   * @param annotationsDirection {@link Direction#VERTICAL} or {@link Direction#HORIZONTAL}
-   * @param declarationAnnotationBreak a tag for the {code Break} after any declaration annotations.
-   * @return the list of {@link Doc.Break}s following the modifiers and annotations
-   */
+  @Override
+  public Void visitModifiers(ModifiersTree node, Void unused) {
+    throw new IllegalStateException("expected manual descent into modifiers");
+  }
+
+  /** Output combined modifiers and annotations and returns the trailing break. */
   private List<Op> visitModifiers(
-      List<IExtendedModifier> modifiers,
+      ModifiersTree modifiersTree,
       Direction annotationsDirection,
       Optional<BreakTag> declarationAnnotationBreak) {
-    if (modifiers.isEmpty()) {
+    return visitModifiers(
+        modifiersTree,
+        modifiersTree.getAnnotations(),
+        annotationsDirection,
+        declarationAnnotationBreak);
+  }
+
+  private List<Op> visitModifiers(
+      ModifiersTree modifiersTree,
+      List<? extends AnnotationTree> annotationTrees,
+      Direction annotationsDirection,
+      Optional<BreakTag> declarationAnnotationBreak) {
+    if (annotationTrees.isEmpty() && !nextIsModifier()) {
       return EMPTY_LIST;
     }
+    Deque<AnnotationTree> annotations = new ArrayDeque<AnnotationTree>(annotationTrees);
     builder.open(ZERO);
     boolean first = true;
     boolean lastWasAnnotation = false;
-    int idx = 0;
-    for (; idx < modifiers.size(); idx++) {
-      IExtendedModifier modifier = modifiers.get(idx);
-      if (modifier.isModifier()) {
+    while (!annotations.isEmpty()) {
+      if (nextIsModifier()) {
         break;
       }
       if (!first) {
@@ -2324,7 +2090,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
                 ? forceBreakList(declarationAnnotationBreak)
                 : breakList(declarationAnnotationBreak));
       }
-      ((ASTNode) modifier).accept(this);
+      scan(annotations.removeFirst(), null);
       first = false;
       lastWasAnnotation = true;
     }
@@ -2333,7 +2099,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         annotationsDirection.isVertical()
             ? forceBreakList(declarationAnnotationBreak)
             : breakList(declarationAnnotationBreak);
-    if (idx >= modifiers.size()) {
+    if (annotations.isEmpty() && !nextIsModifier()) {
       return trailingBreak;
     }
     if (lastWasAnnotation) {
@@ -2342,29 +2108,57 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
     builder.open(ZERO);
     first = true;
-    for (; idx < modifiers.size(); idx++) {
-      IExtendedModifier modifier = modifiers.get(idx);
+    while (nextIsModifier() || !annotations.isEmpty()) {
       if (!first) {
         builder.addAll(breakFillList(Optional.<BreakTag>absent()));
       }
-      ((ASTNode) modifier).accept(this);
+      if (nextIsModifier()) {
+        token(builder.peekToken().get());
+      } else {
+        scan(annotations.removeFirst(), null);
+        lastWasAnnotation = true;
+      }
       first = false;
-      lastWasAnnotation = modifier.isAnnotation();
     }
     builder.close();
     return breakFillList(Optional.<BreakTag>absent());
   }
 
-  /** Helper method for {@link CatchClause}s. */
-  private void visitCatchClause(CatchClause node, AllowTrailingBlankLine allowTrailingBlankLine) {
+  boolean nextIsModifier() {
+    switch (builder.peekToken().get()) {
+      case "public":
+      case "protected":
+      case "private":
+      case "abstract":
+      case "static":
+      case "final":
+      case "transient":
+      case "volatile":
+      case "synchronized":
+      case "native":
+      case "strictfp":
+      case "default":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  @Override
+  public Void visitCatch(CatchTree node, Void unused) {
+    throw new IllegalStateException("expected manual descent into catch trees");
+  }
+
+  /** Helper method for {@link CatchTree}s. */
+  private void visitCatchClause(CatchTree node, AllowTrailingBlankLine allowTrailingBlankLine) {
     sync(node);
     builder.space();
     token("catch");
     builder.space();
     token("(");
     builder.open(plusFour);
-    SingleVariableDeclaration ex = node.getException();
-    if (ex.getType().getNodeType() == ASTNode.UNION_TYPE) {
+    VariableTree ex = node.getParameter();
+    if (ex.getType().getKind() == UNION_TYPE) {
       builder.open(ZERO);
       visitUnionType(ex);
       builder.close();
@@ -2372,24 +2166,24 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       // TODO(cushon): don't break after here for consistency with for, while, etc.
       builder.breakToFill();
       builder.open(ZERO);
-      visit(ex);
+      scan(ex, null);
       builder.close();
     }
     builder.close();
     token(")");
     builder.space();
     visitBlock(
-        node.getBody(), CollapseEmptyOrNot.NO, AllowLeadingBlankLine.YES, allowTrailingBlankLine);
+        node.getBlock(), CollapseEmptyOrNot.NO, AllowLeadingBlankLine.YES, allowTrailingBlankLine);
   }
 
   /** Formats a union type declaration in a catch clause. */
-  private void visitUnionType(SingleVariableDeclaration declaration) {
-    UnionType type = (UnionType) declaration.getType();
+  private void visitUnionType(VariableTree declaration) {
+    UnionTypeTree type = (UnionTypeTree) declaration.getType();
     builder.open(ZERO);
     sync(declaration);
     visitAndBreakModifiers(
-        declaration.modifiers(), Direction.HORIZONTAL, Optional.<BreakTag>absent());
-    List<Type> union = type.types();
+        declaration.getModifiers(), Direction.HORIZONTAL, Optional.<BreakTag>absent());
+    List<? extends Tree> union = type.getTypeAlternatives();
     boolean first = true;
     for (int i = 0; i < union.size() - 1; i++) {
       if (!first) {
@@ -2399,52 +2193,42 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       } else {
         first = false;
       }
-      union.get(i).accept(this);
+      scan(union.get(i), null);
     }
     builder.breakOp(" ");
     token("|");
     builder.space();
-    Type last = union.get(union.size() - 1);
+    Tree last = union.get(union.size() - 1);
     declareOne(
-        declaration,
+        DeclarationKind.NONE,
         Direction.HORIZONTAL,
-        Collections.<IExtendedModifier>emptyList(),
+        Optional.<ModifiersTree>absent(),
         last,
-        VarArgsOrNot.valueOf(declaration.isVarargs()),
-        declaration.varargsAnnotations(),
+        VarArgsOrNot.NO, // VarArgsOrNot.valueOf(declaration.isVarargs()),
+        ImmutableList.<AnnotationTree>of(), // declaration.varargsAnnotations(),
         declaration.getName(),
         "",
-        declaration.extraDimensions(),
+        // declaration.extraDimensions(),
         "=",
         Optional.fromNullable(declaration.getInitializer()),
         Optional.<String>absent(),
-        ReceiverParameter.NO);
+        Optional.<ExpressionTree>absent(),
+        Optional.<TypeWithDims>absent());
     builder.close();
   }
 
-  /**
-   * Helper method for {@link InfixExpression}s. Visit this {@link Expression} node, and its
-   * children, as long as they are {@link InfixExpression} nodes of the same precedence. Accumulate
-   * the operands and operators.
-   * @param precedence the precedence of the operators to collect
-   * @param operands the output list of {@code n + 1} operands
-   * @param operators the output list of {@code n} operators
-   */
+  /** Accumulate the operands and operators. */
   private static void walkInfix(
-      int precedence, Expression expression, List<Expression> operands, List<String> operators) {
-    if (expression.getNodeType() == ASTNode.INFIX_EXPRESSION) {
-      InfixExpression infixExpression = (InfixExpression) expression;
-      String myOperator = infixExpression.getOperator().toString();
-      if (PRECEDENCE.get(myOperator) == precedence) {
-        walkInfix(precedence, infixExpression.getLeftOperand(), operands, operators);
-        operators.add(myOperator);
-        walkInfix(precedence, infixExpression.getRightOperand(), operands, operators);
-        if (infixExpression.hasExtendedOperands()) {
-          for (Expression extendedOperand : (List<Expression>) infixExpression.extendedOperands()) {
-            operators.add(myOperator);
-            walkInfix(precedence, extendedOperand, operands, operators);
-          }
-        }
+      int precedence,
+      ExpressionTree expression,
+      List<ExpressionTree> operands,
+      List<String> operators) {
+    if (expression instanceof BinaryTree) {
+      BinaryTree binaryTree = (BinaryTree) expression;
+      if (precedence(binaryTree) == precedence) {
+        walkInfix(precedence, binaryTree.getLeftOperand(), operands, operators);
+        operators.add(operatorName(expression));
+        walkInfix(precedence, binaryTree.getRightOperand(), operands, operators);
       } else {
         operands.add(expression);
       }
@@ -2453,126 +2237,125 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
   }
 
-  // TODO(jdd): Merge with union types.
-
-  /** Helper method for {@link IntersectionType}s. */
-  private static void walkIntersectionTypes(List<Type> types, IntersectionType node) {
-    for (ASTNode type : (List<ASTNode>) node.types()) {
-      if (type.getNodeType() == ASTNode.INTERSECTION_TYPE) {
-        walkIntersectionTypes(types, (IntersectionType) type);
-      } else {
-        types.add((Type) type);
-      }
-    }
-  }
-
-  /** Helper method for {@link MethodDeclaration}s. */
   private void visitFormals(
-      ASTNode node,
-      Optional<Type> receiverType,
-      SimpleName receiverQualifier,
-      List<SingleVariableDeclaration> parameters) {
-    if (receiverType.isPresent() || !parameters.isEmpty()) {
-      builder.open(ZERO);
-      boolean first = true;
-      if (receiverType.isPresent()) {
-        // TODO(jdd): Use builders.
-        declareOne(
-            node,
-            Direction.HORIZONTAL,
-            ImmutableList.<IExtendedModifier>of(),
-            receiverType.get(),
-            VarArgsOrNot.NO,
-            ImmutableList.<Annotation>of(),
-            receiverQualifier,
-            "",
-            ImmutableList.<Dimension>of(),
-            "",
-            Optional.<Expression>absent(),
-            Optional.<String>absent(),
-            ReceiverParameter.YES);
-        first = false;
-      }
-      for (SingleVariableDeclaration parameter : parameters) {
-        if (!first) {
-          token(",");
-          builder.breakOp(" ");
-        }
-        // TODO(jdd): Check for "=".
-        visitToDeclare(Direction.HORIZONTAL, parameter, Optional.<Expression>absent(), "=");
-        first = false;
-      }
-      builder.close();
+      Optional<VariableTree> receiver, List<? extends VariableTree> parameters) {
+    if (!receiver.isPresent() && parameters.isEmpty()) {
+      return;
     }
+    builder.open(ZERO);
+    boolean first = true;
+    if (receiver.isPresent()) {
+      // TODO(jdd): Use builders.
+      declareOne(
+          DeclarationKind.PARAMETER,
+          Direction.HORIZONTAL,
+          Optional.of(receiver.get().getModifiers()),
+          receiver.get().getType(),
+          VarArgsOrNot.NO,
+          ImmutableList.<AnnotationTree>of(),
+          receiver.get().getName(),
+          "",
+          "",
+          Optional.<ExpressionTree>absent(),
+          !parameters.isEmpty() ? Optional.of(",") : Optional.<String>absent(),
+          Optional.of(receiver.get().getNameExpression()),
+          Optional.<TypeWithDims>absent());
+      first = false;
+    }
+    for (int i = 0; i < parameters.size(); i++) {
+      VariableTree parameter = parameters.get(i);
+      if (!first) {
+        builder.breakOp(" ");
+      }
+      visitToDeclare(
+          DeclarationKind.PARAMETER,
+          Direction.HORIZONTAL,
+          parameter,
+          Optional.<ExpressionTree>absent(),
+          "=",
+          i < parameters.size() - 1 ? Optional.of(",") : Optional.<String>absent());
+      first = false;
+    }
+    builder.close();
   }
 
-  /** Helper method for {@link MethodDeclaration}s. */
-  private void visitThrowsClause(List<Type> thrownExceptionTypes) {
+  //  /** Helper method for {@link MethodDeclaration}s. */
+  private void visitThrowsClause(List<? extends ExpressionTree> thrownExceptionTypes) {
     token("throws");
     builder.breakToFill(" ");
     boolean first = true;
-    for (Type thrownExceptionType : thrownExceptionTypes) {
+    for (ExpressionTree thrownExceptionType : thrownExceptionTypes) {
       if (!first) {
         token(",");
         builder.breakToFill(" ");
       }
-      thrownExceptionType.accept(this);
+      scan(thrownExceptionType, null);
       first = false;
     }
   }
 
-  /** Helper method for {@link ImportDeclaration}s, {@link Name}s, and {@link QualifiedName}s. */
-  private void visitName(Name node, BreakOrNot breaks) {
+  @Override
+  public Void visitIdentifier(IdentifierTree node, Void unused) {
     sync(node);
-    if (node.isSimpleName()) {
-      visit((SimpleName) node);
-    } else {
-      visitQualifiedName((QualifiedName) node, breaks);
+    token(node.getName().toString());
+    return null;
+  }
+
+  /** Helper method for import declarations, names, and qualified names. */
+  private void visitName(Tree node, BreakOrNot breaks) {
+    ArrayDeque<Name> stack = new ArrayDeque<>();
+    for (; node instanceof MemberSelectTree; node = ((MemberSelectTree) node).getExpression()) {
+      stack.addFirst(((MemberSelectTree) node).getIdentifier());
+    }
+    stack.addFirst(((IdentifierTree) node).getName());
+    boolean first = true;
+    for (Name name : stack) {
+      if (!first) {
+        token(".");
+      }
+      token(name.toString());
+      first = false;
     }
   }
 
-  /**
-   * Helper method for {@link EnhancedForStatement}s, {@link MethodDeclaration}s, and
-   * {@link SingleVariableDeclaration}s.
-   */
   private void visitToDeclare(
+      DeclarationKind kind,
       Direction annotationsDirection,
-      SingleVariableDeclaration node,
-      Optional<Expression> initializer,
-      String equals) {
+      VariableTree node,
+      Optional<ExpressionTree> initializer,
+      String equals,
+      Optional<String> trailing) {
     sync(node);
+    boolean varargs = (((JCTree.JCVariableDecl) node).mods.flags & Flags.VARARGS) == Flags.VARARGS;
     declareOne(
-        node,
+        kind,
         annotationsDirection,
-        node.modifiers(),
-        node.getType(),
-        VarArgsOrNot.valueOf(node.isVarargs()),
-        node.varargsAnnotations(),
+        Optional.of(node.getModifiers()),
+        varargs ? ((ArrayTypeTree) node.getType()).getType() : node.getType(),
+        VarArgsOrNot.valueOf(varargs),
+        /*varargsAnnotations=*/ ImmutableList.<AnnotationTree>of(),
         node.getName(),
         "",
-        node.extraDimensions(),
         equals,
         initializer,
-        Optional.<String>absent(),
-        ReceiverParameter.NO);
+        trailing,
+        Optional.<ExpressionTree>absent(),
+        Optional.<TypeWithDims>absent());
   }
 
-  /**
-   * Helper method for formatting the type parameter list of a {@link MethodDeclaration} or
-   * {@link TypeDeclaration}. Does not omit the leading '<', which should be associated with
-   * the type name.
-   */
-  private void typeParametersRest(List<TypeParameter> typeParameters, Indent plusIndent) {
+  /** Does not omit the leading '<', which should be associated with the type name. */
+  private void typeParametersRest(
+      List<? extends TypeParameterTree> typeParameters, Indent plusIndent) {
     builder.open(plusIndent);
     builder.breakOp();
     builder.open(ZERO);
     boolean first = true;
-    for (TypeParameter typeParameter : typeParameters) {
+    for (TypeParameterTree typeParameter : typeParameters) {
       if (!first) {
         token(",");
         builder.breakOp(" ");
       }
-      typeParameter.accept(this);
+      scan(typeParameter, null);
       first = false;
     }
     token(">");
@@ -2580,56 +2363,30 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.close();
   }
 
-  /** Helper method for {@link UnionType}s. */
-  private static void walkUnionTypes(List<Type> types, UnionType node) {
-    for (ASTNode type : (List<ASTNode>) node.types()) {
-      if (type.getNodeType() == ASTNode.UNION_TYPE) {
-        walkUnionTypes(types, (UnionType) type);
-      } else {
-        types.add((Type) type);
-      }
-    }
-  }
-
   /** Collapse chains of {@code .} operators, across multiple {@link ASTNode} types. */
 
   /**
    * Output a "." node.
+   *
    * @param node0 the "." node
    */
-  void visitDot(Expression node0) {
-    Expression node = node0;
+  void visitDot(ExpressionTree node0) {
+    ExpressionTree node = node0;
 
     // collect a flattened list of "."-separated items
     // e.g. ImmutableList.builder().add(1).build() -> [ImmutableList, builder(), add(1), build()]
-    ArrayDeque<Expression> stack = new ArrayDeque<>();
+    ArrayDeque<ExpressionTree> stack = new ArrayDeque<>();
     LOOP:
     do {
       stack.addFirst(node);
-      switch (node.getNodeType()) {
-        case ASTNode.FIELD_ACCESS:
-          node = ((FieldAccess) node).getExpression();
+      switch (node.getKind()) {
+        case MEMBER_SELECT:
+          node = ((MemberSelectTree) node).getExpression();
           break;
-        case ASTNode.METHOD_INVOCATION:
-          node = ((MethodInvocation) node).getExpression();
+        case METHOD_INVOCATION:
+          node = getMethodReceiver((MethodInvocationTree) node);
           break;
-        case ASTNode.QUALIFIED_NAME:
-          node = ((QualifiedName) node).getQualifier();
-          break;
-        case ASTNode.SUPER_METHOD_INVOCATION:
-          // Super method invocations are represented as a single AST node that includes
-          // an optional qualifier, 'super', and the method name and arguments. When laying
-          // out a super method invocation in a dot chain we want to treat 'super' and the
-          // method name as distinct elements, so we create a fake AST node for just the
-          // 'super' token.
-          // TODO(cushon): create a higher-level presentation of dot chains
-          stack.addFirst(AST.newAST(AST.JLS8).newSuperFieldAccess());
-          node = ((SuperMethodInvocation) node).getQualifier();
-          break;
-        case ASTNode.THIS_EXPRESSION:
-          node = ((ThisExpression) node).getQualifier();
-          break;
-        case ASTNode.SIMPLE_NAME:
+        case IDENTIFIER:
           node = null;
           break LOOP;
         default:
@@ -2640,7 +2397,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           break LOOP;
       }
     } while (node != null);
-    List<Expression> items = new ArrayList<>(stack);
+    List<ExpressionTree> items = new ArrayList<>(stack);
 
     boolean needDot = false;
 
@@ -2649,14 +2406,13 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     if (node != null) {
       // Exception: if it's an anonymous class declaration, we don't need to
       // break and indent after the trailing '}'.
-      if (node.getNodeType() == ASTNode.CLASS_INSTANCE_CREATION
-          && ((ClassInstanceCreation) node).getAnonymousClassDeclaration() != null) {
+      if (node.getKind() == NEW_CLASS && ((NewClassTree) node).getClassBody() != null) {
         builder.open(ZERO);
-        node.accept(this);
+        scan(node, null);
         token(".");
       } else {
         builder.open(plusFour);
-        node.accept(this);
+        scan(node, null);
         builder.breakOp();
         needDot = true;
       }
@@ -2670,9 +2426,8 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     int firstInvocationIndex = -1;
     {
       for (int i = 0; i < items.size(); i++) {
-        Expression expression = items.get(i);
-        if (expression.getNodeType() == ASTNode.METHOD_INVOCATION
-            || expression.getNodeType() == ASTNode.SUPER_METHOD_INVOCATION) {
+        ExpressionTree expression = items.get(i);
+        if (expression.getKind() == METHOD_INVOCATION) {
           if (i > 0 || node != null) {
             // we only want dereference invocations
             invocationCount++;
@@ -2705,6 +2460,17 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       prefixIndex = firstInvocationIndex;
     }
 
+    if (prefixIndex == -1 && items.get(0) instanceof IdentifierTree) {
+      switch (((IdentifierTree) items.get(0)).getName().toString()) {
+        case "this":
+        case "super":
+          prefixIndex = 1;
+          break;
+        default:
+          break;
+      }
+    }
+
     if (prefixIndex > 0) {
       visitDotWithPrefix(items, needDot, prefixIndex);
     } else {
@@ -2724,7 +2490,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    * @param needDot whether a leading dot is needed
    */
   private void visitRegularDot(
-      Expression enclosingExpression, List<Expression> items, boolean needDot) {
+      ExpressionTree enclosingExpression, List<ExpressionTree> items, boolean needDot) {
     boolean trailingDereferences = items.size() > 1;
     boolean needDot0 = needDot;
     if (!needDot0) {
@@ -2734,7 +2500,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     // chain starts with another expression
     int minLength = indentMultiplier * 4;
     int length = needDot0 ? minLength : 0;
-    for (Expression e : items) {
+    for (ExpressionTree e : items) {
       if (needDot) {
         if (length > minLength) {
           builder.breakOp(FillMode.UNIFIED, "", ZERO);
@@ -2750,7 +2516,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         dotExpressionArgsAndParen(
             e, tyargIndent, (trailingDereferences || needDot) ? plusFour : ZERO);
       }
-      length += e.getLength();
+      length += getLength(e, getCurrentPath());
       needDot = true;
     }
     if (!needDot0) {
@@ -2766,29 +2532,32 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   //     .thenReturn(result);
   //
   private boolean fillFirstArgument(
-      Expression enclosingExpression, Expression e, List<Expression> items, Indent indent) {
+      ExpressionTree enclosingExpression,
+      ExpressionTree e,
+      List<ExpressionTree> items,
+      Indent indent) {
     // is there a trailing dereference?
     if (items.size() < 2) {
       return false;
     }
     // don't special-case calls nested inside expressions
-    if (enclosingExpression.getParent().getNodeType() != ASTNode.EXPRESSION_STATEMENT
-        || e.getNodeType() != ASTNode.METHOD_INVOCATION) {
+    if (e.getKind() != METHOD_INVOCATION) {
       return false;
     }
-    MethodInvocation methodInvocation = (MethodInvocation) e;
-    if (methodInvocation.getName().getLength() > 4
-        || !methodInvocation.typeArguments().isEmpty()
-        || methodInvocation.arguments().size() != 1
-        || methodInvocation.getExpression() != null) {
+    MethodInvocationTree methodInvocation = (MethodInvocationTree) e;
+    Name name = getMethodName(methodInvocation);
+    if (!(methodInvocation.getMethodSelect() instanceof IdentifierTree)
+        || name.length() > 4
+        || !methodInvocation.getTypeArguments().isEmpty()
+        || methodInvocation.getArguments().size() != 1) {
       return false;
     }
     builder.open(ZERO);
     builder.open(indent);
-    visit(methodInvocation.getName());
+    visit(name);
     token("(");
-    Expression arg = Iterables.getOnlyElement((List<Expression>) methodInvocation.arguments());
-    arg.accept(this);
+    ExpressionTree arg = getOnlyElement(methodInvocation.getArguments());
+    scan(arg, null);
     builder.close();
     token(")");
     builder.close();
@@ -2796,15 +2565,15 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   }
 
   /**
-   * Output a chain of dereferences where some prefix should be treated as a single
-   * syntactic unit, either because it looks like a type name or because there
-   * is only a single method invocation in the chain.
+   * Output a chain of dereferences where some prefix should be treated as a single syntactic unit,
+   * either because it looks like a type name or because there is only a single method invocation in
+   * the chain.
    *
-   * @param items           in the chain
-   * @param needDot         whether a leading dot is needed
-   * @param prefixIndex     the index of the last item in the prefix
+   * @param items in the chain
+   * @param needDot whether a leading dot is needed
+   * @param prefixIndex the index of the last item in the prefix
    */
-  private void visitDotWithPrefix(List<Expression> items, boolean needDot, int prefixIndex) {
+  private void visitDotWithPrefix(List<ExpressionTree> items, boolean needDot, int prefixIndex) {
     // Are there method invocations or field accesses after the prefix?
     boolean trailingDereferences = prefixIndex >= 0 && prefixIndex < items.size() - 1;
 
@@ -2813,7 +2582,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
     BreakTag nameTag = genSym();
     for (int i = 0; i < items.size(); i++) {
-      Expression e = items.get(i);
+      ExpressionTree e = items.get(i);
       if (needDot) {
         FillMode fillMode;
         if (prefixIndex >= 0 && i <= prefixIndex) {
@@ -2842,22 +2611,19 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   }
 
   /** Returns the simple names of expressions in a "." chain. */
-  private List<String> simpleNames(ArrayDeque<Expression> stack) {
+  private List<String> simpleNames(ArrayDeque<ExpressionTree> stack) {
     ImmutableList.Builder<String> simpleNames = ImmutableList.builder();
     OUTER:
-    for (Expression expression : stack) {
-      switch (expression.getNodeType()) {
-        case ASTNode.FIELD_ACCESS:
-          simpleNames.add(((FieldAccess) expression).getName().getIdentifier());
+    for (ExpressionTree expression : stack) {
+      switch (expression.getKind()) {
+        case MEMBER_SELECT:
+          simpleNames.add(((MemberSelectTree) expression).getIdentifier().toString());
           break;
-        case ASTNode.QUALIFIED_NAME:
-          simpleNames.add(((QualifiedName) expression).getName().getIdentifier());
+        case IDENTIFIER:
+          simpleNames.add(((IdentifierTree) expression).getName().toString());
           break;
-        case ASTNode.SIMPLE_NAME:
-          simpleNames.add(((SimpleName) expression).getIdentifier());
-          break;
-        case ASTNode.METHOD_INVOCATION:
-          simpleNames.add(((MethodInvocation) expression).getName().getIdentifier());
+        case METHOD_INVOCATION:
+          simpleNames.add(getMethodName((MethodInvocationTree) expression).toString());
           break OUTER;
         default:
           break OUTER;
@@ -2866,100 +2632,80 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return simpleNames.build();
   }
 
-  private void dotExpressionUpToArgs(Expression expression, Optional<BreakTag> tyargTag) {
-    switch (expression.getNodeType()) {
-      case ASTNode.FIELD_ACCESS:
-        FieldAccess fieldAccess = (FieldAccess) expression;
-        visit(fieldAccess.getName());
+  private void dotExpressionUpToArgs(ExpressionTree expression, Optional<BreakTag> tyargTag) {
+    switch (expression.getKind()) {
+      case MEMBER_SELECT:
+        MemberSelectTree fieldAccess = (MemberSelectTree) expression;
+        visit(fieldAccess.getIdentifier());
         break;
-      case ASTNode.METHOD_INVOCATION:
-        MethodInvocation methodInvocation = (MethodInvocation) expression;
-        if (!methodInvocation.typeArguments().isEmpty()) {
+      case METHOD_INVOCATION:
+        MethodInvocationTree methodInvocation = (MethodInvocationTree) expression;
+        if (!methodInvocation.getTypeArguments().isEmpty()) {
           builder.open(plusFour);
-          addTypeArguments(methodInvocation.typeArguments(), ZERO);
+          addTypeArguments(methodInvocation.getTypeArguments(), ZERO);
           // TODO(jdd): Should indent the name -4.
           builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, tyargTag);
           builder.close();
         }
-        visit(methodInvocation.getName());
+        visit(getMethodName(methodInvocation));
         break;
-      case ASTNode.SUPER_METHOD_INVOCATION:
-        SuperMethodInvocation superMethodInvocation = (SuperMethodInvocation) expression;
-        if (!superMethodInvocation.typeArguments().isEmpty()) {
-          builder.open(plusFour);
-          addTypeArguments(superMethodInvocation.typeArguments(), ZERO);
-          builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, tyargTag);
-          builder.close();
-        }
-        visit(superMethodInvocation.getName());
-        break;
-      case ASTNode.SUPER_FIELD_ACCESS:
-        token("super");
-        break;
-      case ASTNode.THIS_EXPRESSION:
-        token("this");
-        break;
-      case ASTNode.QUALIFIED_NAME:
-        visit(((QualifiedName) expression).getName());
-        break;
-      case ASTNode.SIMPLE_NAME:
-        visit(((SimpleName) expression));
+      case IDENTIFIER:
+        visit(((IdentifierTree) expression).getName());
         break;
       default:
-        expression.accept(this);
+        scan(expression, null);
+        break;
     }
   }
 
-  private void dotExpressionArgsAndParen(Expression expression, Indent tyargIndent, Indent indent) {
-    switch (expression.getNodeType()) {
-      case ASTNode.METHOD_INVOCATION:
+  private ExpressionTree getMethodReceiver(MethodInvocationTree methodInvocation) {
+    ExpressionTree select = methodInvocation.getMethodSelect();
+    return select instanceof MemberSelectTree ? ((MemberSelectTree) select).getExpression() : null;
+  }
+
+  private void dotExpressionArgsAndParen(
+      ExpressionTree expression, Indent tyargIndent, Indent indent) {
+    switch (expression.getKind()) {
+      case METHOD_INVOCATION:
         builder.open(tyargIndent);
-        MethodInvocation methodInvocation = (MethodInvocation) expression;
-        addArguments(methodInvocation.arguments(), indent);
+        MethodInvocationTree methodInvocation = (MethodInvocationTree) expression;
+        addArguments(methodInvocation.getArguments(), indent);
         builder.close();
         break;
-      case ASTNode.SUPER_METHOD_INVOCATION:
-        builder.open(tyargIndent);
-        SuperMethodInvocation superMethodInvocation = (SuperMethodInvocation) expression;
-        addArguments(superMethodInvocation.arguments(), indent);
-        builder.close();
-        break;
-      case ASTNode.THIS_EXPRESSION:
-      case ASTNode.FIELD_ACCESS:
-      case ASTNode.SIMPLE_NAME:
-      case ASTNode.QUALIFIED_NAME:
       default:
         break;
     }
   }
 
   /** Helper methods for method invocations. */
-  void addTypeArguments(List<Type> typeArguments, Indent plusIndent) {
-    if (!typeArguments.isEmpty()) {
-      token("<");
-      builder.open(plusIndent);
-      boolean first = true;
-      for (Type typeArgument : typeArguments) {
-        if (!first) {
-          token(",");
-          builder.breakToFill(" ");
-        }
-        typeArgument.accept(this);
-        first = false;
-      }
-      builder.close();
-      token(">");
+  void addTypeArguments(List<? extends Tree> typeArguments, Indent plusIndent) {
+    if (typeArguments == null || typeArguments.isEmpty()) {
+      return;
     }
+    token("<");
+    builder.open(plusIndent);
+    boolean first = true;
+    for (Tree typeArgument : typeArguments) {
+      if (!first) {
+        token(",");
+        builder.breakToFill(" ");
+      }
+      scan(typeArgument, null);
+      first = false;
+    }
+    builder.close();
+    token(">");
   }
 
   /**
    * Add arguments to a method invocation, etc. The arguments indented {@code plusFour}, filled,
    * from the current indent. The arguments may be output two at a time if they seem to be arguments
    * to a map constructor, etc.
+   *
    * @param arguments the arguments
    * @param plusIndent the extra indent for the arguments
    */
-  void addArguments(List<Expression> arguments, Indent plusIndent) {
+  void addArguments(List<? extends ExpressionTree> arguments, Indent plusIndent) {
     builder.open(plusIndent);
     token("(");
     if (!arguments.isEmpty()) {
@@ -2968,17 +2714,17 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         builder.open(ZERO);
         boolean first = true;
         for (int i = 0; i < arguments.size() - 1; i += 2) {
-          Expression argument0 = arguments.get(i);
-          Expression argument1 = arguments.get(i + 1);
+          ExpressionTree argument0 = arguments.get(i);
+          ExpressionTree argument1 = arguments.get(i + 1);
           if (!first) {
             token(",");
             builder.forcedBreak();
           }
           builder.open(plusFour);
-          argument0.accept(this);
+          scan(argument0, null);
           token(",");
           builder.breakOp(" ");
-          argument1.accept(this);
+          scan(argument1, null);
           builder.close();
           first = false;
         }
@@ -2986,7 +2732,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       } else if (isFormatMethod(arguments)) {
         builder.breakOp();
         builder.open(ZERO);
-        arguments.get(0).accept(this);
+        scan(arguments.get(0), null);
         token(",");
         builder.breakOp(" ");
         builder.open(ZERO);
@@ -3002,16 +2748,16 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.close();
   }
 
-  private void argList(List<Expression> arguments) {
+  private void argList(List<? extends ExpressionTree> arguments) {
     builder.open(ZERO);
     boolean first = true;
     FillMode fillMode = hasOnlyShortItems(arguments) ? FillMode.INDEPENDENT : FillMode.UNIFIED;
-    for (Expression argument : arguments) {
+    for (ExpressionTree argument : arguments) {
       if (!first) {
         token(",");
         builder.breakOp(fillMode, " ", ZERO);
       }
-      argument.accept(this);
+      scan(argument, null);
       first = false;
     }
     builder.close();
@@ -3036,60 +2782,56 @@ public final class JavaInputAstVisitor extends ASTVisitor {
    *     arg);
    * }</pre>
    */
-  private boolean isFormatMethod(List<Expression> arguments) {
+  private boolean isFormatMethod(List<? extends ExpressionTree> arguments) {
     if (arguments.size() < 2) {
       return false;
     }
-    if (!isStringConcat(arguments.get(0))) {
-      return false;
-    }
-    return true;
+    return isStringConcat(arguments.get(0));
   }
 
   private static final Pattern FORMAT_SPECIFIER = Pattern.compile("%|\\{[0-9]\\}");
 
-  private boolean isStringConcat(Expression first) {
+  private boolean isStringConcat(ExpressionTree first) {
     final boolean[] stringLiteral = {true};
     final boolean[] formatString = {false};
-    first.accept(
-        new ASTVisitor() {
-          @Override
-          public void preVisit(ASTNode node) {
-            stringLiteral[0] &= isStringConcatNode(node);
-            if (node.getNodeType() == ASTNode.STRING_LITERAL
-                && FORMAT_SPECIFIER.matcher(((StringLiteral) node).getLiteralValue()).find()) {
-              formatString[0] = true;
-            }
+    new TreeScanner() {
+      @Override
+      public void scan(JCTree tree) {
+        if (tree == null) {
+          return;
+        }
+        switch (tree.getKind()) {
+          case STRING_LITERAL:
+            break;
+          case PLUS:
+            super.scan(tree);
+            break;
+          default:
+            stringLiteral[0] = false;
+            break;
+        }
+        if (tree.getKind() == STRING_LITERAL) {
+          Object value = ((LiteralTree) tree).getValue();
+          if (value instanceof String && FORMAT_SPECIFIER.matcher(value.toString()).find()) {
+            formatString[0] = true;
           }
-
-          private boolean isStringConcatNode(ASTNode node) {
-            switch (node.getNodeType()) {
-              case ASTNode.STRING_LITERAL:
-                return true;
-              case ASTNode.INFIX_EXPRESSION:
-                if (((InfixExpression) node).getOperator() == InfixExpression.Operator.PLUS) {
-                  return true;
-                }
-                break;
-              default:
-                break;
-            }
-            return false;
-          }
-        });
+        }
+      }
+    }.scan((JCTree) first);
     return stringLiteral[0] && formatString[0];
   }
 
   /** Returns the number of columns if the arguments arg laid out in a grid, or else {@code -1}. */
-  private int argumentsAreTabular(List<Expression> arguments) {
+  private int argumentsAreTabular(List<? extends ExpressionTree> arguments) {
     if (arguments.isEmpty()) {
       return -1;
     }
-    List<List<Expression>> rows = new ArrayList<>();
-    PeekingIterator<Expression> it = Iterators.peekingIterator(arguments.iterator());
+    List<List<ExpressionTree>> rows = new ArrayList<>();
+    PeekingIterator<ExpressionTree> it =
+        Iterators.<ExpressionTree>peekingIterator(arguments.iterator());
     int start0 = actualColumn(it.peek());
     {
-      List<Expression> row = new ArrayList<>();
+      List<ExpressionTree> row = new ArrayList<>();
       row.add(it.next());
       while (it.hasNext() && actualColumn(it.peek()) > start0) {
         row.add(it.next());
@@ -3100,7 +2842,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       rows.add(row);
     }
     while (it.hasNext()) {
-      List<Expression> row = new ArrayList<>();
+      List<ExpressionTree> row = new ArrayList<>();
       int start = actualColumn(it.peek());
       if (start != start0) {
         return -1;
@@ -3139,22 +2881,22 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return size0;
   }
 
-  private Integer actualColumn(Expression expression) {
+  private Integer actualColumn(ExpressionTree expression) {
     Map<Integer, Integer> positionToColumnMap = builder.getInput().getPositionToColumnMap();
-    return positionToColumnMap.get(builder.actualStartColumn(expression.getStartPosition()));
+    return positionToColumnMap.get(builder.actualStartColumn(getStartPosition(expression)));
   }
 
   /** Returns true if {@code atLeastM} of the expressions in the given column are the same kind. */
   private static boolean expressionsAreParallel(
-      List<List<Expression>> rows, int column, int atLeastM) {
-    Multiset<Integer> nodeTypes = HashMultiset.create();
-    for (List<Expression> row : rows) {
+      List<List<ExpressionTree>> rows, int column, int atLeastM) {
+    Multiset<Tree.Kind> nodeTypes = HashMultiset.create();
+    for (List<? extends ExpressionTree> row : rows) {
       if (column >= row.size()) {
         continue;
       }
-      nodeTypes.add(row.get(column).getNodeType());
+      nodeTypes.add(row.get(column).getKind());
     }
-    for (Multiset.Entry<Integer> nodeType : nodeTypes.entrySet()) {
+    for (Multiset.Entry<Tree.Kind> nodeType : nodeTypes.entrySet()) {
       if (nodeType.getCount() >= atLeastM) {
         return true;
       }
@@ -3162,105 +2904,75 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return false;
   }
 
-  /** Visitor method for {@link QualifiedName}s. */
-  private void visitQualifiedName(QualifiedName node0, BreakOrNot breaks) {
-    QualifiedName node = node0;
-    sync(node);
-
-    // defer to visitDot for builder-style wrapping if breaks are enabled
-    if (breaks.isYes()) {
-      visitDot(node0);
-      return;
-    }
-
-    // Collapse chains of "." operators.
-    ArrayDeque<SimpleName> stack = new ArrayDeque<>();
-    Name qualifier;
-    while (true) {
-      stack.addFirst(node.getName());
-      qualifier = node.getQualifier();
-      if (qualifier == null || qualifier.getNodeType() != ASTNode.QUALIFIED_NAME) {
-        break;
-      }
-      node = (QualifiedName) qualifier;
-    }
-    if (qualifier != null) {
-      visitName(qualifier, breaks);
-      token(".");
-    }
-    boolean needDot = false;
-    for (SimpleName name : stack) {
-      if (needDot) {
-        token(".");
-      }
-      visit(name);
-      needDot = true;
-    }
-  }
-
   // General helper functions.
 
-  // TODO(jdd): Mention annotation declarations.
+  enum DeclarationKind {
+    NONE,
+    FIELD,
+    PARAMETER
+  }
 
-  /**
-   * Declare one variable or variable-like thing.
-   * @param annotationsDirection {@link Direction#VERTICAL} or {@link Direction#HORIZONTAL}
-   * @param modifiers the {@link IExtendedModifier}s, including annotations
-   * @param type the {@link Type}
-   * @param isVarargs is the type varargs?
-   * @param varargsAnnotations annotations on the varargs
-   * @param name the name
-   * @param op if non-empty, tokens to follow the name
-   * @param extraDimensions the extra dimensions
-   * @param equals "=" or equivalent
-   * @param initializer the (optional) initializer
-   * @param trailing the (optional) trailing token, e.g. ';'
-   * @param receiverParameter whether this is a receiver parameter
-   */
-  void declareOne(
-      ASTNode node,
+  /** Declare one variable or variable-like thing. */
+  int declareOne(
+      DeclarationKind kind,
       Direction annotationsDirection,
-      List<IExtendedModifier> modifiers,
-      Type type,
+      Optional<ModifiersTree> modifiers,
+      Tree type,
       VarArgsOrNot isVarargs,
-      List<Annotation> varargsAnnotations,
-      SimpleName name,
+      List<AnnotationTree> varargsAnnotations,
+      Name name,
       String op,
-      List<Dimension> extraDimensions,
       String equals,
-      Optional<Expression> initializer,
+      Optional<ExpressionTree> initializer,
       Optional<String> trailing,
-      ReceiverParameter receiverParameter) {
+      Optional<ExpressionTree> receiverExpression,
+      Optional<TypeWithDims> typeWithDims) {
 
     BreakTag typeBreak = genSym();
     BreakTag verticalAnnotationBreak = genSym();
 
-    EnumSet<DeclarationPosition> position = DeclarationPosition.getPositionInParent(node);
-
     // If the node is a field declaration, try to output any declaration
     // annotations in-line. If the entire declaration doesn't fit on a single
     // line, fall back to one-per-line.
-    boolean isField = node.getNodeType() == ASTNode.FIELD_DECLARATION;
+    boolean isField = kind == DeclarationKind.FIELD;
 
     if (isField) {
-      if (!position.contains(DeclarationPosition.FIRST)) {
-        builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
-      } else {
-        builder.blankLineWanted(BlankLineWanted.PRESERVE);
-      }
+      builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
     }
 
-    boolean isParam = node.getParent().getNodeType() == ASTNode.METHOD_DECLARATION;
-    builder.open(isParam && hasAnnotations(modifiers) ? plusFour : ZERO);
+    ArrayDeque<List<AnnotationTree>> dims =
+        new ArrayDeque<>(
+            typeWithDims.isPresent()
+                ? typeWithDims.get().dims
+                : Collections.<List<AnnotationTree>>emptyList());
+    int baseDims = 0;
+
+    builder.open(
+        kind == DeclarationKind.PARAMETER
+                && (modifiers.isPresent() && !modifiers.get().getAnnotations().isEmpty())
+            ? plusFour
+            : ZERO);
     {
-      visitAndBreakModifiers(modifiers, annotationsDirection, Optional.of(verticalAnnotationBreak));
+      if (modifiers.isPresent()) {
+        visitAndBreakModifiers(
+            modifiers.get(), annotationsDirection, Optional.of(verticalAnnotationBreak));
+      }
       builder.open(plusFour);
       {
         builder.open(ZERO);
         {
           builder.open(ZERO);
           {
-            type.accept(this);
+            if (typeWithDims.isPresent() && typeWithDims.get().node != null) {
+              scan(typeWithDims.get().node, null);
+              int totalDims = dims.size();
+              builder.open(plusFour);
+              maybeAddDims(dims);
+              builder.close();
+              baseDims = totalDims - dims.size();
+            } else {
+              scan(type, null);
+            }
             if (isVarargs.isYes()) {
               visitAnnotations(varargsAnnotations, BreakOrNot.YES, BreakOrNot.YES);
               builder.op("...");
@@ -3268,23 +2980,21 @@ public final class JavaInputAstVisitor extends ASTVisitor {
           }
           builder.close();
 
-          builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO, Optional.of(typeBreak));
+          if (type != null) {
+            builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO, Optional.of(typeBreak));
+          }
 
           // conditionally ident the name and initializer +4 if the type spans
           // multiple lines
           builder.open(Indent.If.make(typeBreak, plusFour, ZERO));
-          if (receiverParameter.isYes()) {
-            if (name != null) {
-              visit(name);
-              token(".");
-            }
-            token("this");
+          if (receiverExpression.isPresent()) {
+            scan(receiverExpression.get(), null);
           } else {
             visit(name);
           }
           builder.op(op);
-          extraDimensions(initializer.isPresent() ? plusFour : ZERO, extraDimensions);
         }
+        maybeAddDims(dims);
         builder.close();
       }
       builder.close();
@@ -3292,93 +3002,129 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       if (initializer.isPresent()) {
         builder.space();
         token(equals);
-        if (initializer.get().getNodeType() == ASTNode.ARRAY_INITIALIZER) {
+        if (initializer.get().getKind() == Tree.Kind.NEW_ARRAY
+            && ((NewArrayTree) initializer.get()).getType() == null) {
           builder.open(minusFour);
-          {
-            builder.space();
-            initializer.get().accept(this);
-          }
+          builder.space();
+          initializer.get().accept(this, null);
           builder.close();
         } else {
           builder.open(Indent.If.make(typeBreak, plusFour, ZERO));
           {
             builder.breakToFill(" ");
-            initializer.get().accept(this);
+            scan(initializer.get(), null);
           }
           builder.close();
         }
       }
-      // end of conditional name and initializer indent
-      builder.close();
-
-      if (trailing.isPresent()) {
+      if (trailing.isPresent() && builder.peekToken().equals(trailing)) {
         builder.guessToken(trailing.get());
       }
+
+      // end of conditional name and initializer indent
+      builder.close();
     }
     builder.close();
 
     if (isField) {
-      if (!position.contains(DeclarationPosition.LAST)) {
-        builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
-      } else {
-        builder.blankLineWanted(BlankLineWanted.NO);
-      }
+      builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
     }
+
+    return baseDims;
   }
 
-  private boolean hasAnnotations(List<IExtendedModifier> modifiers) {
-    for (IExtendedModifier modifier : modifiers) {
-      if (modifier.isAnnotation()) {
-        return true;
-      }
-    }
-    return false;
+  private void maybeAddDims(ArrayDeque<List<AnnotationTree>> annotations) {
+    maybeAddDims(new ArrayDeque<ExpressionTree>(), annotations);
   }
 
   /**
-   * Declare multiple variables or variable-like things.
-   * @param annotationsDirection {@link Direction#VERTICAL} or {@link Direction#HORIZONTAL}
-   * @param modifiers the {@link IExtendedModifier}s, including annotations
-   * @param type the {@link Type}s
-   * @param fragments the {@link VariableDeclarationFragment}s
+   * The compiler does not always preserve the concrete syntax of annotated array dimensions, and
+   * mixed-notation array dimensions. Use look-ahead to preserve the original syntax.
+   *
+   * <p>It is assumed that any number of regular dimension specifiers ({@code []} with no
+   * annotations) may be present in the input.
+   *
+   * @param dimExpressions an ordered list of dimension expressions (e.g. the {@code 0} in {@code
+   *     new int[0]}
+   * @param annotations an ordered list of type annotations grouped by dimension (e.g. {@code
+   *     [[@A, @B], [@C]]} for {@code int @A [] @B @C []}
    */
-  private void declareMany(
-      Direction annotationsDirection,
-      List<IExtendedModifier> modifiers,
-      Type type,
-      List<VariableDeclarationFragment> fragments) {
+  private void maybeAddDims(
+      ArrayDeque<ExpressionTree> dimExpressions, ArrayDeque<List<AnnotationTree>> annotations) {
+    boolean lastWasAnnotation = false;
+    while (builder.peekToken().isPresent()) {
+      switch (builder.peekToken().get()) {
+        case "@":
+          if (annotations.isEmpty()) {
+            return;
+          }
+          List<AnnotationTree> dimAnnotations = annotations.removeFirst();
+          if (dimAnnotations.isEmpty()) {
+            continue;
+          }
+          builder.breakToFill(" ");
+          visitAnnotations(dimAnnotations, BreakOrNot.NO, BreakOrNot.NO);
+          lastWasAnnotation = true;
+          break;
+        case "[":
+          if (lastWasAnnotation) {
+            builder.breakToFill(" ");
+          } else {
+            builder.breakToFill();
+          }
+          token("[");
+          if (!builder.peekToken().get().equals("]")) {
+            scan(dimExpressions.removeFirst(), null);
+          }
+          token("]");
+          lastWasAnnotation = false;
+          break;
+        default:
+          return;
+      }
+    }
+  }
+
+  private void declareMany(List<VariableTree> fragments, Direction annotationDirection) {
     builder.open(ZERO);
-    visitAndBreakModifiers(modifiers, annotationsDirection, Optional.<BreakTag>absent());
+
+    ModifiersTree modifiers = fragments.get(0).getModifiers();
+    Tree type = fragments.get(0).getType();
+
+    visitAndBreakModifiers(modifiers, annotationDirection, Optional.<BreakTag>absent());
     builder.open(plusFour);
-    type.accept(this);
-    // TODO(jdd): Open another time?
+    builder.open(ZERO);
+    TypeWithDims extractedDims = DimensionHelpers.extractDims(type, SortedDims.YES);
+    ArrayDeque<List<AnnotationTree>> dims = new ArrayDeque<>(extractedDims.dims);
+    scan(extractedDims.node, null);
+    int baseDims = dims.size();
+    maybeAddDims(dims);
+    baseDims = baseDims - dims.size();
     boolean first = true;
-    for (VariableDeclarationFragment fragment : fragments) {
+    for (VariableTree fragment : fragments) {
       if (!first) {
         token(",");
       }
+      TypeWithDims fragmentDims = variableFragmentDims(first, baseDims, fragment.getType());
+      dims = new ArrayDeque<>(fragmentDims.dims);
       builder.breakOp(" ");
       builder.open(ZERO);
+      maybeAddDims(dims);
       visit(fragment.getName());
-      Expression initializer = fragment.getInitializer();
-      extraDimensions(initializer != null ? plusEight : plusFour, fragment.extraDimensions());
+      maybeAddDims(dims);
+      ExpressionTree initializer = fragment.getInitializer();
       if (initializer != null) {
         builder.space();
         token("=");
-        if (initializer.getNodeType() == ASTNode.ARRAY_INITIALIZER) {
-          // TODO(jdd): Check on this.
-          builder.close();
-          builder.open(ZERO);
-          builder.space();
-          initializer.accept(this);
-        } else {
-          builder.open(plusFour);
-          builder.breakOp(" ");
-          initializer.accept(this);
-          builder.close();
-        }
+        builder.open(plusFour);
+        builder.breakOp(" ");
+        scan(initializer, null);
+        builder.close();
       }
       builder.close();
+      if (first) {
+        builder.close();
+      }
       first = false;
     }
     builder.close();
@@ -3386,64 +3132,9 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     builder.close();
   }
 
-  /**
-   * Add a declaration.
-   * @param modifiers the {@link IExtendedModifier}s, including annotations
-   * @param type the {@link Type}s
-   * @param fragments the {@link VariableDeclarationFragment}s
-   * @param annotationsDirection {@link Direction#VERTICAL} or {@link Direction#HORIZONTAL}
-   */
-  void addDeclaration(
-      ASTNode node,
-      List<IExtendedModifier> modifiers,
-      Type type,
-      List<VariableDeclarationFragment> fragments,
-      Direction annotationsDirection) {
-    if (fragments.size() == 1) {
-      VariableDeclarationFragment fragment = fragments.get(0);
-      declareOne(
-          node,
-          annotationsDirection,
-          modifiers,
-          type,
-          VarArgsOrNot.NO,
-          ImmutableList.<Annotation>of(),
-          fragment.getName(),
-          "",
-          fragment.extraDimensions(),
-          "=",
-          Optional.fromNullable(fragment.getInitializer()),
-          Optional.of(";"),
-          ReceiverParameter.NO);
-    } else {
-      declareMany(annotationsDirection, modifiers, type, fragments);
-    }
-  }
-
-  // TODO(jdd): State precondition (and check callers).
-  /**
-   * Emit extra dimensions (if any).
-   * @param plusIndent the extra indentation for the extra dimensions
-   * @param extraDimensions the extra {@link Dimension}s
-   */
-  void extraDimensions(Indent plusIndent, List<Dimension> extraDimensions) {
-    builder.open(plusIndent);
-    for (Dimension extraDimension : extraDimensions) {
-      builder.breakToFill(extraDimension.annotations().isEmpty() ? "" : " ");
-      visit(extraDimension);
-    }
-    builder.close();
-  }
-
-  // TODO(jdd): Static checks?
-  /**
-   * Add a list of {@link BodyDeclaration}s
-   * @param bodyDeclarations the {@link BodyDeclaration}s
-   * @param braces whether to include braces in the output
-   * @param first0 is the first {@link BodyDeclaration} the first to be output?
-   */
+  /** Add a list of declarations. */
   void addBodyDeclarations(
-      List<BodyDeclaration> bodyDeclarations, BracesOrNot braces, FirstDeclarationsOrNot first0) {
+      List<? extends Tree> bodyDeclarations, BracesOrNot braces, FirstDeclarationsOrNot first0) {
     if (bodyDeclarations.isEmpty()) {
       if (braces.isYes()) {
         builder.space();
@@ -3462,27 +3153,37 @@ public final class JavaInputAstVisitor extends ASTVisitor {
       builder.open(plusTwo);
       boolean first = first0.isYes();
       boolean lastOneGotBlankLineBefore = false;
-      for (BodyDeclaration bodyDeclaration : bodyDeclarations) {
+      PeekingIterator<Tree> it = Iterators.<Tree>peekingIterator(bodyDeclarations.iterator());
+      while (it.hasNext()) {
+        Tree bodyDeclaration = it.next();
         dropEmptyDeclarations();
         builder.forcedBreak();
         boolean thisOneGetsBlankLineBefore =
-            bodyDeclaration.getNodeType() != ASTNode.FIELD_DECLARATION
-                || hasJavaDoc(bodyDeclaration);
+            bodyDeclaration.getKind() != VARIABLE || hasJavaDoc(bodyDeclaration);
         if (first) {
-          builder.blankLineWanted(BlankLineWanted.PRESERVE);
+          builder.blankLineWanted(PRESERVE);
         } else if (!first && (thisOneGetsBlankLineBefore || lastOneGotBlankLineBefore)) {
-          builder.blankLineWanted(BlankLineWanted.YES);
+          builder.blankLineWanted(YES);
         }
         markForPartialFormat();
-        bodyDeclaration.accept(this);
+
+        if (bodyDeclaration.getKind() == VARIABLE) {
+          visitVariables(
+              variableFragments(it, bodyDeclaration),
+              DeclarationKind.FIELD,
+              fieldAnnotationDirection(((VariableTree) bodyDeclaration).getModifiers()));
+        } else {
+          scan(bodyDeclaration, null);
+        }
         first = false;
         lastOneGotBlankLineBefore = thisOneGetsBlankLineBefore;
       }
+      dropEmptyDeclarations();
+      builder.forcedBreak();
       builder.close();
       builder.forcedBreak();
       markForPartialFormat();
       if (braces.isYes()) {
-        dropEmptyDeclarations();
         builder.blankLineWanted(BlankLineWanted.NO);
         token("}", plusTwo);
         builder.close();
@@ -3490,10 +3191,30 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     }
   }
 
-  // Use Eclipse token ID instead of position?
-  /** Does this {@link BodyDeclaration} have JavaDoc preceding it? */
-  private boolean hasJavaDoc(BodyDeclaration bodyDeclaration) {
-    int position = bodyDeclaration.getStartPosition();
+  /**
+   * The parser expands multi-variable declarations into separate single-variable declarations. All
+   * of the fragments in the original declaration have the same start position, so we use that as a
+   * signal to collect them and preserve the multi-variable declaration in the output.
+   *
+   * <p>e.g. {@code int x, y;} is parsed as {@code int x; int y;}.
+   */
+  private List<VariableTree> variableFragments(PeekingIterator<? extends Tree> it, Tree first) {
+    List<VariableTree> fragments = new ArrayList<>();
+    if (first.getKind() == VARIABLE) {
+      int start = getStartPosition(first);
+      fragments.add((VariableTree) first);
+      while (it.hasNext()
+          && it.peek().getKind() == VARIABLE
+          && getStartPosition(it.peek()) == start) {
+        fragments.add((VariableTree) it.next());
+      }
+    }
+    return fragments;
+  }
+
+  /** Does this declaration have javadoc preceding it? */
+  private boolean hasJavaDoc(Tree bodyDeclaration) {
+    int position = ((JCTree) bodyDeclaration).getStartPosition();
     Input.Token token = builder.getInput().getPositionTokenMap().get(position);
     if (token != null) {
       for (Input.Tok tok : token.getToksBefore()) {
@@ -3509,75 +3230,52 @@ public final class JavaInputAstVisitor extends ASTVisitor {
     return Optional.fromNullable(input.getPositionTokenMap().get(position));
   }
 
-  /**
-   * Does this list of {@link ASTNode}s ends with the specified token?
-   *
-   * @param input the {@link Input}
-   * @param nodes list of {@link ASTNode}s
-   * @return whether the list has an extra trailing comma
-   */
-  private static boolean hasTrailingToken(Input input, List<ASTNode> nodes, String token) {
+  /** Does this list of trees end with the specified token? */
+  private boolean hasTrailingToken(Input input, List<? extends Tree> nodes, String token) {
     if (nodes.isEmpty()) {
       return false;
     }
-    ASTNode lastNode = nodes.get(nodes.size() - 1);
+    Tree lastNode = getLast(nodes);
     Optional<? extends Input.Token> nextToken =
-        getNextToken(input, lastNode.getStartPosition() + lastNode.getLength());
+        getNextToken(input, getEndPosition(lastNode, getCurrentPath()));
     return nextToken.isPresent() && nextToken.get().getTok().getText().equals(token);
   }
-
-  // TODO(jdd): Use constants for limits?
 
   /**
    * Can a local with a set of modifiers be declared with horizontal annotations? This is currently
    * true if there is at most one marker annotation, and no others.
-   * @param modifiers the list of {@link IExtendedModifier}s
+   *
+   * @param modifiers the list of {@link ModifiersTree}s
    * @return whether the local can be declared with horizontal annotations
    */
-  private static Direction canLocalHaveHorizontalAnnotations(List<IExtendedModifier> modifiers) {
-    int normalAnnotations = 0;
+  private Direction canLocalHaveHorizontalAnnotations(ModifiersTree modifiers) {
     int markerAnnotations = 0;
-    int singleMemberAnnotations = 0;
-    for (IExtendedModifier modifier : modifiers) {
-      switch (((ASTNode) modifier).getNodeType()) {
-        case ASTNode.NORMAL_ANNOTATION:
-          ++normalAnnotations;
-          break;
-        case ASTNode.MARKER_ANNOTATION:
-          ++markerAnnotations;
-          break;
-        case ASTNode.SINGLE_MEMBER_ANNOTATION:
-          ++singleMemberAnnotations;
-          break;
-        default:
-          break;
+    for (AnnotationTree annotation : modifiers.getAnnotations()) {
+      if (annotation.getArguments().isEmpty()) {
+        markerAnnotations++;
       }
     }
-    return normalAnnotations == 0 && markerAnnotations <= 1 && singleMemberAnnotations == 0
+    return markerAnnotations <= 1 && markerAnnotations == modifiers.getAnnotations().size()
         ? Direction.HORIZONTAL
         : Direction.VERTICAL;
   }
 
   /**
-   * Should a field with a set of modifiers be declared with horizontal annotations?
-   * This is currently true if all annotations are marker annotations.
-   *
-   * @param modifiers the list of {@link IExtendedModifier}s
-   * @return whether the local can be declared with horizontal annotations
+   * Should a field with a set of modifiers be declared with horizontal annotations? This is
+   * currently true if all annotations are marker annotations.
    */
-  private static Direction fieldAnnotationDirection(List<IExtendedModifier> modifiers) {
-    for (IExtendedModifier modifier : modifiers) {
-      if (modifier.isAnnotation()
-          && ((ASTNode) modifier).getNodeType() != ASTNode.MARKER_ANNOTATION) {
+  private Direction fieldAnnotationDirection(ModifiersTree modifiers) {
+    for (AnnotationTree annotation : modifiers.getAnnotations()) {
+      if (!annotation.getArguments().isEmpty()) {
         return Direction.VERTICAL;
       }
     }
     return Direction.HORIZONTAL;
   }
 
-  // TODO(jdd): Do more?
   /**
    * Emit a {@link Doc.Token}.
+   *
    * @param token the {@link String} to wrap in a {@link Doc.Token}
    */
   final void token(String token) {
@@ -3586,6 +3284,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
 
   /**
    * Emit a {@link Doc.Token}.
+   *
    * @param token the {@link String} to wrap in a {@link Doc.Token}
    * @param plusIndentCommentsBefore extra indent for comments before this token
    */
@@ -3594,9 +3293,7 @@ public final class JavaInputAstVisitor extends ASTVisitor {
         token, Doc.Token.RealOrImaginary.REAL, plusIndentCommentsBefore, Optional.<Indent>absent());
   }
 
-  /**
-   * Emit a {@link Doc.Token}, and breaks and indents trailing javadoc or block comments.
-   */
+  /** Emit a {@link Doc.Token}, and breaks and indents trailing javadoc or block comments. */
   final void tokenBreakTrailingComment(String token, Indent breakAndIndentTrailingComment) {
     builder.token(
         token,
@@ -3614,10 +3311,11 @@ public final class JavaInputAstVisitor extends ASTVisitor {
   /**
    * Sync to position in the input. If we've skipped outputting any tokens that were present in the
    * input tokens, output them here and complain.
+   *
    * @param node the ASTNode holding the input position
    */
-  final void sync(ASTNode node) {
-    builder.sync(node.getStartPosition());
+  final void sync(Tree node) {
+    builder.sync(((JCTree) node).getStartPosition());
   }
 
   final BreakTag genSym() {

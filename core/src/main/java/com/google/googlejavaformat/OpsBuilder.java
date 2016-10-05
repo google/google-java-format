@@ -28,8 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * An {@code OpsBuilder} creates a list of {@link Op}s, which is turned into a {@link Doc} by
- * {@link DocBuilder}.
+ * An {@code OpsBuilder} creates a list of {@link Op}s, which is turned into a {@link Doc} by {@link
+ * DocBuilder}.
  */
 public final class OpsBuilder {
 
@@ -78,8 +78,8 @@ public final class OpsBuilder {
     public static final BlankLineWanted NO = new SimpleBlankLine(Optional.of(false));
 
     /**
-     * Explicitly preserve blank lines from the input (e.g. before the first
-     * member in a class declaration). Overrides conditional blank lines.
+     * Explicitly preserve blank lines from the input (e.g. before the first member in a class
+     * declaration). Overrides conditional blank lines.
      */
     public static final BlankLineWanted PRESERVE = new SimpleBlankLine(Optional.<Boolean>absent());
 
@@ -149,6 +149,29 @@ public final class OpsBuilder {
   private int tokenI = 0;
   private int inputPosition = Integer.MIN_VALUE;
 
+  /** The number of unclosed open ops in the input stream. */
+  int depth = 0;
+
+  /** Add an {@link Op}, and record open/close ops for later validation of unclosed levels. */
+  private void add(Op op) {
+    if (op instanceof OpenOp) {
+      depth++;
+    } else if (op instanceof CloseOp) {
+      depth--;
+      if (depth < 0) {
+        throw new AssertionError();
+      }
+    }
+    ops.add(op);
+  }
+
+  /** Add a list of {@link Op}s. */
+  public final void addAll(List<Op> ops) {
+    for (Op op : ops) {
+      add(op);
+    }
+  }
+
   /**
    * The {@code OpsBuilder} constructor.
    *
@@ -165,26 +188,45 @@ public final class OpsBuilder {
     return input;
   }
 
+  /** Returns the number of unclosed open ops in the input stream. */
+  public int depth() {
+    return depth;
+  }
+
+  /**
+   * Checks that all open ops in the op stream have matching close ops.
+   *
+   * @throws FormattingError if any ops were unclosed
+   */
+  public void checkClosed(int previous) {
+    if (depth != previous) {
+      throw new FormattingError(diagnostic(String.format("saw %d unclosed ops", depth)));
+    }
+  }
+
+  /** Create a {@link FormatterDiagnostic} at the current position. */
+  public FormatterDiagnostic diagnostic(String message) {
+    System.err.printf(">>>> %d: %s\n", inputPosition, message);
+    return input.createDiagnostic(inputPosition, message);
+  }
+
   /**
    * Sync to position in the input. If we've skipped outputting any tokens that were present in the
    * input tokens, output them here and optionally complain.
+   *
    * @param inputPosition the {@code 0}-based input position
    */
   public final void sync(int inputPosition) {
     if (inputPosition > this.inputPosition) {
       ImmutableList<? extends Input.Token> tokens = input.getTokens();
       int tokensN = tokens.size();
+      this.inputPosition = inputPosition;
       if (tokenI < tokensN && inputPosition > tokens.get(tokenI).getTok().getPosition()) {
         // Found a missing input token. Insert it and mark it missing (usually not good).
         Input.Token token = tokens.get(tokenI++);
-        throw new AssertionError(
-            input
-                .createDiagnostic(
-                    inputPosition,
-                    String.format("did not generate token \"%s\"", token.getTok().getText()))
-                .toString());
+        throw new FormattingError(
+            diagnostic(String.format("did not generate token \"%s\"", token.getTok().getText())));
       }
-      this.inputPosition = inputPosition;
     }
   }
 
@@ -196,25 +238,27 @@ public final class OpsBuilder {
       int tokensN = tokens.size();
       while (tokenI < tokensN && inputPosition > tokens.get(tokenI).getTok().getPosition()) {
         Input.Token token = tokens.get(tokenI++);
-        ops.add(
+        add(
             Doc.Token.make(
                 token, Doc.Token.RealOrImaginary.IMAGINARY, ZERO, Optional.<Indent>absent()));
       }
     }
     this.inputPosition = inputPosition;
+    checkClosed(0);
   }
 
   /**
    * Open a new level by emitting an {@link OpenOp}.
+   *
    * @param plusIndent the extra indent for the new level
    */
   public final void open(Indent plusIndent) {
-    ops.add(OpenOp.make(plusIndent));
+    add(OpenOp.make(plusIndent));
   }
 
   /** Close the current level, by emitting a {@link CloseOp}. */
   public final void close() {
-    ops.add(CloseOp.make());
+    add(CloseOp.make());
   }
 
   /** Return the text of the next {@link Input.Token}, or absent if there is none. */
@@ -228,6 +272,7 @@ public final class OpsBuilder {
   /**
    * Emit an optional token iff it exists on the input. This is used to emit tokens whose existence
    * has been lost in the AST.
+   *
    * @param token the optional token
    */
   public final void guessToken(String token) {
@@ -241,7 +286,7 @@ public final class OpsBuilder {
       Optional<Indent> breakAndIndentTrailingComment) {
     ImmutableList<? extends Input.Token> tokens = input.getTokens();
     if (token.equals(peekToken().orNull())) { // Found the input token. Output it.
-      ops.add(
+      add(
           Doc.Token.make(
               tokens.get(tokenI++),
               Doc.Token.RealOrImaginary.REAL,
@@ -254,14 +299,16 @@ public final class OpsBuilder {
        */
       if (realOrImaginary.isReal()) {
         throw new FormattingError(
-            input.createDiagnostic(
-                inputPosition, String.format("generated extra token \"%s\"", token)));
+            diagnostic(
+                String.format(
+                    "expected token: '%s'; generated %s instead", peekToken().orNull(), token)));
       }
     }
   }
 
   /**
    * Emit a single- or multi-character op by breaking it into single-character {@link Doc.Token}s.
+   *
    * @param op the operator to emit
    */
   public final void op(String op) {
@@ -274,7 +321,7 @@ public final class OpsBuilder {
 
   /** Emit a {@link Doc.Space}. */
   public final void space() {
-    ops.add(Doc.Space.make());
+    add(Doc.Space.make());
   }
 
   /** Emit a {@link Doc.Break}. */
@@ -284,6 +331,7 @@ public final class OpsBuilder {
 
   /**
    * Emit a {@link Doc.Break}.
+   *
    * @param plusIndent extra indent if taken
    */
   public final void breakOp(Indent plusIndent) {
@@ -302,6 +350,7 @@ public final class OpsBuilder {
 
   /**
    * Emit a forced {@link Doc.Break}.
+   *
    * @param plusIndent extra indent if taken
    */
   public final void forcedBreak(Indent plusIndent) {
@@ -310,6 +359,7 @@ public final class OpsBuilder {
 
   /**
    * Emit a {@link Doc.Break}, with a specified {@code flat} value (e.g., {@code " "}).
+   *
    * @param flat the {@link Doc.Break} when not broken
    */
   public final void breakOp(String flat) {
@@ -318,6 +368,7 @@ public final class OpsBuilder {
 
   /**
    * Emit a {@link Doc.Break}, with a specified {@code flat} value (e.g., {@code " "}).
+   *
    * @param flat the {@link Doc.Break} when not broken
    */
   public final void breakToFill(String flat) {
@@ -326,6 +377,7 @@ public final class OpsBuilder {
 
   /**
    * Emit a generic {@link Doc.Break}.
+   *
    * @param fillMode the {@link Doc.FillMode}
    * @param flat the {@link Doc.Break} when not broken
    * @param plusIndent extra indent if taken
@@ -336,6 +388,7 @@ public final class OpsBuilder {
 
   /**
    * Emit a generic {@link Doc.Break}.
+   *
    * @param fillMode the {@link Doc.FillMode}
    * @param flat the {@link Doc.Break} when not broken
    * @param plusIndent extra indent if taken
@@ -343,15 +396,14 @@ public final class OpsBuilder {
    */
   public final void breakOp(
       Doc.FillMode fillMode, String flat, Indent plusIndent, Optional<BreakTag> optionalTag) {
-    ops.add(Doc.Break.make(fillMode, flat, plusIndent, optionalTag));
+    add(Doc.Break.make(fillMode, flat, plusIndent, optionalTag));
   }
 
   private int lastPartialFormatBoundary = -1;
 
   /**
-   * Make the boundary of a region that can be partially formatted. The
-   * boundary will be included in the following region, e.g.:
-   * [[boundary0, boundary1), [boundary1, boundary2), ...].
+   * Make the boundary of a region that can be partially formatted. The boundary will be included in
+   * the following region, e.g.: [[boundary0, boundary1), [boundary1, boundary2), ...].
    */
   public void markForPartialFormat() {
     if (lastPartialFormatBoundary == -1) {
@@ -368,15 +420,8 @@ public final class OpsBuilder {
   }
 
   /**
-   * Add a list of {@link Op}s.
-   * @param newOps the list of {@link Op}s
-   */
-  public final void addAll(List<Op> newOps) {
-    ops.addAll(newOps);
-  }
-
-  /**
    * Force or suppress a blank line here in the output.
+   *
    * @param wanted whether to force ({@code true}) or suppress {@code false}) the blank line
    */
   public final void blankLineWanted(BlankLineWanted wanted) {
@@ -396,6 +441,7 @@ public final class OpsBuilder {
 
   /**
    * Build a list of {@link Op}s from the {@code OpsBuilder}.
+   *
    * @return the list of {@link Op}s
    */
   public final ImmutableList<Op> build() {

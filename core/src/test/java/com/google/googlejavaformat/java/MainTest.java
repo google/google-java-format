@@ -246,6 +246,6 @@ public class MainTest {
             new PrintWriter(err, true),
             new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8)));
     assertThat(main.format("-")).isEqualTo(1);
-    assertThat(err.toString()).contains("<stdin>:4:2: error: Syntax error");
+    assertThat(err.toString()).contains("<stdin>:4:3: error: class, interface, or enum expected");
   }
 }

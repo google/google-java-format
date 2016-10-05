@@ -11,8 +11,8 @@ class TryWtihResources {
       writer.flush();
     }
 
-    try (@SuppressWarnings("resource") Scanner inputScanner =
-        new Scanner(inputStream).useDelimiter("\\s+|,")) {
+    try (@SuppressWarnings("resource")
+        Scanner inputScanner = new Scanner(inputStream).useDelimiter("\\s+|,")) {
       while (inputScanner.hasNextLong()) {
         placementIds.add(inputScanner.nextLong());
       }

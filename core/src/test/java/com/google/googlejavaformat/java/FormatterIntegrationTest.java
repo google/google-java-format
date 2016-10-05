@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.io.Files.getFileExtension;
 import static com.google.common.io.Files.getNameWithoutExtension;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -26,7 +27,6 @@ import com.google.common.reflect.ClassPath.ResourceInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class FormatterIntegrationTest {
         String contents;
         try (InputStream stream =
             FormatterIntegrationTest.class.getClassLoader().getResourceAsStream(resourceName)) {
-          contents = CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
+          contents = CharStreams.toString(new InputStreamReader(stream, UTF_8));
         }
         switch (extension) {
           case "input":
@@ -114,4 +114,3 @@ public class FormatterIntegrationTest {
     }
   }
 }
-
