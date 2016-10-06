@@ -19,13 +19,9 @@ import com.google.common.base.Optional;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 
-/**
- * An output from the formatter.
- */
+/** An output from the formatter. */
 public abstract class Output extends InputOutput {
-  /**
-   * Unique identifier for a break.
-   */
+  /** Unique identifier for a break. */
   public static final class BreakTag {
 
     Optional<Boolean> taken = Optional.absent();
@@ -46,12 +42,14 @@ public abstract class Output extends InputOutput {
 
   /**
    * Indent by outputting {@code indent} spaces.
+   *
    * @param indent the current indent
    */
   public abstract void indent(int indent);
 
   /**
    * Output a string.
+   *
    * @param text the string
    * @param range the {@link Range} corresponding to the string
    */
@@ -59,6 +57,7 @@ public abstract class Output extends InputOutput {
 
   /**
    * A blank line is or is not wanted here.
+   *
    * @param k the {@link Input.Tok} index
    * @param wanted whether a blank line is wanted here
    */
@@ -69,6 +68,7 @@ public abstract class Output extends InputOutput {
 
   /**
    * Get the {@link CommentsHelper}.
+   *
    * @return the {@link CommentsHelper}
    */
   public abstract CommentsHelper getCommentsHelper();

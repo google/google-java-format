@@ -17,16 +17,12 @@ package com.google.googlejavaformat.java;
 import com.google.common.base.Verify;
 import java.util.List;
 
-/**
- * Heuristics for classifying qualified names as types.
- */
+/** Heuristics for classifying qualified names as types. */
 public final class TypeNameClassifier {
 
   private TypeNameClassifier() {}
 
-  /**
-   * A state machine for classifying qualified names.
-   */
+  /** A state machine for classifying qualified names. */
   private enum TyParseState {
 
     /** The start state. */
@@ -114,14 +110,15 @@ public final class TypeNameClassifier {
   }
 
   /**
-   * Returns the end index (inclusive) of the longest prefix that matches the naming conventions
-   * of a type or static field access, or -1 if no such prefix was found.
+   * Returns the end index (inclusive) of the longest prefix that matches the naming conventions of
+   * a type or static field access, or -1 if no such prefix was found.
    *
    * <p>Examples:
+   *
    * <ul>
-   * <li>ClassName
-   * <li>ClassName.staticMemberName
-   * <li>com.google.ClassName.InnerClass.staticMemberName
+   *   <li>ClassName
+   *   <li>ClassName.staticMemberName
+   *   <li>com.google.ClassName.InnerClass.staticMemberName
    * </ul>
    */
   static int typePrefixLength(List<String> nameParts) {

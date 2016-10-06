@@ -49,6 +49,7 @@ final class JavadocWriter {
    * inside an {@code <li>} element in that inner list :)
    */
   private boolean continuingListItemOfInnermostList;
+
   private boolean continuingFooterTag;
   private final NestingCounter continuingListItemCount = new NestingCounter();
   private final NestingCounter continuingListCount = new NestingCounter();

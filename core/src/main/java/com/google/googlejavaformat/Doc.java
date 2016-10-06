@@ -25,16 +25,16 @@ import java.util.List;
 /**
  * {@link com.google.googlejavaformat.java.JavaInputAstVisitor JavaInputAstVisitor} outputs a
  * sequence of {@link Op}s using {@link OpsBuilder}. This linear sequence is then transformed by
- * {@link DocBuilder} into a tree-structured {@code Doc}. The top-level {@code Doc} is a
- * {@link Level}, which contains a sequence of {@code Doc}s, including other {@link Level}s. Leaf
- * {@code Doc}s are {@link Token}s, representing language-level tokens; {@link Tok}s, which may also
+ * {@link DocBuilder} into a tree-structured {@code Doc}. The top-level {@code Doc} is a {@link
+ * Level}, which contains a sequence of {@code Doc}s, including other {@link Level}s. Leaf {@code
+ * Doc}s are {@link Token}s, representing language-level tokens; {@link Tok}s, which may also
  * represent non-token {@link Input.Tok}s, including comments and other white-space; {@link Space}s,
  * representing single spaces; and {@link Break}s, which represent optional line-breaks.
  */
 public abstract class Doc {
   /**
-   * Each {@link Break} in a {@link Level} is either {@link FillMode#UNIFIED} or
-   * {@link FillMode#INDEPENDENT}.
+   * Each {@link Break} in a {@link Level} is either {@link FillMode#UNIFIED} or {@link
+   * FillMode#INDEPENDENT}.
    */
   public enum FillMode {
     /**
@@ -110,6 +110,7 @@ public abstract class Doc {
 
   /**
    * Return the width of a {@code Doc}, or {@code Float.POSITIVE_INFINITY} if it must be broken.
+   *
    * @return the width
    */
   final float getWidth() {
@@ -123,6 +124,7 @@ public abstract class Doc {
   /**
    * Return a {@code Doc}'s flat-string value; not defined (and never called) if the (@code Doc}
    * contains forced breaks.
+   *
    * @return the flat-string value
    */
   final String getFlat() {
@@ -135,6 +137,7 @@ public abstract class Doc {
 
   /**
    * Return the {@link Range} of a {@code Doc}.
+   *
    * @return the {@code Doc}'s {@link Range}
    */
   final Range<Integer> range() {
@@ -147,34 +150,35 @@ public abstract class Doc {
 
   /**
    * Compute the {@code Doc}'s width.
+   *
    * @return the width, or {@code Float.POSITIVE_INFINITY} if it must be broken
    */
   abstract float computeWidth();
 
   /**
    * Compute the {@code Doc}'s flat value. Not defined (and never called) if contains forced breaks.
+   *
    * @return the flat value
    */
   abstract String computeFlat();
 
   /**
    * Compute the {@code Doc}'s {@link Range} of {@link Input.Token}s.
+   *
    * @return the {@link Range}
    */
   abstract Range<Integer> computeRange();
 
   /**
    * Make breaking decisions for a {@code Doc}.
+   *
    * @param maxWidth the maximum line width
    * @param state the current output state
    * @return the new output state
    */
   public abstract State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state);
 
-  /**
-   * Write a {@code Doc} to an {@link Output}, after breaking decisions have
-   * been made.
-   */
+  /** Write a {@code Doc} to an {@link Output}, after breaking decisions have been made. */
   public abstract void write(Output output);
 
   /** A {@code Level} inside a {@link Doc}. */
@@ -188,6 +192,7 @@ public abstract class Doc {
 
     /**
      * Factory method for {@code Level}s.
+     *
      * @param plusIndent the extra indent inside the {@code Level}
      * @return the new {@code Level}
      */
@@ -197,6 +202,7 @@ public abstract class Doc {
 
     /**
      * Add a {@link Doc} to the {@code Level}.
+     *
      * @param doc the {@link Doc} to add
      */
     void add(Doc doc) {
@@ -238,8 +244,8 @@ public abstract class Doc {
     boolean oneLine = false;
 
     /**
-     * Groups of {@link Doc}s that are children of the current {@link Level},
-     * separated by {@link Break}s.
+     * Groups of {@link Doc}s that are children of the current {@link Level}, separated by {@link
+     * Break}s.
      */
     List<List<Doc>> splits = new ArrayList<>();
 
@@ -273,9 +279,7 @@ public abstract class Doc {
       }
     }
 
-    /**
-     * Compute breaks for a {@link Level} that spans multiple lines.
-     */
+    /** Compute breaks for a {@link Level} that spans multiple lines. */
     private State computeBroken(CommentsHelper commentsHelper, int maxWidth, State state) {
       splitByBreaks(docs, splits, breaks);
 
@@ -292,9 +296,7 @@ public abstract class Doc {
       return state;
     }
 
-    /**
-     * Lay out a Break-separated group of Docs in the current Level.
-     */
+    /** Lay out a Break-separated group of Docs in the current Level. */
     private static State computeBreakAndSplit(
         CommentsHelper commentsHelper,
         int maxWidth,
@@ -352,6 +354,7 @@ public abstract class Doc {
 
     /**
      * Get the width of a sequence of {@link Doc}s.
+     *
      * @param docs the {@link Doc}s
      * @return the width, or {@code Float.POSITIVE_INFINITY} if any {@link Doc} must be broken
      */
@@ -378,9 +381,7 @@ public abstract class Doc {
 
   /** A leaf {@link Doc} for a token. */
   public static final class Token extends Doc implements Op {
-    /**
-     * Is a Token a real token, or imaginary (e.g., a token generated incorrectly, or an EOF)?
-     */
+    /** Is a Token a real token, or imaginary (e.g., a token generated incorrectly, or an EOF)? */
     public enum RealOrImaginary {
       REAL,
       IMAGINARY;
@@ -408,21 +409,21 @@ public abstract class Doc {
 
     /**
      * How much extra to indent comments before the {@code Token}.
+     *
      * @return the extra indent
      */
     Indent getPlusIndentCommentsBefore() {
       return plusIndentCommentsBefore;
     }
 
-    /**
-     * Force a line break and indent trailing javadoc or block comments.
-     */
+    /** Force a line break and indent trailing javadoc or block comments. */
     Optional<Indent> breakAndIndentTrailingComment() {
       return breakAndIndentTrailingComment;
     }
 
     /**
      * Make a {@code Token}.
+     *
      * @param token the {@link Input.Token} to wrap
      * @param realOrImaginary did this {@link Input.Token} appear in the input, or was it generated
      *     incorrectly?
@@ -440,6 +441,7 @@ public abstract class Doc {
 
     /**
      * Return the wrapped {@link Input.Token}.
+     *
      * @return the {@link Input.Token}
      */
     Input.Token getToken() {
@@ -448,6 +450,7 @@ public abstract class Doc {
 
     /**
      * Is the token good? That is, does it match an {@link Input.Token}?
+     *
      * @return whether the @code Token} is good
      */
     RealOrImaginary realOrImaginary() {
@@ -504,6 +507,7 @@ public abstract class Doc {
 
     /**
      * Factor method for {@code Space}.
+     *
      * @return the new {@code Space}
      */
     static Space make() {
@@ -562,6 +566,7 @@ public abstract class Doc {
 
     /**
      * Make a {@code Break}.
+     *
      * @param fillMode the {@link FillMode}
      * @param flat the the text when not broken
      * @param plusIndent extra indent if taken
@@ -573,6 +578,7 @@ public abstract class Doc {
 
     /**
      * Make a {@code Break}.
+     *
      * @param fillMode the {@link FillMode}
      * @param flat the the text when not broken
      * @param plusIndent extra indent if taken
@@ -586,6 +592,7 @@ public abstract class Doc {
 
     /**
      * Make a forced {@code Break}.
+     *
      * @return the new forced {@code Break}
      */
     public static Break makeForced() {
@@ -594,6 +601,7 @@ public abstract class Doc {
 
     /**
      * Return the {@code Break}'s extra indent.
+     *
      * @return the extra indent
      */
     int getPlusIndent() {
@@ -602,6 +610,7 @@ public abstract class Doc {
 
     /**
      * Is the {@code Break} forced?
+     *
      * @return whether the {@code Break} is forced
      */
     boolean isForced() {
@@ -690,6 +699,7 @@ public abstract class Doc {
 
     /**
      * Factory method for a {@code Tok}.
+     *
      * @param tok the {@link Input.Tok} to wrap
      * @return the new {@code Tok}
      */

@@ -19,22 +19,17 @@ import com.google.errorprone.annotations.Immutable;
 /**
  * Options for a google-java-format invocation.
  *
- * <p>
- * Like gofmt, the google-java-format CLI exposes <em>no</em> configuration
- * options (aside from {@code --aosp}).
+ * <p>Like gofmt, the google-java-format CLI exposes <em>no</em> configuration options (aside from
+ * {@code --aosp}).
  *
- * <p>
- * The goal of google-java-format is to provide consistent formatting, and to
- * free developers from arguments over style choices. It is an explicit non-goal
- * to support developers' individual preferences, and in fact it would work
- * directly against our primary goals.
+ * <p>The goal of google-java-format is to provide consistent formatting, and to free developers
+ * from arguments over style choices. It is an explicit non-goal to support developers' individual
+ * preferences, and in fact it would work directly against our primary goals.
  *
- * <p>
- * This class exists primarily to distinguish between Google Java Style mode and
- * {@code --aosp} mode. It also provides a configuration that enables the
- * Eclipse Javadoc formatter until
- * <a href="https://github.com/google/google-java-format/issues/7">google-java-
- * format#7</a> is resolved.
+ * <p>This class exists primarily to distinguish between Google Java Style mode and {@code --aosp}
+ * mode. It also provides a configuration that enables the Eclipse Javadoc formatter until <a
+ * href="https://github.com/google/google-java-format/issues/7">google-java- format#7</a> is
+ * resolved.
  */
 @Immutable
 public class JavaFormatterOptions {

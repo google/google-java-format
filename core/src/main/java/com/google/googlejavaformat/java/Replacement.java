@@ -17,9 +17,7 @@ package com.google.googlejavaformat.java;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.Range;
 
-/**
- * Represents a range in the original source and replacement text for that range.
- */
+/** Represents a range in the original source and replacement text for that range. */
 @AutoValue
 public abstract class Replacement {
 

@@ -31,15 +31,14 @@ public abstract class InputOutput {
   private static final CharMatcher NEWLINE_MATCHER = CharMatcher.is('\n');
   private static final DiscreteDomain<Integer> INTEGERS = DiscreteDomain.integers();
 
-  /**
-   * Set the lines.
-   */
+  /** Set the lines. */
   protected final void setLines(ImmutableList<String> lines) {
     this.lines = lines;
   }
 
   /**
    * Get the line count.
+   *
    * @return the line count
    */
   public final int getLineCount() {
@@ -48,6 +47,7 @@ public abstract class InputOutput {
 
   /**
    * Get a line.
+   *
    * @param lineI the line number
    * @return the line
    */
@@ -91,6 +91,7 @@ public abstract class InputOutput {
 
   /**
    * Given an {@code InputOutput}, compute the map from tok indices to line ranges.
+   *
    * @param put the {@code InputOutput}
    * @param kN the number of tokens
    * @return the map from {@link com.google.googlejavaformat.java.JavaInput.Tok} indices to line
@@ -114,6 +115,7 @@ public abstract class InputOutput {
 
   /**
    * Get the {@link Range} of {@link Input.Tok}s beginning on a line.
+   *
    * @param lineI the line number
    * @return the {@link Range} of {@link Input.Tok}s beginning on the specified line
    */
@@ -123,6 +125,7 @@ public abstract class InputOutput {
 
   /**
    * Get the {@link Range} of {@link Input.Tok}s lying in any part on a line.
+   *
    * @param lineI the line number
    * @return the {@link Range} of {@link Input.Tok}s on the specified line
    */
@@ -132,6 +135,7 @@ public abstract class InputOutput {
 
   /**
    * Get the {@link Range} of {@link Input.Tok}s ending on a line.
+   *
    * @param lineI the line number
    * @return the {@link Range} of {@link Input.Tok}s ending on the specified line
    */

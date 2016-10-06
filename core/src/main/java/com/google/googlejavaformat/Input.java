@@ -19,9 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableRangeMap;
 
-/**
- * An input to the formatter.
- */
+/** An input to the formatter. */
 public abstract class Input extends InputOutput {
   /**
    * A {@code Tok} ("tock") is a token, or a comment, or a newline, or a maximal string of blanks. A
@@ -31,18 +29,21 @@ public abstract class Input extends InputOutput {
   public interface Tok {
     /**
      * Return the {@code Tok}'s index.
+     *
      * @return its index
      */
     int getIndex();
 
     /**
      * Return the {@code Tok}'s {@code 0}-based position.
+     *
      * @return its position
      */
     int getPosition();
 
     /**
      * Return the {@code Tok}'s {@code 0}-based column number.
+     *
      * @return its column number
      */
     int getColumn();
@@ -72,24 +73,25 @@ public abstract class Input extends InputOutput {
     boolean isComment();
   }
 
-  /**
-   * A {@code Token} is a language-level token.
-   */
+  /** A {@code Token} is a language-level token. */
   public interface Token {
     /**
      * Get the token's {@link Tok}.
+     *
      * @return the token's {@link Tok}
      */
     Tok getTok();
 
     /**
      * Get the earlier {@link Tok}s assigned to this {@code Token}.
+     *
      * @return the earlier {@link Tok}s assigned to this {@code Token}
      */
     ImmutableList<? extends Tok> getToksBefore();
 
     /**
      * Get the later {@link Tok}s assigned to this {@code Token}.
+     *
      * @return the later {@link Tok}s assigned to this {@code Token}
      */
     ImmutableList<? extends Tok> getToksAfter();
@@ -97,6 +99,7 @@ public abstract class Input extends InputOutput {
 
   /**
    * Get the input tokens.
+   *
    * @return the input tokens
    */
   public abstract ImmutableList<? extends Token> getTokens();
@@ -120,9 +123,9 @@ public abstract class Input extends InputOutput {
   public abstract int getColumnNumber(int inputPosition);
 
   /**
-   * Construct a diagnostic. Populates the input filename, and converts
-   * character offsets to numbers.
-   * */
+   * Construct a diagnostic. Populates the input filename, and converts character offsets to
+   * numbers.
+   */
   public FormatterDiagnostic createDiagnostic(int inputPosition, String message) {
     return FormatterDiagnostic.create(
         getLineNumber(inputPosition), getColumnNumber(inputPosition), message);

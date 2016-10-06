@@ -18,9 +18,7 @@ import com.google.common.base.MoreObjects;
 import java.util.ArrayDeque;
 import java.util.List;
 
-/**
- * A {@code DocBuilder} converts a sequence of {@link Op}s into a {@link Doc}.
- */
+/** A {@code DocBuilder} converts a sequence of {@link Op}s into a {@link Doc}. */
 public final class DocBuilder {
   private final Doc.Level base = Doc.Level.make(Indent.Const.ZERO);
   private final ArrayDeque<Doc.Level> stack = new ArrayDeque<>();
@@ -43,15 +41,14 @@ public final class DocBuilder {
    */
   private Doc.Level appendLevel = base;
 
-  /**
-   * Start to build a {@code DocBuilder}.
-   */
+  /** Start to build a {@code DocBuilder}. */
   public DocBuilder() {
     stack.addLast(base);
   }
 
   /**
    * Add a list of {@link Op}s to the {@link OpsBuilder}.
+   *
    * @param ops the {@link Op}s
    * @return the {@link OpsBuilder}
    */
@@ -64,6 +61,7 @@ public final class DocBuilder {
 
   /**
    * Open a new {@link Doc.Level}.
+   *
    * @param plusIndent the extra indent for the {@link Doc.Level}
    */
   void open(Indent plusIndent) {
@@ -71,9 +69,7 @@ public final class DocBuilder {
     stack.addLast(level);
   }
 
-  /**
-   * Close the current {@link Doc.Level}.
-   */
+  /** Close the current {@link Doc.Level}. */
   void close() {
     Doc.Level top = stack.removeLast();
     stack.peekLast().add(top);
@@ -81,6 +77,7 @@ public final class DocBuilder {
 
   /**
    * Add a {@link Doc} to the current {@link Doc.Level}.
+   *
    * @param doc the {@link Doc}
    */
   void add(Doc doc) {
@@ -89,6 +86,7 @@ public final class DocBuilder {
 
   /**
    * Add a {@link Doc.Break} to the current {@link Doc.Level}.
+   *
    * @param breakDoc the {@link Doc.Break}
    */
   void breakDoc(Doc.Break breakDoc) {
@@ -98,6 +96,7 @@ public final class DocBuilder {
 
   /**
    * Return the {@link Doc}.
+   *
    * @return the {@link Doc}
    */
   public Doc build() {

@@ -35,9 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-/**
- * The main class for the Java formatter CLI.
- */
+/** The main class for the Java formatter CLI. */
 public final class Main {
   private static final int MAX_THREADS = 20;
   private static final String STDIN_FILENAME = "<stdin>";
@@ -60,6 +58,7 @@ public final class Main {
    * The main method for the formatter, with some number of file names to format. We process them in
    * parallel, but we must be careful; if multiple file names refer to the same file (which is hard
    * to determine), we must serialize their updates.
+   *
    * @param args the command-line arguments
    */
   public static void main(String[] args) {

@@ -26,6 +26,7 @@ public enum CloseOp implements Op {
 
   /**
    * Make a {@code CloseOp}, returning a singleton since they are all the same.
+   *
    * @return the singleton {@code CloseOp}
    */
   public static Op make() {

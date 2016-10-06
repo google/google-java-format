@@ -67,6 +67,7 @@ public final class JavaOutput extends Output {
 
   /**
    * {@code JavaOutput} constructor.
+   *
    * @param javaInput the {@link JavaInput}, used to match up blank lines in the output
    * @param commentsHelper the {@link CommentsHelper}, used to rewrite comments
    */
@@ -222,6 +223,7 @@ public final class JavaOutput extends Output {
 
   /**
    * Emit a list of {@link Replacement}s to convert from input to output.
+   *
    * @return a list of {@link Replacement}s, sorted by start index, without overlaps
    */
   public ImmutableList<Replacement> getFormatReplacements(RangeSet<Integer> iRangeSet0) {

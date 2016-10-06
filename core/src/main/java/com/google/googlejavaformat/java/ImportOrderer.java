@@ -66,23 +66,15 @@ public class ImportOrderer {
     this.toks = toks;
   }
 
-  /**
-   * An import statement.
-   */
+  /** An import statement. */
   private static class Import implements Comparable<Import> {
-    /**
-     * The name being imported, for example {@code java.util.List}.
-     */
+    /** The name being imported, for example {@code java.util.List}. */
     final String imported;
 
-    /**
-     * The characters after the final {@code ;}, up to and including the line terminator.
-     */
+    /** The characters after the final {@code ;}, up to and including the line terminator. */
     final String trailing;
 
-    /**
-     * True if this is {@code import static}.
-     */
+    /** True if this is {@code import static}. */
     final boolean isStatic;
 
     Import(String imported, String trailing, boolean isStatic) {
@@ -163,11 +155,12 @@ public class ImportOrderer {
 
   /**
    * Scans a sequence of import lines. The parsing uses this approximate grammar:
+   *
    * <pre>{@code
-   *   <imports> -> (<end-of-line> | <import>)*
-   *   <import> -> "import" <whitespace> ("static" <whitespace>)?
-   *      <identifier> ("." <identifier>)* ("." "*")? <whitespace>? ";"
-   *      <whitespace>? <line-comment>? <end-of-line>
+   * <imports> -> (<end-of-line> | <import>)*
+   * <import> -> "import" <whitespace> ("static" <whitespace>)?
+   *    <identifier> ("." <identifier>)* ("." "*")? <whitespace>? ";"
+   *    <whitespace>? <line-comment>? <end-of-line>
    * }</pre>
    *
    * @param i the index to start parsing at.
@@ -267,15 +260,15 @@ public class ImportOrderer {
   }
 
   /**
-   * Scans the imported thing, the dot-separated name that comes after import [static] and
-   * before the semicolon. We don't allow spaces inside the dot-separated name. Wildcard
-   * imports are supported: if the input is {@code import java.util.*;} then the returned
-   * string will be {@code java.util.*}.
+   * Scans the imported thing, the dot-separated name that comes after import [static] and before
+   * the semicolon. We don't allow spaces inside the dot-separated name. Wildcard imports are
+   * supported: if the input is {@code import java.util.*;} then the returned string will be {@code
+   * java.util.*}.
    *
-   * @param start the index of the start of the identifier. If the import is
-   *     {@code import java.util.List;} then this index points to the token {@code java}.
-   * @return the parsed import ({@code java.util.List} in the example) and the index of the
-   *     first token after the imported thing ({@code ;} in the example).
+   * @param start the index of the start of the identifier. If the import is {@code import
+   *     java.util.List;} then this index points to the token {@code java}.
+   * @return the parsed import ({@code java.util.List} in the example) and the index of the first
+   *     token after the imported thing ({@code ;} in the example).
    * @throws FormatterException if the imported name could not be parsed.
    */
   private StringAndIndex scanImported(int start) throws FormatterException {
@@ -302,8 +295,8 @@ public class ImportOrderer {
   }
 
   /**
-   * Returns the index of the first place where one of the given identifiers occurs, or
-   * {@code Optional.absent()} if there is none.
+   * Returns the index of the first place where one of the given identifiers occurs, or {@code
+   * Optional.absent()} if there is none.
    *
    * @param start the index to start looking at
    * @param identifiers the identifiers to look for
@@ -320,9 +313,7 @@ public class ImportOrderer {
     return Optional.absent();
   }
 
-  /**
-   * Returns the given token, or the preceding token if it is a whitespace token.
-   */
+  /** Returns the given token, or the preceding token if it is a whitespace token. */
   private int unindent(int i) {
     if (i > 0 && isSpaceToken(i - 1)) {
       return i - 1;

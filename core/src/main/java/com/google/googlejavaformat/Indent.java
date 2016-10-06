@@ -18,9 +18,9 @@ import com.google.common.base.MoreObjects;
 import com.google.googlejavaformat.Output.BreakTag;
 
 /**
- * An indent for a {@link Doc.Level} or {@link Doc.Break}. The indent is either a constant
- * {@code int}, or a conditional expression whose value depends on whether or not a
- * {@link Doc.Break} has been broken.
+ * An indent for a {@link Doc.Level} or {@link Doc.Break}. The indent is either a constant {@code
+ * int}, or a conditional expression whose value depends on whether or not a {@link Doc.Break} has
+ * been broken.
  */
 public abstract class Indent {
 
