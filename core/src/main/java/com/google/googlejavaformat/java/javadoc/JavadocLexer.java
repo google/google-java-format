@@ -497,7 +497,8 @@ final class JavadocLexer {
   // We ensure elsewhere that we match this only at the beginning of a line.
   // Only match tags that start with a lowercase letter, to avoid false matches on unescaped
   // annotations inside code blocks.
-  private static final Pattern FOOTER_TAG_PATTERN = compile("^@[a-z]\\w*");
+  // Match "@param <T>" specially in case the <T> is a <P> or other HTML tag we treat specially.
+  private static final Pattern FOOTER_TAG_PATTERN = compile("^@(param\\s+<\\w+>|[a-z]\\w*)");
   private static final Pattern MOE_BEGIN_STRIP_COMMENT_PATTERN =
       compile("^<!--\\s*MOE:begin_intracomment_strip\\s*-->");
   private static final Pattern MOE_END_STRIP_COMMENT_PATTERN =
