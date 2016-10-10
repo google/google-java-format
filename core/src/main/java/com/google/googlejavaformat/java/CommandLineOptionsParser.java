@@ -62,11 +62,11 @@ final class CommandLineOptionsParser {
           break;
         case "--offset":
         case "-offset":
-          optionsBuilder.offsetsBuilder().add(parseInteger(it, flag, value));
+          optionsBuilder.addOffset(parseInteger(it, flag, value));
           break;
         case "--length":
         case "-length":
-          optionsBuilder.lengthsBuilder().add(parseInteger(it, flag, value));
+          optionsBuilder.addLength(parseInteger(it, flag, value));
           break;
         case "--aosp":
         case "-aosp":

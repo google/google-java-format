@@ -14,49 +14,111 @@
 
 package com.google.googlejavaformat.java;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableRangeSet;
 
-/** Command line options for google-java-format. */
-@AutoValue
-abstract class CommandLineOptions {
+/**
+ * Command line options for google-java-format.
+ *
+ * <p>google-java-format doesn't depend on AutoValue, to allow AutoValue to depend on
+ * google-java-format.
+ */
+final class CommandLineOptions {
+
+  private final ImmutableList<String> files;
+  private final boolean inPlace;
+  private final ImmutableRangeSet<Integer> lines;
+  private final ImmutableList<Integer> offsets;
+  private final ImmutableList<Integer> lengths;
+  private final boolean aosp;
+  private final boolean version;
+  private final boolean help;
+  private final boolean stdin;
+  private final boolean fixImportsOnly;
+  private final boolean removeJavadocOnlyImports;
+
+  CommandLineOptions(
+      ImmutableList<String> files,
+      boolean inPlace,
+      ImmutableRangeSet<Integer> lines,
+      ImmutableList<Integer> offsets,
+      ImmutableList<Integer> lengths,
+      boolean aosp,
+      boolean version,
+      boolean help,
+      boolean stdin,
+      boolean fixImportsOnly,
+      boolean removeJavadocOnlyImports) {
+    this.files = files;
+    this.inPlace = inPlace;
+    this.lines = lines;
+    this.offsets = offsets;
+    this.lengths = lengths;
+    this.aosp = aosp;
+    this.version = version;
+    this.help = help;
+    this.stdin = stdin;
+    this.fixImportsOnly = fixImportsOnly;
+    this.removeJavadocOnlyImports = removeJavadocOnlyImports;
+  }
 
   /** The files to format. */
-  abstract ImmutableList<String> files();
+  ImmutableList<String> files() {
+    return files;
+  }
 
   /** Format files in place. */
-  abstract boolean inPlace();
+  boolean inPlace() {
+    return inPlace;
+  }
 
   /** Line ranges to format. */
-  abstract ImmutableRangeSet<Integer> lines();
+  ImmutableRangeSet<Integer> lines() {
+    return lines;
+  }
 
   /** Character offsets for partial formatting, paired with {@code lengths}. */
-  abstract ImmutableList<Integer> offsets();
+  ImmutableList<Integer> offsets() {
+    return offsets;
+  }
 
   /** Partial formatting region lengths, paired with {@code offsets}. */
-  abstract ImmutableList<Integer> lengths();
+  ImmutableList<Integer> lengths() {
+    return lengths;
+  }
 
   /** Use AOSP style instead of Google Style (4-space indentation). */
-  abstract boolean aosp();
+  boolean aosp() {
+    return aosp;
+  }
 
   /** Print the version. */
-  abstract boolean version();
+  boolean version() {
+    return version;
+  }
 
   /** Print usage information. */
-  abstract boolean help();
+  boolean help() {
+    return help;
+  }
 
   /** Format input from stdin. */
-  abstract boolean stdin();
+  boolean stdin() {
+    return stdin;
+  }
 
   /** Fix imports, but do no formatting. */
-  abstract boolean fixImportsOnly();
+  boolean fixImportsOnly() {
+    return fixImportsOnly;
+  }
 
   /**
    * When fixing imports, remove imports that are used only in javadoc and fully-qualify any
    * {@code @link} tags referring to the imported types.
    */
-  abstract boolean removeJavadocOnlyImports();
+  boolean removeJavadocOnlyImports() {
+    return removeJavadocOnlyImports;
+  }
 
   /** Returns true if partial formatting was selected. */
   boolean isSelection() {
@@ -64,40 +126,89 @@ abstract class CommandLineOptions {
   }
 
   static Builder builder() {
-    return new AutoValue_CommandLineOptions.Builder()
-        .inPlace(false)
-        .aosp(false)
-        .version(false)
-        .help(false)
-        .stdin(false)
-        .fixImportsOnly(false)
-        .removeJavadocOnlyImports(false);
+    return new Builder();
   }
 
-  @AutoValue.Builder
-  abstract static class Builder {
-    abstract Builder inPlace(boolean inPlace);
+  static class Builder {
 
-    abstract ImmutableList.Builder<String> filesBuilder();
+    private final ImmutableList.Builder<String> files = ImmutableList.builder();
+    private final ImmutableRangeSet.Builder<Integer> lines = ImmutableRangeSet.builder();
+    private final ImmutableList.Builder<Integer> offsets = ImmutableList.builder();
+    private final ImmutableList.Builder<Integer> lengths = ImmutableList.builder();
+    private Boolean inPlace = false;
+    private Boolean aosp = false;
+    private Boolean version = false;
+    private Boolean help = false;
+    private Boolean stdin = false;
+    private Boolean fixImportsOnly = false;
+    private Boolean removeJavadocOnlyImports = false;
 
-    abstract ImmutableRangeSet.Builder<Integer> linesBuilder();
+    ImmutableList.Builder<String> filesBuilder() {
+      return files;
+    }
 
-    abstract ImmutableList.Builder<Integer> offsetsBuilder();
+    Builder inPlace(boolean inPlace) {
+      this.inPlace = inPlace;
+      return this;
+    }
 
-    abstract ImmutableList.Builder<Integer> lengthsBuilder();
+    ImmutableRangeSet.Builder<Integer> linesBuilder() {
+      return lines;
+    }
 
-    abstract Builder aosp(boolean aosp);
+    Builder addOffset(Integer offset) {
+      offsets.add(offset);
+      return this;
+    }
 
-    abstract Builder version(boolean version);
+    Builder addLength(Integer length) {
+      lengths.add(length);
+      return this;
+    }
 
-    abstract Builder help(boolean help);
+    Builder aosp(boolean aosp) {
+      this.aosp = aosp;
+      return this;
+    }
 
-    abstract Builder stdin(boolean stdin);
+    Builder version(boolean version) {
+      this.version = version;
+      return this;
+    }
 
-    abstract Builder fixImportsOnly(boolean fixImportsOnly);
+    Builder help(boolean help) {
+      this.help = help;
+      return this;
+    }
 
-    abstract Builder removeJavadocOnlyImports(boolean removeJavadocOnlyImports);
+    Builder stdin(boolean stdin) {
+      this.stdin = stdin;
+      return this;
+    }
 
-    abstract CommandLineOptions build();
+    Builder fixImportsOnly(boolean fixImportsOnly) {
+      this.fixImportsOnly = fixImportsOnly;
+      return this;
+    }
+
+    Builder removeJavadocOnlyImports(boolean removeJavadocOnlyImports) {
+      this.removeJavadocOnlyImports = removeJavadocOnlyImports;
+      return this;
+    }
+
+    CommandLineOptions build() {
+      return new CommandLineOptions(
+          this.files.build(),
+          this.inPlace,
+          this.lines.build(),
+          this.offsets.build(),
+          this.lengths.build(),
+          this.aosp,
+          this.version,
+          this.help,
+          this.stdin,
+          this.fixImportsOnly,
+          this.removeJavadocOnlyImports);
+    }
   }
 }
