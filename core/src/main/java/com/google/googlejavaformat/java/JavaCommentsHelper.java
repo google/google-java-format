@@ -15,10 +15,10 @@
 package com.google.googlejavaformat.java;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.googlejavaformat.CommentsHelper;
 import com.google.googlejavaformat.Input.Tok;
+import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.javadoc.JavadocFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -26,8 +26,6 @@ import java.util.List;
 
 /** {@code JavaCommentsHelper} extends {@link CommentsHelper} to rewrite Java comments. */
 public final class JavaCommentsHelper implements CommentsHelper {
-
-  private static final Splitter NEWLINE_SPLITTER = Splitter.on('\n');
 
   private final JavaFormatterOptions options;
 
@@ -45,8 +43,9 @@ public final class JavaCommentsHelper implements CommentsHelper {
       text = JavadocFormatter.formatJavadoc(text, column0, options);
     }
     List<String> lines = new ArrayList<>();
-    for (String line : NEWLINE_SPLITTER.split(text)) {
-      lines.add(CharMatcher.whitespace().trimTrailingFrom(line));
+    Iterator<String> it = Newlines.lineIterator(text);
+    while (it.hasNext()) {
+      lines.add(CharMatcher.whitespace().trimTrailingFrom(it.next()));
     }
     if (tok.isSlashSlashComment()) {
       return indentLineComments(lines, column0);

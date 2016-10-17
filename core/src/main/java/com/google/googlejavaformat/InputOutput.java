@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat;
 
-import com.google.common.base.CharMatcher;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
@@ -28,7 +27,6 @@ public abstract class InputOutput {
   private ImmutableList<String> lines = ImmutableList.of();
 
   protected static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
-  private static final CharMatcher NEWLINE_MATCHER = CharMatcher.is('\n');
   private static final DiscreteDomain<Integer> INTEGERS = DiscreteDomain.integers();
 
   /** Set the lines. */
@@ -77,7 +75,7 @@ public abstract class InputOutput {
     for (Input.Tok tok : toks) {
       String txt = tok.getOriginalText();
       int lineI0 = lineI;
-      lineI += NEWLINE_MATCHER.countIn(txt);
+      lineI += Newlines.count(txt);
       int k = tok.getIndex();
       if (k >= 0) {
         addToRanges(range0s, lineI0, k);

@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getLast;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Splitter;
 import com.google.common.base.Verify;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableCollection;
@@ -26,13 +25,16 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.Input;
+import com.google.googlejavaformat.Newlines;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.jdt.core.ToolFactory;
@@ -128,7 +130,7 @@ public final class JavaInput extends Input {
 
     @Override
     public boolean isNewline() {
-      return "\n".equals(text);
+      return Newlines.isNewline(text);
     }
 
     @Override
@@ -236,8 +238,6 @@ public final class JavaInput extends Input {
     }
   }
 
-  private static final Splitter NEWLINE_SPLITTER = Splitter.on('\n');
-
   private final String text; // The input.
   private int kN; // The number of numbered toks (tokens or comments), excluding the EOF.
   private Map<Integer, Range<Integer>> kToI = null; // Map from token indices to line numbers.
@@ -265,8 +265,7 @@ public final class JavaInput extends Input {
    */
   public JavaInput(String text) throws FormatterException {
     this.text = checkNotNull(text);
-    List<String> lines = NEWLINE_SPLITTER.splitToList(text);
-    setLines(ImmutableList.copyOf(lines));
+    setLines(ImmutableList.copyOf(Newlines.lineIterator(text)));
     ImmutableList<Tok> toks = buildToks(text);
     positionToColumnMap = makePositionToColumnMap(toks);
     tokens = buildTokens(toks);
@@ -369,20 +368,24 @@ public final class JavaInput extends Input {
       char tokText0 = tokText.charAt(0); // The token's first character.
       final boolean isToken; // Is this tok a token?
       final boolean isNumbered; // Is this tok numbered? (tokens and comments)
-      boolean extraNewline = false; // Extra newline at end?
+      String extraNewline = null; // Extra newline at end?
       List<String> strings = new ArrayList<>();
       if (Character.isWhitespace(tokText0)) {
         isToken = false;
         isNumbered = false;
-        boolean first = true;
-        for (String spaces : NEWLINE_SPLITTER.split(originalTokText)) {
-          if (!first) {
-            strings.add("\n");
+        Iterator<String> it = Newlines.lineIterator(originalTokText);
+        while (it.hasNext()) {
+          String line = it.next();
+          String newline = Newlines.getLineEnding(line);
+          if (newline != null) {
+            String spaces = line.substring(0, line.length() - newline.length());
+            if (!spaces.isEmpty()) {
+              strings.add(spaces);
+            }
+            strings.add(newline);
+          } else if (!line.isEmpty()) {
+            strings.add(line);
           }
-          if (!spaces.isEmpty()) {
-            strings.add(spaces);
-          }
-          first = false;
         }
       } else if (tokText.startsWith("'") || tokText.startsWith("\"")) {
         isToken = true;
@@ -390,10 +393,12 @@ public final class JavaInput extends Input {
         strings.add(originalTokText);
       } else if (tokText.startsWith("//") || tokText.startsWith("/*")) {
         // For compatibility with an earlier lexer, the newline after a // comment is its own tok.
-        if (tokText.startsWith("//") && originalTokText.endsWith("\n")) {
-          originalTokText = originalTokText.substring(0, originalTokText.length() - 1);
-          tokText = tokText.substring(0, tokText.length() - 1);
-          extraNewline = true;
+        if (tokText.startsWith("//")
+            && (originalTokText.endsWith("\n") || originalTokText.endsWith("\r"))) {
+          extraNewline = Newlines.getLineEnding(originalTokText);
+          tokText = tokText.substring(0, tokText.length() - extraNewline.length());
+          originalTokText =
+              originalTokText.substring(0, originalTokText.length() - extraNewline.length());
         }
         isToken = false;
         isNumbered = true;
@@ -425,14 +430,9 @@ public final class JavaInput extends Input {
                 columnI,
                 isToken,
                 tokenId));
-        for (char c : originalTokText.toCharArray()) {
-          if (c == '\n') {
-            columnI = 0;
-          } else {
-            ++columnI;
-          }
-          ++charI;
-        }
+        charI += originalTokText.length();
+        columnI = updateColumn(columnI, originalTokText);
+
       } else {
         if (strings.size() != 1 && !tokText.equals(originalTokText)) {
           throw new FormatterException(
@@ -440,24 +440,28 @@ public final class JavaInput extends Input {
         }
         for (String str : strings) {
           toks.add(new Tok(isNumbered ? kN++ : -1, str, str, charI, columnI, isToken, tokenId));
-          for (char c : str.toCharArray()) {
-            if (c == '\n') {
-              columnI = 0;
-            } else {
-              ++columnI;
-            }
-            ++charI;
-          }
+          charI += str.length();
+          columnI = updateColumn(columnI, originalTokText);
         }
       }
-      if (extraNewline) {
-        toks.add(new Tok(-1, "\n", "\n", charI, columnI, false, tokenId));
+      if (extraNewline != null) {
+        toks.add(new Tok(-1, extraNewline, extraNewline, charI, columnI, false, tokenId));
         columnI = 0;
-        ++charI;
+        charI += extraNewline.length();
       }
     }
     toks.add(new Tok(kN, "", "", charI, columnI, true, ITerminalSymbols.TokenNameEOF)); // EOF tok.
     return ImmutableList.copyOf(toks);
+  }
+
+  private static int updateColumn(int columnI, String originalTokText) {
+    Integer last = Iterators.getLast(Newlines.lineOffsetIterator(originalTokText));
+    if (last > 0) {
+      columnI = originalTokText.length() - last;
+    } else {
+      columnI += originalTokText.length();
+    }
+    return columnI;
   }
 
   private static ImmutableList<Token> buildTokens(List<Tok> toks) {
@@ -505,7 +509,7 @@ public final class JavaInput extends Input {
         }
         Tok nonTokenAfter = toks.get(k++);
         toksAfter.add(nonTokenAfter);
-        if (nonTokenAfter.getText().contains("\n")) {
+        if (Newlines.containsBreaks(nonTokenAfter.getText())) {
           break;
         }
       }

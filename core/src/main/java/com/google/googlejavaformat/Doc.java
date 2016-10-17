@@ -14,9 +14,12 @@
 
 package com.google.googlejavaformat;
 
+import static com.google.common.collect.Iterables.getLast;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.Output.BreakTag;
 import java.util.ArrayList;
@@ -274,7 +277,7 @@ public abstract class Doc {
           breaks.add((Break) doc);
           splits.add(new ArrayList<Doc>());
         } else {
-          splits.get(splits.size() - 1).add(doc);
+          getLast(splits).add(doc);
         }
       }
     }
@@ -714,16 +717,16 @@ public abstract class Doc {
 
     @Override
     float computeWidth() {
+      int idx = Newlines.firstBreak(tok.getOriginalText());
       // only count the first line of multi-line block comments
       if (tok.isComment()) {
-        int idx = tok.getOriginalText().indexOf('\n');
         if (idx > 0) {
           return idx;
         } else {
           return tok.length();
         }
       }
-      return tok.getOriginalText().contains("\n") ? Float.POSITIVE_INFINITY : (float) tok.length();
+      return idx != -1 ? Float.POSITIVE_INFINITY : (float) tok.length();
     }
 
     @Override
@@ -740,19 +743,8 @@ public abstract class Doc {
 
     @Override
     public State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state) {
-      int column = state.column;
-      int lines = 0;
-      text = commentsHelper.rewrite(tok, maxWidth, column);
-      // TODO(lowasser): use lastIndexOf('\n')
-      for (char c : text.toCharArray()) {
-        if (c == '\n') {
-          column = 0;
-          lines++;
-        } else {
-          column++;
-        }
-      }
-      return state.withColumn(column);
+      text = commentsHelper.rewrite(tok, maxWidth, state.column);
+      return state.withColumn(text.length() - Iterators.getLast(Newlines.lineOffsetIterator(text)));
     }
 
     @Override

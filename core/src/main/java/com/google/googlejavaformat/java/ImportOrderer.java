@@ -13,6 +13,7 @@
  */
 package com.google.googlejavaformat.java;
 
+import static com.google.common.collect.Iterables.getLast;
 import static org.eclipse.jdt.core.compiler.ITerminalSymbols.TokenNameclass;
 import static org.eclipse.jdt.core.compiler.ITerminalSymbols.TokenNameenum;
 import static org.eclipse.jdt.core.compiler.ITerminalSymbols.TokenNameinterface;
@@ -124,7 +125,7 @@ public class ImportOrderer {
     if (toks.isEmpty()) {
       tail = "";
     } else {
-      Tok lastTok = toks.get(toks.size() - 1);
+      Tok lastTok = getLast(toks);
       int tailStart = lastTok.getPosition() + lastTok.length();
       tail = text.substring(tailStart);
     }
@@ -336,8 +337,7 @@ public class ImportOrderer {
     if (s.isEmpty()) {
       return false;
     } else {
-      // TODO(b/26984991): if the formatter starts understanding \r\n then \r should be removed here
-      return " \t\f\r".indexOf(s.codePointAt(0)) >= 0;
+      return " \t\f".indexOf(s.codePointAt(0)) >= 0;
     }
   }
 

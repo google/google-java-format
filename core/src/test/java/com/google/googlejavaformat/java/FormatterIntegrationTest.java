@@ -84,9 +84,9 @@ public class FormatterIntegrationTest {
     return testInputs;
   }
 
-  private String name;
-  private String input;
-  private String expected;
+  private final String name;
+  private final String input;
+  private final String expected;
 
   public FormatterIntegrationTest(String name, String input, String expected) {
     this.name = name;
@@ -108,6 +108,26 @@ public class FormatterIntegrationTest {
   public void idempotent() {
     try {
       String output = new Formatter().formatSource(expected);
+      assertEquals("bad output for " + name, expected, output);
+    } catch (FormatterException e) {
+      fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
+    }
+  }
+
+  @Test
+  public void cr() throws IOException {
+    try {
+      String output = new Formatter().formatSource(expected.replace('\n', '\r'));
+      assertEquals("bad output for " + name, expected, output);
+    } catch (FormatterException e) {
+      fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
+    }
+  }
+
+  @Test
+  public void crlf() {
+    try {
+      String output = new Formatter().formatSource(expected.replace("\n", "\r\n"));
       assertEquals("bad output for " + name, expected, output);
     } catch (FormatterException e) {
       fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));

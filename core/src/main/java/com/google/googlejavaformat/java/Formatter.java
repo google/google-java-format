@@ -16,10 +16,10 @@ package com.google.googlejavaformat.java;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
@@ -29,6 +29,7 @@ import com.google.errorprone.annotations.Immutable;
 import com.google.googlejavaformat.Doc;
 import com.google.googlejavaformat.DocBuilder;
 import com.google.googlejavaformat.FormattingError;
+import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
 import com.sun.tools.javac.file.JavacFileManager;
@@ -242,20 +243,13 @@ public final class Formatter {
     return javaOutput.getFormatReplacements(tokenRangeSet);
   }
 
-  static final CharMatcher NEWLINE = CharMatcher.is('\n');
-
   /**
    * Converts zero-indexed, [closed, open) line ranges in the given source file to character ranges.
    */
   public static RangeSet<Integer> lineRangesToCharRanges(
       String input, RangeSet<Integer> lineRanges) {
     List<Integer> lines = new ArrayList<>();
-    lines.add(0);
-    int idx = NEWLINE.indexIn(input);
-    while (idx >= 0) {
-      lines.add(idx + 1);
-      idx = NEWLINE.indexIn(input, idx + 1);
-    }
+    Iterators.addAll(lines, Newlines.lineOffsetIterator(input));
     lines.add(input.length() + 1);
 
     final RangeSet<Integer> characterRanges = TreeRangeSet.create();

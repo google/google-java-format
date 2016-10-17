@@ -26,6 +26,7 @@ import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.CommentsHelper;
 import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Input.Token;
+import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output;
 import java.util.ArrayList;
@@ -118,7 +119,7 @@ public final class JavaOutput extends Output {
         ++newlinesPending;
       }
     }
-    if (text.equals("\n")) {
+    if (Newlines.isNewline(text)) {
       /*
        * Don't update range information, and swallow extra newlines. The case below for '\n' is for
        * block comments.
@@ -137,6 +138,11 @@ public final class JavaOutput extends Output {
           case ' ':
             ++spacesPending;
             break;
+          case '\r':
+            if (i + 1 < text.length() && text.charAt(i + 1) == '\n') {
+              i++;
+            }
+            // falls through
           case '\n':
             spacesPending = 0;
             ++newlinesPending;
