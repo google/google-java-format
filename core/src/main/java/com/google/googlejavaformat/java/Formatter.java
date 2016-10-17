@@ -17,6 +17,7 @@ package com.google.googlejavaformat.java;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -198,12 +199,18 @@ public final class Formatter {
    * @throws FormatterException if the input string cannot be parsed
    */
   public String formatSource(String input) throws FormatterException {
-    return formatSource(input, Collections.singleton(Range.closedOpen(0, input.length())));
+    LineSeparator separator = LineSeparator.detect(input);
+    boolean conversionNeeded = separator != LineSeparator.UNIX;
+    String in = conversionNeeded ? LineSeparator.UNIX.convert(input) : input;
+    String out = formatSource(in, Collections.singleton(Range.closedOpen(0, in.length())));
+    return conversionNeeded ? separator.convert(out) : out;
   }
 
   /**
    * Format an input string (a Java compilation unit), for only the specified character ranges.
    * These ranges are extended as necessary (e.g., to encompass whole lines).
+   *
+   * <p>The expected line separator used in the input string is {@code '\n'}.
    *
    * @param input the input string
    * @param characterRanges the character ranges to be reformatted
@@ -212,6 +219,8 @@ public final class Formatter {
    */
   public String formatSource(String input, Collection<Range<Integer>> characterRanges)
       throws FormatterException {
+    Preconditions.checkArgument(LineSeparator.UNIX.matches(input),
+        "Expected input with Unix-style line separator, but got: " + LineSeparator.detect(input));
     return JavaOutput.applyReplacements(input, getFormatReplacements(input, characterRanges));
   }
 

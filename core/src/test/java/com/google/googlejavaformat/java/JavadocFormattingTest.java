@@ -1273,13 +1273,13 @@ public final class JavadocFormattingTest {
   }
 
   @Test
-  public void windowsLineSeparator() throws FormatterException {
+  public void lineSeparator() throws FormatterException {
     String[] input = {
       "/**", " * hello", " *", " * <p>world", " */", "class Test {}",
     };
-    for (String separator : Arrays.asList("\r", "\r\n")) {
+    for (String separator : Arrays.asList("\r", "\r\n", "\n")) {
       String actual = formatter.formatSource(Joiner.on(separator).join(input));
-      assertThat(actual).isEqualTo(Joiner.on('\n').join(input) + "\n");
+      assertThat(actual).isEqualTo(Joiner.on(separator).join(input) + separator);
     }
   }
 }

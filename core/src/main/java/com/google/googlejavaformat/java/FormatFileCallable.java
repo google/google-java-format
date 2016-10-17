@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat.java;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
@@ -38,14 +39,14 @@ public class FormatFileCallable implements Callable<String> {
 
   @Override
   public String call() throws FormatterException {
-    if (parameters.fixImportsOnly()) {
-      return fixImports(input);
+    LineSeparator separator = LineSeparator.detect(input);
+    boolean conversionNeeded = separator != LineSeparator.UNIX;
+    String in = conversionNeeded ? LineSeparator.UNIX.convert(input, separator) : input;
+    if (!parameters.fixImportsOnly()) {
+      in = new Formatter(options).formatSource(in, characterRanges(in).asRanges());
     }
-
-    String formatted =
-        new Formatter(options).formatSource(input, characterRanges(input).asRanges());
-    formatted = fixImports(formatted);
-    return formatted;
+    String fixed = fixImports(in);
+    return conversionNeeded ? separator.convert(fixed) : fixed;
   }
 
   private String fixImports(String input) throws FormatterException {
@@ -58,6 +59,8 @@ public class FormatFileCallable implements Callable<String> {
     input = ImportOrderer.reorderImports(input);
     return input;
   }
+
+  static final CharMatcher CARRIAGE_RETURN = CharMatcher.is('\r');
 
   private RangeSet<Integer> characterRanges(String input) {
     final RangeSet<Integer> characterRanges = TreeRangeSet.create();
@@ -75,8 +78,17 @@ public class FormatFileCallable implements Callable<String> {
         // 0 stands for "format the line under the cursor"
         length = 1;
       }
-      characterRanges.add(
-          Range.closedOpen(parameters.offsets().get(i), parameters.offsets().get(i) + length));
+      // offset and length values are based on the original input
+      int offset = parameters.offsets().get(i);
+      // TODO Remove following offset and length correction, after CRLF/LF/CR treated the same.
+      // See https://github.com/google/google-java-format/pull/79#issuecomment-252153080
+      if (this.input.length() != input.length()) {
+        assert LineSeparator.detect(this.input) == LineSeparator.WINDOWS;
+        assert LineSeparator.detect(input) == LineSeparator.UNIX;
+        length -= CARRIAGE_RETURN.countIn(this.input.substring(offset, offset + length));
+        offset -= CARRIAGE_RETURN.countIn(this.input.substring(0, offset));
+      }
+      characterRanges.add(Range.closedOpen(offset, offset + length));
     }
 
     return characterRanges;

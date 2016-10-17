@@ -52,6 +52,7 @@ import org.eclipse.jdt.core.dom.Type;
  * Removes unused imports from a source file. Imports that are only used in javadoc are also
  * removed, and the references in javadoc are replaced with fully qualified names.
  */
+@SuppressWarnings("unchecked") // jdt uses raw types extensively
 public class RemoveUnusedImports {
 
   /** Configuration for javadoc-only imports. */
@@ -209,7 +210,7 @@ public class RemoveUnusedImports {
       // delete the import
       int endPosition = importTree.getStartPosition() + importTree.getLength();
       endPosition = Math.max(CharMatcher.isNot(' ').indexIn(contents, endPosition), endPosition);
-      String sep = System.lineSeparator();
+      String sep = "\n"; // don't use System.lineSeparator() - here we're always in Unix-land
       if (endPosition + sep.length() < contents.length()
           && contents.subSequence(endPosition, endPosition + sep.length()).equals(sep)) {
         endPosition += sep.length();
