@@ -47,11 +47,6 @@ import java.util.Map;
  * methods to emit the output document.
  */
 public final class JavaOutput extends Output {
-  /** We merge untouched lines from the input with reformatted lines from the output. */
-  enum From {
-    INPUT,
-    OUTPUT
-  }
 
   private final JavaInput javaInput; // Used to follow along while emitting the output.
   private final CommentsHelper commentsHelper; // Used to re-flow comments.

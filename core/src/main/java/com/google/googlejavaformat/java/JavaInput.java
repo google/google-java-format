@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.compiler.IScanner;
 import org.eclipse.jdt.core.compiler.ITerminalSymbols;
@@ -240,7 +239,6 @@ public final class JavaInput extends Input {
 
   private final String text; // The input.
   private int kN; // The number of numbered toks (tokens or comments), excluding the EOF.
-  private Map<Integer, Range<Integer>> kToI = null; // Map from token indices to line numbers.
 
   /*
    * The following lists record the sequential indices of the {@code Tok}s on each input line. (Only
@@ -516,54 +514,6 @@ public final class JavaInput extends Input {
       tokens.add(new Token(toksBefore.build(), tok, toksAfter.build()));
     }
     return tokens.build();
-  }
-
-  /**
-   * Returns the lowest line number the {@link Token} or one of its {@code tokBefore}s lies on in
-   * the {@code JavaInput}.
-   *
-   * @param token the {@link Token}
-   * @return the {@code 0}-based line number
-   */
-  int getLineNumberLo(Token token) {
-    int k = -1;
-    for (Tok tok : token.toksBefore) {
-      k = tok.getIndex();
-      if (k >= 0) {
-        break;
-      }
-    }
-    if (k < 0) {
-      k = token.tok.getIndex();
-    }
-    if (kToI == null) {
-      kToI = makeKToIJ(this, kN);
-    }
-    return kToI.get(k).lowerEndpoint();
-  }
-
-  /**
-   * Returns the highest line number the {@link Token} or one of its {@code tokAfter}s lies on in
-   * the {@code JavaInput}.
-   *
-   * @param token the {@link Token}
-   * @return the {@code 0}-based line number
-   */
-  int getLineNumberHi(Token token) {
-    int k = -1;
-    for (Tok tok : token.toksAfter.reverse()) {
-      k = tok.getIndex();
-      if (k >= 0) {
-        break;
-      }
-    }
-    if (k < 0) {
-      k = token.tok.getIndex();
-    }
-    if (kToI == null) {
-      kToI = makeKToIJ(this, kN);
-    }
-    return kToI.get(k).upperEndpoint() - 1;
   }
 
   /**
