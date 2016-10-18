@@ -55,6 +55,19 @@ public class Newlines {
     return null;
   }
 
+  /**
+   * Returns the first line separator in the text, or {@code defaultLineSeparator} if the text does
+   * not contain a single line separator.
+   */
+  public static String guessLineSeparator(String text, String defaultLineSeparator) {
+    for (String b : BREAKS) {
+      if (text.contains(b)) {
+        return b;
+      }
+    }
+    return defaultLineSeparator;
+  }
+
   /** Returns true if the input contains any line breaks. */
   public static boolean containsBreaks(String text) {
     return CharMatcher.anyOf("\n\r").matchesAnyOf(text);

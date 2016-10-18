@@ -22,6 +22,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
+import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavaInput.Tok;
 import org.eclipse.jdt.core.compiler.InvalidInputException;
 
@@ -33,7 +34,7 @@ public class ImportOrderer {
    *
    * @throws FormatterException if the input could not be parsed.
    */
-  public static String reorderImports(String text) throws FormatterException {
+  public static String reorderImports(String text, String lineSeparator) throws FormatterException {
     ImmutableList<Tok> toks;
     try {
       toks = JavaInput.buildToks(text, CLASS_START);
@@ -41,7 +42,7 @@ public class ImportOrderer {
       // error handling is done during formatting
       return text;
     }
-    return new ImportOrderer(text, toks).reorderImports();
+    return new ImportOrderer(text, lineSeparator, toks).reorderImports();
   }
 
   /**
@@ -61,9 +62,11 @@ public class ImportOrderer {
 
   private final String text;
   private final ImmutableList<Tok> toks;
+  private final String lineSeparator;
 
-  private ImportOrderer(String text, ImmutableList<Tok> toks) throws FormatterException {
+  private ImportOrderer(String text, String lineSeparator, ImmutableList<Tok> toks) {
     this.text = text;
+    this.lineSeparator = lineSeparator;
     this.toks = toks;
   }
 
@@ -242,7 +245,7 @@ public class ImportOrderer {
     for (Import thisImport : imports) {
       if (lastWasStatic && !thisImport.isStatic) {
         // Blank line between static and non-static imports.
-        sb.append('\n');
+        sb.append(lineSeparator);
       }
       lastWasStatic = thisImport.isStatic;
       sb.append(thisImport);

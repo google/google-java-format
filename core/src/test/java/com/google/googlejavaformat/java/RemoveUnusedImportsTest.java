@@ -302,6 +302,8 @@ public class RemoveUnusedImportsTest {
         },
       },
     };
+    String lineSeparator = System.lineSeparator();
+    Joiner joiner = Joiner.on(lineSeparator);
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[][] inputAndOutput : inputsOutputs) {
       assertThat(inputAndOutput.length).isEqualTo(3);
@@ -309,9 +311,9 @@ public class RemoveUnusedImportsTest {
       String[] output = inputAndOutput[1];
       String[] outputFixJavadoc = inputAndOutput[2];
       String[] parameters = {
-        Joiner.on('\n').join(input) + '\n',
-        Joiner.on('\n').join(output) + '\n',
-        Joiner.on('\n').join(outputFixJavadoc) + '\n',
+        joiner.join(input) + lineSeparator,
+        joiner.join(output) + lineSeparator,
+        joiner.join(outputFixJavadoc) + lineSeparator,
       };
       builder.add(parameters);
     }

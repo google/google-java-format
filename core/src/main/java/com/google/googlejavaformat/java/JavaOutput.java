@@ -47,12 +47,8 @@ import java.util.Map;
  * methods to emit the output document.
  */
 public final class JavaOutput extends Output {
-  /** We merge untouched lines from the input with reformatted lines from the output. */
-  enum From {
-    INPUT,
-    OUTPUT
-  }
 
+  private final String lineSeparator; // Used to separate lines of code.
   private final JavaInput javaInput; // Used to follow along while emitting the output.
   private final CommentsHelper commentsHelper; // Used to re-flow comments.
   private final Map<Integer, BlankLineWanted> blankLines = new HashMap<>(); // Info on blank lines.
@@ -72,7 +68,8 @@ public final class JavaOutput extends Output {
    * @param javaInput the {@link JavaInput}, used to match up blank lines in the output
    * @param commentsHelper the {@link CommentsHelper}, used to rewrite comments
    */
-  public JavaOutput(JavaInput javaInput, CommentsHelper commentsHelper) {
+  public JavaOutput(String lineSeparator, JavaInput javaInput, CommentsHelper commentsHelper) {
+    this.lineSeparator = lineSeparator;
     this.javaInput = javaInput;
     this.commentsHelper = commentsHelper;
     kN = javaInput.getkN();
@@ -261,6 +258,7 @@ public final class JavaOutput extends Output {
       int replaceFrom = startTok.getPosition();
       while (replaceFrom > 0) {
         char previous = javaInput.getText().charAt(replaceFrom - 1);
+        // TODO Break also for '\r' and/or "\r\n"?
         if (previous == '\n') {
           break;
         }
@@ -273,7 +271,7 @@ public final class JavaOutput extends Output {
       }
 
       if (needsBreakBefore) {
-        replacement.append('\n');
+        replacement.append(lineSeparator);
       }
 
       boolean first = true;
@@ -287,12 +285,12 @@ public final class JavaOutput extends Output {
           if (first) {
             first = false;
           } else {
-            replacement.append('\n');
+            replacement.append(lineSeparator);
           }
           replacement.append(getLine(i));
         }
       }
-      replacement.append('\n');
+      replacement.append(lineSeparator);
 
       String trailingLine = i < getLineCount() ? getLine(i) : null;
 
