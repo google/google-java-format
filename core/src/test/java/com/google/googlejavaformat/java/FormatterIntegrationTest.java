@@ -24,6 +24,8 @@ import static org.junit.Assert.fail;
 import com.google.common.io.CharStreams;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ResourceInfo;
+import com.google.googlejavaformat.Newlines;
+import com.google.googlejavaformat.Output;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -104,33 +106,47 @@ public class FormatterIntegrationTest {
     }
   }
 
-  @Test
-  public void idempotent() {
+  private void idempotent(Output.Separator separator) {
+    String source = expected;
+    // mangle line separators, if necessary
+    String target = Newlines.getLineEnding(expected);
+    String replacement = separator.chars(expected);
+    if (!replacement.equals(target)) {
+      source = expected.replace(target, replacement);
+    }
+    JavaFormatterOptions.Builder optionsBuilder = JavaFormatterOptions.builder();
+    optionsBuilder.style(JavaFormatterOptions.Style.GOOGLE);
+    optionsBuilder.outputSeparator(separator);
     try {
-      String output = new Formatter().formatSource(expected);
-      assertEquals("bad output for " + name, expected, output);
+      String output = new Formatter(optionsBuilder.build()).formatSource(source);
+      assertEquals("bad output for " + name + " using " + separator, source, output);
     } catch (FormatterException e) {
       fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
     }
   }
 
   @Test
-  public void cr() throws IOException {
-    try {
-      String output = new Formatter().formatSource(expected.replace('\n', '\r'));
-      assertEquals("bad output for " + name, expected, output);
-    } catch (FormatterException e) {
-      fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
-    }
+  public void idempotentAsIs() {
+    idempotent(Output.Separator.AS_IS);
   }
 
   @Test
-  public void crlf() {
-    try {
-      String output = new Formatter().formatSource(expected.replace("\n", "\r\n"));
-      assertEquals("bad output for " + name, expected, output);
-    } catch (FormatterException e) {
-      fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
-    }
+  public void idempotentDefault() {
+    idempotent(Output.Separator.DEFAULT);
+  }
+
+  @Test
+  public void idempotentMac() {
+    idempotent(Output.Separator.MAC);
+  }
+
+  @Test
+  public void idempotentUnix() {
+    idempotent(Output.Separator.UNIX);
+  }
+
+  @Test
+  public void idempotentWindows() {
+    idempotent(Output.Separator.WINDOWS);
   }
 }

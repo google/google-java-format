@@ -155,6 +155,7 @@ public class MainTest {
   // end to end import fixing test
   @Test
   public void imports() throws Exception {
+    Joiner joiner = Joiner.on(System.lineSeparator());
     String[] input = {
       "import java.util.LinkedList;",
       "import java.util.List;",
@@ -177,11 +178,11 @@ public class MainTest {
         "  public static List<String> names;",
         "}",
       };
-      InputStream in = new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8));
+      InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
       StringWriter out = new StringWriter();
       Main main = new Main(new PrintWriter(out, true), new PrintWriter(System.err, true), in);
       assertThat(main.format("-", "--fix-imports-only")).isEqualTo(0);
-      assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
+      assertThat(out.toString()).isEqualTo(joiner.join(expected));
     }
     {
       String[] expected = {
@@ -191,19 +192,20 @@ public class MainTest {
         "  public static List<String> names;",
         "}",
       };
-      InputStream in = new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8));
+      InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
       StringWriter out = new StringWriter();
       Main main = new Main(new PrintWriter(out, true), new PrintWriter(System.err, true), in);
       assertThat(
               main.format("-", "--fix-imports-only", "--experimental-remove-javadoc-only-imports"))
           .isEqualTo(0);
-      assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
+      assertThat(out.toString()).isEqualTo(joiner.join(expected));
     }
   }
 
   // test that -lines handling works with import removal
   @Test
   public void importRemovalLines() throws Exception {
+    Joiner joiner = Joiner.on(System.lineSeparator());
     String[] input = {
       "import java.util.ArrayList;",
       "import java.util.List;",
@@ -224,9 +226,9 @@ public class MainTest {
         new Main(
             new PrintWriter(out, true),
             new PrintWriter(System.err, true),
-            new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8)));
+            new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
     assertThat(main.format("-", "-lines", "4")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
+    assertThat(out.toString()).isEqualTo(joiner.join(expected));
   }
 
   // test that errors are reported on the right line when imports are removed

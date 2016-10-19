@@ -21,6 +21,52 @@ import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 
 /** An output from the formatter. */
 public abstract class Output extends InputOutput {
+
+  /** Newline mode used by output. */
+  public enum Separator {
+    /**
+     * Line separator used by input.
+     */
+    AS_IS(null),
+
+    /**
+     * System default separator.
+     *
+     * @see System#lineSeparator()
+     */
+    DEFAULT(System.lineSeparator()),
+
+    /**
+     * Legacy Mac OS line separator: CR or as a String {@code "\r"}.
+     */
+    MAC("\r"),
+
+    /**
+     * Unix/Linux line separator: LF or as a String {@code "\n"}.
+     */
+    UNIX("\n"),
+
+    /**
+     * Windows line separator: CRLF or as String {@code "\r\n"}.
+     */
+    WINDOWS("\r\n");
+
+    private final String chars;
+
+    Separator(String chars) {
+      this.chars = chars;
+    }
+
+    /** Returns line separator char(s) to use. */
+    public String chars(String inputText) {
+      if (chars != null) {
+        return chars;
+      }
+      assert this == AS_IS;
+      return Newlines.guessLineSeparator(inputText, UNIX.chars);
+    }
+  }
+
   /** Unique identifier for a break. */
   public static final class BreakTag {
 

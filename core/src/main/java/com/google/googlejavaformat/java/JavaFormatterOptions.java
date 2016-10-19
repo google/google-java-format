@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import com.google.errorprone.annotations.Immutable;
+import com.google.googlejavaformat.Output;
 
 /**
  * Options for a google-java-format invocation.
@@ -29,7 +30,9 @@ import com.google.errorprone.annotations.Immutable;
 @Immutable
 public class JavaFormatterOptions {
 
-  static final int DEFAULT_MAX_LINE_LENGTH = 100;
+  private static final int DEFAULT_MAX_LINE_LENGTH = 100;
+  private static final Style DEFAULT_STYLE = Style.GOOGLE;
+  private static final Output.Separator DEFAULT_OUTPUT_SEPARATOR = Output.Separator.AS_IS;
 
   public enum Style {
 
@@ -51,9 +54,11 @@ public class JavaFormatterOptions {
   }
 
   private final Style style;
+  private final Output.Separator outputSeparator;
 
-  private JavaFormatterOptions(Style style) {
-    this.style = style;
+  private JavaFormatterOptions(Builder builder) {
+    this.style = builder.style;
+    this.outputSeparator = builder.outputSeparator;
   }
 
   /** Returns the maximum formatted width */
@@ -64,6 +69,11 @@ public class JavaFormatterOptions {
   /** Returns the multiplier for the unit of indent */
   public int indentationMultiplier() {
     return style.indentationMultiplier();
+  }
+
+  /** Returns the line separator to use in output */
+  public Output.Separator outputSeparator() {
+    return outputSeparator;
   }
 
   /** Returns the default formatting options. */
@@ -78,7 +88,8 @@ public class JavaFormatterOptions {
 
   /** A builder for {@link JavaFormatterOptions}. */
   public static class Builder {
-    private Style style = Style.GOOGLE;
+    private Style style = DEFAULT_STYLE;
+    private Output.Separator outputSeparator = DEFAULT_OUTPUT_SEPARATOR;
 
     private Builder() {}
 
@@ -87,8 +98,13 @@ public class JavaFormatterOptions {
       return this;
     }
 
+    public Builder outputSeparator(Output.Separator outputSeparator) {
+      this.outputSeparator = outputSeparator;
+      return this;
+    }
+
     public JavaFormatterOptions build() {
-      return new JavaFormatterOptions(style);
+      return new JavaFormatterOptions(this);
     }
   }
 }

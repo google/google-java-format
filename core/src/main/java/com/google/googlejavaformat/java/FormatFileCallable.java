@@ -55,7 +55,7 @@ public class FormatFileCallable implements Callable<String> {
             parameters.removeJavadocOnlyImports()
                 ? JavadocOnlyImports.REMOVE
                 : JavadocOnlyImports.KEEP);
-    input = ImportOrderer.reorderImports(input);
+    input = ImportOrderer.reorderImports(input, options.outputSeparator().chars(input));
     return input;
   }
 
