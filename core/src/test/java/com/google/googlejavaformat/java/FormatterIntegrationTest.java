@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import com.google.common.io.CharStreams;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ResourceInfo;
+import com.google.googlejavaformat.Newlines;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -87,11 +88,13 @@ public class FormatterIntegrationTest {
   private final String name;
   private final String input;
   private final String expected;
+  private final String separator;
 
   public FormatterIntegrationTest(String name, String input, String expected) {
     this.name = name;
     this.input = input;
     this.expected = expected;
+    this.separator = Newlines.getLineEnding(expected);
   }
 
   @Test
@@ -105,30 +108,33 @@ public class FormatterIntegrationTest {
   }
 
   @Test
-  public void idempotent() {
+  public void idempotentLF() {
     try {
-      String output = new Formatter().formatSource(expected);
-      assertEquals("bad output for " + name, expected, output);
+      String mangled = expected.replace(separator, "\n");
+      String output = new Formatter().formatSource(mangled);
+      assertEquals("bad output for " + name, mangled, output);
     } catch (FormatterException e) {
       fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
     }
   }
 
   @Test
-  public void cr() throws IOException {
+  public void idempotentCR() throws IOException {
     try {
-      String output = new Formatter().formatSource(expected.replace('\n', '\r'));
-      assertEquals("bad output for " + name, expected, output);
+      String mangled = expected.replace(separator, "\r");
+      String output = new Formatter().formatSource(mangled);
+      assertEquals("bad output for " + name, mangled, output);
     } catch (FormatterException e) {
       fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
     }
   }
 
   @Test
-  public void crlf() {
+  public void idempotentCRLF() {
     try {
-      String output = new Formatter().formatSource(expected.replace("\n", "\r\n"));
-      assertEquals("bad output for " + name, expected, output);
+      String mangled = expected.replace(separator, "\r\n");
+      String output = new Formatter().formatSource(mangled);
+      assertEquals("bad output for " + name, mangled, output);
     } catch (FormatterException e) {
       fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
     }

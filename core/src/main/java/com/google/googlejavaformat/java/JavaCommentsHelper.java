@@ -28,8 +28,10 @@ import java.util.List;
 public final class JavaCommentsHelper implements CommentsHelper {
 
   private final JavaFormatterOptions options;
+  private final String lineSeparator;
 
-  public JavaCommentsHelper(JavaFormatterOptions options) {
+  public JavaCommentsHelper(String lineSeparator, JavaFormatterOptions options) {
+    this.lineSeparator = lineSeparator;
     this.options = options;
   }
 
@@ -58,7 +60,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
 
   // For non-javadoc-shaped block comments, shift the entire block to the correct
   // column, but do not adjust relative indentation.
-  private static String preserveIndentation(List<String> lines, int column0) {
+  private String preserveIndentation(List<String> lines, int column0) {
     StringBuilder builder = new StringBuilder();
 
     // find the leftmost non-whitespace character in all trailing lines
@@ -75,7 +77,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
 
     // output all trailing lines with plausible indentation
     for (int i = 1; i < lines.size(); ++i) {
-      builder.append("\n").append(Strings.repeat(" ", column0));
+      builder.append(lineSeparator).append(Strings.repeat(" ", column0));
       // check that startCol is valid index, e.g. for blank lines
       if (lines.get(i).length() >= startCol) {
         builder.append(lines.get(i).substring(startCol));
@@ -87,25 +89,25 @@ public final class JavaCommentsHelper implements CommentsHelper {
   }
 
   // Remove leading and trailing whitespace, and re-indent each line.
-  private static String indentLineComments(List<String> lines, int column0) {
+  private String indentLineComments(List<String> lines, int column0) {
     StringBuilder builder = new StringBuilder();
     builder.append(lines.get(0).trim());
     String indentString = Strings.repeat(" ", column0);
     for (int i = 1; i < lines.size(); ++i) {
-      builder.append("\n").append(indentString).append(lines.get(i).trim());
+      builder.append(lineSeparator).append(indentString).append(lines.get(i).trim());
     }
     return builder.toString();
   }
 
   // Remove leading and trailing whitespace, and re-indent each line.
   // Add a +1 indent before '*', and add the '*' if necessary.
-  private static String indentJavadoc(List<String> lines, int column0) {
+  private String indentJavadoc(List<String> lines, int column0) {
     StringBuilder builder = new StringBuilder();
     builder.append(lines.get(0).trim());
     int indent = column0 + 1;
     String indentString = Strings.repeat(" ", indent);
     for (int i = 1; i < lines.size(); ++i) {
-      builder.append("\n").append(indentString);
+      builder.append(lineSeparator).append(indentString);
       String line = lines.get(i).trim();
       if (!line.startsWith("*")) {
         builder.append("* ");

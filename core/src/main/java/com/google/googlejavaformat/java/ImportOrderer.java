@@ -22,6 +22,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
+import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavaInput.Tok;
 import org.eclipse.jdt.core.compiler.InvalidInputException;
 
@@ -61,10 +62,12 @@ public class ImportOrderer {
 
   private final String text;
   private final ImmutableList<Tok> toks;
+  private final String lineSeparator;
 
   private ImportOrderer(String text, ImmutableList<Tok> toks) throws FormatterException {
     this.text = text;
     this.toks = toks;
+    this.lineSeparator = Newlines.guessLineSeparator(text);
   }
 
   /** An import statement. */
@@ -242,7 +245,7 @@ public class ImportOrderer {
     for (Import thisImport : imports) {
       if (lastWasStatic && !thisImport.isStatic) {
         // Blank line between static and non-static imports.
-        sb.append('\n');
+        sb.append(lineSeparator);
       }
       lastWasStatic = thisImport.isStatic;
       sb.append(thisImport);

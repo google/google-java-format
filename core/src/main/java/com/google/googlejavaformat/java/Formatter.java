@@ -232,8 +232,10 @@ public final class Formatter {
     // 'de-linting' changes (e.g. import ordering).
     input = ModifierOrderer.reorderModifiers(input, characterRanges);
 
+    String lineSeparator = Newlines.guessLineSeparator(input);
     JavaInput javaInput = new JavaInput(input);
-    JavaOutput javaOutput = new JavaOutput(javaInput, new JavaCommentsHelper(options));
+    JavaOutput javaOutput =
+        new JavaOutput(lineSeparator, javaInput, new JavaCommentsHelper(lineSeparator, options));
     try {
       format(javaInput, javaOutput, options);
     } catch (FormattingError e) {

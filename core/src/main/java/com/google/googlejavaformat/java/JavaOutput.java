@@ -47,7 +47,7 @@ import java.util.Map;
  * methods to emit the output document.
  */
 public final class JavaOutput extends Output {
-
+  private final String lineSeparator;
   private final JavaInput javaInput; // Used to follow along while emitting the output.
   private final CommentsHelper commentsHelper; // Used to re-flow comments.
   private final Map<Integer, BlankLineWanted> blankLines = new HashMap<>(); // Info on blank lines.
@@ -67,7 +67,8 @@ public final class JavaOutput extends Output {
    * @param javaInput the {@link JavaInput}, used to match up blank lines in the output
    * @param commentsHelper the {@link CommentsHelper}, used to rewrite comments
    */
-  public JavaOutput(JavaInput javaInput, CommentsHelper commentsHelper) {
+  public JavaOutput(String lineSeparator, JavaInput javaInput, CommentsHelper commentsHelper) {
+    this.lineSeparator = lineSeparator;
     this.javaInput = javaInput;
     this.commentsHelper = commentsHelper;
     kN = javaInput.getkN();
@@ -256,7 +257,7 @@ public final class JavaOutput extends Output {
       int replaceFrom = startTok.getPosition();
       while (replaceFrom > 0) {
         char previous = javaInput.getText().charAt(replaceFrom - 1);
-        if (previous == '\n') {
+        if (previous == '\n' || previous == '\r') {
           break;
         }
         if (CharMatcher.whitespace().matches(previous)) {
@@ -268,7 +269,7 @@ public final class JavaOutput extends Output {
       }
 
       if (needsBreakBefore) {
-        replacement.append('\n');
+        replacement.append(lineSeparator);
       }
 
       boolean first = true;
@@ -282,12 +283,12 @@ public final class JavaOutput extends Output {
           if (first) {
             first = false;
           } else {
-            replacement.append('\n');
+            replacement.append(lineSeparator);
           }
           replacement.append(getLine(i));
         }
       }
-      replacement.append('\n');
+      replacement.append(lineSeparator);
 
       String trailingLine = i < getLineCount() ? getLine(i) : null;
 
@@ -305,12 +306,22 @@ public final class JavaOutput extends Output {
       // the next line after the reformatted range). However, if the partial
       // formatting range doesn't end in a newline, then break and re-indent.
       boolean reIndent = true;
+      OUTER:
       while (replaceTo < javaInput.getText().length()) {
         char endChar = javaInput.getText().charAt(replaceTo);
-        if (endChar == '\n') {
-          reIndent = false;
-          replaceTo++;
-          break;
+        switch (endChar) {
+          case '\r':
+            if (replaceTo + 1 < javaInput.getText().length()
+                && javaInput.getText().charAt(replaceTo + 1) == '\n') {
+              replaceTo++;
+            }
+            // falls through
+          case '\n':
+            replaceTo++;
+            reIndent = false;
+            break OUTER;
+          default:
+            break;
         }
         if (CharMatcher.whitespace().matches(endChar)) {
           replaceTo++;

@@ -33,15 +33,25 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 /** Tests formatting parts of files. */
-@RunWith(JUnit4.class)
+@RunWith(Parameterized.class)
 public final class PartialFormattingTest {
+
+  @Parameters
+  public static Iterable<Object[]> parameters() {
+    return ImmutableList.copyOf(new Object[][] {{"\n"}, {"\r"}, {"\r\n"}});
+  }
 
   @Rule public TemporaryFolder testFolder = new TemporaryFolder();
 
-  String newline = "\n";
+  private final String newline;
+
+  public PartialFormattingTest(String newline) {
+    this.newline = newline;
+  }
 
   String lines(String... args) {
     return Joiner.on(newline).join(args);
@@ -65,7 +75,8 @@ public final class PartialFormattingTest {
             /* line 2 character 25 */ "}",
             "");
     // Claim to have modified the parentheses.
-    String output = doGetFormatReplacements(input, 18, 19);
+    int start = input.indexOf("() {");
+    String output = doGetFormatReplacements(input, start, start + 1);
     assertEquals("bad output", expectedOutput, output);
   }
 
@@ -207,12 +218,16 @@ public final class PartialFormattingTest {
 
   @Test
   public void insertLeadingNewlines() throws Exception {
-    String input = "class Test { int xxx = 1; int yyy = 1; int zzz = 1; }";
+    String input =
+        lines(
+            "class Test { int xxx = 1; int yyy = 1; int zzz = 1; }", //
+            "");
     String expectedOutput =
         lines(
             "class Test { int xxx = 1;", //
             "  int yyy = 1;",
-            "  int zzz = 1; }");
+            "  int zzz = 1; }",
+            "");
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertEquals("bad output", expectedOutput, output);
@@ -640,8 +655,10 @@ public final class PartialFormattingTest {
             /* line 4 character 25 */ "}",
             "");
     // Claim to have modified the parentheses.
+    int start = input.indexOf("() {");
     ImmutableList<Replacement> ranges =
-        new Formatter().getFormatReplacements(input, ImmutableList.of(Range.closedOpen(18, 19)));
+        new Formatter()
+            .getFormatReplacements(input, ImmutableList.of(Range.closedOpen(start, start + 1)));
     assertThat(ranges).hasSize(1);
     Replacement replacement = ranges.get(0);
     assertThat(replacement.getReplacementString())
@@ -649,7 +666,8 @@ public final class PartialFormattingTest {
             lines(
                 "  void f() {}", //
                 ""));
-    assertThat(replacement.getReplaceRange()).isEqualTo(Range.closedOpen(11, 25));
+    int replaceFrom = input.indexOf("void f");
+    assertThat(replacement.getReplaceRange().lowerEndpoint()).isEqualTo(replaceFrom);
   }
 
   @Test
@@ -1005,7 +1023,9 @@ public final class PartialFormattingTest {
             "  }",
             "}",
             "");
-    ImmutableList<Range<Integer>> ranges = ImmutableList.of(Range.closedOpen(45, 48));
+    int start = input.indexOf(newline + "}}");
+    ImmutableList<Range<Integer>> ranges =
+        ImmutableList.of(Range.closedOpen(start, start + newline.length() + 2));
     String output = new Formatter().formatSource(input, ranges);
     assertEquals("bad output", expected, output);
   }
@@ -1342,14 +1362,14 @@ public final class PartialFormattingTest {
     int nonWhitespaceLine2Start = input.indexOf("System.err");
     int start;
     // formatting a range that touches non-whitespace characters in line2 should format line2
-    for (start = nonWhitespaceLine2Start; start >= line2Start; start--) {
-      Range<Integer> range = Range.closedOpen(start, nonWhitespaceLine2Start + 1);
+    for (start = nonWhitespaceLine2Start; start > (line2Start - newline.length()); start--) {
+      Range<Integer> range = Range.closedOpen(start, nonWhitespaceLine2Start + newline.length());
       String output = new Formatter().formatSource(input, ImmutableList.of(range));
       assertThat(output).isEqualTo(expectedFormatLine2);
     }
     // formatting a range that touches whitespace characters between line1 and line2 should
     // not result in any formatting
-    assertThat(input.charAt(start)).isEqualTo('\n');
+    assertThat(input.substring(start, start + newline.length())).isEqualTo(newline);
     int line1End = input.indexOf(line1) + line1.length();
     for (; start >= line1End; start--) {
       Range<Integer> range = Range.closedOpen(start, line2Start);
@@ -1357,7 +1377,7 @@ public final class PartialFormattingTest {
       assertThat(output).isEqualTo(input);
     }
     // formatting a range that touches non-whitespace characters in line1 should format line1
-    assertThat(input.charAt(start + 1)).isEqualTo('\n');
+    assertThat(input.substring(start + 1, start + 1 + newline.length())).isEqualTo(newline);
     int line1Start = input.indexOf(line1);
     for (; start >= line1Start; start--) {
       Range<Integer> range = Range.closedOpen(start, line2Start);
@@ -1467,12 +1487,13 @@ public final class PartialFormattingTest {
     };
     String in = lines(input);
     // request partial formatting of the end of the first parameter
-    assertThat(in.substring(44, 45)).isEqualTo(",");
+    int start = in.indexOf(lines(",", "      int ccccccccccccc"));
+    assertThat(in.substring(start, start + 1)).isEqualTo(",");
 
-    assertThat(new Formatter().formatSource(in, ImmutableList.of(Range.closedOpen(44, 44))))
+    assertThat(new Formatter().formatSource(in, ImmutableList.of(Range.closedOpen(start, start))))
         .isEqualTo(lines(expected));
 
-    assertThat(formatMain(lines(input), "-offset", "44", "-length", "0"))
+    assertThat(formatMain(lines(input), "-offset", String.valueOf(start), "-length", "0"))
         .isEqualTo(lines(expected));
   }
 
@@ -1526,4 +1547,3 @@ public final class PartialFormattingTest {
         .isEqualTo(in);
   }
 }
-
