@@ -30,23 +30,15 @@ import static com.google.googlejavaformat.java.Trees.operatorName;
 import static com.google.googlejavaformat.java.Trees.precedence;
 import static com.google.googlejavaformat.java.Trees.skipParen;
 import static com.sun.source.tree.Tree.Kind.ANNOTATION;
-import static com.sun.source.tree.Tree.Kind.ANNOTATION_TYPE;
+import static com.sun.source.tree.Tree.Kind.ARRAY_ACCESS;
 import static com.sun.source.tree.Tree.Kind.ASSIGNMENT;
 import static com.sun.source.tree.Tree.Kind.BLOCK;
-import static com.sun.source.tree.Tree.Kind.CLASS;
-import static com.sun.source.tree.Tree.Kind.ENUM;
 import static com.sun.source.tree.Tree.Kind.EXTENDS_WILDCARD;
-import static com.sun.source.tree.Tree.Kind.IDENTIFIER;
 import static com.sun.source.tree.Tree.Kind.IF;
-import static com.sun.source.tree.Tree.Kind.INTERFACE;
-import static com.sun.source.tree.Tree.Kind.MEMBER_SELECT;
 import static com.sun.source.tree.Tree.Kind.METHOD_INVOCATION;
 import static com.sun.source.tree.Tree.Kind.NEW_ARRAY;
 import static com.sun.source.tree.Tree.Kind.NEW_CLASS;
-import static com.sun.source.tree.Tree.Kind.PLUS;
 import static com.sun.source.tree.Tree.Kind.STRING_LITERAL;
-import static com.sun.source.tree.Tree.Kind.UNARY_MINUS;
-import static com.sun.source.tree.Tree.Kind.UNARY_PLUS;
 import static com.sun.source.tree.Tree.Kind.UNION_TYPE;
 import static com.sun.source.tree.Tree.Kind.VARIABLE;
 
@@ -419,26 +411,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   @Override
   public Void visitArrayAccess(ArrayAccessTree node, Void unused) {
     sync(node);
-    builder.open(plusFour);
-    // Collapse chains of ArrayAccess nodes.
-    ArrayDeque<ExpressionTree> stack = new ArrayDeque<>();
-    ExpressionTree array;
-    while (true) {
-      stack.addLast(node.getIndex());
-      array = node.getExpression();
-      if (!(array instanceof ArrayAccessTree)) {
-        break;
-      }
-      node = (ArrayAccessTree) array;
-    }
-    scan(array, null);
-    do {
-      token("[");
-      builder.breakToFill();
-      scan(stack.removeLast(), null);
-      token("]");
-    } while (!stack.isEmpty());
-    builder.close();
+    visitDot(node);
     return null;
   }
 
@@ -452,10 +425,9 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       TypeWithDims extractedDims = DimensionHelpers.extractDims(node.getType(), SortedDims.YES);
       Tree base = extractedDims.node;
 
-      ArrayDeque<ExpressionTree> dimExpressions =
-          new ArrayDeque<ExpressionTree>(node.getDimensions());
+      Deque<ExpressionTree> dimExpressions = new ArrayDeque<ExpressionTree>(node.getDimensions());
 
-      ArrayDeque<List<AnnotationTree>> annotations = new ArrayDeque<>();
+      Deque<List<AnnotationTree>> annotations = new ArrayDeque<>();
       annotations.addAll((List<List<AnnotationTree>>) node.getDimAnnotations());
       annotations.addAll(extractedDims.dims);
 
@@ -578,7 +550,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     TypeWithDims extractedDims = DimensionHelpers.extractDims(node, SortedDims.YES);
     builder.open(plusFour);
     scan(extractedDims.node, null);
-    ArrayDeque<List<AnnotationTree>> dims = new ArrayDeque<>(extractedDims.dims);
+    Deque<List<AnnotationTree>> dims = new ArrayDeque<>(extractedDims.dims);
     maybeAddDims(dims);
     Verify.verify(dims.isEmpty());
     builder.close();
@@ -1315,7 +1287,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             node.getModifiers(), annotations, Direction.VERTICAL, Optional.<BreakTag>absent()));
 
     Tree baseReturnType = null;
-    ArrayDeque<List<AnnotationTree>> dims = null;
+    Deque<List<AnnotationTree>> dims = null;
     if (node.getReturnType() != null) {
       TypeWithDims extractedDims =
           DimensionHelpers.extractDims(node.getReturnType(), SortedDims.YES);
@@ -2303,7 +2275,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   /** Helper method for import declarations, names, and qualified names. */
   private void visitName(Tree node, BreakOrNot breaks) {
-    ArrayDeque<Name> stack = new ArrayDeque<>();
+    Deque<Name> stack = new ArrayDeque<>();
     for (; node instanceof MemberSelectTree; node = ((MemberSelectTree) node).getExpression()) {
       stack.addFirst(((MemberSelectTree) node).getIdentifier());
     }
@@ -2375,10 +2347,13 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
     // collect a flattened list of "."-separated items
     // e.g. ImmutableList.builder().add(1).build() -> [ImmutableList, builder(), add(1), build()]
-    ArrayDeque<ExpressionTree> stack = new ArrayDeque<>();
+    Deque<ExpressionTree> stack = new ArrayDeque<>();
     LOOP:
     do {
       stack.addFirst(node);
+      if (node.getKind() == ARRAY_ACCESS) {
+        node = getArrayBase(node);
+      }
       switch (node.getKind()) {
         case MEMBER_SELECT:
           node = ((MemberSelectTree) node).getExpression();
@@ -2393,7 +2368,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           // If the dot chain starts with a primary expression
           // (e.g. a class instance creation, or a conditional expression)
           // then remove it from the list and deal with it first.
-          stack.removeFirst();
+          node = stack.removeFirst();
           break LOOP;
       }
     } while (node != null);
@@ -2408,13 +2383,18 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       // break and indent after the trailing '}'.
       if (node.getKind() == NEW_CLASS && ((NewClassTree) node).getClassBody() != null) {
         builder.open(ZERO);
-        scan(node, null);
+        scan(getArrayBase(node), null);
         token(".");
       } else {
         builder.open(plusFour);
-        scan(node, null);
+        scan(getArrayBase(node), null);
         builder.breakOp();
         needDot = true;
+      }
+      formatArrayIndices(getArrayIndices(node));
+      if (stack.isEmpty()) {
+        builder.close();
+        return;
       }
     }
 
@@ -2611,10 +2591,12 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   }
 
   /** Returns the simple names of expressions in a "." chain. */
-  private List<String> simpleNames(ArrayDeque<ExpressionTree> stack) {
+  private List<String> simpleNames(Deque<ExpressionTree> stack) {
     ImmutableList.Builder<String> simpleNames = ImmutableList.builder();
     OUTER:
     for (ExpressionTree expression : stack) {
+      boolean isArray = expression.getKind() == ARRAY_ACCESS;
+      expression = getArrayBase(expression);
       switch (expression.getKind()) {
         case MEMBER_SELECT:
           simpleNames.add(((MemberSelectTree) expression).getIdentifier().toString());
@@ -2628,11 +2610,15 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         default:
           break OUTER;
       }
+      if (isArray) {
+        break OUTER;
+      }
     }
     return simpleNames.build();
   }
 
   private void dotExpressionUpToArgs(ExpressionTree expression, Optional<BreakTag> tyargTag) {
+    expression = getArrayBase(expression);
     switch (expression.getKind()) {
       case MEMBER_SELECT:
         MemberSelectTree fieldAccess = (MemberSelectTree) expression;
@@ -2658,6 +2644,17 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
+  /**
+   * Returns the base expression of an erray access, e.g. given {@code foo[0][0]} returns {@code
+   * foo}.
+   */
+  private ExpressionTree getArrayBase(ExpressionTree node) {
+    while (node instanceof ArrayAccessTree) {
+      node = ((ArrayAccessTree) node).getExpression();
+    }
+    return node;
+  }
+
   private ExpressionTree getMethodReceiver(MethodInvocationTree methodInvocation) {
     ExpressionTree select = methodInvocation.getMethodSelect();
     return select instanceof MemberSelectTree ? ((MemberSelectTree) select).getExpression() : null;
@@ -2665,6 +2662,8 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   private void dotExpressionArgsAndParen(
       ExpressionTree expression, Indent tyargIndent, Indent indent) {
+    Deque<ExpressionTree> indices = getArrayIndices(expression);
+    expression = getArrayBase(expression);
     switch (expression.getKind()) {
       case METHOD_INVOCATION:
         builder.open(tyargIndent);
@@ -2675,6 +2674,36 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       default:
         break;
     }
+    formatArrayIndices(indices);
+  }
+
+  /** Lays out one or more array indices. Does not output the expression for the array itself. */
+  private void formatArrayIndices(Deque<ExpressionTree> indices) {
+    if (indices.isEmpty()) {
+      return;
+    }
+    builder.open(ZERO);
+    do {
+      token("[");
+      builder.breakToFill();
+      scan(indices.removeLast(), null);
+      token("]");
+    } while (!indices.isEmpty());
+    builder.close();
+  }
+
+  /**
+   * Returns all array indices for the given expression, e.g. given {@code foo[0][0]} returns the
+   * expressions for {@code [0][0]}.
+   */
+  private Deque<ExpressionTree> getArrayIndices(ExpressionTree expression) {
+    Deque<ExpressionTree> indices = new ArrayDeque<>();
+    while (expression instanceof ArrayAccessTree) {
+      ArrayAccessTree array = (ArrayAccessTree) expression;
+      indices.addLast(array.getIndex());
+      expression = array.getExpression();
+    }
+    return indices;
   }
 
   /** Helper methods for method invocations. */
@@ -2940,7 +2969,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
     }
 
-    ArrayDeque<List<AnnotationTree>> dims =
+    Deque<List<AnnotationTree>> dims =
         new ArrayDeque<>(
             typeWithDims.isPresent()
                 ? typeWithDims.get().dims
@@ -3033,7 +3062,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return baseDims;
   }
 
-  private void maybeAddDims(ArrayDeque<List<AnnotationTree>> annotations) {
+  private void maybeAddDims(Deque<List<AnnotationTree>> annotations) {
     maybeAddDims(new ArrayDeque<ExpressionTree>(), annotations);
   }
 
@@ -3050,7 +3079,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    *     [[@A, @B], [@C]]} for {@code int @A [] @B @C []}
    */
   private void maybeAddDims(
-      ArrayDeque<ExpressionTree> dimExpressions, ArrayDeque<List<AnnotationTree>> annotations) {
+      Deque<ExpressionTree> dimExpressions, Deque<List<AnnotationTree>> annotations) {
     boolean lastWasAnnotation = false;
     while (builder.peekToken().isPresent()) {
       switch (builder.peekToken().get()) {
@@ -3095,7 +3124,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.open(plusFour);
     builder.open(ZERO);
     TypeWithDims extractedDims = DimensionHelpers.extractDims(type, SortedDims.YES);
-    ArrayDeque<List<AnnotationTree>> dims = new ArrayDeque<>(extractedDims.dims);
+    Deque<List<AnnotationTree>> dims = new ArrayDeque<>(extractedDims.dims);
     scan(extractedDims.node, null);
     int baseDims = dims.size();
     maybeAddDims(dims);
