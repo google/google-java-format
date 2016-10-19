@@ -25,6 +25,7 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
+import com.google.googlejavaformat.Newlines;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -209,7 +210,7 @@ public class RemoveUnusedImports {
       // delete the import
       int endPosition = importTree.getStartPosition() + importTree.getLength();
       endPosition = Math.max(CharMatcher.isNot(' ').indexIn(contents, endPosition), endPosition);
-      String sep = System.lineSeparator();
+      String sep = Newlines.guessLineSeparator(contents);
       if (endPosition + sep.length() < contents.length()
           && contents.subSequence(endPosition, endPosition + sep.length()).equals(sep)) {
         endPosition += sep.length();

@@ -42,6 +42,9 @@ public class MainTest {
 
   @Rule public TemporaryFolder testFolder = new TemporaryFolder();
 
+  // PrintWriter instances used below are hard-coded to use system-default line separator.
+  private final Joiner joiner = Joiner.on(System.lineSeparator());
+
   @Test
   public void testUsageOutput() {
     StringWriter out = new StringWriter();
@@ -145,11 +148,11 @@ public class MainTest {
       "}",
       "",
     };
-    InputStream in = new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8));
+    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
     StringWriter out = new StringWriter();
     Main main = new Main(new PrintWriter(out, true), new PrintWriter(System.err, true), in);
     assertThat(main.format("-")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
+    assertThat(out.toString()).isEqualTo(joiner.join(expected));
   }
 
   // end to end import fixing test
@@ -177,11 +180,11 @@ public class MainTest {
         "  public static List<String> names;",
         "}",
       };
-      InputStream in = new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8));
+      InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
       StringWriter out = new StringWriter();
       Main main = new Main(new PrintWriter(out, true), new PrintWriter(System.err, true), in);
       assertThat(main.format("-", "--fix-imports-only")).isEqualTo(0);
-      assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
+      assertThat(out.toString()).isEqualTo(joiner.join(expected));
     }
     {
       String[] expected = {
@@ -191,13 +194,13 @@ public class MainTest {
         "  public static List<String> names;",
         "}",
       };
-      InputStream in = new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8));
+      InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
       StringWriter out = new StringWriter();
       Main main = new Main(new PrintWriter(out, true), new PrintWriter(System.err, true), in);
       assertThat(
               main.format("-", "--fix-imports-only", "--experimental-remove-javadoc-only-imports"))
           .isEqualTo(0);
-      assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
+      assertThat(out.toString()).isEqualTo(joiner.join(expected));
     }
   }
 
@@ -224,9 +227,9 @@ public class MainTest {
         new Main(
             new PrintWriter(out, true),
             new PrintWriter(System.err, true),
-            new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8)));
+            new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
     assertThat(main.format("-", "-lines", "4")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(Joiner.on('\n').join(expected));
+    assertThat(out.toString()).isEqualTo(joiner.join(expected));
   }
 
   // test that errors are reported on the right line when imports are removed
@@ -244,7 +247,7 @@ public class MainTest {
         new Main(
             new PrintWriter(out, true),
             new PrintWriter(err, true),
-            new ByteArrayInputStream(Joiner.on('\n').join(input).getBytes(UTF_8)));
+            new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
     assertThat(main.format("-")).isEqualTo(1);
     assertThat(err.toString()).contains("<stdin>:4:3: error: class, interface, or enum expected");
   }
