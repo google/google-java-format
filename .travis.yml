@@ -3,7 +3,7 @@ language: java
 notifications:
   email:
     recipients:
-      - google-java-format-dev+travis@google.com
+      - google-java-format-dev+ci@google.com
     on_success: change
     on_failure: always
 
