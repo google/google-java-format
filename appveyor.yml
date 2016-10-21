@@ -9,7 +9,7 @@ install:
         )
         [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\maven-bin.zip", "C:\maven")
       }
-  - cmd: SET PATH=C:\maven\apache-maven-3.3.9\bin;%JAVA_HOME%\bin;%PATH
+  - cmd: SET PATH=C:\maven\apache-maven-3.3.9\bin;%JAVA_HOME%\bin;%PATH%
   - cmd: SET MAVEN_OPTS=-XX:MaxPermSize=2g -Xmx4g
   - cmd: SET JAVA_OPTS=-XX:MaxPermSize=2g -Xmx4g
 
@@ -24,8 +24,8 @@ cache:
   - C:\Users\appveyor\.m2
 
 notifications:
-  # Email
   - provider: Email
     to:
       - google-java-format-dev+ci@google.com
+    on_build_failure: true
     on_build_status_changed: true
