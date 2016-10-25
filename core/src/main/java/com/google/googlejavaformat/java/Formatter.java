@@ -91,7 +91,7 @@ public final class Formatter {
 
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
 
-  private static final Predicate<Diagnostic<?>> ERROR_DIAGNOSTIC =
+  static final Predicate<Diagnostic<?>> ERROR_DIAGNOSTIC =
       new Predicate<Diagnostic<?>>() {
         @Override
         public boolean apply(Diagnostic<?> input) {

@@ -16,8 +16,11 @@
 
 package com.google.googlejavaformat.java;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
@@ -25,29 +28,43 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
+import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Newlines;
+import com.sun.source.doctree.DocCommentTree;
+import com.sun.source.doctree.ReferenceTree;
+import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.ImportTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.util.DocTreePath;
+import com.sun.source.util.DocTreePathScanner;
+import com.sun.source.util.TreePathScanner;
+import com.sun.source.util.TreeScanner;
+import com.sun.tools.javac.api.JavacTrees;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.parser.JavacParser;
+import com.sun.tools.javac.parser.ParserFactory;
+import com.sun.tools.javac.tree.DCTree;
+import com.sun.tools.javac.tree.DCTree.DCReference;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
+import com.sun.tools.javac.tree.JCTree.JCIdent;
+import com.sun.tools.javac.tree.JCTree.JCImport;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Options;
+import java.io.IOError;
+import java.io.IOException;
+import java.net.URI;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTParser;
-import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.ArrayType;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.ImportDeclaration;
-import org.eclipse.jdt.core.dom.Javadoc;
-import org.eclipse.jdt.core.dom.MemberRef;
-import org.eclipse.jdt.core.dom.MethodRef;
-import org.eclipse.jdt.core.dom.MethodRefParameter;
-import org.eclipse.jdt.core.dom.Name;
-import org.eclipse.jdt.core.dom.QualifiedName;
-import org.eclipse.jdt.core.dom.SimpleName;
-import org.eclipse.jdt.core.dom.SimpleType;
-import org.eclipse.jdt.core.dom.TagElement;
-import org.eclipse.jdt.core.dom.Type;
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
+import javax.tools.StandardLocation;
 
 /**
  * Removes unused imports from a source file. Imports that are only used in javadoc are also
@@ -79,117 +96,149 @@ public class RemoveUnusedImports {
   // This is still reasonably effective in practice because type names differ
   // from other kinds of names in casing convention, and simple name
   // clashes between imported and declared types are rare.
-  private static class UnusedImportScanner extends ASTVisitor {
+  private static class UnusedImportScanner extends TreePathScanner<Void, Void> {
 
     private final Set<String> usedNames = new LinkedHashSet<>();
-    private final Multimap<String, ASTNode> usedInJavadoc = HashMultimap.create();
+    private final Multimap<String, Range<Integer>> usedInJavadoc = HashMultimap.create();
+    final JavacTrees trees;
+    final DocTreeScanner docTreeSymbolScanner;
 
-    @Override
-    public boolean visit(Javadoc node) {
-      node.accept(
-          new ASTVisitor(/*visitDocTags=*/ true) {
-            @Override
-            public boolean visit(TagElement node) {
-              recordTag(node);
-              return super.visit(node);
-            }
-          });
-      return super.visit(node);
+    private UnusedImportScanner(JavacTrees trees) {
+      this.trees = trees;
+      docTreeSymbolScanner = new DocTreeScanner();
     }
 
-    private void recordTag(TagElement node) {
-      if (node.getTagName() == null) {
+    /** Skip the imports themselves when checking for usage. */
+    @Override
+    public Void visitImport(ImportTree importTree, Void usedSymbols) {
+      return null;
+    }
+
+    @Override
+    public Void visitIdentifier(IdentifierTree tree, Void unused) {
+      if (tree == null) {
+        return null;
+      }
+      usedNames.add(tree.getName().toString());
+      return null;
+    }
+
+    @Override
+    public Void scan(Tree tree, Void unused) {
+      if (tree == null) {
+        return null;
+      }
+      scanJavadoc();
+      return super.scan(tree, unused);
+    }
+
+    private void scanJavadoc() {
+      if (getCurrentPath() == null) {
         return;
       }
-      switch (node.getTagName()) {
-        case "@exception":
-        case "@link":
-        case "@linkplain":
-        case "@see":
-        case "@throws":
-        case "@value":
-          recordReference(Iterables.<ASTNode>getFirst(node.fragments(), null));
-          break;
-        default:
-          break;
+      DocCommentTree commentTree = trees.getDocCommentTree(getCurrentPath());
+      if (commentTree == null) {
+        return;
       }
+      docTreeSymbolScanner.scan(new DocTreePath(getCurrentPath(), commentTree), null);
     }
 
-    private void recordReference(ASTNode reference) {
-      if (reference instanceof SimpleName) {
-        recordSimpleName((Name) reference);
-      } else if (reference instanceof MemberRef) {
-        recordSimpleName(((MemberRef) reference).getQualifier());
-      } else if (reference instanceof MethodRef) {
-        recordMethodRef((MethodRef) reference);
+    // scan javadoc comments, checking for references to imported types
+    class DocTreeScanner extends DocTreePathScanner<Void, Void> {
+      @Override
+      public Void visitIdentifier(com.sun.source.doctree.IdentifierTree node, Void aVoid) {
+        return null;
       }
-    }
 
-    private void recordMethodRef(MethodRef methodRef) {
-      recordSimpleName(methodRef.getQualifier());
-      for (MethodRefParameter parameter : (List<MethodRefParameter>) methodRef.parameters()) {
-        recordTypeRef(parameter.getType());
+      @Override
+      public Void visitReference(ReferenceTree referenceTree, Void unused) {
+        DCReference reference = (DCReference) referenceTree;
+        long basePos =
+            reference.getSourcePosition((DCTree.DCDocComment) getCurrentPath().getDocComment());
+        // the position of trees inside the reference node aren't stored, but the qualifier's
+        // start position is the beginning of the reference node
+        if (reference.qualifierExpression != null) {
+          new ReferenceScanner(basePos).scan(reference.qualifierExpression, null);
+        }
+        // Record uses inside method parameters. The javadoc tool doesn't use these, but
+        // IntelliJ does.
+        if (reference.paramTypes != null) {
+          for (JCTree param : reference.paramTypes) {
+            // TODO(cushon): get start positions for the parameters
+            new ReferenceScanner(-1).scan(param, null);
+          }
+        }
+        return null;
       }
-    }
 
-    private void recordTypeRef(Type type) {
-      if (type instanceof SimpleType) {
-        recordSimpleName(((SimpleType) type).getName());
-      } else if (type instanceof ArrayType) {
-        recordTypeRef(((ArrayType) type).getElementType());
-      }
-    }
+      // scans the qualifier and parameters of a javadoc reference for possible type names
+      private class ReferenceScanner extends TreeScanner<Void, Void> {
+        private final long basePos;
 
-    private void recordSimpleName(Name name) {
-      while (name instanceof QualifiedName) {
-        name = ((QualifiedName) name).getQualifier();
-      }
-      if (name instanceof SimpleName) {
-        String identifier = ((SimpleName) name).getIdentifier();
-        if (Character.isUpperCase(identifier.charAt(0))) {
-          usedInJavadoc.put(identifier, name);
+        public ReferenceScanner(long basePos) {
+          this.basePos = basePos;
+        }
+
+        @Override
+        public Void visitIdentifier(IdentifierTree node, Void aVoid) {
+          usedInJavadoc.put(
+              node.getName().toString(),
+              basePos != -1
+                  ? Range.closedOpen((int) basePos, (int) basePos + node.getName().length())
+                  : null);
+          return super.visitIdentifier(node, aVoid);
         }
       }
-    }
-
-    @Override
-    public boolean visit(ImportDeclaration node) {
-      // skip imports
-      return false;
-    }
-
-    @Override
-    public boolean visit(SimpleName node) {
-      usedNames.add(node.getIdentifier().toString());
-      return super.visit(node);
     }
   }
 
   public static String removeUnusedImports(
       final String contents, JavadocOnlyImports javadocOnlyImports) {
-    CompilationUnit unit = parse(contents);
+    Context context = new Context();
+    JCCompilationUnit unit = parse(context, contents);
     if (unit == null) {
       // error handling is done during formatting
       return contents;
     }
-    UnusedImportScanner scanner = new UnusedImportScanner();
-    unit.accept(scanner);
+    UnusedImportScanner scanner = new UnusedImportScanner(JavacTrees.instance(context));
+    scanner.scan(unit, null);
     return applyReplacements(
         contents,
         buildReplacements(
             contents, unit, scanner.usedNames, scanner.usedInJavadoc, javadocOnlyImports));
   }
 
-  private static CompilationUnit parse(String source) {
-    ASTParser parser = ASTParser.newParser(AST.JLS8);
-    parser.setSource(source.toCharArray());
-    Map<String, String> options = JavaCore.getOptions();
-    JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, options);
-    parser.setCompilerOptions(options);
-    CompilationUnit unit = (CompilationUnit) parser.createAST(null);
-    if (unit.getMessages().length > 0) {
+  private static JCCompilationUnit parse(Context context, String javaInput) {
+    DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+    context.put(DiagnosticListener.class, diagnostics);
+    Options.instance(context).put("allowStringFolding", "false");
+    JCCompilationUnit unit;
+    JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
+    try {
+      fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, ImmutableList.of());
+    } catch (IOException e) {
+      // impossible
+      throw new IOError(e);
+    }
+    SimpleJavaFileObject source =
+        new SimpleJavaFileObject(URI.create("source"), JavaFileObject.Kind.SOURCE) {
+          @Override
+          public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+            return javaInput;
+          }
+        };
+    Log.instance(context).useSource(source);
+    ParserFactory parserFactory = ParserFactory.instance(context);
+    JavacParser parser =
+        parserFactory.newParser(
+            javaInput, /*keepDocComments=*/ true, /*keepEndPos=*/ true, /*keepLineMap=*/ true);
+    unit = parser.parseCompilationUnit();
+    unit.sourcefile = source;
+    Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
+        Iterables.filter(diagnostics.getDiagnostics(), Formatter.ERROR_DIAGNOSTIC);
+    if (!Iterables.isEmpty(errorDiagnostics)) {
       // error handling is done during formatting
-      return null;
+      throw FormattingError.fromJavacDiagnostics(errorDiagnostics);
     }
     return unit;
   }
@@ -197,18 +246,18 @@ public class RemoveUnusedImports {
   /** Construct replacements to fix unused imports. */
   private static RangeMap<Integer, String> buildReplacements(
       String contents,
-      CompilationUnit unit,
+      JCCompilationUnit unit,
       Set<String> usedNames,
-      Multimap<String, ASTNode> usedInJavadoc,
+      Multimap<String, Range<Integer>> usedInJavadoc,
       JavadocOnlyImports javadocOnlyImports) {
     RangeMap<Integer, String> replacements = TreeRangeMap.create();
-    for (ImportDeclaration importTree : (List<ImportDeclaration>) unit.imports()) {
+    for (JCImport importTree : unit.getImports()) {
       String simpleName = getSimpleName(importTree);
       if (!isUnused(unit, usedNames, usedInJavadoc, javadocOnlyImports, importTree, simpleName)) {
         continue;
       }
       // delete the import
-      int endPosition = importTree.getStartPosition() + importTree.getLength();
+      int endPosition = importTree.getEndPosition(unit.endPositions);
       endPosition = Math.max(CharMatcher.isNot(' ').indexIn(contents, endPosition), endPosition);
       String sep = Newlines.guessLineSeparator(contents);
       if (endPosition + sep.length() < contents.length()
@@ -219,44 +268,47 @@ public class RemoveUnusedImports {
       // fully qualify any javadoc references with the same simple name as a deleted
       // non-static import
       if (!importTree.isStatic()) {
-        for (ASTNode doc : usedInJavadoc.get(simpleName)) {
-          String replaceWith = importTree.getName().toString();
-          Range<Integer> range =
-              Range.closedOpen(doc.getStartPosition(), doc.getStartPosition() + doc.getLength());
-          replacements.put(range, replaceWith);
+        for (Range<Integer> docRange : usedInJavadoc.get(simpleName)) {
+          if (docRange == null) {
+            continue;
+          }
+          String replaceWith = importTree.getQualifiedIdentifier().toString();
+          replacements.put(docRange, replaceWith);
         }
       }
     }
     return replacements;
   }
 
-  private static String getSimpleName(ImportDeclaration importTree) {
-    return importTree.getName() instanceof QualifiedName
-        ? ((QualifiedName) importTree.getName()).getName().toString()
-        : importTree.getName().toString();
+  private static String getSimpleName(JCImport importTree) {
+    return importTree.getQualifiedIdentifier() instanceof JCIdent
+        ? ((JCIdent) importTree.getQualifiedIdentifier()).getName().toString()
+        : ((JCFieldAccess) importTree.getQualifiedIdentifier()).getIdentifier().toString();
   }
 
   private static boolean isUnused(
-      CompilationUnit unit,
+      JCCompilationUnit unit,
       Set<String> usedNames,
-      Multimap<String, ASTNode> usedInJavadoc,
+      Multimap<String, Range<Integer>> usedInJavadoc,
       JavadocOnlyImports javadocOnlyImports,
-      ImportDeclaration importTree,
+      JCImport importTree,
       String simpleName) {
-    if (unit.getPackage() != null) {
+    if (unit.getPackageName() != null) {
       String qualifier =
-          importTree.isOnDemand()
-              ? importTree.getName().toString()
-              : importTree.getName() instanceof QualifiedName
-                  ? ((QualifiedName) importTree.getName()).getQualifier().toString()
-                  : null;
-      if (unit.getPackage().getName().toString().equals(qualifier)) {
+          importTree.getQualifiedIdentifier() instanceof JCFieldAccess
+              ? ((JCFieldAccess) importTree.getQualifiedIdentifier()).getExpression().toString()
+              : null;
+      if (unit.getPackageName().toString().equals(qualifier)) {
         return true;
       }
     }
-    if (importTree.isOnDemand()) {
+    if (importTree.getQualifiedIdentifier() instanceof JCFieldAccess
+        && ((JCFieldAccess) importTree.getQualifiedIdentifier())
+            .getIdentifier()
+            .contentEquals("*")) {
       return false;
     }
+
     if (usedNames.contains(simpleName)) {
       return false;
     }
