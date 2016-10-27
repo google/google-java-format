@@ -134,8 +134,7 @@ final class JavadocLexer {
   }
 
   private Type consumeToken() throws LexException {
-    boolean preserveExistingFormatting =
-        preDepth.isPositive() || tableDepth.isPositive() || codeDepth.isPositive();
+    boolean preserveExistingFormatting = preserveExistingFormatting();
 
     if (input.tryConsumeRegex(NEWLINE_PATTERN)) {
       somethingSinceNewline = false;
@@ -178,22 +177,26 @@ final class JavadocLexer {
 
     if (input.tryConsumeRegex(PRE_OPEN_PATTERN)) {
       preDepth.increment();
-      return PRE_OPEN_TAG;
+      return preserveExistingFormatting ? LITERAL : PRE_OPEN_TAG;
     } else if (input.tryConsumeRegex(PRE_CLOSE_PATTERN)) {
       preDepth.decrementIfPositive();
-      return PRE_CLOSE_TAG;
-    } else if (input.tryConsumeRegex(CODE_OPEN_PATTERN)) {
+      return preserveExistingFormatting() ? LITERAL : PRE_CLOSE_TAG;
+    }
+
+    if (input.tryConsumeRegex(CODE_OPEN_PATTERN)) {
       codeDepth.increment();
-      return CODE_OPEN_TAG;
+      return preserveExistingFormatting ? LITERAL : CODE_OPEN_TAG;
     } else if (input.tryConsumeRegex(CODE_CLOSE_PATTERN)) {
       codeDepth.decrementIfPositive();
-      return CODE_CLOSE_TAG;
-    } else if (input.tryConsumeRegex(TABLE_OPEN_PATTERN)) {
+      return preserveExistingFormatting() ? LITERAL : CODE_CLOSE_TAG;
+    }
+
+    if (input.tryConsumeRegex(TABLE_OPEN_PATTERN)) {
       tableDepth.increment();
-      return TABLE_OPEN_TAG;
+      return preserveExistingFormatting ? LITERAL : TABLE_OPEN_TAG;
     } else if (input.tryConsumeRegex(TABLE_CLOSE_PATTERN)) {
       tableDepth.decrementIfPositive();
-      return TABLE_CLOSE_TAG;
+      return preserveExistingFormatting() ? LITERAL : TABLE_CLOSE_TAG;
     }
 
     if (preserveExistingFormatting) {
@@ -233,6 +236,10 @@ final class JavadocLexer {
       return LITERAL;
     }
     throw new AssertionError();
+  }
+
+  private boolean preserveExistingFormatting() {
+    return preDepth.isPositive() || tableDepth.isPositive() || codeDepth.isPositive();
   }
 
   private void checkMatchingTags() throws LexException {
