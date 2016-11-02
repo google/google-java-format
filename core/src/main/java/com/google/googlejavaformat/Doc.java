@@ -744,7 +744,8 @@ public abstract class Doc {
     @Override
     public State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state) {
       text = commentsHelper.rewrite(tok, maxWidth, state.column);
-      return state.withColumn(text.length() - Iterators.getLast(Newlines.lineOffsetIterator(text)));
+      int firstLineLength = text.length() - Iterators.getLast(Newlines.lineOffsetIterator(text));
+      return state.withColumn(state.column + firstLineLength);
     }
 
     @Override
