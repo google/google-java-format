@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -200,6 +201,40 @@ public class MainTest {
       assertThat(
               main.format("-", "--fix-imports-only", "--experimental-remove-javadoc-only-imports"))
           .isEqualTo(0);
+      assertThat(out.toString()).isEqualTo(joiner.join(expected));
+    }
+  }
+
+  @Test
+  @Ignore("FormatFileCallable.call() needs a second format run after fixing imports")
+  public void optimizeImportsDoesNotLeaveEmptyLines() throws Exception {
+    String[] input = {
+      "package abc;",
+      "",
+      "import java.util.LinkedList;",
+      "import java.util.List;",
+      "import java.util.ArrayList;",
+      "",
+      "import static java.nio.charset.StandardCharsets.UTF_8;",
+      "",
+      "import java.util.EnumSet;",
+      "",
+      "class Test ",
+      "extends ArrayList {",
+      "}"
+    };
+    {
+      String[] expected = {
+        "package abc;", "", "import java.util.ArrayList;", "", "class Test extends ArrayList {}", ""
+      };
+      // pre-check expectation with local formatter instance
+      String optimized = new Formatter().formatSourceAndOptimizeImports(joiner.join(input));
+      assertThat(optimized).isEqualTo(joiner.join(expected));
+
+      InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+      StringWriter out = new StringWriter();
+      Main main = new Main(new PrintWriter(out, true), new PrintWriter(System.err, true), in);
+      assertThat(main.format("-")).isEqualTo(0);
       assertThat(out.toString()).isEqualTo(joiner.join(expected));
     }
   }

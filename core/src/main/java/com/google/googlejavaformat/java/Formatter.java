@@ -32,6 +32,7 @@ import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
+import com.google.googlejavaformat.java.RemoveUnusedImports.JavadocOnlyImports;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
@@ -194,12 +195,33 @@ public final class Formatter {
   /**
    * Format an input string (a Java compilation unit) into an output string.
    *
+   * <p>Leaves import statements untouched.
+   *
    * @param input the input string
    * @return the output string
    * @throws FormatterException if the input string cannot be parsed
    */
   public String formatSource(String input) throws FormatterException {
     return formatSource(input, Collections.singleton(Range.closedOpen(0, input.length())));
+  }
+
+  /**
+   * Format an input string (a Java compilation unit) and optimize imports into an output string.
+   *
+   * <p>Optimizing imports includes ordering, spacing and removal of unused import statements. An
+   * import used only in a Javadoc comment is considered as unused and therefore removed from the
+   * import statements and its usage within the comment replaced by its fully qualified name.
+   *
+   * @param input the input string
+   * @return the output string
+   * @throws FormatterException if the input string cannot be parsed
+   * @see <a href="https://google.github.io/styleguide/javaguide.html#s3.3.3-import-ordering-and-spacing">
+   *   Google Java Style Guide - 3.3.3 Import ordering and spacing</a>
+   */
+  public String formatSourceAndOptimizeImports(String input) throws FormatterException {
+    input = ImportOrderer.reorderImports(input);
+    input = RemoveUnusedImports.removeUnusedImports(input, JavadocOnlyImports.REMOVE);
+    return formatSource(input);
   }
 
   /**
