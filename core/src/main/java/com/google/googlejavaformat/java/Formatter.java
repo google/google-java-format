@@ -226,14 +226,14 @@ public final class Formatter {
    */
   public ImmutableList<Replacement> getFormatReplacements(
       String input, Collection<Range<Integer>> characterRanges) throws FormatterException {
+    JavaInput javaInput = new JavaInput(input);
 
     // TODO(cushon): this is only safe because the modifier ordering doesn't affect whitespace,
     // and doesn't change the replacements that are output. This is not true in general for
     // 'de-linting' changes (e.g. import ordering).
-    input = ModifierOrderer.reorderModifiers(input, characterRanges);
+    javaInput = ModifierOrderer.reorderModifiers(javaInput, characterRanges);
 
     String lineSeparator = Newlines.guessLineSeparator(input);
-    JavaInput javaInput = new JavaInput(input);
     JavaOutput javaOutput =
         new JavaOutput(lineSeparator, javaInput, new JavaCommentsHelper(lineSeparator, options));
     try {

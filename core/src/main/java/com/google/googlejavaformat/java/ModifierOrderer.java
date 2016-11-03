@@ -34,7 +34,7 @@ import javax.lang.model.element.Modifier;
 import org.eclipse.jdt.core.compiler.ITerminalSymbols;
 
 /** Fixes sequences of modifiers to be in JLS order. */
-public class ModifierOrderer {
+final class ModifierOrderer {
 
   /**
    * Returns the {@link javax.lang.model.element.Modifier} for the given token id, or {@code null}.
@@ -71,21 +71,21 @@ public class ModifierOrderer {
   }
 
   /** Reorders all modifiers in the given text to be in JLS order. */
-  public static String reorderModifiers(String text) throws FormatterException {
-    return reorderModifiers(text, Collections.singleton(Range.closedOpen(0, text.length())));
+  static JavaInput reorderModifiers(String text) throws FormatterException {
+    return reorderModifiers(
+        new JavaInput(text), Collections.singleton(Range.closedOpen(0, text.length())));
   }
 
   /**
    * Reorders all modifiers in the given text and within the given character ranges to be in JLS
    * order.
    */
-  public static String reorderModifiers(String text, Collection<Range<Integer>> characterRanges)
+  static JavaInput reorderModifiers(JavaInput javaInput, Collection<Range<Integer>> characterRanges)
       throws FormatterException {
-    JavaInput javaInput = new JavaInput(text);
     if (javaInput.getTokens().isEmpty()) {
       // There weren't any tokens, possible because of a lexing error.
       // Errors about invalid input will be reported later after parsing.
-      return text;
+      return javaInput;
     }
     RangeSet<Integer> tokenRanges = javaInput.characterRangesToTokenRanges(characterRanges);
     Iterator<? extends Token> it = javaInput.getTokens().iterator();
@@ -134,7 +134,7 @@ public class ModifierOrderer {
         replacements.put(Range.closedOpen(begin, end), replacement.toString());
       }
     }
-    return applyReplacements(javaInput.getText(), replacements);
+    return applyReplacements(javaInput, replacements);
   }
 
   private static void addTrivia(StringBuilder replacement, ImmutableList<? extends Tok> toks) {
@@ -152,19 +152,19 @@ public class ModifierOrderer {
   }
 
   /** Applies replacements to the given string. */
-  private static String applyReplacements(
-      String text, TreeRangeMap<Integer, String> replacementMap) {
+  private static JavaInput applyReplacements(
+      JavaInput javaInput, TreeRangeMap<Integer, String> replacementMap) throws FormatterException {
     // process in descending order so the replacement ranges aren't perturbed if any replacements
     // differ in size from the input
     Map<Range<Integer>, String> ranges = replacementMap.asDescendingMapOfRanges();
     if (ranges.isEmpty()) {
-      return text;
+      return javaInput;
     }
-    StringBuilder sb = new StringBuilder(text);
+    StringBuilder sb = new StringBuilder(javaInput.getText());
     for (Entry<Range<Integer>, String> entry : ranges.entrySet()) {
       Range<Integer> range = entry.getKey();
       sb.replace(range.lowerEndpoint(), range.upperEndpoint(), entry.getValue());
     }
-    return sb.toString();
+    return new JavaInput(sb.toString());
   }
 }
