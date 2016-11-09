@@ -1168,7 +1168,15 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     } else {
       builder.breakOp(" ");
     }
-    scan(node.getBody(), null);
+    if (node.getBody().getKind() == Tree.Kind.BLOCK) {
+      visitBlock(
+          (BlockTree) node.getBody(),
+          CollapseEmptyOrNot.YES,
+          AllowLeadingBlankLine.NO,
+          AllowTrailingBlankLine.NO);
+    } else {
+      scan(node.getBody(), null);
+    }
     builder.close();
     return null;
   }
