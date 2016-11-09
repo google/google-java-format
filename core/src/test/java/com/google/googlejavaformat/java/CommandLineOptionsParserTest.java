@@ -115,7 +115,7 @@ public class CommandLineOptionsParserTest {
       CommandLineOptionsParser.parse(Arrays.asList("-lines=1:1", "-lines=1:1"));
       fail();
     } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage()).contains("Ranges may not overlap");
+      assertThat(e.getMessage()).contains("overlap");
     }
   }
 }
