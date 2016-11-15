@@ -62,7 +62,7 @@ configuration.
 
 ```groovy
 dependencies {
-  compile 'com.google.googlejavaformat:google-java-format:1.0'
+  compile 'com.google.googlejavaformat:google-java-format:1.1'
 }
 ```
 
