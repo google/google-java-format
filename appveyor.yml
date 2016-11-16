@@ -27,5 +27,6 @@ notifications:
   - provider: Email
     to:
       - google-java-format-dev+ci@google.com
+    on_build_success: false
     on_build_failure: true
     on_build_status_changed: true
