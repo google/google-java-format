@@ -1,0 +1,6 @@
+import org.checkerframework.checker.nullness.qual.*;
+
+public class Varargs {
+
+  public void format2(Object @Nullable... a2) {}
+}
