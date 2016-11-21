@@ -2307,13 +2307,22 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       Optional<String> trailing) {
     sync(node);
     boolean varargs = (((JCTree.JCVariableDecl) node).mods.flags & Flags.VARARGS) == Flags.VARARGS;
+    List<? extends AnnotationTree> varargsAnnotations = ImmutableList.of();
+    Tree type = node.getType();
+    if (varargs) {
+      if (type instanceof AnnotatedTypeTree) {
+        varargsAnnotations = ((AnnotatedTypeTree) type).getAnnotations();
+        type = ((AnnotatedTypeTree) type).getUnderlyingType();
+      }
+      type = ((ArrayTypeTree) type).getType();
+    }
     declareOne(
         kind,
         annotationsDirection,
         Optional.of(node.getModifiers()),
-        varargs ? ((ArrayTypeTree) node.getType()).getType() : node.getType(),
+        type,
         VarArgsOrNot.valueOf(varargs),
-        /*varargsAnnotations=*/ ImmutableList.<AnnotationTree>of(),
+        varargsAnnotations,
         node.getName(),
         "",
         equals,
@@ -2956,7 +2965,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       Optional<ModifiersTree> modifiers,
       Tree type,
       VarArgsOrNot isVarargs,
-      List<AnnotationTree> varargsAnnotations,
+      List<? extends AnnotationTree> varargsAnnotations,
       Name name,
       String op,
       String equals,
