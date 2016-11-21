@@ -2307,13 +2307,28 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       Optional<String> trailing) {
     sync(node);
     boolean varargs = (((JCTree.JCVariableDecl) node).mods.flags & Flags.VARARGS) == Flags.VARARGS;
+    Tree type = node.getType();
+    List<? extends AnnotationTree> annotations = ImmutableList.<AnnotationTree>of();
+    if (type instanceof JCTree.JCAnnotatedType) {
+      JCTree.JCAnnotatedType annotatedType = (JCTree.JCAnnotatedType) type;
+      assert annotatedType.getKind() == Tree.Kind.ANNOTATED_TYPE;
+      // Uncomment the first line, leads to the following error:
+      //     Formatter crashed on Varargs: 5:34: error: expected token: '.'; generated @ instead
+      // Seems like the "@Nullable" token is not consumed from the real input...
+      // TODO annotations = annotatedType.getAnnotations();
+      // TODO type = annotatedType.getUnderlyingType();
+    }
+    if (type instanceof ArrayTypeTree) {
+      ArrayTypeTree arrayTypeTree = (ArrayTypeTree) type;
+      type = arrayTypeTree.getType();
+    }
     declareOne(
         kind,
         annotationsDirection,
         Optional.of(node.getModifiers()),
-        varargs ? ((ArrayTypeTree) node.getType()).getType() : node.getType(),
+        type,
         VarArgsOrNot.valueOf(varargs),
-        /*varargsAnnotations=*/ ImmutableList.<AnnotationTree>of(),
+        annotations,
         node.getName(),
         "",
         equals,
@@ -2956,7 +2971,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       Optional<ModifiersTree> modifiers,
       Tree type,
       VarArgsOrNot isVarargs,
-      List<AnnotationTree> varargsAnnotations,
+      List<? extends AnnotationTree> varargsAnnotations,
       Name name,
       String op,
       String equals,
