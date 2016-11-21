@@ -18,6 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
+import com.google.googlejavaformat.FormatterDiagnostic;
+import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.java.FormatterException;
 import com.google.testing.compile.CompilationRule;
 import java.io.IOException;
@@ -54,6 +56,12 @@ public class FormattingFilerTest {
     } catch (IOException expected) {
       assertThat(expected.getMessage()).contains("foo.Bar");
       assertThat(expected.getCause().getClass()).isAssignableTo(FormatterException.class);
+    } catch (FormattingError error) {
+      assertThat(error.diagnostics()).hasSize(1);
+      FormatterDiagnostic diagnostic = error.diagnostics().get(0);
+      assertThat(diagnostic.line()).isEqualTo(2);
+      assertThat(diagnostic.column()).isEqualTo(19);
+      assertThat(diagnostic.message()).contains("reached end of file while parsing");
     }
   }
 
