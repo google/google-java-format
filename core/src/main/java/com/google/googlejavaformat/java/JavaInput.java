@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getLast;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Verify;
@@ -31,15 +32,25 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Newlines;
+import com.google.googlejavaformat.java.JavacTokens.RawTok;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
+import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import org.eclipse.jdt.core.ToolFactory;
-import org.eclipse.jdt.core.compiler.IScanner;
-import org.eclipse.jdt.core.compiler.ITerminalSymbols;
-import org.eclipse.jdt.core.compiler.InvalidInputException;
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileObject;
+import javax.tools.JavaFileObject.Kind;
+import javax.tools.SimpleJavaFileObject;
 
 /** {@code JavaInput} extends {@link Input} to represent a Java input document. */
 public final class JavaInput extends Input {
@@ -63,7 +74,7 @@ public final class JavaInput extends Input {
     private final int position;
     private final int columnI;
     private final boolean isToken;
-    private final int id;
+    private final TokenKind kind;
 
     /**
      * The {@code Tok} constructor.
@@ -74,7 +85,7 @@ public final class JavaInput extends Input {
      * @param position its {@code 0}-origin position in the input
      * @param columnI its {@code 0}-origin column number in the input
      * @param isToken whether the {@code Tok} is a token
-     * @param id the token id as defined by {@link org.eclipse.jdt.core.compiler.ITerminalSymbols}
+     * @param kind the token kind
      */
     Tok(
         int index,
@@ -83,14 +94,14 @@ public final class JavaInput extends Input {
         int position,
         int columnI,
         boolean isToken,
-        int id) {
+        TokenKind kind) {
       this.index = index;
       this.originalText = originalText;
       this.text = text;
       this.position = position;
       this.columnI = columnI;
       this.isToken = isToken;
-      this.id = id;
+      this.kind = kind;
     }
 
     @Override
@@ -163,12 +174,8 @@ public final class JavaInput extends Input {
           .toString();
     }
 
-    /**
-     * The token id used by the eclipse scanner. See {@link
-     * org.eclipse.jdt.core.compiler.ITerminalSymbols} for possible values.
-     */
-    public int id() {
-      return id;
+    public TokenKind kind() {
+      return kind;
     }
   }
 
@@ -322,47 +329,54 @@ public final class JavaInput extends Input {
 
   /** Lex the input and build the list of toks. */
   private ImmutableList<Tok> buildToks(String text) throws FormatterException {
-    try {
-      ImmutableList<Tok> toks = buildToks(text, ImmutableSet.<Integer>of());
-      kN = getLast(toks).getIndex();
-      computeRanges(toks);
-      return toks;
-    } catch (InvalidInputException e) {
-      // jdt's scanner elects not to produce error messages, so we don't either
-      //
-      // problems will get caught (again!) and reported (with error messages!)
-      // during parsing
-      return ImmutableList.of();
-    }
+    ImmutableList<Tok> toks = buildToks(text, ImmutableSet.<TokenKind>of());
+    kN = getLast(toks).getIndex();
+    computeRanges(toks);
+    return toks;
   }
 
   /**
    * Lex the input and build the list of toks.
    *
    * @param text the text to be lexed.
-   * @param stopIds a set of Eclipse token names which should cause lexing to stop. If one of these
-   *     is found, the returned list will include tokens up to but not including that token.
+   * @param stopTokens a set of tokens which should cause lexing to stop. If one of these is found,
+   *     the returned list will include tokens up to but not including that token.
    */
-  static ImmutableList<Tok> buildToks(String text, ImmutableSet<Integer> stopIds)
-      throws InvalidInputException, FormatterException {
-    stopIds =
-        ImmutableSet.<Integer>builder().addAll(stopIds).add(ITerminalSymbols.TokenNameEOF).build();
+  static ImmutableList<Tok> buildToks(String text, ImmutableSet<TokenKind> stopTokens)
+      throws FormatterException {
+    stopTokens = ImmutableSet.<TokenKind>builder().addAll(stopTokens).add(TokenKind.EOF).build();
+    Context context = new Context();
+    new JavacFileManager(context, true, UTF_8);
+    DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<>();
+    context.put(DiagnosticListener.class, diagnosticCollector);
+    Log log = Log.instance(context);
+    log.useSource(
+        new SimpleJavaFileObject(URI.create("Source.java"), Kind.SOURCE) {
+          @Override
+          public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+            return text;
+          }
+        });
+    DeferredDiagnosticHandler diagnostics = new DeferredDiagnosticHandler(log);
+    ImmutableList<RawTok> rawToks = JavacTokens.getTokens(text, context, stopTokens);
+    if (diagnostics.getDiagnostics().stream().anyMatch(d -> d.getKind() == Diagnostic.Kind.ERROR)) {
+      return ImmutableList.of(new Tok(0, "", "", 0, 0, true, null)); // EOF
+    }
     int kN = 0;
-    IScanner scanner = ToolFactory.createScanner(true, true, true, "1.8");
-    scanner.setSource(text.toCharArray());
-    int textLength = text.length();
     List<Tok> toks = new ArrayList<>();
     int charI = 0;
     int columnI = 0;
-    while (scanner.getCurrentTokenEndPosition() < textLength - 1) {
-      int tokenId = scanner.getNextToken();
-      if (stopIds.contains(tokenId)) {
+    for (RawTok t : rawToks) {
+      if (stopTokens.contains(t.kind())) {
         break;
       }
-      int charI0 = scanner.getCurrentTokenStartPosition();
+      int charI0 = t.pos();
       // Get string, possibly with Unicode escapes.
-      String originalTokText = text.substring(charI0, scanner.getCurrentTokenEndPosition() + 1);
-      String tokText = new String(scanner.getCurrentTokenSource()); // Unicode escapes removed.
+      String originalTokText = text.substring(charI0, t.endPos());
+      String tokText =
+          t.kind() == TokenKind.STRINGLITERAL
+              ? t.stringVal() // Unicode escapes removed.
+              : originalTokText;
       char tokText0 = tokText.charAt(0); // The token's first character.
       final boolean isToken; // Is this tok a token?
       final boolean isNumbered; // Is this tok numbered? (tokens and comments)
@@ -427,7 +441,7 @@ public final class JavaInput extends Input {
                 charI,
                 columnI,
                 isToken,
-                tokenId));
+                t.kind()));
         charI += originalTokText.length();
         columnI = updateColumn(columnI, originalTokText);
 
@@ -437,18 +451,18 @@ public final class JavaInput extends Input {
               "Unicode escapes not allowed in whitespace or multi-character operators");
         }
         for (String str : strings) {
-          toks.add(new Tok(isNumbered ? kN++ : -1, str, str, charI, columnI, isToken, tokenId));
+          toks.add(new Tok(isNumbered ? kN++ : -1, str, str, charI, columnI, isToken, null));
           charI += str.length();
           columnI = updateColumn(columnI, originalTokText);
         }
       }
       if (extraNewline != null) {
-        toks.add(new Tok(-1, extraNewline, extraNewline, charI, columnI, false, tokenId));
+        toks.add(new Tok(-1, extraNewline, extraNewline, charI, columnI, false, null));
         columnI = 0;
         charI += extraNewline.length();
       }
     }
-    toks.add(new Tok(kN, "", "", charI, columnI, true, ITerminalSymbols.TokenNameEOF)); // EOF tok.
+    toks.add(new Tok(kN, "", "", charI, columnI, true, null)); // EOF tok.
     return ImmutableList.copyOf(toks);
   }
 

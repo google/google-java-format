@@ -106,11 +106,6 @@
         <version>${guava.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.eclipse.jdt</groupId>
-        <artifactId>org.eclipse.jdt.core</artifactId>
-        <version>3.10.0</version>
-      </dependency>
-      <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>javac</artifactId>
         <version>1.9.0-dev-r2973-2</version>

@@ -14,9 +14,6 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.collect.Iterables.getLast;
-import static org.eclipse.jdt.core.compiler.ITerminalSymbols.TokenNameclass;
-import static org.eclipse.jdt.core.compiler.ITerminalSymbols.TokenNameenum;
-import static org.eclipse.jdt.core.compiler.ITerminalSymbols.TokenNameinterface;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -24,33 +21,27 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavaInput.Tok;
-import org.eclipse.jdt.core.compiler.InvalidInputException;
+import com.sun.tools.javac.parser.Tokens.TokenKind;
 
 /** Orders imports in Java source code. */
 public class ImportOrderer {
   /**
-   * Reorder the inputs in {@code input}, a complete Java program. On success, another complete Java
+   * Reorder the inputs in {@code text}, a complete Java program. On success, another complete Java
    * program is returned, which is the same as the original except the imports are in order.
    *
    * @throws FormatterException if the input could not be parsed.
    */
   public static String reorderImports(String text) throws FormatterException {
-    ImmutableList<Tok> toks;
-    try {
-      toks = JavaInput.buildToks(text, CLASS_START);
-    } catch (InvalidInputException e) {
-      // error handling is done during formatting
-      return text;
-    }
+    ImmutableList<Tok> toks = JavaInput.buildToks(text, CLASS_START);
     return new ImportOrderer(text, toks).reorderImports();
   }
 
   /**
-   * Eclipse token ids that indicate the start of a type definition. We use this to avoid scanning
+   * {@link TokenKind}s that indicate the start of a type definition. We use this to avoid scanning
    * the whole file, since we know that imports must precede any type definition.
    */
-  private static final ImmutableSet<Integer> CLASS_START =
-      ImmutableSet.of(TokenNameclass, TokenNameinterface, TokenNameenum);
+  private static final ImmutableSet<TokenKind> CLASS_START =
+      ImmutableSet.of(TokenKind.CLASS, TokenKind.INTERFACE, TokenKind.ENUM);
 
   /**
    * We use this set to find the first import, and again to check that there are no imports after
