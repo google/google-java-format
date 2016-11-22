@@ -24,8 +24,6 @@ import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.testFramework.fixtures.LightCodeInsightFixtureTestCase;
-import java.net.URL;
-import java.net.URLClassLoader;
 
 /**
  * Tests for {@link GoogleJavaFormatCodeStyleManager}.
@@ -33,24 +31,6 @@ import java.net.URLClassLoader;
  * @author bcsf@google.com (Brian Chang)
  */
 public class GoogleJavaFormatCodeStyleManagerTest extends LightCodeInsightFixtureTestCase {
-
-  @Override
-  protected void setUp() throws Exception {
-    if (getClass().getClassLoader() instanceof URLClassLoader) {
-      for (URL url : ((URLClassLoader) getClass().getClassLoader()).getURLs()) {
-        if (url.getPath().matches(".*/ecj-\\d(\\.\\d)*\\.jar")) {
-          System.err.println(
-              "If you see a SecurityException while running this test from within IJ,\n"
-                  + "unfortunately you'll need to somehow remove ecj.jar from your classpath,\n"
-                  + "as it will cause a cert conflict with org.eclipse.jdt.core.jar.\n"
-                  + "e.g. if "
-                  + url.getPath()
-                  + " is in IDEA_HOME/lib, temporarily relocate it");
-        }
-      }
-    }
-    super.setUp();
-  }
 
   public void testFormatFile() {
     CodeStyleManager codeStyleManager = CodeStyleManager.getInstance(getProject());

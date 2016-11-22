@@ -23,6 +23,7 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.googlejavaformat.Input.Tok;
 import com.google.googlejavaformat.Input.Token;
+import com.sun.tools.javac.parser.Tokens.TokenKind;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,39 +32,42 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import javax.lang.model.element.Modifier;
-import org.eclipse.jdt.core.compiler.ITerminalSymbols;
 
 /** Fixes sequences of modifiers to be in JLS order. */
 final class ModifierOrderer {
 
   /**
-   * Returns the {@link javax.lang.model.element.Modifier} for the given token id, or {@code null}.
+   * Returns the {@link javax.lang.model.element.Modifier} for the given token kind, or {@code
+   * null}.
    */
-  static Modifier getModifier(int tokenId) {
-    switch (tokenId) {
-      case ITerminalSymbols.TokenNamepublic:
+  private static Modifier getModifier(TokenKind kind) {
+    if (kind == null) {
+      return null;
+    }
+    switch (kind) {
+      case PUBLIC:
         return Modifier.PUBLIC;
-      case ITerminalSymbols.TokenNameprotected:
+      case PROTECTED:
         return Modifier.PROTECTED;
-      case ITerminalSymbols.TokenNameprivate:
+      case PRIVATE:
         return Modifier.PRIVATE;
-      case ITerminalSymbols.TokenNameabstract:
+      case ABSTRACT:
         return Modifier.ABSTRACT;
-      case ITerminalSymbols.TokenNamestatic:
+      case STATIC:
         return Modifier.STATIC;
-      case ITerminalSymbols.TokenNamedefault:
+      case DEFAULT:
         return Modifier.DEFAULT;
-      case ITerminalSymbols.TokenNamefinal:
+      case FINAL:
         return Modifier.FINAL;
-      case ITerminalSymbols.TokenNametransient:
+      case TRANSIENT:
         return Modifier.TRANSIENT;
-      case ITerminalSymbols.TokenNamevolatile:
+      case VOLATILE:
         return Modifier.VOLATILE;
-      case ITerminalSymbols.TokenNamesynchronized:
+      case SYNCHRONIZED:
         return Modifier.SYNCHRONIZED;
-      case ITerminalSymbols.TokenNamenative:
+      case NATIVE:
         return Modifier.NATIVE;
-      case ITerminalSymbols.TokenNamestrictfp:
+      case STRICTFP:
         return Modifier.STRICTFP;
       default:
         return null;
@@ -148,7 +152,7 @@ final class ModifierOrderer {
    * is not a modifier.
    */
   private static Modifier asModifier(Token token) {
-    return getModifier(((JavaInput.Tok) token.getTok()).id());
+    return getModifier(((JavaInput.Tok) token.getTok()).kind());
   }
 
   /** Applies replacements to the given string. */
