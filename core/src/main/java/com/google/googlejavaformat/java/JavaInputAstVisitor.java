@@ -257,7 +257,6 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   private final Indent.Const minusFour;
   private final Indent.Const plusTwo;
   private final Indent.Const plusFour;
-  private final Indent.Const plusEight;
 
   private static final ImmutableList<Op> breakList(Optional<BreakTag> breakTag) {
     return ImmutableList.<Op>of(Doc.Break.make(Doc.FillMode.UNIFIED, " ", ZERO, breakTag));
@@ -294,7 +293,6 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     minusFour = Indent.Const.make(-4, indentMultiplier);
     plusTwo = Indent.Const.make(+2, indentMultiplier);
     plusFour = Indent.Const.make(+4, indentMultiplier);
-    plusEight = Indent.Const.make(+8, indentMultiplier);
   }
 
   /** A record of whether we have visited into an expression. */
@@ -425,7 +423,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       TypeWithDims extractedDims = DimensionHelpers.extractDims(node.getType(), SortedDims.YES);
       Tree base = extractedDims.node;
 
-      Deque<ExpressionTree> dimExpressions = new ArrayDeque<ExpressionTree>(node.getDimensions());
+      Deque<ExpressionTree> dimExpressions = new ArrayDeque<>(node.getDimensions());
 
       Deque<List<AnnotationTree>> annotations = new ArrayDeque<>();
       annotations.addAll((List<List<AnnotationTree>>) node.getDimAnnotations());
@@ -1064,7 +1062,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       token("static");
       builder.space();
     }
-    visitName(node.getQualifiedIdentifier(), BreakOrNot.NO);
+    visitName(node.getQualifiedIdentifier());
     token(";");
     return null;
   }
@@ -1290,9 +1288,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         }
       }
     }
-    builder.addAll(
-        visitModifiers(
-            node.getModifiers(), annotations, Direction.VERTICAL, Optional.<BreakTag>absent()));
+    builder.addAll(visitModifiers(annotations, Direction.VERTICAL, Optional.<BreakTag>absent()));
 
     Tree baseReturnType = null;
     Deque<List<AnnotationTree>> dims = null;
@@ -1473,7 +1469,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.open(plusFour);
     token("package");
     builder.space();
-    visitName(packageName, BreakOrNot.NO);
+    visitName(packageName);
     builder.close();
     token(";");
   }
@@ -1786,13 +1782,6 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return null;
   }
 
-  private void maybeToken(String token) {
-    if (builder.peekToken().equals(Optional.of(token))) {
-      token(token);
-      builder.breakToFill(" ");
-    }
-  }
-
   public void visitClassDeclaration(ClassTree node) {
     sync(node);
     List<Op> breaks =
@@ -2042,21 +2031,19 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       Direction annotationsDirection,
       Optional<BreakTag> declarationAnnotationBreak) {
     return visitModifiers(
-        modifiersTree,
         modifiersTree.getAnnotations(),
         annotationsDirection,
         declarationAnnotationBreak);
   }
 
   private List<Op> visitModifiers(
-      ModifiersTree modifiersTree,
       List<? extends AnnotationTree> annotationTrees,
       Direction annotationsDirection,
       Optional<BreakTag> declarationAnnotationBreak) {
     if (annotationTrees.isEmpty() && !nextIsModifier()) {
       return EMPTY_LIST;
     }
-    Deque<AnnotationTree> annotations = new ArrayDeque<AnnotationTree>(annotationTrees);
+    Deque<AnnotationTree> annotations = new ArrayDeque<>(annotationTrees);
     builder.open(ZERO);
     boolean first = true;
     boolean lastWasAnnotation = false;
@@ -2282,7 +2269,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   }
 
   /** Helper method for import declarations, names, and qualified names. */
-  private void visitName(Tree node, BreakOrNot breaks) {
+  private void visitName(Tree node) {
     Deque<Name> stack = new ArrayDeque<>();
     for (; node instanceof MemberSelectTree; node = ((MemberSelectTree) node).getExpression()) {
       stack.addFirst(((MemberSelectTree) node).getIdentifier());
@@ -2471,7 +2458,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     if (prefixIndex > 0) {
       visitDotWithPrefix(items, needDot, prefixIndex);
     } else {
-      visitRegularDot(node0, items, needDot);
+      visitRegularDot(items, needDot);
     }
 
     if (node != null) {
@@ -2482,12 +2469,10 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   /**
    * Output a "regular" chain of dereferences, possibly in builder-style. Break before every dot.
    *
-   * @param enclosingExpression the parent expression of the dot chain
    * @param items in the chain
    * @param needDot whether a leading dot is needed
    */
-  private void visitRegularDot(
-      ExpressionTree enclosingExpression, List<ExpressionTree> items, boolean needDot) {
+  private void visitRegularDot(List<ExpressionTree> items, boolean needDot) {
     boolean trailingDereferences = items.size() > 1;
     boolean needDot0 = needDot;
     if (!needDot0) {
@@ -2505,8 +2490,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         token(".");
         length++;
       }
-      if (!fillFirstArgument(
-          enclosingExpression, e, items, trailingDereferences ? ZERO : minusFour)) {
+      if (!fillFirstArgument(e, items, trailingDereferences ? ZERO : minusFour)) {
         BreakTag tyargTag = genSym();
         dotExpressionUpToArgs(e, Optional.of(tyargTag));
         Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
@@ -2529,7 +2513,6 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   //     .thenReturn(result);
   //
   private boolean fillFirstArgument(
-      ExpressionTree enclosingExpression,
       ExpressionTree e,
       List<ExpressionTree> items,
       Indent indent) {
