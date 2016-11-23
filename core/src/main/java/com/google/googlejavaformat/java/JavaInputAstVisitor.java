@@ -645,6 +645,11 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token("new");
     builder.space();
     addTypeArguments(node.getTypeArguments(), plusFour);
+    if (node.getClassBody() != null) {
+      builder.addAll(
+          visitModifiers(
+              node.getClassBody().getModifiers(), Direction.HORIZONTAL, Optional.absent()));
+    }
     scan(node.getIdentifier(), null);
     addArguments(node.getArguments(), plusFour);
     builder.close();
