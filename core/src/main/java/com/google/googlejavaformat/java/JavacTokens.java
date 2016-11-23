@@ -32,6 +32,10 @@ import java.util.Set;
 /** A wrapper around javac's lexer. */
 public class JavacTokens {
 
+  /** The lexer eats terminal comments, so feed it one we don't care about. */
+  // TODO(b/33103797): fix javac and remove the work-around
+  private static final CharSequence EOF_COMMENT = "\n//EOF";
+
   /** An unprocessed input token, including whitespace and comments. */
   static class RawTok {
     private final String stringVal;
@@ -74,7 +78,7 @@ public class JavacTokens {
       return ImmutableList.of();
     }
     ScannerFactory fac = ScannerFactory.instance(context);
-    char[] buffer = source.toCharArray();
+    char[] buffer = (source + EOF_COMMENT).toCharArray();
     Scanner scanner =
         new AccessibleScanner(fac, new CommentSavingTokenizer(fac, buffer, buffer.length));
     ImmutableList.Builder<RawTok> tokens = ImmutableList.builder();
@@ -82,9 +86,6 @@ public class JavacTokens {
     do {
       scanner.nextToken();
       Token t = scanner.token();
-      if (stopTokens.contains(t.kind)) {
-        break;
-      }
       if (t.comments != null) {
         for (Comment c : Lists.reverse(t.comments)) {
           if (last < c.getSourcePos(0)) {
@@ -94,6 +95,9 @@ public class JavacTokens {
               new RawTok(null, null, c.getSourcePos(0), c.getSourcePos(0) + c.getText().length()));
           last = c.getSourcePos(0) + c.getText().length();
         }
+      }
+      if (stopTokens.contains(t.kind)) {
+        break;
       }
       if (last < t.pos) {
         tokens.add(new RawTok(null, null, last, t.pos));
