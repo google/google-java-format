@@ -426,6 +426,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       Deque<ExpressionTree> dimExpressions = new ArrayDeque<>(node.getDimensions());
 
       Deque<List<AnnotationTree>> annotations = new ArrayDeque<>();
+      annotations.add(ImmutableList.copyOf(node.getAnnotations()));
       annotations.addAll((List<List<AnnotationTree>>) node.getDimAnnotations());
       annotations.addAll(extractedDims.dims);
 
