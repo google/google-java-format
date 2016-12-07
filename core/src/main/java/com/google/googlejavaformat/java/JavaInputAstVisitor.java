@@ -1147,9 +1147,9 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public Void visitLambdaExpression(LambdaExpressionTree node, Void unused) {
     sync(node);
     boolean statementBody = node.getBodyKind() == LambdaExpressionTree.BodyKind.STATEMENT;
-    builder.open(statementBody ? ZERO : plusFour);
-    builder.open(plusFour);
-    if (builder.peekToken().equals(Optional.of("("))) {
+    boolean parens = builder.peekToken().equals(Optional.of("("));
+    builder.open(parens ? plusFour : ZERO);
+    if (parens) {
       token("(");
     }
     boolean first = true;
@@ -1161,12 +1161,13 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       scan(parameter, null);
       first = false;
     }
-    if (builder.peekToken().equals(Optional.of(")"))) {
+    if (parens) {
       token(")");
     }
     builder.close();
     builder.space();
     builder.op("->");
+    builder.open(statementBody ? ZERO : plusFour);
     if (statementBody) {
       builder.space();
     } else {
@@ -2992,7 +2993,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         visitAndBreakModifiers(
             modifiers.get(), annotationsDirection, Optional.of(verticalAnnotationBreak));
       }
-      builder.open(plusFour);
+      builder.open(type != null ? plusFour : ZERO);
       {
         builder.open(ZERO);
         {
