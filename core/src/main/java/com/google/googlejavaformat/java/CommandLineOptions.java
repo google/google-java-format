@@ -38,6 +38,8 @@ final class CommandLineOptions {
   private final boolean removeJavadocOnlyImports;
   private final boolean sortImports;
   private final boolean removeUnusedImports;
+  private final boolean dryRun;
+  private final boolean setExitIfChanged;
 
   CommandLineOptions(
       ImmutableList<String> files,
@@ -52,7 +54,9 @@ final class CommandLineOptions {
       boolean fixImportsOnly,
       boolean removeJavadocOnlyImports,
       boolean sortImports,
-      boolean removeUnusedImports) {
+      boolean removeUnusedImports,
+      boolean dryRun,
+      boolean setExitIfChanged) {
     this.files = files;
     this.inPlace = inPlace;
     this.lines = lines;
@@ -66,6 +70,8 @@ final class CommandLineOptions {
     this.removeJavadocOnlyImports = removeJavadocOnlyImports;
     this.sortImports = sortImports;
     this.removeUnusedImports = removeUnusedImports;
+    this.dryRun = dryRun;
+    this.setExitIfChanged = setExitIfChanged;
   }
 
   /** The files to format. */
@@ -141,6 +147,21 @@ final class CommandLineOptions {
     return !lines().isEmpty() || !offsets().isEmpty() || !lengths().isEmpty();
   }
 
+  /** Returns true if dry-run mode was selected. */
+  boolean isDryRun() {
+    return dryRun;
+  }
+
+  /** Returns true if exit code 1 should be set if formatting was done or is required. */
+  boolean isSetExitIfChanged() {
+    return setExitIfChanged;
+  }
+
+  /** Returns true if no special run-mode (like in-place or dry-run) is selected. */
+  boolean stdout() {
+    return !(inPlace || dryRun); // note: add new special run modes here
+  }
+
   static Builder builder() {
     return new Builder();
   }
@@ -160,6 +181,8 @@ final class CommandLineOptions {
     private Boolean removeJavadocOnlyImports = false;
     private Boolean sortImports = true;
     private Boolean removeUnusedImports = true;
+    private Boolean dryRun = false;
+    private Boolean setExitIfChanged = false;
 
     ImmutableList.Builder<String> filesBuilder() {
       return files;
@@ -224,6 +247,16 @@ final class CommandLineOptions {
       return this;
     }
 
+    Builder dryRun(boolean dryRun) {
+      this.dryRun = dryRun;
+      return this;
+    }
+
+    Builder setExitIfChanged(boolean setExitIfChanged) {
+      this.setExitIfChanged = setExitIfChanged;
+      return this;
+    }
+
     CommandLineOptions build() {
       return new CommandLineOptions(
           this.files.build(),
@@ -238,7 +271,9 @@ final class CommandLineOptions {
           this.fixImportsOnly,
           this.removeJavadocOnlyImports,
           this.sortImports,
-          this.removeUnusedImports);
+          this.removeUnusedImports,
+          this.dryRun,
+          this.setExitIfChanged);
     }
   }
 }
