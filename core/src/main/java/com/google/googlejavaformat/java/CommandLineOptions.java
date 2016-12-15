@@ -36,6 +36,7 @@ final class CommandLineOptions {
   private final boolean stdin;
   private final boolean fixImportsOnly;
   private final boolean removeJavadocOnlyImports;
+  private final boolean sortImports;
 
   CommandLineOptions(
       ImmutableList<String> files,
@@ -48,7 +49,8 @@ final class CommandLineOptions {
       boolean help,
       boolean stdin,
       boolean fixImportsOnly,
-      boolean removeJavadocOnlyImports) {
+      boolean removeJavadocOnlyImports,
+      boolean sortImports) {
     this.files = files;
     this.inPlace = inPlace;
     this.lines = lines;
@@ -60,6 +62,7 @@ final class CommandLineOptions {
     this.stdin = stdin;
     this.fixImportsOnly = fixImportsOnly;
     this.removeJavadocOnlyImports = removeJavadocOnlyImports;
+    this.sortImports = sortImports;
   }
 
   /** The files to format. */
@@ -120,6 +123,11 @@ final class CommandLineOptions {
     return removeJavadocOnlyImports;
   }
 
+  /** Sort imports. */
+  boolean sortImports() {
+    return sortImports;
+  }
+
   /** Returns true if partial formatting was selected. */
   boolean isSelection() {
     return !lines().isEmpty() || !offsets().isEmpty() || !lengths().isEmpty();
@@ -142,6 +150,7 @@ final class CommandLineOptions {
     private Boolean stdin = false;
     private Boolean fixImportsOnly = false;
     private Boolean removeJavadocOnlyImports = false;
+    private Boolean sortImports = true;
 
     ImmutableList.Builder<String> filesBuilder() {
       return files;
@@ -196,6 +205,11 @@ final class CommandLineOptions {
       return this;
     }
 
+    Builder sortImports(boolean sortImports) {
+      this.sortImports = sortImports;
+      return this;
+    }
+
     CommandLineOptions build() {
       return new CommandLineOptions(
           this.files.build(),
@@ -208,7 +222,8 @@ final class CommandLineOptions {
           this.help,
           this.stdin,
           this.fixImportsOnly,
-          this.removeJavadocOnlyImports);
+          this.removeJavadocOnlyImports,
+          this.sortImports);
     }
   }
 }

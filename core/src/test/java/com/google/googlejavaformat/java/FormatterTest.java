@@ -259,6 +259,13 @@ public final class FormatterTest {
     importOrdering(null, "com/google/googlejavaformat/java/testimports/A.imports-and-formatting");
   }
 
+  @Test
+  public void formattingWithoutImportOrdering() throws IOException, UsageException {
+    importOrdering(
+        "--skip-sorting-imports",
+        "com/google/googlejavaformat/java/testimports/A.formatting-only");
+  }
+
   private void importOrdering(String sortArg, String outputResourceName)
       throws IOException, UsageException {
     Path tmpdir = testFolder.newFolder().toPath();

@@ -6,14 +6,14 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.util.List;
-import java.util.Set;
 
 import javax.annotations.Nullable;
 
 import static org.junit.Assert.fail;
 import static com.google.truth.Truth.assertThat;
 
-@RunWith( JUnit4.class ) public class SomeTest  {
+@RunWith(JUnit4.class)
+public class SomeTest {
 
   <T> void check(@Nullable List<T> x) {
     Preconditions.checkNodeNull(x);

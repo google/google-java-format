@@ -40,6 +40,7 @@ public class CommandLineOptionsParserTest {
     assertThat(options.offsets()).isEmpty();
     assertThat(options.inPlace()).isFalse();
     assertThat(options.version()).isFalse();
+    assertThat(options.sortImports()).isTrue();
   }
 
   @Test
@@ -106,6 +107,14 @@ public class CommandLineOptionsParserTest {
   @Test
   public void version() {
     assertThat(CommandLineOptionsParser.parse(Arrays.asList("-v")).version()).isTrue();
+  }
+
+  @Test
+  public void skipSortingImports() {
+    assertThat(
+            CommandLineOptionsParser.parse(Arrays.asList("--skip-sorting-imports"))
+                .sortImports())
+        .isFalse();
   }
 
   // TODO(cushon): consider handling this in the parser and reporting a more detailed error

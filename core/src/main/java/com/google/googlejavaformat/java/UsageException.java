@@ -40,6 +40,8 @@ public final class UsageException extends Exception {
     "    Use AOSP style instead of Google Style (4-space indentation)",
     "  --fix-imports-only",
     "    Fix import order and remove any unused imports, but do no other formatting.",
+    "  --skip-sorting-imports",
+    "    Do not fix the import order. Unused imports will still be removed.",
     "  --length, -length",
     "    Character length to format.",
     "  --lines, -lines, --line, -line",
