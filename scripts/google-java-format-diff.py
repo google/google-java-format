@@ -53,6 +53,8 @@ def main():
                       help='be more verbose, ineffective without -i')
   parser.add_argument('-a', '--aosp', action='store_true',
                       help='use AOSP style instead of Google Style (4-space indentation)')
+  parser.add_argument('--skip-sorting-imports', action='store_true',
+                      help='do not fix the import order')
   args = parser.parse_args()
 
   # Extract changed lines for each file.
@@ -94,6 +96,8 @@ def main():
       command.append('-i')
     if args.aosp:
       command.append('--aosp')
+    if args.skip_sorting_imports:
+      command.append('--skip-sorting-imports')
     command.extend(lines)
     command.append(filename)
     p = subprocess.Popen(command, stdout=subprocess.PIPE,
