@@ -1,20 +1,30 @@
 <idea-plugin version="2">
   <id>google-java-format</id>
   <name>google-java-format</name>
-  <version>1.0</version>
+  <version>1.2.SNAPSHOT.20161216</version>
   <vendor url="https://github.com/google/google-java-format">
     Google
   </vendor>
+
+  <!-- Mark it as available on all JetBrains IDEs. It's really only useful in
+       IDEA and Android Studio, but there's no way to specify that for some
+       reason. It won't crash PyCharm or anything, so whatever. -->
+  <depends>com.intellij.modules.lang</depends>
 
   <description><![CDATA[
       Formats Java source code to comply with Google Style.
     ]]></description>
 
-  <idea-version since-build="141.0" until-build="163.0"/>
+  <!-- CodeStyleManager stayed the same from 143 (IDEA 15) through 162
+       (2016.2). But they changed a parameter type of a method in 163 (2016.3),
+       so it needs some work to fix. -->
+  <idea-version since-build="143.0" until-build="163.0"/>
 
   <project-components>
     <component>
-      <implementation-class>com.google.googlejavaformat.intellij.GoogleJavaFormatSettings</implementation-class>
+      <implementation-class>
+        com.google.googlejavaformat.intellij.GoogleJavaFormatSettings
+      </implementation-class>
       <loadForDefaultProject/>
     </component>
   </project-components>

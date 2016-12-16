@@ -10,6 +10,5 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="google-java-format-1.1-20160728.050102-25-all-deps" level="project" />
   </component>
 </module>
