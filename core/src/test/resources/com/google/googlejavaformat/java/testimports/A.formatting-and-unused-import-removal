@@ -1,0 +1,31 @@
+package com.google.example;
+
+import com.google.common.base.Preconditions;
+
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.util.List;
+
+import javax.annotations.Nullable;
+
+import static org.junit.Assert.fail;
+import static com.google.truth.Truth.assertThat;
+
+@RunWith(JUnit4.class)
+public class SomeTest {
+
+  <T> void check(@Nullable List<T> x) {
+    Preconditions.checkNodeNull(x);
+  }
+
+  void f() {
+    List<String> xs = null;
+    assertThat(xs).isNull();
+    try {
+      check(xs);
+      fail();
+    } catch (NullPointerException e) {
+    }
+  }
+}

@@ -41,6 +41,7 @@ public class CommandLineOptionsParserTest {
     assertThat(options.inPlace()).isFalse();
     assertThat(options.version()).isFalse();
     assertThat(options.sortImports()).isTrue();
+    assertThat(options.removeUnusedImports()).isTrue();
   }
 
   @Test
@@ -112,8 +113,15 @@ public class CommandLineOptionsParserTest {
   @Test
   public void skipSortingImports() {
     assertThat(
-            CommandLineOptionsParser.parse(Arrays.asList("--skip-sorting-imports"))
-                .sortImports())
+            CommandLineOptionsParser.parse(Arrays.asList("--skip-sorting-imports")).sortImports())
+        .isFalse();
+  }
+
+  @Test
+  public void skipRemovingUnusedImports() {
+    assertThat(
+            CommandLineOptionsParser.parse(Arrays.asList("--skip-removing-unused-imports"))
+                .removeUnusedImports())
         .isFalse();
   }
 

@@ -37,6 +37,7 @@ final class CommandLineOptions {
   private final boolean fixImportsOnly;
   private final boolean removeJavadocOnlyImports;
   private final boolean sortImports;
+  private final boolean removeUnusedImports;
 
   CommandLineOptions(
       ImmutableList<String> files,
@@ -50,7 +51,8 @@ final class CommandLineOptions {
       boolean stdin,
       boolean fixImportsOnly,
       boolean removeJavadocOnlyImports,
-      boolean sortImports) {
+      boolean sortImports,
+      boolean removeUnusedImports) {
     this.files = files;
     this.inPlace = inPlace;
     this.lines = lines;
@@ -63,6 +65,7 @@ final class CommandLineOptions {
     this.fixImportsOnly = fixImportsOnly;
     this.removeJavadocOnlyImports = removeJavadocOnlyImports;
     this.sortImports = sortImports;
+    this.removeUnusedImports = removeUnusedImports;
   }
 
   /** The files to format. */
@@ -128,6 +131,11 @@ final class CommandLineOptions {
     return sortImports;
   }
 
+  /** Remove unused imports. */
+  boolean removeUnusedImports() {
+    return removeUnusedImports;
+  }
+
   /** Returns true if partial formatting was selected. */
   boolean isSelection() {
     return !lines().isEmpty() || !offsets().isEmpty() || !lengths().isEmpty();
@@ -151,6 +159,7 @@ final class CommandLineOptions {
     private Boolean fixImportsOnly = false;
     private Boolean removeJavadocOnlyImports = false;
     private Boolean sortImports = true;
+    private Boolean removeUnusedImports = true;
 
     ImmutableList.Builder<String> filesBuilder() {
       return files;
@@ -210,6 +219,11 @@ final class CommandLineOptions {
       return this;
     }
 
+    Builder removeUnusedImports(boolean removeUnusedImports) {
+      this.removeUnusedImports = removeUnusedImports;
+      return this;
+    }
+
     CommandLineOptions build() {
       return new CommandLineOptions(
           this.files.build(),
@@ -223,7 +237,8 @@ final class CommandLineOptions {
           this.stdin,
           this.fixImportsOnly,
           this.removeJavadocOnlyImports,
-          this.sortImports);
+          this.sortImports,
+          this.removeUnusedImports);
     }
   }
 }

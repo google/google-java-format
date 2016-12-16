@@ -49,12 +49,14 @@ public class FormatFileCallable implements Callable<String> {
   }
 
   private String fixImports(String input) throws FormatterException {
-    input =
-        RemoveUnusedImports.removeUnusedImports(
-            input,
-            parameters.removeJavadocOnlyImports()
-                ? JavadocOnlyImports.REMOVE
-                : JavadocOnlyImports.KEEP);
+    if (parameters.removeUnusedImports()) {
+      input =
+          RemoveUnusedImports.removeUnusedImports(
+              input,
+              parameters.removeJavadocOnlyImports()
+                  ? JavadocOnlyImports.REMOVE
+                  : JavadocOnlyImports.KEEP);
+    }
     if (parameters.sortImports()) {
       input = ImportOrderer.reorderImports(input);
     }

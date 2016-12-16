@@ -92,6 +92,9 @@ final class CommandLineOptionsParser {
         case "--skip-sorting-imports":
           optionsBuilder.sortImports(false);
           break;
+        case "--skip-removing-unused-imports":
+          optionsBuilder.removeUnusedImports(false);
+          break;
         case "-":
           optionsBuilder.stdin(true);
           break;

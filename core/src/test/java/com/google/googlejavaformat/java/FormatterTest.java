@@ -263,7 +263,14 @@ public final class FormatterTest {
   public void formattingWithoutImportOrdering() throws IOException, UsageException {
     importOrdering(
         "--skip-sorting-imports",
-        "com/google/googlejavaformat/java/testimports/A.formatting-only");
+        "com/google/googlejavaformat/java/testimports/A.formatting-and-unused-import-removal");
+  }
+
+  @Test
+  public void formattingWithoutRemovingUnusedImports() throws IOException, UsageException {
+    importOrdering(
+        "--skip-removing-unused-imports",
+        "com/google/googlejavaformat/java/testimports/A.formatting-and-import-sorting");
   }
 
   private void importOrdering(String sortArg, String outputResourceName)
