@@ -249,6 +249,15 @@ public final class FormatterTest {
   }
 
   @Test
+  public void importsOptimizedIfRequested() throws FormatterException {
+    String input =
+      "package com.google.example;\n" + UNORDERED_IMPORTS + "\npublic class ExampleTest {}\n";
+    String output = new Formatter().formatSourceAndOptimizeImports(input);
+    String expect = "package com.google.example;\n\npublic class ExampleTest {}\n";
+    assertThat(output).isEqualTo(expect);
+  }
+
+  @Test
   public void importOrderingWithoutFormatting() throws IOException, UsageException {
     importOrdering(
         "--fix-imports-only", "com/google/googlejavaformat/java/testimports/A.imports-only");
