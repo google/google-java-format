@@ -32,6 +32,7 @@ import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
+import com.google.googlejavaformat.java.RemoveUnusedImports.JavadocOnlyImports;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
@@ -199,6 +200,8 @@ public final class Formatter {
    * @throws FormatterException if the input string cannot be parsed
    */
   public String formatSource(String input) throws FormatterException {
+    input = ImportOrderer.reorderImports(input);
+    input = RemoveUnusedImports.removeUnusedImports(input, JavadocOnlyImports.REMOVE);
     return formatSource(input, Collections.singleton(Range.closedOpen(0, input.length())));
   }
 

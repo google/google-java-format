@@ -239,12 +239,11 @@ public final class FormatterTest {
               "import javax.annotations.Nullable;");
 
   @Test
-  public void importsNotReorderedByDefault() throws FormatterException {
+  public void importsFixedByDefault() throws FormatterException {
     String input =
         "package com.google.example;\n" + UNORDERED_IMPORTS + "\npublic class ExampleTest {}\n";
     String output = new Formatter().formatSource(input);
-    String expect =
-        "package com.google.example;\n\n" + UNORDERED_IMPORTS + "\n\npublic class ExampleTest {}\n";
+    String expect = "package com.google.example;\n\npublic class ExampleTest {}\n";
     assertThat(output).isEqualTo(expect);
   }
 
