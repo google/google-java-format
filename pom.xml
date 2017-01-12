@@ -109,7 +109,7 @@
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>javac</artifactId>
-        <version>9-dev-r3297-1</version>
+        <version>${javac.version}</version>
       </dependency>
 
       <!-- Compile-time dependencies -->
