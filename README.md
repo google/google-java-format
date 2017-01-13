@@ -13,7 +13,7 @@
 and run it with:
 
 ```
-java -jar /path/to/google-java-format-1.1-all-deps.jar <options> [files...]
+java -jar /path/to/google-java-format-1.2-all-deps.jar <options> [files...]
 ```
 
 The formatter can act on whole files, on limited lines (`--lines`), on specific
@@ -54,7 +54,7 @@ configuration.
 <dependency>
   <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format</artifactId>
-  <version>1.1</version>
+  <version>1.2</version>
 </dependency>
 ```
 
@@ -62,7 +62,7 @@ configuration.
 
 ```groovy
 dependencies {
-  compile 'com.google.googlejavaformat:google-java-format:1.1'
+  compile 'com.google.googlejavaformat:google-java-format:1.2'
 }
 ```
 
