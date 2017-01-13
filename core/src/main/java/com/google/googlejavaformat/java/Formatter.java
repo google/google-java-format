@@ -32,13 +32,6 @@ import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.parser.JavacParser;
-import com.sun.tools.javac.parser.ParserFactory;
-import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
-import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Options;
 import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
@@ -53,6 +46,13 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardLocation;
+import org.openjdk.tools.javac.file.JavacFileManager;
+import org.openjdk.tools.javac.parser.JavacParser;
+import org.openjdk.tools.javac.parser.ParserFactory;
+import org.openjdk.tools.javac.tree.JCTree.JCCompilationUnit;
+import org.openjdk.tools.javac.util.Context;
+import org.openjdk.tools.javac.util.Log;
+import org.openjdk.tools.javac.util.Options;
 
 /**
  * This is google-java-format, a new Java formatter that follows the Google Java Style Guide quite

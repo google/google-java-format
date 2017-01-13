@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavaInput.Tok;
-import com.sun.tools.javac.parser.Tokens.TokenKind;
+import org.openjdk.tools.javac.parser.Tokens.TokenKind;
 
 /** Orders imports in Java source code. */
 public class ImportOrderer {

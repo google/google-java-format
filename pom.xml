@@ -95,7 +95,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.8</java.version>
     <guava.version>19.0</guava.version>
-    <javac.version>9-dev-r3297-1</javac.version>
+    <javac.version>9-dev-r3297-1-shaded</javac.version>
   </properties>
 
   <dependencyManagement>
@@ -245,8 +245,7 @@
         <version>2.18</version>
         <configuration>
           <!-- set heap size to work around http://github.com/travis-ci/travis-ci/issues/3396 -->
-          <!-- put javac.jar on bootclasspath when executing tests -->
-          <argLine>-Xmx1024m -Xbootclasspath/p:${settings.localRepository}/com/google/errorprone/javac/${javac.version}/javac-${javac.version}.jar</argLine>
+          <argLine>-Xmx1024m</argLine>
         </configuration>
       </plugin>
     </plugins>

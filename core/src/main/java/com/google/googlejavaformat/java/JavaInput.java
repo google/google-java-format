@@ -33,12 +33,6 @@ import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavacTokens.RawTok;
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.parser.Tokens.TokenKind;
-import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
-import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -51,6 +45,12 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
+import org.openjdk.tools.javac.file.JavacFileManager;
+import org.openjdk.tools.javac.parser.Tokens.TokenKind;
+import org.openjdk.tools.javac.tree.JCTree.JCCompilationUnit;
+import org.openjdk.tools.javac.util.Context;
+import org.openjdk.tools.javac.util.Log;
+import org.openjdk.tools.javac.util.Log.DeferredDiagnosticHandler;
 
 /** {@code JavaInput} extends {@link Input} to represent a Java input document. */
 public final class JavaInput extends Input {
