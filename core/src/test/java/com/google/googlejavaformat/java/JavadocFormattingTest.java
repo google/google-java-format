@@ -687,6 +687,38 @@ public final class JavadocFormattingTest {
   public void lists() {
     String[] input = {
       "/**", //
+      "* hi",
+      "*",
+      "* <ul>",
+      "* <li>",
+      "* <ul>",
+      "* <li>a</li>",
+      "* </ul>",
+      "* </li>",
+      "* </ul>",
+      "*/",
+      "class Test {}",
+    };
+    String[] expected = {
+      "/**", //
+      " * hi",
+      " *",
+      " * <ul>",
+      " *   <li>",
+      " *       <ul>",
+      " *         <li>a",
+      " *       </ul>",
+      " * </ul>",
+      " */",
+      "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void lists2() {
+    String[] input = {
+      "/**", //
       " * Foo.",
       " *",
       " * <ul><li>1<ul><li>1a<li>1b</ul>more 1<p>still more 1<li>2</ul>",
@@ -706,6 +738,33 @@ public final class JavadocFormattingTest {
       " *       more 1",
       " *       <p>still more 1",
       " *   <li>2",
+      " * </ul>",
+      " */",
+      "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void closeInnerListStillNewline() {
+    String[] input = {
+      "/**", //
+      " * Foo.",
+      " *",
+      " * <ul><li><ul><li>a</ul>b</ul>",
+      " */",
+      "class Test {}",
+    };
+    String[] expected = {
+      "/**", //
+      " * Foo.",
+      " *",
+      " * <ul>",
+      " *   <li>",
+      " *       <ul>",
+      " *         <li>a",
+      " *       </ul>",
+      " *       b",
       " * </ul>",
       " */",
       "class Test {}",

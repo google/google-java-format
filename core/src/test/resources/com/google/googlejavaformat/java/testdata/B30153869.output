@@ -19,7 +19,6 @@ class T {
    *         <li>b
    *         <li>c
    *       </ul>
-   *
    *   <li>e
    * </ul>
    */

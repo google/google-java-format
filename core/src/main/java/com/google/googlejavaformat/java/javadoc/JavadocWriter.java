@@ -53,6 +53,7 @@ final class JavadocWriter {
   private boolean continuingFooterTag;
   private final NestingCounter continuingListItemCount = new NestingCounter();
   private final NestingCounter continuingListCount = new NestingCounter();
+  private final NestingCounter postWriteModifiedContinuingListCount = new NestingCounter();
   private int remainingOnLine;
   private boolean atStartOfLine;
   private RequestedWhitespace requestedWhitespace = NONE;
@@ -106,6 +107,11 @@ final class JavadocWriter {
     continuingListItemOfInnermostList = false;
     continuingListItemCount.reset();
     continuingListCount.reset();
+    /*
+     * There's probably no need for this, since its only effect is to disable blank lines in some
+     * cases -- and we're doing that already in the footer.
+     */
+    postWriteModifiedContinuingListCount.reset();
 
     if (!wroteAnythingSignificant) {
       // Javadoc consists solely of tags. This is frowned upon in general but OK for @Overrides.
@@ -127,6 +133,7 @@ final class JavadocWriter {
     writeToken(token);
     continuingListItemOfInnermostList = false;
     continuingListCount.increment();
+    postWriteModifiedContinuingListCount.increment();
 
     requestNewline();
   }
@@ -137,8 +144,8 @@ final class JavadocWriter {
     continuingListItemCount.decrementIfPositive();
     continuingListCount.decrementIfPositive();
     writeToken(token);
+    postWriteModifiedContinuingListCount.decrementIfPositive();
 
-    // TODO(cushon): only if continuingListItemCount == 0?
     requestBlankLine();
   }
 
@@ -290,7 +297,7 @@ final class JavadocWriter {
     }
 
     if (requestedWhitespace == BLANK_LINE
-        && (continuingListItemCount.isPositive() || continuingFooterTag)) {
+        && (postWriteModifiedContinuingListCount.isPositive() || continuingFooterTag)) {
       /*
        * We don't write blank lines inside lists or footer tags, even in cases where we otherwise
        * would (e.g., before a <p> tag). Justification: We don't write blank lines _between_ list
