@@ -23,7 +23,7 @@ import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWh
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWhitespace.NONE;
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWhitespace.WHITESPACE;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.HEADER_OPEN_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.LIST_OPEN_TAG;
+import static com.google.googlejavaformat.java.javadoc.Token.Type.LIST_ITEM_OPEN_TAG;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_OPEN_TAG;
 
 import com.google.common.base.Strings;
@@ -404,5 +404,5 @@ final class JavadocWriter {
    * LITERAL (because they require other special handling).
    */
   private static final ImmutableSet<Type> START_OF_LINE_TOKENS =
-      immutableEnumSet(LIST_OPEN_TAG, PARAGRAPH_OPEN_TAG, HEADER_OPEN_TAG);
+      immutableEnumSet(LIST_ITEM_OPEN_TAG, PARAGRAPH_OPEN_TAG, HEADER_OPEN_TAG);
 }

@@ -1090,6 +1090,20 @@ public final class JavadocFormattingTest {
   }
 
   @Test
+  public void listItemSpaces() throws Exception {
+    String input =
+        new String(
+            ByteStreams.toByteArray(getClass().getResourceAsStream("testjavadoc/B31404367.input")),
+            UTF_8);
+    String expected =
+        new String(
+            ByteStreams.toByteArray(getClass().getResourceAsStream("testjavadoc/B31404367.output")),
+            UTF_8);
+    String output = formatter.formatSource(input);
+    assertThat(output).isEqualTo(expected);
+  }
+
+  @Test
   public void htmlTagsInCode() {
     String[] input = {
       "/** abc {@code {} <p> <li> <pre> <table>} def */", //
