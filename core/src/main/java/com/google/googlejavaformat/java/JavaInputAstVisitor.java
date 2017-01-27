@@ -342,6 +342,11 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
     dropEmptyDeclarations();
     for (Tree type : node.getTypeDecls()) {
+      if (type.getKind() == Tree.Kind.IMPORT) {
+        // javac treats extra semicolons in the import list as type declarations
+        // TODO(cushon): remove this if https://bugs.openjdk.java.net/browse/JDK-8027682 is fixed
+        continue;
+      }
       if (!first) {
         builder.blankLineWanted(BlankLineWanted.YES);
       }
@@ -1070,6 +1075,8 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
     visitName(node.getQualifiedIdentifier());
     token(";");
+    // TODO(cushon): remove this if https://bugs.openjdk.java.net/browse/JDK-8027682 is fixed
+    dropEmptyDeclarations();
     return null;
   }
 
