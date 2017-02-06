@@ -18,7 +18,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.googlejavaformat.java.Formatter;
 import java.io.IOException;
+import javax.annotation.Nullable;
 import javax.annotation.processing.Filer;
+import javax.annotation.processing.Messager;
 import javax.lang.model.element.Element;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
@@ -33,17 +35,30 @@ public final class FormattingFiler implements Filer {
   private final Filer delegate;
   // TODO(ronshapiro): consider allowing users to create their own Formatter instance
   private final Formatter formatter = new Formatter();
+  private final Messager messager;
 
   /** @param delegate filer to decorate */
   public FormattingFiler(Filer delegate) {
+    this(delegate, null);
+  }
+
+  /**
+   * Create a new {@link FormattingFiler}. An optional {@link Messager} may be specified to make
+   * logs more visible.
+   *
+   * @param delegate filer to decorate
+   * @param messager to log warnings to
+   */
+  public FormattingFiler(Filer delegate, @Nullable Messager messager) {
     this.delegate = checkNotNull(delegate);
+    this.messager = messager;
   }
 
   @Override
   public JavaFileObject createSourceFile(CharSequence name, Element... originatingElements)
       throws IOException {
     return new FormattingJavaFileObject(
-        delegate.createSourceFile(name, originatingElements), formatter);
+        delegate.createSourceFile(name, originatingElements), formatter, messager);
   }
 
   @Override

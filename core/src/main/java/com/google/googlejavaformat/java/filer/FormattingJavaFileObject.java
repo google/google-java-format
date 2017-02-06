@@ -22,6 +22,9 @@ import com.google.googlejavaformat.java.Formatter;
 import com.google.googlejavaformat.java.FormatterException;
 import java.io.IOException;
 import java.io.Writer;
+import javax.annotation.Nullable;
+import javax.annotation.processing.Messager;
+import javax.tools.Diagnostic;
 import javax.tools.ForwardingJavaFileObject;
 import javax.tools.JavaFileObject;
 
@@ -31,11 +34,19 @@ final class FormattingJavaFileObject extends ForwardingJavaFileObject<JavaFileOb
   private static final int DEFAULT_FILE_SIZE = 80 * 500;
 
   private final Formatter formatter;
+  private final Messager messager;
 
-  /** @param delegate {@link JavaFileObject} to decorate */
-  FormattingJavaFileObject(JavaFileObject delegate, Formatter formatter) {
+  /**
+   * Create a new {@link FormattingJavaFileObject}.
+   *
+   * @param delegate {@link JavaFileObject} to decorate
+   * @param messager to log messages with.
+   */
+  FormattingJavaFileObject(
+      JavaFileObject delegate, Formatter formatter, @Nullable Messager messager) {
     super(checkNotNull(delegate));
     this.formatter = checkNotNull(formatter);
+    this.messager = messager;
   }
 
   @Override
@@ -62,7 +73,15 @@ final class FormattingJavaFileObject extends ForwardingJavaFileObject<JavaFileOb
                 }
               });
         } catch (FormatterException e) {
-          throw new IOException("Error formatting " + getName(), e);
+          // An exception will happen when the code being formatted has an error. It's better to
+          // log the exception and emit unformatted code so the developer can view the code which
+          // caused a problem.
+          try (Writer writer = fileObject.openWriter()) {
+            writer.append(stringBuilder.toString());
+          }
+          if (messager != null) {
+            messager.printMessage(Diagnostic.Kind.NOTE, "Error formatting " + getName());
+          }
         }
       }
     };

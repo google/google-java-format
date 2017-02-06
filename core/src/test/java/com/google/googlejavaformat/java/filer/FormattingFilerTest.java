@@ -15,16 +15,19 @@
 package com.google.googlejavaformat.java.filer;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
-import com.google.googlejavaformat.java.FormatterException;
 import com.google.testing.compile.CompilationRule;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import javax.annotation.processing.Filer;
+import javax.annotation.processing.Messager;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager.Location;
@@ -43,18 +46,38 @@ public class FormattingFilerTest {
   @Rule public CompilationRule compilationRule = new CompilationRule();
 
   @Test
-  public void invalidSyntaxThrowsError() throws IOException {
+  public void invalidSyntaxDoesNotThrowError() throws IOException {
+    List<String> logMessages = new ArrayList<>();
+    Messager messager =
+        new Messager() {
+          @Override
+          public void printMessage(javax.tools.Diagnostic.Kind kind, CharSequence msg) {
+            logMessages.add(kind.toString() + ";" + msg);
+          }
+
+          @Override
+          public void printMessage(javax.tools.Diagnostic.Kind kind, CharSequence msg, Element e) {}
+
+          @Override
+          public void printMessage(
+              javax.tools.Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a) {}
+
+          @Override
+          public void printMessage(
+              javax.tools.Diagnostic.Kind kind,
+              CharSequence msg,
+              Element e,
+              AnnotationMirror a,
+              AnnotationValue v) {}
+        };
+
     String file = Joiner.on('\n').join("package foo;", "public class Bar {");
-    FormattingFiler formattingFiler = new FormattingFiler(new FakeFiler());
+    FormattingFiler formattingFiler = new FormattingFiler(new FakeFiler(), messager);
     Writer writer = formattingFiler.createSourceFile("foo.Bar").openWriter();
     writer.write(file);
-    try {
-      writer.close();
-      fail("An exception should be thrown if formatting fails");
-    } catch (IOException expected) {
-      assertThat(expected.getMessage()).contains("foo.Bar");
-      assertThat(expected.getCause().getClass()).isAssignableTo(FormatterException.class);
-    }
+    writer.close();
+
+    assertThat(logMessages).containsExactly("NOTE;Error formatting foo.Bar");
   }
 
   @Test
