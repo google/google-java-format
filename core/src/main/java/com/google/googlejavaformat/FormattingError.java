@@ -17,6 +17,7 @@ package com.google.googlejavaformat;
 import static java.util.Locale.ENGLISH;
 
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import javax.tools.Diagnostic;
@@ -32,6 +33,7 @@ public class FormattingError extends Error {
   }
 
   public FormattingError(Iterable<FormatterDiagnostic> diagnostics) {
+    super(Joiner.on("\n").join(diagnostics) + "\n");
     this.diagnostics = ImmutableList.copyOf(diagnostics);
   }
 
