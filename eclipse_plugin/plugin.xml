@@ -3,9 +3,9 @@
 <plugin>
    <extension point="org.eclipse.jdt.core.javaFormatter">
    <javaFormatter
-         class="com.google.googlejavaformat.eclipse.GoogleJavaFormatter"
-         id="com.google.googlejavaformat.eclipse.GoogleJavaFormatter"
-         name="Google Java Formatter">
+         class="com.google.googlejavaformat.java.GoogleJavaFormatter"
+         id="com.google.googlejavaformat.java.GoogleJavaFormatter"
+         name="Google Java Formatter (1.3-SNAPSHOT)">
    </javaFormatter>
    </extension>
 </plugin>
