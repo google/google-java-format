@@ -82,10 +82,16 @@ public class GoogleJavaFormatter extends CodeFormatter {
         default:
           throw new IllegalArgumentException(String.format("Unknown snippet kind: %d", kind));
       }
-      return editFromReplacements(
+      List<Replacement> replacements =
           new SnippetFormatter()
               .format(
-                  snippetKind, source, rangesFromRegions(regions), initialIndent, includeComments));
+                  snippetKind, source, rangesFromRegions(regions), initialIndent, includeComments);
+      if (idempotent(source, regions, replacements)) {
+        // Do not create edits if there's no diff.
+        return null;
+      }
+      // Convert replacements to text edits.
+      return editFromReplacements(replacements);
     } catch (IllegalArgumentException | FormatterException exception) {
       // Do not format on errors.
       return null;
@@ -98,6 +104,28 @@ public class GoogleJavaFormatter extends CodeFormatter {
       ranges.add(Range.closedOpen(region.getOffset(), region.getOffset() + region.getLength()));
     }
     return ranges;
+  }
+
+  /** @return {@code true} if input and output texts are equal, else {@code false}. */
+  private boolean idempotent(String source, IRegion[] regions, List<Replacement> replacements) {
+    // This implementation only checks for single replacement.
+    if (replacements.size() == 1) {
+      Replacement replacement = replacements.get(0);
+      String output = replacement.getReplacementString();
+      // Entire source case: input = output, nothing changed.
+      if (output.equals(source)) {
+        return true;
+      }
+      // Single region and single replacement case: if they are equal, nothing changed.
+      if (regions.length == 1) {
+        Range<Integer> range = replacement.getReplaceRange();
+        String snippet = source.substring(range.lowerEndpoint(), range.upperEndpoint());
+        if (output.equals(snippet)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private TextEdit editFromReplacements(List<Replacement> replacements) {
