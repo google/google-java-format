@@ -86,22 +86,24 @@ public class GoogleJavaFormatter extends CodeFormatter {
           new SnippetFormatter()
               .format(
                   snippetKind, source, rangesFromRegions(regions), initialIndent, includeComments);
-      // Trivial case: no replacement, no change.
+      // Trivial case: no replacement, nothing changed.
       if (replacements.isEmpty()) {
         return null;
       }
-      // Entire source case: input = output, no change.
-      if (replacements.size() == 1 && replacements.get(0).getReplacementString().equals(source)) {
-        return null;
-      }
-      // Single region and replacement case: if they are equals, no change.
-      if (replacements.size() == 1 && regions.length == 1) {
-        Replacement replacement = replacements.get(0);
-        String output = replacement.getReplacementString();
-        Range<Integer> replaceRange = replacement.getReplaceRange();
-        String input = source.substring(replaceRange.lowerEndpoint(), replaceRange.upperEndpoint());
-        if (output.equals(input)) {
+      if (replacements.size() == 1) {
+        // Entire source case: input = output, nothing changed.
+        if (replacements.get(0).getReplacementString().equals(source)) {
           return null;
+        }
+        // Single region and single replacement case: if they are equal, nothing changed.
+        if (regions.length == 1) {
+          Replacement replacement = replacements.get(0);
+          String output = replacement.getReplacementString();
+          Range<Integer> range = replacement.getReplaceRange();
+          String input = source.substring(range.lowerEndpoint(), range.upperEndpoint());
+          if (output.equals(input)) {
+            return null;
+          }
         }
       }
       // Convert replacements to text edits.
