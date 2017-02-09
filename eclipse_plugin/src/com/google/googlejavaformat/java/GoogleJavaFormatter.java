@@ -82,10 +82,30 @@ public class GoogleJavaFormatter extends CodeFormatter {
         default:
           throw new IllegalArgumentException(String.format("Unknown snippet kind: %d", kind));
       }
-      return editFromReplacements(
+      List<Replacement> replacements =
           new SnippetFormatter()
               .format(
-                  snippetKind, source, rangesFromRegions(regions), initialIndent, includeComments));
+                  snippetKind, source, rangesFromRegions(regions), initialIndent, includeComments);
+      // Trivial case: no replacement, no change.
+      if (replacements.isEmpty()) {
+        return null;
+      }
+      // Entire source case: input = output, no change.
+      if (replacements.size() == 1 && replacements.get(0).getReplacementString().equals(source)) {
+        return null;
+      }
+      // Single region and replacement case: if they are equals, no change.
+      if (replacements.size() == 1 && regions.length == 1) {
+        Replacement replacement = replacements.get(0);
+        String output = replacement.getReplacementString();
+        Range<Integer> replaceRange = replacement.getReplaceRange();
+        String input = source.substring(replaceRange.lowerEndpoint(), replaceRange.upperEndpoint());
+        if (output.equals(input)) {
+          return null;
+        }
+      }
+      // Convert replacements to text edits.
+      return editFromReplacements(replacements);
     } catch (IllegalArgumentException | FormatterException exception) {
       // Do not format on errors.
       return null;
