@@ -25,6 +25,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import java.awt.Insets;
+import javax.annotation.Nullable;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -32,7 +33,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 class GoogleJavaFormatConfigurable extends BaseConfigurable implements SearchableConfigurable {
 

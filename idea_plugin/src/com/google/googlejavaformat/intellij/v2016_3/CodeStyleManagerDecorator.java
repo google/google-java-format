@@ -32,8 +32,8 @@ import com.intellij.util.ThrowableRunnable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Decorates the {@link CodeStyleManager} abstract class by delegating to a concrete implementation
