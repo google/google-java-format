@@ -45,7 +45,7 @@ IntelliJ to add support for configuring external formatters.
 ### Eclipse
 
 A [google-java-format Eclipse
-plugin](https://github.com/google/google-java-format/releases/tag/google-java-format-1.3)
+plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.3/google-java-format-eclipse-plugin-1.3.0.jar)
 can be downloaded from the releases page.
 
 The plugin adds a `google-java-format` formatter implementation that can be
