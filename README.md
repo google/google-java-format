@@ -13,7 +13,7 @@
 and run it with:
 
 ```
-java -jar /path/to/google-java-format-1.2-all-deps.jar <options> [files...]
+java -jar /path/to/google-java-format-1.3-all-deps.jar <options> [files...]
 ```
 
 The formatter can act on whole files, on limited lines (`--lines`), on specific
@@ -42,6 +42,16 @@ files. Until IntelliJ is restarted, the `Reformat code` action will also
 There is an [open bug](https://devnet.jetbrains.com/thread/464297) against
 IntelliJ to add support for configuring external formatters.
 
+### Eclipse
+
+A [google-java-format Eclipse
+plugin](https://github.com/google/google-java-format/releases/tag/google-java-format-1.3)
+can be downloaded from the releases page.
+
+The plugin adds a `google-java-format` formatter implementation that can be
+configured in `Window > Preferences > Java > Code Style > Formatter > Formatter
+Implementation`.
+
 ### as a library
 
 The formatter can be used in software which generates java to output more
@@ -54,7 +64,7 @@ configuration.
 <dependency>
   <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format</artifactId>
-  <version>1.2</version>
+  <version>1.3</version>
 </dependency>
 ```
 
@@ -62,7 +72,7 @@ configuration.
 
 ```groovy
 dependencies {
-  compile 'com.google.googlejavaformat:google-java-format:1.2'
+  compile 'com.google.googlejavaformat:google-java-format:1.3'
 }
 ```
 
