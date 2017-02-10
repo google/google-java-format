@@ -5,7 +5,7 @@
    <javaFormatter
          class="com.google.googlejavaformat.java.GoogleJavaFormatter"
          id="com.google.googlejavaformat.java.GoogleJavaFormatter"
-         name="google-java-format 1.3">
+         name="google-java-format 1.4">
    </javaFormatter>
    </extension>
 </plugin>
