@@ -115,7 +115,7 @@ public class DimensionHelpers {
           return node;
         }
         node = extractDims(dims, annotatedTypeTree.getUnderlyingType());
-        dims.addFirst(ImmutableList.<AnnotationTree>copyOf(annotatedTypeTree.getAnnotations()));
+        dims.addFirst(ImmutableList.copyOf(annotatedTypeTree.getAnnotations()));
         return node;
       default:
         return node;

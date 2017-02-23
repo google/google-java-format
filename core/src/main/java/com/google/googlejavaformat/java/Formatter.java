@@ -32,7 +32,6 @@ import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
-import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
 import java.net.URI;
@@ -138,7 +137,7 @@ public final class Formatter {
     JCCompilationUnit unit;
     JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
     try {
-      fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, ImmutableList.<File>of());
+      fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, ImmutableList.of());
     } catch (IOException e) {
       // impossible
       throw new IOError(e);
