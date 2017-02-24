@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -199,7 +198,7 @@ public final class Formatter {
    * @throws FormatterException if the input string cannot be parsed
    */
   public String formatSource(String input) throws FormatterException {
-    return formatSource(input, Collections.singleton(Range.closedOpen(0, input.length())));
+    return formatSource(input, ImmutableList.of(Range.closedOpen(0, input.length())));
   }
 
   /**

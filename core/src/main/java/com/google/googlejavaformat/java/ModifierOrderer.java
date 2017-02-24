@@ -77,7 +77,7 @@ final class ModifierOrderer {
   /** Reorders all modifiers in the given text to be in JLS order. */
   static JavaInput reorderModifiers(String text) throws FormatterException {
     return reorderModifiers(
-        new JavaInput(text), Collections.singleton(Range.closedOpen(0, text.length())));
+        new JavaInput(text), ImmutableList.of(Range.closedOpen(0, text.length())));
   }
 
   /**
