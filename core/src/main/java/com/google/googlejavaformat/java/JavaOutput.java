@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static java.util.Comparator.comparing;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.MoreObjects;
@@ -30,8 +31,6 @@ import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -364,15 +363,7 @@ public final class JavaOutput extends Output {
 
   public static String applyReplacements(String input, List<Replacement> replacements) {
     replacements = new ArrayList<>(replacements);
-    Collections.sort(
-        replacements,
-        new Comparator<Replacement>() {
-          @Override
-          public int compare(Replacement o1, Replacement o2) {
-            return Integer.compare(
-                o2.getReplaceRange().lowerEndpoint(), o1.getReplaceRange().lowerEndpoint());
-          }
-        });
+    replacements.sort(comparing((Replacement r) -> r.getReplaceRange().lowerEndpoint()).reversed());
     StringBuilder writer = new StringBuilder(input);
     for (Replacement replacement : replacements) {
       writer.replace(
