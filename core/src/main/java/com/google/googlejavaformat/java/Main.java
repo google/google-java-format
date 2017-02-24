@@ -212,8 +212,7 @@ public final class Main {
       throw new UsageException("partial formatting is only support for a single file");
     }
     if (parameters.offsets().size() != parameters.lengths().size()) {
-      throw new UsageException(
-          String.format("-offsets and -lengths flags must be provided in matching pairs"));
+      throw new UsageException("-offsets and -lengths flags must be provided in matching pairs");
     }
     if (filesToFormat <= 0 && !parameters.version() && !parameters.help()) {
       throw new UsageException("no files were provided");
