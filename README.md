@@ -46,7 +46,7 @@ IntelliJ to add support for configuring external formatters.
 
 A [google-java-format Eclipse
 plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.3/google-java-format-eclipse-plugin-1.3.0.jar)
-can be downloaded from the releases page.
+can be downloaded from the releases page. Drop it into the Eclipse [dropins folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fmisc%2Fp2_dropins_format.html) to activate the plugin.
 
 The plugin adds a `google-java-format` formatter implementation that can be
 configured in `Window > Preferences > Java > Code Style > Formatter > Formatter
