@@ -476,7 +476,6 @@ public final class OpsBuilder {
           boolean space = false; // Do we need an extra space after a previous "/*" comment?
           boolean lastWasComment = false; // Was the last thing we output a comment?
           boolean allowBlankAfterLastComment = false;
-          boolean lastWasJavadoc = false;
           for (Input.Tok tokBefore : token.getToksBefore()) {
             if (tokBefore.isNewline()) {
               newlines++;
@@ -491,7 +490,9 @@ public final class OpsBuilder {
               space = tokBefore.isSlashStarComment();
               newlines = 0;
               lastWasComment = true;
-              lastWasJavadoc = tokBefore.isJavadocComment();
+              if (tokBefore.isJavadocComment()) {
+                tokOps.put(j, Doc.Break.makeForced());
+              }
               allowBlankAfterLastComment =
                   tokBefore.isSlashSlashComment()
                       || (tokBefore.isSlashStarComment() && !tokBefore.isJavadocComment());
@@ -501,7 +502,7 @@ public final class OpsBuilder {
             // Force a line break after two newlines in a row following a line or block comment
             output.blankLine(token.getTok().getIndex(), BlankLineWanted.YES);
           }
-          if (lastWasJavadoc || (lastWasComment && newlines > 0)) {
+          if (lastWasComment && newlines > 0) {
             tokOps.put(j, Doc.Break.makeForced());
           } else if (space) {
             tokOps.put(j, SPACE);
