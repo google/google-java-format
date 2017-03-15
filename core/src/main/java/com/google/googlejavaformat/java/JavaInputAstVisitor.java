@@ -227,6 +227,10 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     boolean isYes() {
       return this == YES;
     }
+
+    static VarArgsOrNot fromVariable(VariableTree node) {
+      return valueOf((((JCTree.JCVariableDecl) node).mods.flags & Flags.VARARGS) == Flags.VARARGS);
+    }
   }
 
   /** Whether the formal parameter declaration is a receiver. */
@@ -912,7 +916,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           annotationDirection,
           Optional.of(fragment.getModifiers()),
           fragment.getType(),
-          VarArgsOrNot.NO,
+          VarArgsOrNot.fromVariable(fragment),
           ImmutableList.<AnnotationTree>of(),
           fragment.getName(),
           "",
@@ -2307,7 +2311,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       String equals,
       Optional<String> trailing) {
     sync(node);
-    boolean varargs = (((JCTree.JCVariableDecl) node).mods.flags & Flags.VARARGS) == Flags.VARARGS;
+    boolean varargs = VarArgsOrNot.fromVariable(node).isYes();
     List<? extends AnnotationTree> varargsAnnotations = ImmutableList.of();
     Tree type = node.getType();
     if (varargs) {
