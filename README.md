@@ -42,6 +42,12 @@ files. Until IntelliJ is restarted, the `Reformat code` action will also
 There is an [open bug](https://devnet.jetbrains.com/thread/464297) against
 IntelliJ to add support for configuring external formatters.
 
+If this is currently not an option for your team, you could also use the
+formatter 
+[rule set](https://github.com/google/styleguide/blob/gh-pages/intellij-java-google-style.xml)
+for intellij as a work-around.
+
+
 ### Eclipse
 
 A [google-java-format Eclipse
