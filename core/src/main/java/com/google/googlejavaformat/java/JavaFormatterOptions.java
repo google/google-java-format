@@ -29,7 +29,7 @@ import com.google.errorprone.annotations.Immutable;
 @Immutable
 public class JavaFormatterOptions {
 
-  static final int DEFAULT_MAX_LINE_LENGTH = 100;
+  static final int DEFAULT_MAX_LINE_LENGTH = 150;
 
   public enum Style {
 
