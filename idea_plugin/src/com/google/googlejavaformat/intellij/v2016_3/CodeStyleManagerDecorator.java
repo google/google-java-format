@@ -29,9 +29,7 @@ import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.codeStyle.Indent;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.ThrowableRunnable;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 
@@ -99,9 +97,10 @@ class CodeStyleManagerDecorator extends CodeStyleManager {
   }
 
   @Override
-  public void reformatTextWithContext(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
+  public void reformatTextWithContext(
+      @NotNull PsiFile psiFile, @NotNull ChangedRangesInfo changedRangesInfo)
       throws IncorrectOperationException {
-    delegate.reformatTextWithContext(file, ranges);
+    delegate.reformatTextWithContext(psiFile, changedRangesInfo);
   }
 
   @Override
@@ -178,15 +177,5 @@ class CodeStyleManagerDecorator extends CodeStyleManager {
   @Override
   public <T> T performActionWithFormatterDisabled(Computable<T> r) {
     return delegate.performActionWithFormatterDisabled(r);
-  }
-
-  @Override
-  public void reformatTextWithContext(
-      @NotNull PsiFile psiFile, @NotNull ChangedRangesInfo changedRangesInfo)
-      throws IncorrectOperationException {
-    List<TextRange> ranges = new ArrayList<>();
-    ranges.addAll(changedRangesInfo.insertedRanges);
-    ranges.addAll(changedRangesInfo.allChangedRanges);
-    this.reformatTextWithContext(psiFile, ranges);
   }
 }
