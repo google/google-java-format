@@ -293,14 +293,15 @@ public class RemoveUnusedImports {
       JavadocOnlyImports javadocOnlyImports,
       JCImport importTree,
       String simpleName) {
-    if (unit.getPackageName() != null) {
-      String qualifier =
-          importTree.getQualifiedIdentifier() instanceof JCFieldAccess
-              ? ((JCFieldAccess) importTree.getQualifiedIdentifier()).getExpression().toString()
-              : null;
-      if (unit.getPackageName().toString().equals(qualifier)) {
-        return true;
-      }
+    String qualifier =
+        importTree.getQualifiedIdentifier() instanceof JCFieldAccess
+            ? ((JCFieldAccess) importTree.getQualifiedIdentifier()).getExpression().toString()
+            : null;
+    if (qualifier.equals("java.lang")) {
+      return true;
+    }
+    if (unit.getPackageName() != null && unit.getPackageName().toString().equals(qualifier)) {
+      return true;
     }
     if (importTree.getQualifiedIdentifier() instanceof JCFieldAccess
         && ((JCFieldAccess) importTree.getQualifiedIdentifier())

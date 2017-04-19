@@ -307,6 +307,28 @@ public class RemoveUnusedImportsTest {
           "public class Test {}",
         },
       },
+      {
+        {
+          "package p;",
+          "import java.lang.Foo;",
+          "import java.lang.Foo.Bar;",
+          "import p.Baz;",
+          "import p.Baz.Bork;",
+          "public class Test implements Foo, Bar, Baz, Bork {}",
+        },
+        {
+          "package p;",
+          "import java.lang.Foo.Bar;",
+          "import p.Baz.Bork;",
+          "public class Test implements Foo, Bar, Baz, Bork {}",
+        },
+        {
+          "package p;",
+          "import java.lang.Foo.Bar;",
+          "import p.Baz.Bork;",
+          "public class Test implements Foo, Bar, Baz, Bork {}",
+        },
+      },
     };
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[][] inputAndOutput : inputsOutputs) {
