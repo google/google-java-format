@@ -88,8 +88,9 @@ public final class JavaCommentsHelper implements CommentsHelper {
     return builder.toString();
   }
 
-  // Remove leading and trailing whitespace, and re-indent each line.
+  // Remove leading whitespace (trailing was already removed), wrap if necessary, and re-indent.
   private String indentLineComments(List<String> lines, int column0) {
+    lines = wrapLineComments(lines, column0, options);
     StringBuilder builder = new StringBuilder();
     builder.append(lines.get(0).trim());
     String indentString = Strings.repeat(" ", column0);
@@ -99,7 +100,28 @@ public final class JavaCommentsHelper implements CommentsHelper {
     return builder.toString();
   }
 
-  // Remove leading and trailing whitespace, and re-indent each line.
+  private List<String> wrapLineComments(
+      List<String> lines, int column0, JavaFormatterOptions options) {
+    List<String> result = new ArrayList<>();
+    for (String line : lines) {
+      while (line.length() + column0 > options.maxLineLength()) {
+        int idx = options.maxLineLength() - column0;
+        // only break on whitespace characters, and ignore the leading `// `
+        while (idx >= 2 && !CharMatcher.whitespace().matches(line.charAt(idx))) {
+          idx--;
+        }
+        if (idx <= 2) {
+          break;
+        }
+        result.add(line.substring(0, idx));
+        line = "//" + line.substring(idx);
+      }
+      result.add(line);
+    }
+    return result;
+  }
+
+  // Remove leading whitespace (trailing was already removed), and re-indent.
   // Add a +1 indent before '*', and add the '*' if necessary.
   private String indentJavadoc(List<String> lines, int column0) {
     StringBuilder builder = new StringBuilder();
@@ -140,3 +162,4 @@ public final class JavaCommentsHelper implements CommentsHelper {
     return true;
   }
 }
+

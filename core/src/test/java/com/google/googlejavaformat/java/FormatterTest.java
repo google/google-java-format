@@ -323,4 +323,70 @@ public final class FormatterTest {
     assertThat(new Formatter().formatSource("class T {{ f(\"\\\"\"); }}"))
         .isEqualTo("class T {\n  {\n    f(\"\\\"\");\n  }\n}\n");
   }
+
+  @Test
+  public void wrapLineComment() throws Exception {
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    "class T {\n"
+                        + "  public static void main(String[] args) { // one long incredibly"
+                        + " unbroken sentence moving from topic to topic so that no-one had a"
+                        + " chance to interrupt;\n"
+                        + "  }\n"
+                        + "}\n"))
+        .isEqualTo(
+            "class T {\n"
+                + "  public static void main(\n"
+                + "      String[]\n"
+                + "          args) { // one long incredibly unbroken sentence moving"
+                + " from topic to topic so that no-one\n"
+                + "                  // had a chance to interrupt;\n"
+                + "  }\n"
+                + "}\n");
+  }
+
+  @Test
+  public void onlyWrapLineCommentOnWhitespace() throws Exception {
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    "class T {\n"
+                        + "  public static void main(String[] args) { // one_long_incredibly"
+                        + "_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a"
+                        + "_chance_to_interrupt;\n"
+                        + "  }\n"
+                        + "}\n"))
+        .isEqualTo(
+            "class T {\n"
+                + "  public static void main(\n"
+                + "      String[]\n"
+                + "          args) { // one_long_incredibly"
+                + "_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a"
+                + "_chance_to_interrupt;\n"
+                + "  }\n"
+                + "}\n");
+  }
+
+  @Test
+  public void onlyWrapLineCommentOnWhitespace_noLeadingWhitespace() throws Exception {
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    "class T {\n"
+                        + "  public static void main(String[] args) { //one_long_incredibly"
+                        + "_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a"
+                        + "_chance_to_interrupt;\n"
+                        + "  }\n"
+                        + "}\n"))
+        .isEqualTo(
+            "class T {\n"
+                + "  public static void main(\n"
+                + "      String[]\n"
+                + "          args) { //one_long_incredibly"
+                + "_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a"
+                + "_chance_to_interrupt;\n"
+                + "  }\n"
+                + "}\n");
+  }
 }
