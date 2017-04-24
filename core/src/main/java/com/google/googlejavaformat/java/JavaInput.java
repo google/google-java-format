@@ -481,10 +481,11 @@ public final class JavaInput extends Input {
     int k = 0;
     int kN = toks.size();
 
-    while (k < kN) {
-      // Remaining non-tokens before the token go here.
-      ImmutableList.Builder<Tok> toksBefore = ImmutableList.builder();
+    // Remaining non-tokens before the token go here.
+    ImmutableList.Builder<Tok> toksBefore = ImmutableList.builder();
 
+    OUTERMOST:
+    while (k < kN) {
       while (!toks.get(k).isToken()) {
         toksBefore.add(toks.get(k++));
       }
@@ -519,6 +520,15 @@ public final class JavaInput extends Input {
               break;
           }
         }
+        if (isParamComment(toks.get(k))) {
+          tokens.add(new Token(toksBefore.build(), tok, toksAfter.build()));
+          toksBefore = ImmutableList.<Tok>builder().add(toks.get(k++));
+          // drop newlines after parameter comments
+          while (toks.get(k).isNewline()) {
+            k++;
+          }
+          continue OUTERMOST;
+        }
         Tok nonTokenAfter = toks.get(k++);
         toksAfter.add(nonTokenAfter);
         if (Newlines.containsBreaks(nonTokenAfter.getText())) {
@@ -526,8 +536,15 @@ public final class JavaInput extends Input {
         }
       }
       tokens.add(new Token(toksBefore.build(), tok, toksAfter.build()));
+      toksBefore = ImmutableList.builder();
     }
     return tokens.build();
+  }
+
+  private static boolean isParamComment(Tok tok) {
+    return tok.isSlashStarComment()
+        && tok.getText().endsWith("*/")
+        && tok.getText().substring(0, tok.getText().length() - "*/".length()).trim().endsWith("=");
   }
 
   /**

@@ -1,0 +1,8 @@
+class B26694550 {
+  {
+    fffffffffffffffffffffffffffffff(
+        ImmutableList.copyOf(keys), /*keepGoing=*/
+        false,
+        ggggggggggggggggggggggggggggggggggggggggggg);
+  }
+}
