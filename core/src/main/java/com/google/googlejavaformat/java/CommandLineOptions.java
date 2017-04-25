@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableRangeSet;
  * <p>google-java-format doesn't depend on AutoValue, to allow AutoValue to depend on
  * google-java-format.
  */
-final class CommandLineOptions {
+public final class CommandLineOptions {
 
   private final ImmutableList<String> files;
   private final boolean inPlace;
@@ -145,7 +145,7 @@ final class CommandLineOptions {
     return new Builder();
   }
 
-  static class Builder {
+  public static class Builder {
 
     private final ImmutableList.Builder<String> files = ImmutableList.builder();
     private final ImmutableRangeSet.Builder<Integer> lines = ImmutableRangeSet.builder();
@@ -161,70 +161,70 @@ final class CommandLineOptions {
     private Boolean sortImports = true;
     private Boolean removeUnusedImports = true;
 
-    ImmutableList.Builder<String> filesBuilder() {
+    public ImmutableList.Builder<String> filesBuilder() {
       return files;
     }
 
-    Builder inPlace(boolean inPlace) {
+    public Builder inPlace(boolean inPlace) {
       this.inPlace = inPlace;
       return this;
     }
 
-    ImmutableRangeSet.Builder<Integer> linesBuilder() {
+    public ImmutableRangeSet.Builder<Integer> linesBuilder() {
       return lines;
     }
 
-    Builder addOffset(Integer offset) {
+    public Builder addOffset(Integer offset) {
       offsets.add(offset);
       return this;
     }
 
-    Builder addLength(Integer length) {
+    public Builder addLength(Integer length) {
       lengths.add(length);
       return this;
     }
 
-    Builder aosp(boolean aosp) {
+    public Builder aosp(boolean aosp) {
       this.aosp = aosp;
       return this;
     }
 
-    Builder version(boolean version) {
+    public Builder version(boolean version) {
       this.version = version;
       return this;
     }
 
-    Builder help(boolean help) {
+    public Builder help(boolean help) {
       this.help = help;
       return this;
     }
 
-    Builder stdin(boolean stdin) {
+    public Builder stdin(boolean stdin) {
       this.stdin = stdin;
       return this;
     }
 
-    Builder fixImportsOnly(boolean fixImportsOnly) {
+    public Builder fixImportsOnly(boolean fixImportsOnly) {
       this.fixImportsOnly = fixImportsOnly;
       return this;
     }
 
-    Builder removeJavadocOnlyImports(boolean removeJavadocOnlyImports) {
+    public Builder removeJavadocOnlyImports(boolean removeJavadocOnlyImports) {
       this.removeJavadocOnlyImports = removeJavadocOnlyImports;
       return this;
     }
 
-    Builder sortImports(boolean sortImports) {
+    public Builder sortImports(boolean sortImports) {
       this.sortImports = sortImports;
       return this;
     }
 
-    Builder removeUnusedImports(boolean removeUnusedImports) {
+    public Builder removeUnusedImports(boolean removeUnusedImports) {
       this.removeUnusedImports = removeUnusedImports;
       return this;
     }
 
-    CommandLineOptions build() {
+    public CommandLineOptions build() {
       return new CommandLineOptions(
           this.files.build(),
           this.inPlace,

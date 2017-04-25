@@ -107,7 +107,7 @@ public final class Main {
     }
   }
 
-  private int formatFiles(CommandLineOptions parameters, JavaFormatterOptions options) {
+  public int formatFiles(CommandLineOptions parameters, JavaFormatterOptions options) {
     int numThreads = Math.min(MAX_THREADS, parameters.files().size());
     ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
 
