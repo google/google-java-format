@@ -487,7 +487,14 @@ public final class JavaInput extends Input {
     OUTERMOST:
     while (k < kN) {
       while (!toks.get(k).isToken()) {
-        toksBefore.add(toks.get(k++));
+        Tok tok = toks.get(k++);
+        toksBefore.add(tok);
+        if (isParamComment(tok)) {
+          while (toks.get(k).isNewline()) {
+            // drop newlines after parameter comments
+            k++;
+          }
+        }
       }
       Tok tok = toks.get(k++);
 
@@ -543,8 +550,7 @@ public final class JavaInput extends Input {
 
   private static boolean isParamComment(Tok tok) {
     return tok.isSlashStarComment()
-        && tok.getText().endsWith("*/")
-        && tok.getText().substring(0, tok.getText().length() - "*/".length()).trim().endsWith("=");
+        && tok.getText().matches("\\/\\*[A-Za-z0-9\\s_\\-]+=\\s*\\*\\/");
   }
 
   /**
