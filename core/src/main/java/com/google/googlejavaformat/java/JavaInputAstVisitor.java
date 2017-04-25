@@ -950,7 +950,11 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.space();
     token("(");
     builder.open(plusFour);
-    builder.open(node.getInitializer().size() <= 1 ? ZERO : plusFour);
+    builder.open(
+        node.getInitializer().size() > 1
+                && node.getInitializer().get(0).getKind() == Tree.Kind.EXPRESSION_STATEMENT
+            ? plusFour
+            : ZERO);
     if (!node.getInitializer().isEmpty()) {
       if (node.getInitializer().get(0).getKind() == VARIABLE) {
         PeekingIterator<StatementTree> it =
