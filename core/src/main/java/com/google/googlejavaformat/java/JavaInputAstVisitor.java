@@ -984,8 +984,8 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       scan(node.getCondition(), null);
     }
     token(";");
-    builder.breakOp(" ");
     if (!node.getUpdate().isEmpty()) {
+      builder.breakOp(" ");
       builder.open(node.getUpdate().size() <= 1 ? ZERO : plusFour);
       boolean firstUpdater = true;
       for (ExpressionStatementTree updater : node.getUpdate()) {
@@ -998,6 +998,8 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       }
       builder.guessToken(";");
       builder.close();
+    } else {
+      builder.space();
     }
     builder.close();
     token(")");
