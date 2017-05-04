@@ -471,7 +471,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         if (!first) {
           builder.forcedBreak();
         }
-        builder.open(row.iterator().next().getKind() == NEW_ARRAY ? ZERO : plusFour);
+        builder.open(row.iterator().next().getKind() == NEW_ARRAY || cols == 1 ? ZERO : plusFour);
         boolean firstInRow = true;
         for (ExpressionTree item : row) {
           if (!firstInRow) {
@@ -2889,7 +2889,10 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       while (it.hasNext() && actualColumn(it.peek()) > start0) {
         row.add(it.next());
       }
-      if (!it.hasNext() || row.size() == 1) {
+      if (!it.hasNext()) {
+        return -1;
+      }
+      if (rowLength(row) <= 1) {
         return -1;
       }
       rows.add(row);
@@ -2932,6 +2935,23 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       return -1;
     }
     return size0;
+  }
+
+  static int rowLength(List<? extends ExpressionTree> row) {
+    int size = 0;
+    for (ExpressionTree tree : row) {
+      if (tree.getKind() != NEW_ARRAY) {
+        size++;
+        continue;
+      }
+      NewArrayTree array = (NewArrayTree) tree;
+      if (array.getInitializers() == null) {
+        size++;
+        continue;
+      }
+      size += rowLength(array.getInitializers());
+    }
+    return size;
   }
 
   private Integer actualColumn(ExpressionTree expression) {
