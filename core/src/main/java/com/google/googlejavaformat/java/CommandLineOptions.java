@@ -38,6 +38,7 @@ final class CommandLineOptions {
   private final boolean removeJavadocOnlyImports;
   private final boolean sortImports;
   private final boolean removeUnusedImports;
+  private final boolean skipJavaDocFormatting;
 
   CommandLineOptions(
       ImmutableList<String> files,
@@ -52,7 +53,8 @@ final class CommandLineOptions {
       boolean fixImportsOnly,
       boolean removeJavadocOnlyImports,
       boolean sortImports,
-      boolean removeUnusedImports) {
+      boolean removeUnusedImports,
+      boolean skipJavaDocFormatting) {
     this.files = files;
     this.inPlace = inPlace;
     this.lines = lines;
@@ -66,6 +68,7 @@ final class CommandLineOptions {
     this.removeJavadocOnlyImports = removeJavadocOnlyImports;
     this.sortImports = sortImports;
     this.removeUnusedImports = removeUnusedImports;
+    this.skipJavaDocFormatting = skipJavaDocFormatting;
   }
 
   /** The files to format. */
@@ -136,6 +139,10 @@ final class CommandLineOptions {
     return removeUnusedImports;
   }
 
+  boolean skipJavaDocFormatting() {
+    return skipJavaDocFormatting;
+  }
+
   /** Returns true if partial formatting was selected. */
   boolean isSelection() {
     return !lines().isEmpty() || !offsets().isEmpty() || !lengths().isEmpty();
@@ -160,6 +167,7 @@ final class CommandLineOptions {
     private Boolean removeJavadocOnlyImports = false;
     private Boolean sortImports = true;
     private Boolean removeUnusedImports = true;
+    private Boolean skipJavaDocFormatting = false;
 
     ImmutableList.Builder<String> filesBuilder() {
       return files;
@@ -224,6 +232,11 @@ final class CommandLineOptions {
       return this;
     }
 
+    Builder skipJavaDocFormatting(boolean skipJavaDocFormatting) {
+      this.skipJavaDocFormatting = skipJavaDocFormatting;
+      return this;
+    }
+
     CommandLineOptions build() {
       return new CommandLineOptions(
           this.files.build(),
@@ -238,7 +251,8 @@ final class CommandLineOptions {
           this.fixImportsOnly,
           this.removeJavadocOnlyImports,
           this.sortImports,
-          this.removeUnusedImports);
+          this.removeUnusedImports,
+          this.skipJavaDocFormatting);
     }
   }
 }

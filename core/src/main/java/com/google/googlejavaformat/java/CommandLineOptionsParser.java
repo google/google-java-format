@@ -95,6 +95,9 @@ final class CommandLineOptionsParser {
         case "--skip-removing-unused-imports":
           optionsBuilder.removeUnusedImports(false);
           break;
+        case "--skip-javadoc-formatting":
+          optionsBuilder.skipJavaDocFormatting(true);
+          break;
         case "-":
           optionsBuilder.stdin(true);
           break;

@@ -44,6 +44,8 @@ public final class UsageException extends Exception {
     "    Do not fix the import order. Unused imports will still be removed.",
     "  --skip-removing-unused-imports",
     "    Do not remove unused imports. Imports will still be sorted.",
+    "  --skip-javadoc-formatting",
+    "    Do not format javadoc comments. Comments will still be trimmed, indented and fixed for missing asterisks.",
     "  --length, -length",
     "    Character length to format.",
     "  --lines, -lines, --line, -line",

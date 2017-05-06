@@ -51,9 +51,11 @@ public class JavaFormatterOptions {
   }
 
   private final Style style;
+  private final boolean skipJavaDocFormatting;
 
-  private JavaFormatterOptions(Style style) {
+  private JavaFormatterOptions(Style style, boolean skipJavaDocFormatting) {
     this.style = style;
+    this.skipJavaDocFormatting = skipJavaDocFormatting;
   }
 
   /** Returns the maximum formatted width */
@@ -64,6 +66,11 @@ public class JavaFormatterOptions {
   /** Returns the multiplier for the unit of indent */
   public int indentationMultiplier() {
     return style.indentationMultiplier();
+  }
+
+  /** Returns if javadoc formatting should be skipped. */
+  public boolean skipJavaDocFormatting() {
+    return skipJavaDocFormatting;
   }
 
   /** Returns the default formatting options. */
@@ -79,6 +86,7 @@ public class JavaFormatterOptions {
   /** A builder for {@link JavaFormatterOptions}. */
   public static class Builder {
     private Style style = Style.GOOGLE;
+    private boolean skipJavaDocFormatting = false;
 
     private Builder() {}
 
@@ -87,8 +95,13 @@ public class JavaFormatterOptions {
       return this;
     }
 
+    public Builder skipJavaDocFormatting(boolean skipJavaDocFormatting) {
+      this.skipJavaDocFormatting = skipJavaDocFormatting;
+      return this;
+    }
+
     public JavaFormatterOptions build() {
-      return new JavaFormatterOptions(style);
+      return new JavaFormatterOptions(style, skipJavaDocFormatting);
     }
   }
 }
