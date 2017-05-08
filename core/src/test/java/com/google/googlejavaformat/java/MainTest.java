@@ -173,6 +173,7 @@ public class MainTest {
       String[] expected = {
         "import java.util.ArrayList;",
         "import java.util.List;",
+        "",
         "class Test {",
         "  /**",
         "   * May be an {@link ArrayList}.",
@@ -189,6 +190,7 @@ public class MainTest {
     {
       String[] expected = {
         "import java.util.List;",
+        "",
         "class Test {",
         "  /** May be an {@link java.util.ArrayList}. */",
         "  public static List<String> names;",
@@ -217,6 +219,7 @@ public class MainTest {
     };
     String[] expected = {
       "import java.util.ArrayList;",
+      "",
       "class Test {",
       "  ArrayList<String> a = new ArrayList<>();",
       "ArrayList<String> b = new ArrayList<>();",
