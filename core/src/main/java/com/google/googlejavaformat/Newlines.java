@@ -42,6 +42,16 @@ public class Newlines {
     return BREAKS.contains(input);
   }
 
+  /** Returns the length of the newline sequence at the current offset, or {@code -1}. */
+  public static int hasNewlineAt(String input, int idx) {
+    for (String b : BREAKS) {
+      if (input.startsWith(b, idx)) {
+        return b.length();
+      }
+    }
+    return -1;
+  }
+
   /**
    * Returns the terminating line break in the input, or {@code null} if the input does not end in a
    * break.

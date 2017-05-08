@@ -22,6 +22,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Range;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -361,6 +362,7 @@ public final class PartialFormattingTest {
     String expectedOutput =
         lines(
             "package test;", //
+            "",
             "class Test {}",
             "");
     int idx = input.indexOf("test");
@@ -664,9 +666,9 @@ public final class PartialFormattingTest {
     assertThat(replacement.getReplacementString())
         .isEqualTo(
             lines(
-                "  void f() {}", //
-                ""));
-    int replaceFrom = input.indexOf("void f");
+                "", //
+                "  void f() {}"));
+    int replaceFrom = input.indexOf("void f") - newline.length();
     assertThat(replacement.getReplaceRange().lowerEndpoint()).isEqualTo(replaceFrom);
   }
 
@@ -1545,5 +1547,158 @@ public final class PartialFormattingTest {
     assertThat(
             new Formatter().formatSource(in, ImmutableList.of(Range.closedOpen(idx + 1, idx + 1))))
         .isEqualTo(in);
+  }
+
+  @Test
+  public void importNewlines() throws Exception {
+    String input =
+        lines(
+            "package p;",
+            "import java.util.ArrayList;",
+            "class Foo {",
+            "  ArrayList<String> xs = new ArrayList<>();",
+            "}",
+            "");
+    String expectedOutput =
+        lines(
+            "package p;",
+            "",
+            "import java.util.ArrayList;",
+            "",
+            "class Foo {",
+            "  ArrayList<String> xs = new ArrayList<>();",
+            "}",
+            "");
+
+    String output = runFormatter(input, new String[] {"-lines", "2"});
+    assertThat(output).isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void b36458607() throws Exception {
+    String input =
+        lines(
+            "// copyright",
+            "",
+            "package p;",
+            "import static c.g.I.c;",
+            "",
+            "/** */",
+            "class Foo {{ c(); }}",
+            "");
+    String expectedOutput =
+        lines(
+            "// copyright",
+            "",
+            "package p;",
+            "",
+            "import static c.g.I.c;",
+            "",
+            "/** */",
+            "class Foo {{ c(); }}",
+            "");
+
+    String output = runFormatter(input, new String[] {"-lines", "4"});
+    assertThat(output).isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void b32159971() throws Exception {
+    String input =
+        lines(
+            "", //
+            "",
+            "package p;",
+            "class X {}",
+            "");
+    String expectedOutput =
+        lines(
+            "package p;", //
+            "",
+            "class X {}",
+            "");
+
+    String output = runFormatter(input, new String[] {"-lines", "3"});
+    assertThat(output).isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void b21668189() throws Exception {
+    String input =
+        lines(
+            "class Foo {", //
+            "  {",
+            "    int x = 1;",
+            "    ",
+            "    int y = 2;",
+            "  }",
+            "}",
+            "");
+    String expectedOutput =
+        lines(
+            "class Foo {", //
+            "  {",
+            "    int x = 1;",
+            "",
+            "    int y = 2;",
+            "  }",
+            "}",
+            "");
+
+    String output = runFormatter(input, new String[] {"-lines", "4:5"});
+    assertThat(output).isEqualTo(expectedOutput);
+  }
+
+  private String runFormatter(String input, String[] args) throws IOException, UsageException {
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    assertThat(main.format(ObjectArrays.concat(args, path.toString()))).isEqualTo(0);
+    return out.toString();
+  }
+
+  @Test
+  public void trailing() throws Exception {
+    String input =
+        lines(
+            "package foo.bar.baz;",
+            "",
+            "public class B {",
+            "  public void f() {",
+            "    int a = 7 +4;",
+            "    int b = 7 +4;",
+            "    int c = 7 +4;",
+            "    int d = 7 +4;",
+            "",
+            "    int e = 7 +4;",
+            "  }",
+            "}");
+    String expected =
+        lines(
+            "package foo.bar.baz;",
+            "",
+            "public class B {",
+            "  public void f() {",
+            "    int a = 7 +4;",
+            "    int b = 7 +4;",
+            "    int c = 7 + 4;",
+            "    int d = 7 +4;",
+            "",
+            "    int e = 7 +4;",
+            "  }",
+            "}");
+    String actual =
+        new Formatter().formatSource(input, ImmutableList.of(rangeOf(input, "int c = 7 +4")));
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  private Range<Integer> rangeOf(String input, String needle) {
+    int idx = input.indexOf(needle);
+    return Range.closedOpen(idx, idx + needle.length());
   }
 }
