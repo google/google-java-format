@@ -14,16 +14,15 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteStreams;
+import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import java.util.Arrays;
-
-import static com.google.common.truth.Truth.assertThat;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /** Tests formatting javadoc. */
 @RunWith(JUnit4.class)
@@ -1341,25 +1340,25 @@ public final class JavadocFormattingTest {
   public void skipEmpty() {
     // For skip javadoc formatting cases all we care about are that the comments are unchanged.
     String[] input = {
-            "/***/", //
-            "class Test {}",
+      "/***/", //
+      "class Test {}",
     };
     doSkipFormatTest(input, input);
   }
 
   @Test
-  public void skipNoAsterisk() {
+  public void skipJavadocFormattingStillFixesNoAsterisk() {
     String[] input = {
-            "/**", //
-            " abc<p>def",
-            " */",
-            "class Test {}",
+      "/**", //
+      " abc<p>def",
+      " */",
+      "class Test {}",
     };
     String[] expected = {
-            "/**", //
-            " * abc<p>def",
-            " */",
-            "class Test {}",
+      "/**", //
+      " * abc<p>def",
+      " */",
+      "class Test {}",
     };
     doSkipFormatTest(input, expected);
   }
@@ -1368,32 +1367,32 @@ public final class JavadocFormattingTest {
   public void skipListHtmlButFixIndentation() {
     // Skipping javadoc formatting doesn't stop fixing indentation.
     String[] input = {
-            "/**", //
-            "* hi",
-            "*",
-            "* <ul>",
-            "* <li>",
-            "* <ul>",
-            "* <li>a</li>",
-            "* </ul>",
-            "* </li>",
-            "* </ul>",
-            "*/",
-            "class Test {}",
+      "/**", //
+      "* hi",
+      "*",
+      "* <ul>",
+      "* <li>",
+      "* <ul>",
+      "* <li>a</li>",
+      "* </ul>",
+      "* </li>",
+      "* </ul>",
+      "*/",
+      "class Test {}",
     };
     String[] expected = {
-            "/**", //
-            " * hi",
-            " *",
-            " * <ul>",
-            " * <li>",
-            " * <ul>",
-            " * <li>a</li>",
-            " * </ul>",
-            " * </li>",
-            " * </ul>",
-            " */",
-            "class Test {}",
+      "/**", //
+      " * hi",
+      " *",
+      " * <ul>",
+      " * <li>",
+      " * <ul>",
+      " * <li>a</li>",
+      " * </ul>",
+      " * </li>",
+      " * </ul>",
+      " */",
+      "class Test {}",
     };
     doSkipFormatTest(input, expected);
   }
@@ -1401,32 +1400,32 @@ public final class JavadocFormattingTest {
   @Test
   public void skipInferParagraphTags() {
     String[] input = {
-            "/**",
-            " *",
-            " *",
-            " * foo",
-            " * foo",
-            " *",
-            " *",
-            " * foo",
-            " *",
-            " * bar",
-            " *",
-            " * <pre>",
-            " *",
-            " * baz",
-            " *",
-            " * </pre>",
-            " *",
-            " * <ul>",
-            " * <li>foo",
-            " *",
-            " * bar",
-            " * </ul>",
-            " *",
-            " *",
-            " */",
-            "class Test {}",
+      "/**",
+      " *",
+      " *",
+      " * foo",
+      " * foo",
+      " *",
+      " *",
+      " * foo",
+      " *",
+      " * bar",
+      " *",
+      " * <pre>",
+      " *",
+      " * baz",
+      " *",
+      " * </pre>",
+      " *",
+      " * <ul>",
+      " * <li>foo",
+      " *",
+      " * bar",
+      " * </ul>",
+      " *",
+      " *",
+      " */",
+      "class Test {}",
     };
     doSkipFormatTest(input, input);
   }
@@ -1434,12 +1433,12 @@ public final class JavadocFormattingTest {
   @Test
   public void skipRemoveCloseTags() {
     String[] input = {
-            "/**", //
-            " * foo</p>",
-            " *",
-            " * <p>bar</p>",
-            " */",
-            "class Test {}",
+      "/**", //
+      " * foo</p>",
+      " *",
+      " * <p>bar</p>",
+      " */",
+      "class Test {}",
     };
     doSkipFormatTest(input, input);
   }
@@ -1455,7 +1454,8 @@ public final class JavadocFormattingTest {
 
   private void doSkipFormatTest(String[] input, String[] expected) {
     try {
-      Formatter skipFormatter = new Formatter(JavaFormatterOptions.builder().skipJavaDocFormatting(true).build());
+      Formatter skipFormatter =
+          new Formatter(JavaFormatterOptions.builder().skipJavadocFormatting(true).build());
       String actual = skipFormatter.formatSource(Joiner.on('\n').join(input));
       assertThat(actual).isEqualTo(Joiner.on('\n').join(expected) + "\n");
     } catch (FormatterException e) {

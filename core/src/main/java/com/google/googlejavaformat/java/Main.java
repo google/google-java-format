@@ -99,9 +99,9 @@ public final class Main {
 
     JavaFormatterOptions options =
         JavaFormatterOptions.builder()
-                .style(parameters.aosp() ? Style.AOSP : Style.GOOGLE)
-                .skipJavaDocFormatting(parameters.skipJavaDocFormatting())
-                .build();
+            .style(parameters.aosp() ? Style.AOSP : Style.GOOGLE)
+            .skipJavadocFormatting(parameters.skipJavadocFormatting())
+            .build();
 
     if (parameters.stdin()) {
       return formatStdin(parameters, options);

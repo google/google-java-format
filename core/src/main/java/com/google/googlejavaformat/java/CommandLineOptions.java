@@ -38,7 +38,7 @@ final class CommandLineOptions {
   private final boolean removeJavadocOnlyImports;
   private final boolean sortImports;
   private final boolean removeUnusedImports;
-  private final boolean skipJavaDocFormatting;
+  private final boolean skipJavadocFormatting;
 
   CommandLineOptions(
       ImmutableList<String> files,
@@ -54,7 +54,7 @@ final class CommandLineOptions {
       boolean removeJavadocOnlyImports,
       boolean sortImports,
       boolean removeUnusedImports,
-      boolean skipJavaDocFormatting) {
+      boolean skipJavadocFormatting) {
     this.files = files;
     this.inPlace = inPlace;
     this.lines = lines;
@@ -68,7 +68,7 @@ final class CommandLineOptions {
     this.removeJavadocOnlyImports = removeJavadocOnlyImports;
     this.sortImports = sortImports;
     this.removeUnusedImports = removeUnusedImports;
-    this.skipJavaDocFormatting = skipJavaDocFormatting;
+    this.skipJavadocFormatting = skipJavadocFormatting;
   }
 
   /** The files to format. */
@@ -139,8 +139,8 @@ final class CommandLineOptions {
     return removeUnusedImports;
   }
 
-  boolean skipJavaDocFormatting() {
-    return skipJavaDocFormatting;
+  boolean skipJavadocFormatting() {
+    return skipJavadocFormatting;
   }
 
   /** Returns true if partial formatting was selected. */
@@ -167,7 +167,7 @@ final class CommandLineOptions {
     private Boolean removeJavadocOnlyImports = false;
     private Boolean sortImports = true;
     private Boolean removeUnusedImports = true;
-    private Boolean skipJavaDocFormatting = false;
+    private Boolean skipJavadocFormatting = false;
 
     ImmutableList.Builder<String> filesBuilder() {
       return files;
@@ -232,8 +232,8 @@ final class CommandLineOptions {
       return this;
     }
 
-    Builder skipJavaDocFormatting(boolean skipJavaDocFormatting) {
-      this.skipJavaDocFormatting = skipJavaDocFormatting;
+    Builder skipJavadocFormatting(boolean skipJavadocFormatting) {
+      this.skipJavadocFormatting = skipJavadocFormatting;
       return this;
     }
 
@@ -252,7 +252,7 @@ final class CommandLineOptions {
           this.removeJavadocOnlyImports,
           this.sortImports,
           this.removeUnusedImports,
-          this.skipJavaDocFormatting);
+          this.skipJavadocFormatting);
     }
   }
 }
