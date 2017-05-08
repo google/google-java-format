@@ -145,7 +145,10 @@ public final class JavaOutput extends Output {
             break;
           default:
             while (newlinesPending > 0) {
-              mutableLines.add(lineBuilder.toString());
+              // drop leading blank lines
+              if (!mutableLines.isEmpty() || lineBuilder.length() > 0) {
+                mutableLines.add(lineBuilder.toString());
+              }
               lineBuilder = new StringBuilder();
               rangesSet = false;
               --newlinesPending;
@@ -253,44 +256,33 @@ public final class JavaOutput extends Output {
       // Add all output lines in the given token range to the replacement.
       StringBuilder replacement = new StringBuilder();
 
-      boolean needsBreakBefore = false;
       int replaceFrom = startTok.getPosition();
+      // Replace leading whitespace in the input with the whitespace from the formatted file
       while (replaceFrom > 0) {
         char previous = javaInput.getText().charAt(replaceFrom - 1);
-        if (previous == '\n' || previous == '\r') {
+        if (!CharMatcher.whitespace().matches(previous)) {
           break;
         }
-        if (CharMatcher.whitespace().matches(previous)) {
-          replaceFrom--;
-          continue;
-        }
-        needsBreakBefore = true;
-        break;
+        replaceFrom--;
       }
 
-      if (needsBreakBefore) {
-        replacement.append(lineSeparator);
+      int i = kToJ.get(startTok.getIndex()).lowerEndpoint();
+      // Include leading blank lines from the formatted output, unless the formatted range
+      // starts at the beginning of the file.
+      while (i > 0 && getLine(i - 1).isEmpty()) {
+        i--;
       }
-
-      boolean first = true;
-      int i;
-      for (i = kToJ.get(startTok.getIndex()).lowerEndpoint();
-          i < kToJ.get(endTok.getIndex()).upperEndpoint();
-          i++) {
+      // Write out the formatted range.
+      for (; i < kToJ.get(endTok.getIndex()).upperEndpoint(); i++) {
         // It's possible to run out of output lines (e.g. if the input ended with
         // multiple trailing newlines).
         if (i < getLineCount()) {
-          if (first) {
-            first = false;
-          } else {
+          if (i > 0) {
             replacement.append(lineSeparator);
           }
           replacement.append(getLine(i));
         }
       }
-      replacement.append(lineSeparator);
-
-      String trailingLine = i < getLineCount() ? getLine(i) : null;
 
       int replaceTo =
           Math.min(endTok.getPosition() + endTok.length(), javaInput.getText().length());
@@ -299,46 +291,50 @@ public final class JavaOutput extends Output {
       if (endTok.getIndex() == javaInput.getkN() - 1) {
         replaceTo = javaInput.getText().length();
       }
-
-      // Expand the partial formatting range to include non-breaking trailing
-      // whitespace. If the range ultimately ends in a newline, then preserve
-      // whatever original text was on the next line (i.e. don't re-indent
-      // the next line after the reformatted range). However, if the partial
-      // formatting range doesn't end in a newline, then break and re-indent.
-      boolean reIndent = true;
-      OUTER:
+      // Replace trailing whitespace in the input with the whitespace from the formatted file.
+      // If the trailing whitespace in the input includes one or more line breaks, preserve the
+      // whitespace after the last newline to avoid re-indenting the line following the formatted
+      // line.
+      int newline = -1;
       while (replaceTo < javaInput.getText().length()) {
-        char endChar = javaInput.getText().charAt(replaceTo);
-        switch (endChar) {
-          case '\r':
-            if (replaceTo + 1 < javaInput.getText().length()
-                && javaInput.getText().charAt(replaceTo + 1) == '\n') {
-              replaceTo++;
-            }
-            // falls through
-          case '\n':
-            replaceTo++;
-            reIndent = false;
-            break OUTER;
-          default:
-            break;
+        char next = javaInput.getText().charAt(replaceTo);
+        if (!CharMatcher.whitespace().matches(next)) {
+          break;
         }
-        if (CharMatcher.whitespace().matches(endChar)) {
+        int newlineLength = Newlines.hasNewlineAt(javaInput.getText(), replaceTo);
+        if (newlineLength != -1) {
+          newline = replaceTo;
+          // Skip over the entire newline; don't count the second character of \r\n as a newline.
+          replaceTo += newlineLength;
+        } else {
           replaceTo++;
-          continue;
         }
-        break;
       }
-      if (reIndent && trailingLine != null) {
-        int idx = CharMatcher.whitespace().negate().indexIn(trailingLine);
-        if (idx > 0) {
-          replacement.append(trailingLine, 0, idx);
+      if (newline != -1) {
+        replaceTo = newline;
+      }
+
+      if (newline == -1) {
+        // There wasn't an existing trailing newline; add one.
+        replacement.append(lineSeparator);
+      }
+      for (; i < getLineCount(); i++) {
+        String after = getLine(i);
+        if (after.isEmpty()) {
+          // Write out trailing blank lines from the formatted output.
+          replacement.append(lineSeparator);
+        } else {
+          if (newline == -1) {
+            // If there wasn't a trailing newline in the input, indent the next line.
+            int idx = CharMatcher.whitespace().negate().indexIn(after);
+            replacement.append(after.substring(0, idx));
+          }
+          break;
         }
       }
 
       result.add(Replacement.create(replaceFrom, replaceTo, replacement.toString()));
     }
-
     return result.build();
   }
 
