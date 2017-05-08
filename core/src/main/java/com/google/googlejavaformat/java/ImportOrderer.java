@@ -15,6 +15,7 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.collect.Iterables.getLast;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -124,10 +125,18 @@ public class ImportOrderer {
       tail = text.substring(tailStart);
     }
 
-    return tokString(0, unindentedFirstImportStart)
-        + reorderedImportsString(imports.imports)
-        + tokString(afterLastImport, toks.size())
-        + tail;
+    StringBuilder result = new StringBuilder();
+    result.append(
+        CharMatcher.whitespace().trimTrailingFrom(tokString(0, unindentedFirstImportStart)));
+    if (result.length() > 0) {
+      result.append(lineSeparator).append(lineSeparator);
+    }
+    result.append(reorderedImportsString(imports.imports));
+    result.append(lineSeparator);
+    result.append(
+        CharMatcher.whitespace().trimLeadingFrom(tokString(afterLastImport, toks.size())));
+    result.append(tail);
+    return result.toString();
   }
 
   private String tokString(int start, int end) {

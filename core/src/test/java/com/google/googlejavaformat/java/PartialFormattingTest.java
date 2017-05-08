@@ -1701,4 +1701,31 @@ public final class PartialFormattingTest {
     int idx = input.indexOf(needle);
     return Range.closedOpen(idx, idx + needle.length());
   }
+
+  @Test
+  public void importJavadocNewlines() throws Exception {
+    String input =
+        lines(
+            "package p;",
+            "import java.util.ArrayList;",
+            "/** */",
+            "class Foo {",
+            "  ArrayList<String> xs = new ArrayList<>();",
+            "}",
+            "");
+    String expectedOutput =
+        lines(
+            "package p;",
+            "",
+            "import java.util.ArrayList;",
+            "",
+            "/** */",
+            "class Foo {",
+            "  ArrayList<String> xs = new ArrayList<>();",
+            "}",
+            "");
+
+    String output = runFormatter(input, new String[] {"-lines", "2"});
+    assertThat(output).isEqualTo(expectedOutput);
+  }
 }

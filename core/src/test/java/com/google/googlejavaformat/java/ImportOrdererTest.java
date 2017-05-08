@@ -25,9 +25,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/**
- * Tests for {@link ImportOrderer}.
- */
+/** Tests for {@link ImportOrderer}. */
 @RunWith(Parameterized.class)
 public class ImportOrdererTest {
   @Parameters(name = "{index}: {0}")
@@ -42,7 +40,7 @@ public class ImportOrdererTest {
     String[][][] inputsOutputs = {
       {
         // Empty input produces empty output.
-        {},
+        {}, //
         {}
       },
       {
@@ -55,14 +53,14 @@ public class ImportOrdererTest {
       },
       {
         {
-          "package foo;",
+          "package foo;", //
           "",
           "import com.google.first.Bar;",
           "",
           "public class Blim {}",
         },
         {
-          "package foo;",
+          "package foo;", //
           "",
           "import com.google.first.Bar;",
           "",
@@ -204,29 +202,32 @@ public class ImportOrdererTest {
       // we unindent imports, if we reorder them
       {
         {
-          "  import  com.foo.Second;",
+          "  import  com.foo.Second;", //
           "  import com.foo.First;",
           "  public class Foo {}",
         },
         {
-          "import com.foo.First;",
+          "import com.foo.First;", //
           "import com.foo.Second;",
-          "  public class Foo {}",
+          "",
+          "public class Foo {}",
         }
       },
 
       // Error cases
       {
-        {"package com.google.example;",
+        {
+          "package com.google.example;", //
           "",
-          "import\\",  // \\ means there is no newline here.
+          "import\\", // \\ means there is no newline here.
         },
         {
           "!!Unexpected token after import: ",
         }
       },
       {
-        {"package com.google.example;",
+        {
+          "package com.google.example;", //
           "",
           "import",
         },
@@ -235,7 +236,8 @@ public class ImportOrdererTest {
         }
       },
       {
-        {"package com.google.example;",
+        {
+          "package com.google.example;", //
           "",
           "import foo\\",
         },
@@ -244,7 +246,8 @@ public class ImportOrdererTest {
         }
       },
       {
-        {"package com.google.example;",
+        {
+          "package com.google.example;", //
           "",
           "import foo.\\",
         },
@@ -279,7 +282,7 @@ public class ImportOrdererTest {
       },
       {
         {
-          "import com.foo.Second; /* no block comments after imports */",
+          "import com.foo.Second; /* no block comments after imports */", //
           "import com.foo.First;",
         },
         {
@@ -297,6 +300,7 @@ public class ImportOrdererTest {
         {
           "import com.foo.First;",
           "import com.foo.Second;",
+          "",
           "/* but we're not fooled by comments that look like imports:",
           "import com.foo.Third;",
           "*/",
@@ -313,7 +317,7 @@ public class ImportOrdererTest {
       },
       {
         {
-          "import com.abc.@;",
+          "import com.abc.@;", //
           "import com.abc.@@;",
         },
         {
