@@ -1,7 +1,7 @@
 <idea-plugin version="2">
   <id>google-java-format</id>
   <name>google-java-format</name>
-  <version>1.2.SNAPSHOT.20161216</version>
+  <version>1.3.1</version>
   <vendor url="https://github.com/google/google-java-format">
     Google
   </vendor>
@@ -15,10 +15,9 @@
       Formats Java source code to comply with Google Style.
     ]]></description>
 
-  <!-- CodeStyleManager stayed the same from 143 (IDEA 15) through 162
-       (2016.2). But they changed a parameter type of a method in 163 (2016.3),
-       so it needs some work to fix. -->
-  <idea-version since-build="143.0" until-build="163.0"/>
+  <!-- CodeStyleManager continues to change across API versions, and will need to be updated again
+       for 2017.2. -->
+  <idea-version since-build="171" until-build="171.*"/>
 
   <project-components>
     <component>
