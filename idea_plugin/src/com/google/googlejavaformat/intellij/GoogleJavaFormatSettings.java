@@ -52,6 +52,7 @@ class GoogleJavaFormatSettings extends AbstractProjectComponent
   @Override
   public void loadState(State state) {
     this.state = state;
+    updateFormatterState();
   }
 
   boolean isEnabled() {
