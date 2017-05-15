@@ -2320,13 +2320,6 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     boolean varargs = VarArgsOrNot.fromVariable(node).isYes();
     List<? extends AnnotationTree> varargsAnnotations = ImmutableList.of();
     Tree type = node.getType();
-    if (varargs) {
-      if (type instanceof AnnotatedTypeTree) {
-        varargsAnnotations = ((AnnotatedTypeTree) type).getAnnotations();
-        type = ((AnnotatedTypeTree) type).getUnderlyingType();
-      }
-      type = ((ArrayTypeTree) type).getType();
-    }
     declareOne(
         kind,
         annotationsDirection,
