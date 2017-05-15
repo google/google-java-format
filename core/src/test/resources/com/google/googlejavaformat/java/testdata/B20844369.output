@@ -11,23 +11,23 @@ public class B20844369 {
           + "(?<tokenHash>[0-9a-fA-F]{8})" // subtype's token hash
           + ")?"; // end optional subtype
 
-  int x = //foo
-      42 + //bar
+  int x = // foo
+      42 + // bar
           1;
 
   int x =
-      //foo
+      // foo
       42
-          + //bar
+          + // bar
           1;
 
   int x = /*foo*/
-      42 + //bar
+      42 + // bar
           1;
 
   int x =
       /*foo*/
       42
-          + //bar
+          + // bar
           1;
 }

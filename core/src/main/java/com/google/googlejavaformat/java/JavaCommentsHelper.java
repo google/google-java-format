@@ -104,6 +104,10 @@ public final class JavaCommentsHelper implements CommentsHelper {
       List<String> lines, int column0, JavaFormatterOptions options) {
     List<String> result = new ArrayList<>();
     for (String line : lines) {
+      // Add missing leading spaces to line comments: `//foo` -> `// foo`
+      if (!line.startsWith("// ")) {
+        line = "// " + line.substring("//".length());
+      }
       while (line.length() + column0 > options.maxLineLength()) {
         int idx = options.maxLineLength() - column0;
         // only break on whitespace characters, and ignore the leading `// `
