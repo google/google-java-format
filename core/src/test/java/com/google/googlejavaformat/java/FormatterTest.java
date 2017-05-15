@@ -383,7 +383,7 @@ public final class FormatterTest {
             "class T {\n"
                 + "  public static void main(\n"
                 + "      String[]\n"
-                + "          args) { //one_long_incredibly"
+                + "          args) { // one_long_incredibly"
                 + "_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a"
                 + "_chance_to_interrupt;\n"
                 + "  }\n"
