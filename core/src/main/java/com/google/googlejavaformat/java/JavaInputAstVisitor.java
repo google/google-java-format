@@ -44,7 +44,6 @@ import static org.openjdk.source.tree.Tree.Kind.VARIABLE;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
 import com.google.common.base.Verify;
 import com.google.common.collect.HashMultiset;
@@ -1222,7 +1221,8 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
       // Format the member value pairs one-per-line if any of them are
       // initialized with arrays.
-      boolean hasArrayInitializer = Iterables.any(node.getArguments(), IS_ARRAY_VALUE);
+      boolean hasArrayInitializer =
+          Iterables.any(node.getArguments(), JavaInputAstVisitor::isArrayValue);
       for (ExpressionTree argument : node.getArguments()) {
         if (!first) {
           token(",");
@@ -1249,15 +1249,10 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return null;
   }
 
-  private static final Predicate<ExpressionTree> IS_ARRAY_VALUE =
-      new Predicate<ExpressionTree>() {
-        @Override
-        public boolean apply(ExpressionTree argument) {
-          ExpressionTree expression = ((AssignmentTree) argument).getExpression();
-          return expression instanceof NewArrayTree
-              && ((NewArrayTree) expression).getType() == null;
-        }
-      };
+  private static boolean isArrayValue(ExpressionTree argument) {
+    ExpressionTree expression = ((AssignmentTree) argument).getExpression();
+    return expression instanceof NewArrayTree && ((NewArrayTree) expression).getType() == null;
+  }
 
   public void visitAnnotationArgument(AssignmentTree node) {
     boolean isArrayInitializer = node.getExpression().getKind() == NEW_ARRAY;
@@ -1639,7 +1634,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     if (node.getArguments().size() != 1) {
       return false;
     }
-    ExpressionTree value = Iterables.getOnlyElement(node.getArguments());
+    ExpressionTree value = getOnlyElement(node.getArguments());
     if (value.getKind() == ASSIGNMENT) {
       return false;
     }

@@ -16,7 +16,6 @@ package com.google.googlejavaformat;
 
 import static java.util.Locale.ENGLISH;
 
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -43,17 +42,12 @@ public class FormattingError extends Error {
 
   public static FormattingError fromJavacDiagnostics(
       Iterable<Diagnostic<? extends JavaFileObject>> diagnostics) {
-    return new FormattingError(Iterables.transform(diagnostics, TO_FORMATTER_DIAGNOSTIC));
+    return new FormattingError(
+        Iterables.transform(diagnostics, FormattingError::toFormatterDiagnostic));
   }
 
-  private static final Function<Diagnostic<?>, FormatterDiagnostic> TO_FORMATTER_DIAGNOSTIC =
-      new Function<Diagnostic<?>, FormatterDiagnostic>() {
-        @Override
-        public FormatterDiagnostic apply(Diagnostic<?> input) {
-          return FormatterDiagnostic.create(
-              (int) input.getLineNumber(),
-              (int) input.getColumnNumber(),
-              input.getMessage(ENGLISH));
-        }
-      };
+  private static FormatterDiagnostic toFormatterDiagnostic(Diagnostic<?> input) {
+    return FormatterDiagnostic.create(
+        (int) input.getLineNumber(), (int) input.getColumnNumber(), input.getMessage(ENGLISH));
+  }
 }
