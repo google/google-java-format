@@ -48,6 +48,10 @@ final class CommandLineOptionsParser {
       }
       // NOTE: update usage information in UsageException when new flags are added
       switch (flag) {
+	case "-n":
+        case "--dry-run":
+	  optionsBuilder.dryRun(true);
+	  break;
         case "-i":
         case "-r":
         case "-replace":

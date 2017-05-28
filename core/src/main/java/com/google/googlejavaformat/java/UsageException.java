@@ -32,6 +32,8 @@ public final class UsageException extends Exception {
     "Usage: google-java-format [options] file(s)",
     "",
     "Options:",
+    "  -n, --dry-run",
+    "    Don't change anything, only check; supposed to be used form the CI.",
     "  -i, -r, -replace, --replace",
     "    Send formatted output back to files, not stdout.",
     "  -",

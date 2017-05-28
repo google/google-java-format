@@ -30,6 +30,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -131,6 +133,7 @@ public final class Main {
     }
 
     boolean allOk = true;
+    Set<Path> needFormatting = new TreeSet<>();
     for (Map.Entry<Path, Future<String>> result : results.entrySet()) {
       String formatted;
       try {
@@ -151,7 +154,13 @@ public final class Main {
         allOk = false;
         continue;
       }
-      if (parameters.inPlace()) {
+      if (parameters.dryRun()) {
+        if (formatted.equals(inputs.get(result.getKey()))) {
+          continue;
+        } else {
+          needFormatting.add(result.getKey());
+	}
+      } else if (parameters.inPlace()) {
         if (formatted.equals(inputs.get(result.getKey()))) {
           continue; // preserve original file
         }
@@ -166,6 +175,13 @@ public final class Main {
         outWriter.write(formatted);
       }
     }
+
+    if (!needFormatting.isEmpty()) {
+      errWriter.println("Need Formatting:");
+      errWriter.println(needFormatting);
+      return 1;
+    }
+
     return allOk ? 0 : 1;
   }
 

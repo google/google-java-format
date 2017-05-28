@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableRangeSet;
 final class CommandLineOptions {
 
   private final ImmutableList<String> files;
+  private final boolean dryRun;
   private final boolean inPlace;
   private final ImmutableRangeSet<Integer> lines;
   private final ImmutableList<Integer> offsets;
@@ -41,6 +42,7 @@ final class CommandLineOptions {
 
   CommandLineOptions(
       ImmutableList<String> files,
+      boolean dryRun,
       boolean inPlace,
       ImmutableRangeSet<Integer> lines,
       ImmutableList<Integer> offsets,
@@ -54,6 +56,7 @@ final class CommandLineOptions {
       boolean sortImports,
       boolean removeUnusedImports) {
     this.files = files;
+    this.dryRun = dryRun;
     this.inPlace = inPlace;
     this.lines = lines;
     this.offsets = offsets;
@@ -71,6 +74,11 @@ final class CommandLineOptions {
   /** The files to format. */
   ImmutableList<String> files() {
     return files;
+  }
+
+  /** Dry run. */
+  boolean dryRun() {
+    return dryRun;
   }
 
   /** Format files in place. */
@@ -151,6 +159,7 @@ final class CommandLineOptions {
     private final ImmutableRangeSet.Builder<Integer> lines = ImmutableRangeSet.builder();
     private final ImmutableList.Builder<Integer> offsets = ImmutableList.builder();
     private final ImmutableList.Builder<Integer> lengths = ImmutableList.builder();
+    private Boolean dryRun = false;
     private Boolean inPlace = false;
     private Boolean aosp = false;
     private Boolean version = false;
@@ -163,6 +172,11 @@ final class CommandLineOptions {
 
     ImmutableList.Builder<String> filesBuilder() {
       return files;
+    }
+
+    Builder dryRun(boolean dryRun) {
+      this.dryRun = dryRun;
+      return this;
     }
 
     Builder inPlace(boolean inPlace) {
@@ -227,6 +241,7 @@ final class CommandLineOptions {
     CommandLineOptions build() {
       return new CommandLineOptions(
           this.files.build(),
+          this.dryRun,
           this.inPlace,
           this.lines.build(),
           this.offsets.build(),
