@@ -1232,7 +1232,11 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             builder.breakOp(" ");
           }
         }
-        visitAnnotationArgument((AssignmentTree) argument);
+        if (argument instanceof AssignmentTree) {
+          visitAnnotationArgument((AssignmentTree) argument);
+        } else {
+          scan(argument, null);
+        }
         first = false;
       }
       builder.breakOp(UNIFIED, "", minusTwo, Optional.<BreakTag>absent());
@@ -1253,6 +1257,9 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       new Predicate<ExpressionTree>() {
         @Override
         public boolean apply(ExpressionTree argument) {
+          if (!(argument instanceof AssignmentTree)) {
+            return false;
+          }
           ExpressionTree expression = ((AssignmentTree) argument).getExpression();
           return expression instanceof NewArrayTree
               && ((NewArrayTree) expression).getType() == null;
