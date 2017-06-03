@@ -22,6 +22,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavaInput.Tok;
+import java.util.ArrayList;
+import java.util.List;
 import org.openjdk.tools.javac.parser.Tokens.TokenKind;
 
 /** Orders imports in Java source code. */
@@ -115,16 +117,6 @@ public class ImportOrderer {
       throw new FormatterException("Imports not contiguous (perhaps a comment separates them?)");
     }
 
-    // Add back the text from after the point where we stopped tokenizing.
-    String tail;
-    if (toks.isEmpty()) {
-      tail = "";
-    } else {
-      Tok lastTok = getLast(toks);
-      int tailStart = lastTok.getPosition() + lastTok.length();
-      tail = text.substring(tailStart);
-    }
-
     StringBuilder result = new StringBuilder();
     result.append(
         CharMatcher.whitespace().trimTrailingFrom(tokString(0, unindentedFirstImportStart)));
@@ -132,10 +124,19 @@ public class ImportOrderer {
       result.append(lineSeparator).append(lineSeparator);
     }
     result.append(reorderedImportsString(imports.imports));
-    result.append(lineSeparator);
-    result.append(
-        CharMatcher.whitespace().trimLeadingFrom(tokString(afterLastImport, toks.size())));
-    result.append(tail);
+
+    List<String> tail = new ArrayList<>();
+    tail.add(CharMatcher.whitespace().trimLeadingFrom(tokString(afterLastImport, toks.size())));
+    if (!toks.isEmpty()) {
+      Tok lastTok = getLast(toks);
+      int tailStart = lastTok.getPosition() + lastTok.length();
+      tail.add(text.substring(tailStart));
+    }
+    if (tail.stream().anyMatch(s -> !s.isEmpty())) {
+      result.append(lineSeparator);
+      tail.forEach(result::append);
+    }
+
     return result.toString();
   }
 

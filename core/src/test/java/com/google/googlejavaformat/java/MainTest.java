@@ -254,4 +254,26 @@ public class MainTest {
     assertThat(main.format("-")).isEqualTo(1);
     assertThat(err.toString()).contains("<stdin>:4:3: error: class, interface, or enum expected");
   }
+
+  @Test
+  public void packageInfo() throws Exception {
+    String[] input = {
+      "@CheckReturnValue",
+      "@ParametersAreNonnullByDefault",
+      "package com.google.common.labs.base;",
+      "",
+      "import javax.annotation.CheckReturnValue;",
+      "import javax.annotation.ParametersAreNonnullByDefault;",
+      "",
+    };
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(err, true),
+            new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
+    assertThat(main.format("-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(joiner.join(input));
+  }
 }
