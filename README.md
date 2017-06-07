@@ -40,6 +40,12 @@ checkbox.
 To enable it by default in new projects, use "File→Other Settings→Default
 Settings...".
 
+If this is currently not an option for your team, you could also use the
+formatter 
+[rule set](https://github.com/google/styleguide/blob/gh-pages/intellij-java-google-style.xml)
+for intellij as a work-around.
+
+
 ### Eclipse
 
 A [google-java-format Eclipse
