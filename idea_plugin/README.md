@@ -19,3 +19,4 @@ Settings...".
 4.  Under "File→Project Structure→Libraries" add
     `core/target/google-java-format*all-deps.jar` file. IntelliJ will ask if you
     want to add it as a dependency to the google-java-format module. You do.
+5.  Run Build→Prepare Plugin Module 'google-java-format' For Deployment.
