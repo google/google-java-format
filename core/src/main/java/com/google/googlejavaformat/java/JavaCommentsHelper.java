@@ -23,6 +23,8 @@ import com.google.googlejavaformat.java.javadoc.JavadocFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** {@code JavaCommentsHelper} extends {@link CommentsHelper} to rewrite Java comments. */
 public final class JavaCommentsHelper implements CommentsHelper {
@@ -100,13 +102,17 @@ public final class JavaCommentsHelper implements CommentsHelper {
     return builder.toString();
   }
 
+  private static final Pattern LINE_COMMENT_PREFIX = Pattern.compile("^(//+)[^\\s/]");
+
   private List<String> wrapLineComments(
       List<String> lines, int column0, JavaFormatterOptions options) {
     List<String> result = new ArrayList<>();
     for (String line : lines) {
-      // Add missing leading spaces to line comments: `//foo` -> `// foo`
-      if (!line.startsWith("// ")) {
-        line = "// " + line.substring("//".length());
+      // Add missing leading spaces to line comments: `//foo` -> `// foo`.
+      Matcher matcher = LINE_COMMENT_PREFIX.matcher(line);
+      if (matcher.find()) {
+        int length = matcher.group(1).length();
+        line = Strings.repeat("/", length) + " " + line.substring(length);
       }
       while (line.length() + column0 > options.maxLineLength()) {
         int idx = options.maxLineLength() - column0;
