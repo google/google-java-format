@@ -1324,6 +1324,45 @@ public final class JavadocFormattingTest {
   }
 
   @Test
+  public void javadocFullSentences() {
+    String[] input = {
+      "/** In our application, bats are often found hanging from the ceiling, especially on"
+          + " Wednesdays.  Sometimes sick bats have issues where their claws do not close entirely."
+          + "  This class provides a nice, grippable surface for them to cling to. */",
+      "class Grippable {}",
+    };
+    String[] expected = {
+      "/**",
+      " * In our application, bats are often found hanging from the ceiling, especially on"
+          + " Wednesdays.",
+      " * Sometimes sick bats have issues where their claws do not close entirely. This class"
+          + " provides a",
+      " * nice, grippable surface for them to cling to.",
+      " */",
+      "class Grippable {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void javadocSentenceFragment() {
+    String[] input = {
+      "/** Provides a comfy, grippable surface for sick bats with claw-closing problems, which are"
+          + " sometimes found hanging from the ceiling on Wednesdays. */",
+      "class Grippable {}",
+    };
+    String[] expected = {
+      "/**",
+      " * Provides a comfy, grippable surface for sick bats with claw-closing problems, which are"
+          + " sometimes",
+      " * found hanging from the ceiling on Wednesdays.",
+      " */",
+      "class Grippable {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void javadocCanEndAnywhere() {
     String[] input = {
       "/** foo <pre*/", //
