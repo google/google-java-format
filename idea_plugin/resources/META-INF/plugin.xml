@@ -1,7 +1,7 @@
 <idea-plugin version="2">
   <id>google-java-format</id>
   <name>google-java-format</name>
-  <version>1.3.1</version>
+  <version>1.3.2</version>
   <vendor url="https://github.com/google/google-java-format">
     Google
   </vendor>
@@ -17,7 +17,7 @@
 
   <!-- CodeStyleManager continues to change across API versions, and will need to be updated again
        for 2017.2. -->
-  <idea-version since-build="171" until-build="171.*"/>
+  <idea-version since-build="172"/>
 
   <project-components>
     <component>

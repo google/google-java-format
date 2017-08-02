@@ -10,8 +10,10 @@
       <sourceFolder url="file://$MODULE_DIR$/src/com/google/googlejavaformat/intellij/v2017_1" isTestSource="false" packagePrefix="com.google.googlejavaformat.intellij" />
       <excludeFolder url="file://$MODULE_DIR$/src/com/google/googlejavaformat/intellij/v2016_2" />
       <excludeFolder url="file://$MODULE_DIR$/src/com/google/googlejavaformat/intellij/v2016_3" />
+      <excludeFolder url="file://$MODULE_DIR$/src/com/google/googlejavaformat/intellij/v2017_1" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="google-java-format-1.3-all-deps" level="project" />
   </component>
 </module>
