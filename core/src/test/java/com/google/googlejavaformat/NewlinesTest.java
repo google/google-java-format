@@ -20,15 +20,12 @@ import static org.junit.Assert.fail;
 import com.google.common.collect.ImmutableList;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** {@link Newlines}Test */
-@RunWith(JUnit4.class)
-public class NewlinesTest {
+class NewlinesTest {
   @Test
-  public void offsets() {
+  void offsets() {
     assertThat(ImmutableList.copyOf(Newlines.lineOffsetIterator("foo\nbar\n")))
         .containsExactly(0, 4, 8);
     assertThat(ImmutableList.copyOf(Newlines.lineOffsetIterator("foo\nbar"))).containsExactly(0, 4);
@@ -44,7 +41,7 @@ public class NewlinesTest {
   }
 
   @Test
-  public void lines() {
+  void lines() {
     assertThat(ImmutableList.copyOf(Newlines.lineIterator("foo\nbar\n")))
         .containsExactly("foo\n", "bar\n");
     assertThat(ImmutableList.copyOf(Newlines.lineIterator("foo\nbar")))
@@ -62,7 +59,7 @@ public class NewlinesTest {
   }
 
   @Test
-  public void terminalOffset() {
+  void terminalOffset() {
     Iterator<Integer> it = Newlines.lineOffsetIterator("foo\nbar\n");
     it.next();
     it.next();
@@ -86,7 +83,7 @@ public class NewlinesTest {
   }
 
   @Test
-  public void terminalLine() {
+  void terminalLine() {
     Iterator<String> it = Newlines.lineIterator("foo\nbar\n");
     it.next();
     it.next();
