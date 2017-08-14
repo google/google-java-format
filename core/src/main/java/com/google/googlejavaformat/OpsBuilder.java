@@ -536,7 +536,18 @@ public final class OpsBuilder {
            * were generated (presumably), copy all input non-tokens literally, even spaces and
            * newlines.
            */
+          int newlines = 0;
+          boolean lastWasComment = false;
           for (Input.Tok tokBefore : token.getToksBefore()) {
+            if (tokBefore.isNewline()) {
+              newlines++;
+            } else if (tokBefore.isComment()) {
+              newlines = 0;
+              lastWasComment = tokBefore.isComment();
+            }
+            if (lastWasComment && newlines > 0) {
+              tokOps.put(j, Doc.Break.makeForced());
+            }
             tokOps.put(j, Doc.Tok.make(tokBefore));
           }
           for (Input.Tok tokAfter : token.getToksAfter()) {
