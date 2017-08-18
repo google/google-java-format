@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.lang.model.element.Modifier;
+import org.openjdk.javax.lang.model.element.Modifier;
 import org.openjdk.tools.javac.parser.Tokens.TokenKind;
 
 /** Fixes sequences of modifiers to be in JLS order. */

@@ -32,8 +32,8 @@
 
   <modules>
     <module>core</module>
-    <module>eclipse_plugin</module>
     <!-- google-java-format#24
+    <module>eclipse_plugin</module>
     <module>idea_plugin</module>
     -->
   </modules>
@@ -96,7 +96,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.8</java.version>
     <guava.version>19.0</guava.version>
-    <javac.version>9-dev-r3297-1-shaded</javac.version>
+    <javac.version>9-dev-r4023-3</javac.version>
   </properties>
 
   <dependencyManagement>
@@ -109,7 +109,7 @@
       </dependency>
       <dependency>
         <groupId>com.google.errorprone</groupId>
-        <artifactId>javac</artifactId>
+        <artifactId>javac-shaded</artifactId>
         <version>${javac.version}</version>
       </dependency>
 

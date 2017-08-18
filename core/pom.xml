@@ -41,7 +41,7 @@
     </dependency>
     <dependency>
       <groupId>com.google.errorprone</groupId>
-      <artifactId>javac</artifactId>
+      <artifactId>javac-shaded</artifactId>
     </dependency>
 
     <!-- Compile-time dependencies -->

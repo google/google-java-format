@@ -16,7 +16,7 @@ package com.google.googlejavaformat.java;
 
 import java.io.IOError;
 import java.io.IOException;
-import javax.lang.model.element.Name;
+import org.openjdk.javax.lang.model.element.Name;
 import org.openjdk.source.tree.ClassTree;
 import org.openjdk.source.tree.CompoundAssignmentTree;
 import org.openjdk.source.tree.ExpressionTree;

@@ -74,7 +74,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import javax.lang.model.element.Name;
+import org.openjdk.javax.lang.model.element.Name;
 import org.openjdk.source.tree.AnnotatedTypeTree;
 import org.openjdk.source.tree.AnnotationTree;
 import org.openjdk.source.tree.ArrayAccessTree;
