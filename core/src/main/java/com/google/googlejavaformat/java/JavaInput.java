@@ -329,7 +329,7 @@ public final class JavaInput extends Input {
 
   /** Lex the input and build the list of toks. */
   private ImmutableList<Tok> buildToks(String text) throws FormatterException {
-    ImmutableList<Tok> toks = buildToks(text, ImmutableSet.<TokenKind>of());
+    ImmutableList<Tok> toks = buildToks(text, ImmutableSet.of());
     kN = getLast(toks).getIndex();
     computeRanges(toks);
     return toks;

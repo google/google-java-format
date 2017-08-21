@@ -271,11 +271,11 @@ public abstract class Doc {
     private static void splitByBreaks(List<Doc> docs, List<List<Doc>> splits, List<Break> breaks) {
       splits.clear();
       breaks.clear();
-      splits.add(new ArrayList<Doc>());
+      splits.add(new ArrayList<>());
       for (Doc doc : docs) {
         if (doc instanceof Break) {
           breaks.add((Break) doc);
-          splits.add(new ArrayList<Doc>());
+          splits.add(new ArrayList<>());
         } else {
           getLast(splits).add(doc);
         }
@@ -287,8 +287,7 @@ public abstract class Doc {
       splitByBreaks(docs, splits, breaks);
 
       state =
-          computeBreakAndSplit(
-              commentsHelper, maxWidth, state, Optional.<Break>absent(), splits.get(0));
+          computeBreakAndSplit(commentsHelper, maxWidth, state, Optional.absent(), splits.get(0));
 
       // Handle following breaks and split.
       for (int i = 0; i < breaks.size(); i++) {
@@ -576,7 +575,7 @@ public abstract class Doc {
      * @return the new {@code Break}
      */
     public static Break make(FillMode fillMode, String flat, Indent plusIndent) {
-      return new Break(fillMode, flat, plusIndent, Optional.<BreakTag>absent());
+      return new Break(fillMode, flat, plusIndent, Optional.absent());
     }
 
     /**
