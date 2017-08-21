@@ -1757,21 +1757,26 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         if (!first) {
           builder.forcedBreak();
         }
-        VariableTree variableTree = (VariableTree) resource;
-        declareOne(
-            DeclarationKind.PARAMETER,
-            fieldAnnotationDirection(variableTree.getModifiers()),
-            Optional.of(variableTree.getModifiers()),
-            variableTree.getType(),
-            VarArgsOrNot.NO,
-            ImmutableList.<AnnotationTree>of(),
-            variableTree.getName(),
-            "",
-            "=",
-            Optional.fromNullable(variableTree.getInitializer()),
-            Optional.<String>absent(),
-            Optional.<ExpressionTree>absent(),
-            Optional.<TypeWithDims>absent());
+        if (resource instanceof VariableTree) {
+          VariableTree variableTree = (VariableTree) resource;
+          declareOne(
+              DeclarationKind.PARAMETER,
+              fieldAnnotationDirection(variableTree.getModifiers()),
+              Optional.of(variableTree.getModifiers()),
+              variableTree.getType(),
+              VarArgsOrNot.NO,
+              ImmutableList.<AnnotationTree>of(),
+              variableTree.getName(),
+              "",
+              "=",
+              Optional.fromNullable(variableTree.getInitializer()),
+              Optional.<String>absent(),
+              Optional.<ExpressionTree>absent(),
+              Optional.<TypeWithDims>absent());
+        } else {
+          // TODO(cushon): think harder about what to do with `try (resource1; resource2) {}`
+          scan(resource, null);
+        }
         if (builder.peekToken().equals(Optional.of(";"))) {
           token(";");
           builder.space();
