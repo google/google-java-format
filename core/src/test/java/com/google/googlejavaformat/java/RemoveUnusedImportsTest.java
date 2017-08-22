@@ -329,6 +329,18 @@ public class RemoveUnusedImportsTest {
           "public class Test implements Foo, Bar, Baz, Bork {}",
         },
       },
+      {
+        {
+          "import java.lang.Foo;", //
+          "interface Test { private static void foo() {} }",
+        },
+        {
+          "interface Test { private static void foo() {} }",
+        },
+        {
+          "interface Test { private static void foo() {} }",
+        },
+      },
     };
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[][] inputAndOutput : inputsOutputs) {
