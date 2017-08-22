@@ -53,6 +53,7 @@ import org.openjdk.source.util.TreePathScanner;
 import org.openjdk.source.util.TreeScanner;
 import org.openjdk.tools.javac.api.JavacTrees;
 import org.openjdk.tools.javac.file.JavacFileManager;
+import org.openjdk.tools.javac.main.Option;
 import org.openjdk.tools.javac.parser.JavacParser;
 import org.openjdk.tools.javac.parser.ParserFactory;
 import org.openjdk.tools.javac.tree.DCTree;
@@ -195,6 +196,8 @@ public class RemoveUnusedImports {
   public static String removeUnusedImports(
       final String contents, JavadocOnlyImports javadocOnlyImports) {
     Context context = new Context();
+    // TODO(cushon): this should default to the latest supported source level, same as in Formatter
+    Options.instance(context).put(Option.SOURCE, "9");
     JCCompilationUnit unit = parse(context, contents);
     if (unit == null) {
       // error handling is done during formatting
