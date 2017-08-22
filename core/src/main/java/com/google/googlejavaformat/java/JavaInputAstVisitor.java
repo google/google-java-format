@@ -74,6 +74,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 import org.openjdk.javax.lang.model.element.Name;
 import org.openjdk.source.tree.AnnotatedTypeTree;
 import org.openjdk.source.tree.AnnotationTree;
@@ -91,9 +92,11 @@ import org.openjdk.source.tree.CompilationUnitTree;
 import org.openjdk.source.tree.CompoundAssignmentTree;
 import org.openjdk.source.tree.ConditionalExpressionTree;
 import org.openjdk.source.tree.ContinueTree;
+import org.openjdk.source.tree.DirectiveTree;
 import org.openjdk.source.tree.DoWhileLoopTree;
 import org.openjdk.source.tree.EmptyStatementTree;
 import org.openjdk.source.tree.EnhancedForLoopTree;
+import org.openjdk.source.tree.ExportsTree;
 import org.openjdk.source.tree.ExpressionStatementTree;
 import org.openjdk.source.tree.ExpressionTree;
 import org.openjdk.source.tree.ForLoopTree;
@@ -110,11 +113,15 @@ import org.openjdk.source.tree.MemberSelectTree;
 import org.openjdk.source.tree.MethodInvocationTree;
 import org.openjdk.source.tree.MethodTree;
 import org.openjdk.source.tree.ModifiersTree;
+import org.openjdk.source.tree.ModuleTree;
 import org.openjdk.source.tree.NewArrayTree;
 import org.openjdk.source.tree.NewClassTree;
+import org.openjdk.source.tree.OpensTree;
 import org.openjdk.source.tree.ParameterizedTypeTree;
 import org.openjdk.source.tree.ParenthesizedTree;
 import org.openjdk.source.tree.PrimitiveTypeTree;
+import org.openjdk.source.tree.ProvidesTree;
+import org.openjdk.source.tree.RequiresTree;
 import org.openjdk.source.tree.ReturnTree;
 import org.openjdk.source.tree.StatementTree;
 import org.openjdk.source.tree.SwitchTree;
@@ -126,6 +133,7 @@ import org.openjdk.source.tree.TypeCastTree;
 import org.openjdk.source.tree.TypeParameterTree;
 import org.openjdk.source.tree.UnaryTree;
 import org.openjdk.source.tree.UnionTypeTree;
+import org.openjdk.source.tree.UsesTree;
 import org.openjdk.source.tree.VariableTree;
 import org.openjdk.source.tree.WhileLoopTree;
 import org.openjdk.source.tree.WildcardTree;
@@ -1478,7 +1486,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     String sourceForNode = getSourceForNode(node, getCurrentPath());
     // A negative numeric literal -n is usually represented as unary minus on n,
     // but that doesn't work for integer or long MIN_VALUE. The parser works
-    // around that by representing it directly as a singed literal (with no
+    // around that by representing it directly as a signed literal (with no
     // unary minus), but the lexer still expects two tokens.
     if (sourceForNode.startsWith("-")) {
       token("-");
@@ -2301,6 +2309,119 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public Void visitIdentifier(IdentifierTree node, Void unused) {
     sync(node);
     token(node.getName().toString());
+    return null;
+  }
+
+  @Override
+  public Void visitModule(ModuleTree node, Void unused) {
+    for (AnnotationTree annotation : node.getAnnotations()) {
+      scan(annotation, null);
+      builder.forcedBreak();
+    }
+    if (node.getModuleType() == ModuleTree.ModuleKind.OPEN) {
+      token("open");
+      builder.space();
+    }
+    token("module");
+    builder.space();
+    scan(node.getName(), null);
+    builder.space();
+    if (node.getDirectives().isEmpty()) {
+      tokenBreakTrailingComment("{", plusTwo);
+      builder.blankLineWanted(BlankLineWanted.NO);
+      token("}", plusTwo);
+    } else {
+      builder.open(plusTwo);
+      token("{");
+      builder.forcedBreak();
+      Optional<Tree.Kind> previousDirective = Optional.absent();
+      for (DirectiveTree directiveTree : node.getDirectives()) {
+        markForPartialFormat();
+        builder.blankLineWanted(
+            previousDirective.transform(k -> !k.equals(directiveTree.getKind())).or(false)
+                ? BlankLineWanted.YES
+                : BlankLineWanted.NO);
+        builder.forcedBreak();
+        scan(directiveTree, null);
+        previousDirective = Optional.of(directiveTree.getKind());
+      }
+      builder.close();
+      builder.forcedBreak();
+      token("}");
+    }
+    return null;
+  }
+
+  private void visitDirective(
+      String name,
+      String separator,
+      ExpressionTree nameExpression,
+      @Nullable List<? extends ExpressionTree> items) {
+    token(name);
+    builder.space();
+    scan(nameExpression, null);
+    if (items != null) {
+      builder.open(plusFour);
+      builder.space();
+      token(separator);
+      builder.forcedBreak();
+      boolean first = true;
+      for (ExpressionTree item : items) {
+        if (!first) {
+          token(",");
+          builder.forcedBreak();
+        }
+        scan(item, null);
+        first = false;
+      }
+      token(";");
+      builder.close();
+    } else {
+      token(";");
+    }
+  }
+
+  @Override
+  public Void visitExports(ExportsTree node, Void unused) {
+    visitDirective("exports", "to", node.getPackageName(), node.getModuleNames());
+    return null;
+  }
+
+  @Override
+  public Void visitOpens(OpensTree node, Void unused) {
+    visitDirective("opens", "to", node.getPackageName(), node.getModuleNames());
+    return null;
+  }
+
+  @Override
+  public Void visitProvides(ProvidesTree node, Void unused) {
+    visitDirective("provides", "with", node.getServiceName(), node.getImplementationNames());
+    return null;
+  }
+
+  @Override
+  public Void visitRequires(RequiresTree node, Void unused) {
+    token("requires");
+    builder.space();
+    if (builder.peekToken().equals(Optional.of("static"))) {
+      token("static");
+      builder.space();
+    }
+    if (builder.peekToken().equals(Optional.of("transitive"))) {
+      token("transitive");
+      builder.space();
+    }
+    scan(node.getModuleName(), null);
+    token(";");
+    return null;
+  }
+
+  @Override
+  public Void visitUses(UsesTree node, Void unused) {
+    token("uses");
+    builder.space();
+    scan(node.getServiceName(), null);
+    token(";");
     return null;
   }
 
