@@ -2403,13 +2403,16 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public Void visitRequires(RequiresTree node, Void unused) {
     token("requires");
     builder.space();
-    if (builder.peekToken().equals(Optional.of("static"))) {
-      token("static");
-      builder.space();
-    }
-    if (builder.peekToken().equals(Optional.of("transitive"))) {
-      token("transitive");
-      builder.space();
+    while (true) {
+      if (builder.peekToken().equals(Optional.of("static"))) {
+        token("static");
+        builder.space();
+      } else if (builder.peekToken().equals(Optional.of("transitive"))) {
+        token("transitive");
+        builder.space();
+      } else {
+        break;
+      }
     }
     scan(node.getModuleName(), null);
     token(";");
