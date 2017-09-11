@@ -21,8 +21,7 @@ ofsets (`--offset`), passing through to standard-out (default) or altered
 in-place (`--replace`).
 
 To reformat changed lines in a specific patch, use
-[`google-java-format-diff.py`]
-(https://github.com/google/google-java-format/blob/master/scripts/google-java-format-diff.py)
+[`google-java-format-diff.py`](https://github.com/google/google-java-format/blob/master/scripts/google-java-format-diff.py).
 
 ***Note:*** *There is no configurability as to the formatter's algorithm for
 formatting. This is a deliberate design decision to unify our code formatting on
