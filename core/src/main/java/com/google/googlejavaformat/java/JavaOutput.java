@@ -233,7 +233,7 @@ public final class JavaOutput extends Output {
    */
   public ImmutableList<Replacement> getFormatReplacements(RangeSet<Integer> iRangeSet0) {
     ImmutableList.Builder<Replacement> result = ImmutableList.builder();
-    Map<Integer, Range<Integer>> kToJ = JavaOutput.makeKToIJ(this, kN);
+    Map<Integer, Range<Integer>> kToJ = JavaOutput.makeKToIJ(this);
 
     // Expand the token ranges to align with re-formattable boundaries.
     RangeSet<Integer> breakableRanges = TreeRangeSet.create();

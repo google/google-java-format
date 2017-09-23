@@ -82,7 +82,7 @@ public abstract class InputOutput {
         for (int i = lineI0; i <= lineI; i++) {
           addToRanges(ranges, i, k);
         }
-        addToRanges(range1s, lineI0, k);
+        addToRanges(range1s, lineI, k);
       }
     }
   }
@@ -91,11 +91,10 @@ public abstract class InputOutput {
    * Given an {@code InputOutput}, compute the map from tok indices to line ranges.
    *
    * @param put the {@code InputOutput}
-   * @param kN the number of tokens
    * @return the map from {@link com.google.googlejavaformat.java.JavaInput.Tok} indices to line
    *     ranges in this {@code put}
    */
-  public static Map<Integer, Range<Integer>> makeKToIJ(InputOutput put, int kN) {
+  public static Map<Integer, Range<Integer>> makeKToIJ(InputOutput put) {
     Map<Integer, Range<Integer>> map = new HashMap<>();
     int ijN = put.getLineCount();
     for (int ij = 0; ij <= ijN; ij++) {
