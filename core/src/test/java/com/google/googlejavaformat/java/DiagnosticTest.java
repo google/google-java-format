@@ -42,7 +42,7 @@ public class DiagnosticTest {
 
   @BeforeClass
   public static void setUpLocale() throws Exception {
-    Locale.setDefault(Locale.US);
+    Locale.setDefault(Locale.ROOT);
   }
 
   @Test
