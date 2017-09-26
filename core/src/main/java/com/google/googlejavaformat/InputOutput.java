@@ -53,14 +53,8 @@ public abstract class InputOutput {
     return lines.get(lineI);
   }
 
-  /** The {@link Range}s of the tokens or comments beginning on each line. */
-  protected final List<Range<Integer>> range0s = new ArrayList<>();
-
   /** The {@link Range}s of the tokens or comments lying on each line, in any part. */
   protected final List<Range<Integer>> ranges = new ArrayList<>();
-
-  /** The {@link Range}s of the tokens or comments ending on each line. */
-  protected final List<Range<Integer>> range1s = new ArrayList<>();
 
   private static void addToRanges(List<Range<Integer>> ranges, int i, int k) {
     while (ranges.size() <= i) {
@@ -78,11 +72,9 @@ public abstract class InputOutput {
       lineI += Newlines.count(txt);
       int k = tok.getIndex();
       if (k >= 0) {
-        addToRanges(range0s, lineI0, k);
         for (int i = lineI0; i <= lineI; i++) {
           addToRanges(ranges, i, k);
         }
-        addToRanges(range1s, lineI0, k);
       }
     }
   }
@@ -112,16 +104,6 @@ public abstract class InputOutput {
   }
 
   /**
-   * Get the {@link Range} of {@link Input.Tok}s beginning on a line.
-   *
-   * @param lineI the line number
-   * @return the {@link Range} of {@link Input.Tok}s beginning on the specified line
-   */
-  public final Range<Integer> getRange0s(int lineI) {
-    return 0 <= lineI && lineI < range0s.size() ? range0s.get(lineI) : EMPTY_RANGE;
-  }
-
-  /**
    * Get the {@link Range} of {@link Input.Tok}s lying in any part on a line.
    *
    * @param lineI the line number
@@ -131,27 +113,13 @@ public abstract class InputOutput {
     return 0 <= lineI && lineI < ranges.size() ? ranges.get(lineI) : EMPTY_RANGE;
   }
 
-  /**
-   * Get the {@link Range} of {@link Input.Tok}s ending on a line.
-   *
-   * @param lineI the line number
-   * @return the {@link Range} of {@link Input.Tok}s ending on the specified line
-   */
-  public final Range<Integer> getRange1s(int lineI) {
-    return 0 <= lineI && lineI < range1s.size() ? range1s.get(lineI) : EMPTY_RANGE;
-  }
-
   @Override
   public String toString() {
     return "InputOutput{"
         + "lines="
         + lines
-        + ", range0s="
-        + range0s
         + ", ranges="
         + ranges
-        + ", range1s="
-        + range1s
         + '}';
   }
 }
