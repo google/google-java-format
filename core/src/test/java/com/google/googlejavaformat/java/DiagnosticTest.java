@@ -28,9 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -40,9 +38,17 @@ import org.junit.runners.JUnit4;
 public class DiagnosticTest {
   @Rule public TemporaryFolder testFolder = new TemporaryFolder();
 
-  @BeforeClass
-  public static void setUpLocale() throws Exception {
+  private Locale backupLocale;
+
+  @Before
+  public void setUpLocale() throws Exception {
+    backupLocale = Locale.getDefault();
     Locale.setDefault(Locale.ROOT);
+  }
+
+  @After
+  public void restoreLocale() throws Exception {
+    Locale.setDefault(backupLocale);
   }
 
   @Test
