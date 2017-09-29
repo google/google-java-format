@@ -206,7 +206,6 @@ public final class OpsBuilder {
 
   /** Create a {@link FormatterDiagnostic} at the current position. */
   public FormatterDiagnostic diagnostic(String message) {
-    System.err.printf(">>>> %d: %s\n", inputPosition, message);
     return input.createDiagnostic(inputPosition, message);
   }
 

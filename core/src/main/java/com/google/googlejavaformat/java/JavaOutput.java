@@ -98,8 +98,8 @@ public final class JavaOutput extends Output {
       // Skip over input line we've passed.
       int iN = javaInput.getLineCount();
       while (iLine < iN
-          && (javaInput.getRange1s(iLine).isEmpty()
-              || javaInput.getRange1s(iLine).upperEndpoint() <= range.lowerEndpoint())) {
+          && (javaInput.getRanges(iLine).isEmpty()
+              || javaInput.getRanges(iLine).upperEndpoint() <= range.lowerEndpoint())) {
         if (javaInput.getRanges(iLine).isEmpty()) {
           // Skipped over a blank line.
           sawNewlines = true;
@@ -125,7 +125,6 @@ public final class JavaOutput extends Output {
       }
       spacesPending = 0;
     } else {
-      boolean range0sSet = false;
       boolean rangesSet = false;
       int textN = text.length();
       for (int i = 0; i < textN; i++) {
@@ -159,15 +158,6 @@ public final class JavaOutput extends Output {
             }
             lineBuilder.append(c);
             if (!range.isEmpty()) {
-              if (!range0sSet) {
-                if (!range.isEmpty()) {
-                  while (range0s.size() <= mutableLines.size()) {
-                    range0s.add(Formatter.EMPTY_RANGE);
-                  }
-                  range0s.set(mutableLines.size(), union(range0s.get(mutableLines.size()), range));
-                  range0sSet = true;
-                }
-              }
               if (!rangesSet) {
                 while (ranges.size() <= mutableLines.size()) {
                   ranges.add(Formatter.EMPTY_RANGE);
@@ -177,13 +167,6 @@ public final class JavaOutput extends Output {
               }
             }
         }
-      }
-      // TODO(jdd): Move others down here. Use common method for these.
-      if (!range.isEmpty()) {
-        while (range1s.size() <= mutableLines.size()) {
-          range1s.add(Formatter.EMPTY_RANGE);
-        }
-        range1s.set(mutableLines.size(), union(range1s.get(mutableLines.size()), range));
       }
     }
     if (!range.isEmpty()) {
@@ -204,18 +187,10 @@ public final class JavaOutput extends Output {
     }
     int jN = mutableLines.size();
     Range<Integer> eofRange = Range.closedOpen(kN, kN + 1);
-    while (range0s.size() < jN) {
-      range0s.add(Formatter.EMPTY_RANGE);
-    }
-    range0s.add(eofRange);
     while (ranges.size() < jN) {
       ranges.add(Formatter.EMPTY_RANGE);
     }
     ranges.add(eofRange);
-    while (range1s.size() < jN) {
-      range1s.add(Formatter.EMPTY_RANGE);
-    }
-    range1s.add(eofRange);
     setLines(ImmutableList.copyOf(mutableLines));
   }
 
