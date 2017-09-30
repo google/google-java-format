@@ -3,8 +3,9 @@
 ## Enabling
 
 The plugin will not be enabled by default. To enable it in the current project,
-go to "File→Settings...→google-java-format Settings" and check the "Enable"
-checkbox.
+go to "File→Settings...→google-java-format Settings" (or "IntelliJ
+IDEA→Preferences...→Other Settings→google-java-format Settings" on macOS) and
+check the "Enable google-java-format" checkbox.
 
 To enable it by default in new projects, use "File→Other Settings→Default
 Settings...".
