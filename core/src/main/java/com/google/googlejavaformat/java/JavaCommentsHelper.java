@@ -112,7 +112,15 @@ public final class JavaCommentsHelper implements CommentsHelper {
       Matcher matcher = LINE_COMMENT_PREFIX.matcher(line);
       if (matcher.find()) {
         int length = matcher.group(1).length();
-        line = Strings.repeat("/", length) + " " + line.substring(length);
+        // If it is `//noinspection` then don't add a space.  `//noinspection` is
+        // used for single-line suppressions by both IntelliJ and Android Lint,
+        // and for now there is no good alternative.
+        if ((line.length() > length + 12)
+            && line.substring(length,length+12).equals("noinspection")) {
+          // do nothing
+        } else {
+          line = Strings.repeat("/", length) + " " + line.substring(length);
+        }
       }
       while (line.length() + column0 > options.maxLineLength()) {
         int idx = options.maxLineLength() - column0;
