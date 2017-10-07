@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
+import java.util.Locale;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -238,21 +239,29 @@ public class MainTest {
   // test that errors are reported on the right line when imports are removed
   @Test
   public void importRemoveErrorParseError() throws Exception {
-    String[] input = {
-      "import java.util.ArrayList;", //
-      "import java.util.List;",
-      "class Test {",
-      "}}",
-    };
-    StringWriter out = new StringWriter();
-    StringWriter err = new StringWriter();
-    Main main =
-        new Main(
-            new PrintWriter(out, true),
-            new PrintWriter(err, true),
-            new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
-    assertThat(main.format("-")).isEqualTo(1);
-    assertThat(err.toString()).contains("<stdin>:4:3: error: class, interface, or enum expected");
+    Locale backupLocale = Locale.getDefault();
+    try {
+      Locale.setDefault(Locale.ROOT);
+
+      String[] input = {
+        "import java.util.ArrayList;", //
+        "import java.util.List;",
+        "class Test {",
+        "}}",
+      };
+      StringWriter out = new StringWriter();
+      StringWriter err = new StringWriter();
+      Main main =
+          new Main(
+              new PrintWriter(out, true),
+              new PrintWriter(err, true),
+              new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
+      assertThat(main.format("-")).isEqualTo(1);
+      assertThat(err.toString()).contains("<stdin>:4:3: error: class, interface, or enum expected");
+
+    } finally {
+      Locale.setDefault(backupLocale);
+    }
   }
 
   @Test
