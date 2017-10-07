@@ -21,8 +21,7 @@ ofsets (`--offset`), passing through to standard-out (default) or altered
 in-place (`--replace`).
 
 To reformat changed lines in a specific patch, use
-[`google-java-format-diff.py`]
-(https://github.com/google/google-java-format/blob/master/scripts/google-java-format-diff.py)
+[`google-java-format-diff.py`](https://github.com/google/google-java-format/blob/master/scripts/google-java-format-diff.py).
 
 ***Note:*** *There is no configurability as to the formatter's algorithm for
 formatting. This is a deliberate design decision to unify our code formatting on
@@ -30,8 +29,9 @@ a single format.*
 
 ### IntelliJ
 
-A [google-java-format IntelliJ plugin](https://plugins.jetbrains.com/plugin/8527)
-is available from the plugin repository.
+A [google-java-format IntelliJ
+plugin](https://plugins.jetbrains.com/plugin/8527) is available from the plugin
+repository.
 
 The plugin will not be enabled by default. To enable it in the current project,
 go to "File→Settings...→google-java-format Settings" and check the "Enable"
