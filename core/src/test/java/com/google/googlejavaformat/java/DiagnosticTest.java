@@ -26,6 +26,9 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -36,6 +39,19 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class DiagnosticTest {
   @Rule public TemporaryFolder testFolder = new TemporaryFolder();
+
+  private Locale backupLocale;
+
+  @Before
+  public void setUpLocale() throws Exception {
+    backupLocale = Locale.getDefault();
+    Locale.setDefault(Locale.ROOT);
+  }
+
+  @After
+  public void restoreLocale() throws Exception {
+    Locale.setDefault(backupLocale);
+  }
 
   @Test
   public void parseError() throws Exception {
