@@ -90,7 +90,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
     return builder.toString();
   }
 
-  // Remove leading whitespace (trailing was already removed), wrap if necessary, and re-indent.
+  // Wraps and re-indents line comments.
   private String indentLineComments(List<String> lines, int column0) {
     lines = wrapLineComments(lines, column0, options);
     StringBuilder builder = new StringBuilder();
@@ -102,14 +102,15 @@ public final class JavaCommentsHelper implements CommentsHelper {
     return builder.toString();
   }
 
-  private static final Pattern LINE_COMMENT_PREFIX = Pattern.compile("^(//+)[^\\s/]");
+  private static final Pattern LINE_COMMENT_MISSING_SPACE_PREFIX =
+      Pattern.compile("^(//+)(?!noinspection)[^\\s/]");
 
   private List<String> wrapLineComments(
       List<String> lines, int column0, JavaFormatterOptions options) {
     List<String> result = new ArrayList<>();
     for (String line : lines) {
       // Add missing leading spaces to line comments: `//foo` -> `// foo`.
-      Matcher matcher = LINE_COMMENT_PREFIX.matcher(line);
+      Matcher matcher = LINE_COMMENT_MISSING_SPACE_PREFIX.matcher(line);
       if (matcher.find()) {
         int length = matcher.group(1).length();
         line = Strings.repeat("/", length) + " " + line.substring(length);
