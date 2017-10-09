@@ -262,7 +262,9 @@ final class JavadocLexer {
    * but in the course of joining literals, we incidentally join whitespace, too. We do take
    * advantage of the joining later on: It simplifies {@link #inferParagraphTags}.
    *
-   * <p>Note that we do <i>not</i> merge a literal token and a whitespace token together.
+   * <p>Note that we do <i>not</i> merge a literal token and a whitespace token together, except in
+   * special cases such as when the following literal starts with "@" or the preceding literal ends
+   * with ".".
    */
   private static ImmutableList<Token> joinAdjacentLiteralsAndAdjacentWhitespace(List<Token> input) {
     /*
@@ -282,13 +284,6 @@ final class JavadocLexer {
         continue;
       }
 
-      /*
-       * IF we have accumulated some literals to join together (say, "foo<b>bar</b>"), and IF we'll
-       * next see whitespace followed by a "@" literal, we need to join that together with the
-       * previous literals. That ensures that we won't insert a line break before the "@," turning
-       * it into a tag.
-       */
-
       if (accumulated.length() == 0) {
         output.add(tokens.peek());
         tokens.next();
@@ -300,8 +295,37 @@ final class JavadocLexer {
         seenWhitespace.append(tokens.next().getValue());
       }
 
-      if (tokens.peek().getType() == LITERAL && tokens.peek().getValue().startsWith("@")) {
-        // OK, we're in the case described above.
+      /*
+       * The next two if statements handle special cases: merge two literal tokens, together with
+       * the whitespace that separates them.
+       */
+
+      /*
+       * If the programmer uses two spaces after a period or colon, preserve that.  This also
+       * prevents a line from ending with a period or colon, which would make it impossible to know
+       * the programmer's preference regarding how many spaces should follow it.
+       */
+
+      char accumulatedEnd = accumulated.charAt(accumulated.length() - 1);
+      if (!isParagraphBreak(seenWhitespace.toString())
+          && tokens.peek().getType() == LITERAL
+          && (accumulatedEnd == '.' || accumulatedEnd == ':')) {
+        accumulated.append(seenWhitespace.toString().startsWith("  ") ? "  " : " ");
+        accumulated.append(tokens.peek().getValue());
+        tokens.next();
+        continue;
+      }
+
+      /*
+       * IF we have accumulated some literals to join together (say, "foo<b>bar</b>"), and IF we'll
+       * next see whitespace followed by a "@" literal, we need to join that together with the
+       * previous literals. That ensures that we won't insert a line break before the "@," turning
+       * it into a tag.
+       */
+
+      if (!isParagraphBreak(seenWhitespace.toString())
+          && tokens.peek().getType() == LITERAL
+          && tokens.peek().getValue().startsWith("@")) {
         accumulated.append(" ");
         accumulated.append(tokens.peek().getValue());
         tokens.next();
@@ -323,6 +347,11 @@ final class JavadocLexer {
      * /[^ -]-/, as in "non-\nblocking."
      */
     return output.build();
+  }
+
+  /** Returns true if {@code whitespace} contains two newlines. */
+  private static boolean isParagraphBreak(String whitespace) {
+    return whitespace.indexOf('\n') != whitespace.lastIndexOf('\n');
   }
 
   /**

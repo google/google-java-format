@@ -1,0 +1,12 @@
+/**
+ * This is a sentence.  Two spaces between sentences
+ * makes them easier to read.  Maintaining the current
+ * spacing is preferable to discarding it.
+ * At the end of a line, we have to make a guess.
+ * That is undesirable, but a person can edit the
+ * comment to prevent sentences from ending at the
+ * end of a line.  Or, there could be a command-line
+ * option to control how much space to add
+ * after a line-ending period.
+ */
+class SentenceEnding {}
