@@ -389,4 +389,15 @@ public final class FormatterTest {
                 + "  }\n"
                 + "}\n");
   }
+
+  @Test
+  public void testNoInjectedSpaceForSuppressionComment() throws Exception {
+    String input = "class T {\n"
+            + "  public static void main(String[] args) {\n"
+            + "    //noinspection CheckResult\n"
+            + "    methodWhoseResultShouldBeChecked();\n"
+            + "  }\n"
+            + "}\n";
+    assertThat(new Formatter().formatSource(input)).isEqualTo(input);
+  }
 }
