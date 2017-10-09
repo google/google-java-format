@@ -115,10 +115,8 @@ public final class JavaCommentsHelper implements CommentsHelper {
         // If it is `//noinspection` then don't add a space.  `//noinspection` is
         // used for single-line suppressions by both IntelliJ and Android Lint,
         // and for now there is no good alternative.
-        boolean hasNoSuppression =
-            (line.length() > length + 12)
-                && line.substring(length, length + 12).equals("noinspection");
-        if (!hasNoSuppression) {
+        boolean hasNoInspection = line.regionMatches(length, "noinspection", 0, 12);
+        if (!hasNoInspection) {
           line = Strings.repeat("/", length) + " " + line.substring(length);
         }
       }
