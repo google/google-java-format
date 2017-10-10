@@ -21,13 +21,13 @@ import java.util.Iterator;
 import java.util.List;
 
 /** A parser for {@link CommandLineOptions}. */
-final class CommandLineOptionsParser {
+public final class CommandLineOptionsParser {
 
   private static final Splitter COMMA_SPLITTER = Splitter.on(',');
   private static final Splitter COLON_SPLITTER = Splitter.on(':');
 
   /** Parses {@link CommandLineOptions}. */
-  static CommandLineOptions parse(Iterable<String> options) {
+  public static CommandLineOptions parse(Iterable<String> options) {
     CommandLineOptions.Builder optionsBuilder = CommandLineOptions.builder();
     Iterator<String> it = options.iterator();
     while (it.hasNext()) {
