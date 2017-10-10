@@ -40,6 +40,10 @@ checkbox.
 To enable it by default in new projects, use "File→Other Settings→Default
 Settings...".
 
+When enabled, it will replace the normal "Refomat Code" action, which can be
+triggered from the "Code" menu or with the Ctrl-Alt-L (by default) keyboard
+shortcut.
+
 ### Eclipse
 
 A [google-java-format Eclipse
