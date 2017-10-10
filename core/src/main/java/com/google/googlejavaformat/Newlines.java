@@ -16,23 +16,27 @@ package com.google.googlejavaformat;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** Platform-independent newline handling. */
 public class Newlines {
 
+  private static Map<String, List<Integer>> cache = new ConcurrentHashMap<String, List<Integer>>();
+
   /** Returns the number of line breaks in the input. */
   public static int count(String input) {
-    return Iterators.size(lineOffsetIterator(input)) - 1;
+    return lineOffsetList(input).size() - 1;
   }
 
   /** Returns the index of the first break in the input, or {@code -1}. */
   public static int firstBreak(String input) {
-    Iterator<Integer> it = lineOffsetIterator(input);
-    it.next();
-    return it.hasNext() ? it.next() : -1;
+    List<Integer> offsets = lineOffsetList(input);
+    return offsets.isEmpty() ? -1 : offsets.get(0);
   }
 
   private static final ImmutableSet<String> BREAKS = ImmutableSet.of("\r\n", "\n", "\r");
@@ -94,7 +98,16 @@ public class Newlines {
 
   /** Returns an iterator over the start offsets of lines in the input. */
   public static Iterator<Integer> lineOffsetIterator(String input) {
-    return new LineOffsetIterator(input);
+    return lineOffsetList(input).iterator();
+  }
+
+  private static List<Integer> lineOffsetList(String input) {
+    List<Integer> offsets = cache.get(input);
+    if (offsets == null) {
+      offsets = Lists.newArrayList(new LineOffsetIterator(input));
+      cache.put(input, offsets);
+    }
+    return offsets;
   }
 
   /** Returns an iterator over lines in the input, including trailing whitespace. */
