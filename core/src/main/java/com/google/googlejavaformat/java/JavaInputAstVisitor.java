@@ -68,7 +68,6 @@ import com.google.googlejavaformat.java.DimensionHelpers.SortedDims;
 import com.google.googlejavaformat.java.DimensionHelpers.TypeWithDims;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
@@ -308,7 +307,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   }
 
   /** A record of whether we have visited into an expression. */
-  private final Deque<Boolean> inExpression = new ArrayDeque<>(Arrays.asList(false));
+  private final Deque<Boolean> inExpression = new ArrayDeque<>(ImmutableList.of(false));
 
   private boolean inExpression() {
     return inExpression.peekLast();
