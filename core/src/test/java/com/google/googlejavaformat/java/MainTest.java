@@ -20,8 +20,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ProcessBuilder.Redirect;
@@ -91,7 +93,10 @@ public class MainTest {
       return;
     }
     Main main =
-        new Main(new PrintWriter(System.out, true), new PrintWriter(System.err, true), System.in);
+        new Main(
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out, UTF_8)), true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            System.in);
     int errorCode = main.format("-replace", path.toAbsolutePath().toString());
     assertThat(errorCode).named("Error Code").isEqualTo(0);
   }
@@ -151,7 +156,11 @@ public class MainTest {
     };
     InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
     StringWriter out = new StringWriter();
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(System.err, true), in);
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
     assertThat(main.format("-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(joiner.join(expected));
   }
@@ -184,7 +193,11 @@ public class MainTest {
       };
       InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
       StringWriter out = new StringWriter();
-      Main main = new Main(new PrintWriter(out, true), new PrintWriter(System.err, true), in);
+      Main main =
+          new Main(
+              new PrintWriter(out, true),
+              new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+              in);
       assertThat(main.format("-", "--fix-imports-only")).isEqualTo(0);
       assertThat(out.toString()).isEqualTo(joiner.join(expected));
     }
@@ -199,7 +212,11 @@ public class MainTest {
       };
       InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
       StringWriter out = new StringWriter();
-      Main main = new Main(new PrintWriter(out, true), new PrintWriter(System.err, true), in);
+      Main main =
+          new Main(
+              new PrintWriter(out, true),
+              new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+              in);
       assertThat(
               main.format("-", "--fix-imports-only", "--experimental-remove-javadoc-only-imports"))
           .isEqualTo(0);
@@ -230,7 +247,7 @@ public class MainTest {
     Main main =
         new Main(
             new PrintWriter(out, true),
-            new PrintWriter(System.err, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
     assertThat(main.format("-", "-lines", "4")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(joiner.join(expected));
