@@ -238,7 +238,7 @@ public class RemoveUnusedImports {
     unit = parser.parseCompilationUnit();
     unit.sourcefile = source;
     Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
-        Iterables.filter(diagnostics.getDiagnostics(), Formatter.ERROR_DIAGNOSTIC);
+        Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
     if (!Iterables.isEmpty(errorDiagnostics)) {
       // error handling is done during formatting
       throw FormattingError.fromJavacDiagnostics(errorDiagnostics);

@@ -16,7 +16,6 @@ package com.google.googlejavaformat.java;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
@@ -91,25 +90,6 @@ public final class Formatter {
 
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
 
-  static final Predicate<Diagnostic<?>> ERROR_DIAGNOSTIC =
-      new Predicate<Diagnostic<?>>() {
-        @Override
-        public boolean apply(Diagnostic<?> input) {
-          if (input.getKind() != Diagnostic.Kind.ERROR) {
-            return false;
-          }
-          switch (input.getCode()) {
-            case "compiler.err.invalid.meth.decl.ret.type.req":
-              // accept constructor-like method declarations that don't match the name of their
-              // enclosing class
-              return false;
-            default:
-              break;
-          }
-          return true;
-        }
-      };
-
   private final JavaFormatterOptions options;
 
   /** A new Formatter instance with default options. */
@@ -167,7 +147,7 @@ public final class Formatter {
 
     javaInput.setCompilationUnit(unit);
     Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
-        Iterables.filter(diagnostics.getDiagnostics(), ERROR_DIAGNOSTIC);
+        Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
     if (!Iterables.isEmpty(errorDiagnostics)) {
       throw FormattingError.fromJavacDiagnostics(errorDiagnostics);
     }
@@ -181,6 +161,21 @@ public final class Formatter {
         javaOutput.getCommentsHelper(), options.maxLineLength(), new Doc.State(+0, 0));
     doc.write(javaOutput);
     javaOutput.flush();
+  }
+
+  static boolean errorDiagnostic(Diagnostic<?> input) {
+    if (input.getKind() != Diagnostic.Kind.ERROR) {
+      return false;
+    }
+    switch (input.getCode()) {
+      case "compiler.err.invalid.meth.decl.ret.type.req":
+        // accept constructor-like method declarations that don't match the name of their
+        // enclosing class
+        return false;
+      default:
+        break;
+    }
+    return true;
   }
 
   /**
