@@ -16,7 +16,6 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -79,14 +78,7 @@ public class ArrayDimensionTest {
       "List<int @A [] @B []> xs;",
       "List<int[] @A [][] @B []> xs;",
     };
-    return Iterables.transform(
-        Arrays.asList(inputs),
-        new Function<String, Object[]>() {
-          @Override
-          public Object[] apply(String input) {
-            return new Object[] {input};
-          }
-        });
+    return Iterables.transform(Arrays.asList(inputs), input -> new Object[] {input});
   }
 
   private final String input;

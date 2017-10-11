@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.util.Comparator.comparing;
 
 import com.google.common.base.CharMatcher;
@@ -109,7 +108,7 @@ public final class JavaOutput extends Output {
        * Output blank line if we've called {@link OpsBuilder#blankLine}{@code (true)} here, or if
        * there's a blank line here and it's a comment.
        */
-      BlankLineWanted wanted = firstNonNull(blankLines.get(lastK), BlankLineWanted.NO);
+      BlankLineWanted wanted = blankLines.getOrDefault(lastK, BlankLineWanted.NO);
       if (isComment(text) ? sawNewlines : wanted.wanted().or(sawNewlines)) {
         ++newlinesPending;
       }
