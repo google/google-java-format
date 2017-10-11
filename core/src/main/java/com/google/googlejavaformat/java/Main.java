@@ -152,13 +152,15 @@ public final class Main {
         allOk = false;
         continue;
       }
+      // in default mode always print formatted text to stdout, regardless of whether the input was formatted
       if (parameters.stdout()) {
         outWriter.write(formatted);
       }
-      boolean changed = !formatted.equals(inputs.get(path));
-      if (!changed) {
-        continue; // preserve original file
+      // check for any change. if the file was already formatted, continue with the next entry
+      if (formatted.equals(inputs.get(path))) {
+        continue;
       }
+      // something changed! handle according to the selected run mode and other parameters
       if (parameters.isSetExitIfChanged()) {
         allOk = false;
       }
@@ -187,15 +189,18 @@ public final class Main {
     }
     try {
       String output = new FormatFileCallable(parameters, input, options).call();
+      boolean changed = !output.equals(input);
       if (parameters.isDryRun()) {
-        outWriter.println(STDIN_FILENAME);
+        if (changed) {
+          outWriter.println(STDIN_FILENAME);
+        }
       } else {
         outWriter.write(output);
       }
-      if (input.equals(output)) {
-        return 0;
+      if (changed) {
+        return parameters.isSetExitIfChanged() ? 1 : 0;
       }
-      return parameters.isSetExitIfChanged() ? 1 : 0;
+      return 0;
     } catch (FormatterException e) {
       for (FormatterDiagnostic diagnostic : e.diagnostics()) {
         errWriter.println(STDIN_FILENAME + ":" + diagnostic.toString());

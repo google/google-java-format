@@ -107,6 +107,34 @@ public final class FormatterTest {
   }
 
   @Test
+  public void testFormatStdinStdoutWithDryRunAndExit0() throws Exception {
+    testFormatStdinStdoutWithArgs(0, "-", "-n");
+  }
+
+  @Test
+  public void testFormatStdinStdoutWithDryRunAndExit1() throws Exception {
+    testFormatStdinStdoutWithArgs(1, "-", "-n", "--set-exit-if-changed");
+  }
+
+  private void testFormatStdinStdoutWithArgs(int exit, String...args) throws Exception {
+    String input = "class Foo{\n" + "void f\n" + "() {\n" + "}\n" + "}\n";
+    String expectedOutput = "<stdin>" + System.lineSeparator(); // Main.STDIN_FILENAME
+
+    InputStream in = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    InputStream oldIn = System.in;
+    System.setIn(in);
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    assertThat(main.format(args)).isEqualTo(exit);
+    assertThat(out.toString()).isEqualTo(expectedOutput);
+
+    System.setIn(oldIn);
+  }
+
+  @Test
   public void testFormatLengthUpToEOF() throws Exception {
     String input = "class Foo{\n" + "void f\n" + "() {\n" + "}\n" + "}\n\n\n\n\n\n";
     String expectedOutput = "class Foo {\n" + "  void f() {}\n" + "}\n";
