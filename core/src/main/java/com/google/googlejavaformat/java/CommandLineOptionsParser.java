@@ -54,6 +54,13 @@ final class CommandLineOptionsParser {
         case "--replace":
           optionsBuilder.inPlace(true);
           break;
+        case "-n":
+        case "--dry-run":
+          optionsBuilder.dryRun(true);
+          break;
+        case "--set-exit-if-changed":
+          optionsBuilder.setExitIfChanged(true);
+          break;
         case "--lines":
         case "-lines":
         case "--line":

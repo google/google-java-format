@@ -29,7 +29,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Locale;
 import org.junit.Rule;
 import org.junit.Test;
@@ -284,5 +286,58 @@ public class MainTest {
             new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
     assertThat(main.format("-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(joiner.join(input));
+  }
+
+  @Test
+  public void dryRun() throws Exception {
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+
+    int errorCodeOk = main.format("-n", tempJava("Simple", "enum Simple {}\n"));
+    assertThat(errorCodeOk).named("Error Code").isEqualTo(0);
+    assertThat(out.toString()).isEmpty();
+    assertThat(err.toString()).isEmpty();
+  }
+
+  @Test
+  public void dryRunNeedsFormattingExit0() throws Exception {
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+
+    int errorCode = dryRun(main, false);
+    assertThat(errorCode).named("Error Code").isEqualTo(0);
+    assertThat(out.toString()).contains("NeedsFormatting.java");
+    assertThat(err.toString()).isEmpty();
+  }
+
+  @Test
+  public void dryRunNeedsFormattingExit1() throws Exception {
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+
+    int errorCode = dryRun(main, true);
+    assertThat(errorCode).named("Error Code").isEqualTo(1);
+    assertThat(out.toString()).contains("NeedsFormatting.java");
+    assertThat(err.toString()).isEmpty();
+  }
+
+  private int dryRun(Main main, boolean setExitIfChanged) throws Exception {
+    List<String> args = new ArrayList<>();
+    args.add("--dry-run");
+    if (setExitIfChanged) {
+      args.add("--set-exit-if-changed");
+    }
+    args.add(tempJava("IsFormatted", "interface IsFormatted {}\n"));
+    args.add(tempJava("NeedsFormatting", "  class  NeedsFormatting  {  }\n"));
+    return main.format(args.toArray(new String[args.size()]));
+  }
+
+  private String tempJava(String name, String code) throws Exception {
+    Path path = testFolder.newFile(name + ".java").toPath();
+    Files.write(path, code.getBytes(UTF_8));
+    return path.toAbsolutePath().toString();
   }
 }

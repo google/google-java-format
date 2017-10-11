@@ -133,6 +133,7 @@ public final class Main {
     boolean allOk = true;
     for (Map.Entry<Path, Future<String>> result : results.entrySet()) {
       String formatted;
+      Path path = result.getKey();
       try {
         formatted = result.getValue().get();
       } catch (InterruptedException e) {
@@ -142,28 +143,38 @@ public final class Main {
       } catch (ExecutionException e) {
         if (e.getCause() instanceof FormatterException) {
           for (FormatterDiagnostic diagnostic : ((FormatterException) e.getCause()).diagnostics()) {
-            errWriter.println(result.getKey() + ":" + diagnostic.toString());
+            errWriter.println(path + ":" + diagnostic.toString());
           }
         } else {
-          errWriter.println(result.getKey() + ": error: " + e.getCause().getMessage());
+          errWriter.println(path + ": error: " + e.getCause().getMessage());
           e.getCause().printStackTrace(errWriter);
         }
         allOk = false;
         continue;
       }
-      if (parameters.inPlace()) {
-        if (formatted.equals(inputs.get(result.getKey()))) {
-          continue; // preserve original file
-        }
-        try {
-          Files.write(result.getKey(), formatted.getBytes(UTF_8));
-        } catch (IOException e) {
-          errWriter.println(result.getKey() + ": could not write file: " + e.getMessage());
-          allOk = false;
-          continue;
-        }
-      } else {
+      // in default mode always print formatted text to stdout, regardless of whether the input was formatted
+      if (parameters.stdout()) {
         outWriter.write(formatted);
+      }
+      // check for any change. if the file was already formatted, continue with the next entry
+      if (formatted.equals(inputs.get(path))) {
+        continue;
+      }
+      // something changed! handle according to the selected run mode and other parameters
+      if (parameters.isSetExitIfChanged()) {
+        allOk = false;
+      }
+      if (parameters.isDryRun()) {
+        outWriter.println(path);
+        continue;
+      }
+      if (parameters.inPlace()) {
+        try {
+          Files.write(path, formatted.getBytes(UTF_8));
+        } catch (IOException e) {
+          errWriter.println(path + ": could not write file: " + e.getMessage());
+          allOk = false;
+        }
       }
     }
     return allOk ? 0 : 1;
@@ -178,7 +189,17 @@ public final class Main {
     }
     try {
       String output = new FormatFileCallable(parameters, input, options).call();
-      outWriter.write(output);
+      boolean changed = !output.equals(input);
+      if (parameters.isDryRun()) {
+        if (changed) {
+          outWriter.println(STDIN_FILENAME);
+        }
+      } else {
+        outWriter.write(output);
+      }
+      if (changed) {
+        return parameters.isSetExitIfChanged() ? 1 : 0;
+      }
       return 0;
     } catch (FormatterException e) {
       for (FormatterDiagnostic diagnostic : e.diagnostics()) {
@@ -207,6 +228,9 @@ public final class Main {
 
     if (parameters.inPlace() && parameters.files().isEmpty()) {
       throw new UsageException("in-place formatting was requested but no files were provided");
+    }
+    if (parameters.inPlace() && parameters.isDryRun()) {
+      throw new UsageException("in-place formatting and dry-run can't be used at the same time");
     }
     if (parameters.isSelection() && filesToFormat != 1) {
       throw new UsageException("partial formatting is only support for a single file");

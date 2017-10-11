@@ -20,9 +20,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/**
- * Tests for command-line flags.
- */
+/** Tests for command-line flags. */
 @RunWith(JUnit4.class)
 public class CommandLineFlagsTest {
 
@@ -143,6 +141,23 @@ public class CommandLineFlagsTest {
 
     try {
       Main.processArgs("-aosp");
+      fail();
+    } catch (UsageException e) {
+      // expected
+    }
+  }
+
+  @Test
+  public void formatInPlaceAndDryRunTogetherIsNotAllowed() {
+    try {
+      Main.processArgs("-i", "-n");
+      fail();
+    } catch (UsageException e) {
+      // expected
+    }
+
+    try {
+      Main.processArgs("--replace", "--dry-run");
       fail();
     } catch (UsageException e) {
       // expected
