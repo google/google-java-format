@@ -285,4 +285,17 @@ public class MainTest {
     assertThat(main.format("-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(joiner.join(input));
   }
+
+  @Test
+  public void newline() throws Exception {
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(err, true),
+            new ByteArrayInputStream("class T {}\n\t".getBytes(UTF_8)));
+    assertThat(main.format("-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo("class T {}\n");
+  }
 }

@@ -182,7 +182,7 @@ public final class JavaOutput extends Output {
   /** Flush any incomplete last line, then add the EOF token into our data structures. */
   void flush() {
     String lastLine = lineBuilder.toString();
-    if (!lastLine.isEmpty()) {
+    if (!CharMatcher.whitespace().matchesAllOf(lastLine)) {
       mutableLines.add(lastLine);
     }
     int jN = mutableLines.size();
@@ -295,13 +295,13 @@ public final class JavaOutput extends Output {
       }
       for (; i < getLineCount(); i++) {
         String after = getLine(i);
-        if (after.isEmpty()) {
-          // Write out trailing blank lines from the formatted output.
+        int idx = CharMatcher.whitespace().negate().indexIn(after);
+        if (idx == -1) {
+          // Write out trailing empty lines from the formatted output.
           replacement.append(lineSeparator);
         } else {
           if (newline == -1) {
             // If there wasn't a trailing newline in the input, indent the next line.
-            int idx = CharMatcher.whitespace().negate().indexIn(after);
             replacement.append(after.substring(0, idx));
           }
           break;
