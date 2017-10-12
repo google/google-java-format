@@ -318,7 +318,7 @@ public class MainTest {
             new PrintWriter(err, true),
             new ByteArrayInputStream(input.getBytes(UTF_8)));
     assertThat(main.format("-n", "-")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo("<stdin>\n");
+    assertThat(out.toString()).isEqualTo("<stdin>" + System.lineSeparator());
     assertThat(err.toString()).isEmpty();
   }
 
@@ -344,7 +344,11 @@ public class MainTest {
     assertThat(exitCode).isEqualTo(0);
 
     assertThat(out.toString())
-        .isEqualTo(b.toAbsolutePath().toString() + "\n" + c.toAbsolutePath().toString() + "\n");
+        .isEqualTo(
+            b.toAbsolutePath().toString()
+                + System.lineSeparator()
+                + c.toAbsolutePath().toString()
+                + System.lineSeparator());
     assertThat(err.toString()).isEmpty();
   }
 
@@ -370,7 +374,7 @@ public class MainTest {
     String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
     String out = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
     assertThat(err).isEmpty();
-    assertThat(out).isEqualTo("<stdin>\n");
+    assertThat(out).isEqualTo("<stdin>" + System.lineSeparator());
     assertThat(process.exitValue()).isEqualTo(1);
   }
 
@@ -395,7 +399,7 @@ public class MainTest {
     String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
     String out = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
     assertThat(err).isEmpty();
-    assertThat(out).isEqualTo(path.toAbsolutePath().toString() + "\n");
+    assertThat(out).isEqualTo(path.toAbsolutePath().toString() + System.lineSeparator());
     assertThat(process.exitValue()).isEqualTo(1);
   }
 }
