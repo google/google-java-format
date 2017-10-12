@@ -59,10 +59,9 @@ public final class JavaInput extends Input {
    * either a token (if {@code isToken()}), or a non-token, which is a comment (if {@code
    * isComment()}) or a newline (if {@code isNewline()}) or a maximal sequence of other whitespace
    * characters (if {@code isSpaces()}). Each {@link Tok} contains a sequence of characters, an
-   * index (sequential starting at {@code 0} for tokens and comments, else {@code -1}), and an
-   * Eclipse-compatible ({@code 0}-origin) position in the input. The concatenation of the texts of
-   * all the {@link Tok}s equals the input. Each Input ends with a token EOF {@link Tok}, with empty
-   * text.
+   * index (sequential starting at {@code 0} for tokens and comments, else {@code -1}), and a
+   * ({@code 0}-origin) position in the input. The concatenation of the texts of all the {@link
+   * Tok}s equals the input. Each Input ends with a token EOF {@link Tok}, with empty text.
    *
    * <p>A {@code /*} comment possibly contains newlines; a {@code //} comment does not contain the
    * terminating newline character, but is followed by a newline {@link Tok}.

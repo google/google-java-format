@@ -1100,9 +1100,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public Void visitBinary(BinaryTree node, Void unused) {
     sync(node);
     /*
-     * Collect together all operators with same precedence to clean up indentation. Eclipse's
-     * extended operands help a little (to collect together the same operator), but they're applied
-     * inconsistently, and don't apply to other operators of the same precedence.
+     * Collect together all operators with same precedence to clean up indentation.
      */
     List<ExpressionTree> operands = new ArrayList<>();
     List<String> operators = new ArrayList<>();

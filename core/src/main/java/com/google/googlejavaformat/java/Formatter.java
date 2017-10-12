@@ -57,13 +57,13 @@ import org.openjdk.tools.javac.util.Options;
  * This is google-java-format, a new Java formatter that follows the Google Java Style Guide quite
  * precisely---to the letter and to the spirit.
  *
- * <p>This formatter uses the Eclipse parser to generate an AST. Because the Eclipse AST loses
- * information about the non-tokens in the input (including newlines, comments, etc.), and even some
- * tokens (e.g., optional commas or semicolons), this formatter lexes the input again and follows
- * along in the resulting list of tokens. Its lexer splits all multi-character operators (like ">>")
- * into multiple single-character operators. Each non-token is assigned to a token---non-tokens
- * following a token on the same line go with that token; those following go with the next token---
- * and there is a final EOF token to hold final comments.
+ * <p>This formatter uses the javac parser to generate an AST. Because the AST loses information
+ * about the non-tokens in the input (including newlines, comments, etc.), and even some tokens
+ * (e.g., optional commas or semicolons), this formatter lexes the input again and follows along in
+ * the resulting list of tokens. Its lexer splits all multi-character operators (like ">>") into
+ * multiple single-character operators. Each non-token is assigned to a token---non-tokens following
+ * a token on the same line go with that token; those following go with the next token--- and there
+ * is a final EOF token to hold final comments.
  *
  * <p>The formatter walks the AST to generate a Greg Nelson/Derek Oppen-style list of formatting
  * {@link Op}s [1--2] that then generates a structured {@link Doc}. Each AST node type has a visitor
