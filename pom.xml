@@ -95,8 +95,9 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.8</java.version>
-    <guava.version>19.0</guava.version>
+    <guava.version>22.0</guava.version>
     <javac.version>9-dev-r4023-3</javac.version>
+    <truth.version>0.36</truth.version>
   </properties>
 
   <dependencyManagement>
@@ -141,7 +142,7 @@
       <dependency>
         <groupId>com.google.truth</groupId>
         <artifactId>truth</artifactId>
-        <version>0.28</version>
+        <version>${truth.version}</version>
         <scope>test</scope>
       </dependency>
     </dependencies>

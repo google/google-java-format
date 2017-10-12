@@ -69,7 +69,6 @@
     <dependency>
       <groupId>com.google.truth</groupId>
       <artifactId>truth</artifactId>
-      <version>0.26</version>
     </dependency>
     <dependency>
       <groupId>com.google.testing.compile</groupId>
