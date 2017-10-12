@@ -78,7 +78,7 @@ public final class PartialFormattingTest {
     // Claim to have modified the parentheses.
     int start = input.indexOf("() {");
     String output = doGetFormatReplacements(input, start, start + 1);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -99,7 +99,7 @@ public final class PartialFormattingTest {
             "");
     // Claim to have modified everything after the parentheses.
     String output = doGetFormatReplacements(input, 20, 21);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -123,7 +123,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("add(2)");
     String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -152,7 +152,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("void");
     String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -181,7 +181,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("class");
     String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -214,7 +214,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -231,7 +231,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -249,7 +249,7 @@ public final class PartialFormattingTest {
             "  int zzz = 1; }");
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -265,7 +265,7 @@ public final class PartialFormattingTest {
             "  int zzz = 1; }");
     int idx = input.indexOf("yyy");
     String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -281,7 +281,7 @@ public final class PartialFormattingTest {
             "    int x; } }");
     int idx = input.indexOf("zzz");
     String output = doGetFormatReplacements(input, idx, idx);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -298,7 +298,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("}");
     String output = doGetFormatReplacements(input, idx, idx);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -315,7 +315,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("}");
     String output = doGetFormatReplacements(input, idx, idx);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -331,7 +331,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("}");
     String output = doGetFormatReplacements(input, idx, idx);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -347,7 +347,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("}");
     String output = doGetFormatReplacements(input, idx, idx);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -367,7 +367,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("test");
     String output = doGetFormatReplacements(input, idx, idx);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   private static String doGetFormatReplacements(String input, int characterILo, int characterIHi)
@@ -632,7 +632,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf(toFormat);
     String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -759,7 +759,7 @@ public final class PartialFormattingTest {
     String toFormat = "Runnable";
     int idx = input.indexOf(toFormat);
     String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -799,7 +799,7 @@ public final class PartialFormattingTest {
     String toFormat = "Runnable";
     int idx = input.indexOf(toFormat);
     String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -996,7 +996,7 @@ public final class PartialFormattingTest {
     String toFormat = "Hello";
     int idx = input.indexOf(toFormat);
     String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   // regression test for b/b22196513
@@ -1209,7 +1209,7 @@ public final class PartialFormattingTest {
             "    switch (foo) {",
             "      case FOO:",
             "        f();",
-            "        break;",
+            "      break;",
             "      case BAR:", // we deliberately only format the first case
             "      g();",
             "      break;",
@@ -1219,7 +1219,7 @@ public final class PartialFormattingTest {
 
     int idx = input.indexOf("f()");
     String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   // regression test for b/23349153
@@ -1240,7 +1240,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("Object o");
     String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -1261,7 +1261,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("Object o");
     String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -1282,7 +1282,7 @@ public final class PartialFormattingTest {
             "");
     int idx = input.indexOf("Object o");
     String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertEquals("bad output", expectedOutput, output);
+    assertThat(output).isEqualTo(expectedOutput);
   }
 
   // Regression test for b/18479811
@@ -1726,6 +1726,54 @@ public final class PartialFormattingTest {
             "");
 
     String output = runFormatter(input, new String[] {"-lines", "2"});
+    assertThat(output).isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void nestedSwitchCase() throws Exception {
+    String input =
+        lines(
+            "class Test {",
+            "  {",
+            "    switch (foo) {",
+            "      case FOO:",
+            "      f();",
+            "      break;",
+            "      case BAR:",
+            "      switch (bar) {",
+            "        case BAZ:",
+            "        h();",
+            "        break;",
+            "        case BOZ:",
+            "        i();",
+            "        break;",
+            "      }",
+            "    }",
+            "  }",
+            "}");
+    String expectedOutput =
+        lines(
+            "class Test {",
+            "  {",
+            "    switch (foo) {",
+            "      case FOO:",
+            "      f();",
+            "      break;",
+            "      case BAR:",
+            "      switch (bar) {",
+            "        case BAZ:",
+            "            h();",
+            "        break;",
+            "        case BOZ:",
+            "        i();",
+            "        break;",
+            "      }",
+            "    }",
+            "  }",
+            "}");
+
+    int idx = input.indexOf("h()");
+    String output = doGetFormatReplacements(input, idx, idx + 1);
     assertThat(output).isEqualTo(expectedOutput);
   }
 }

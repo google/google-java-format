@@ -1679,13 +1679,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       token(":");
     }
     builder.open(plusTwo);
-    try {
-      // don't partially format within case groups
-      inExpression.addLast(true);
-      visitStatements(node.getStatements());
-    } finally {
-      inExpression.removeLast();
-    }
+    visitStatements(node.getStatements());
     builder.close();
     return null;
   }
