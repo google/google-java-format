@@ -315,4 +315,110 @@ public class MainTest {
     assertThat(main.format("-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo("class T {}\n");
   }
+
+  @Test
+  public void dryRunStdinUnchanged() throws Exception {
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(err, true),
+            new ByteArrayInputStream("class Test {}\n".getBytes(UTF_8)));
+    assertThat(main.format("-n", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEmpty();
+    assertThat(err.toString()).isEmpty();
+  }
+
+  @Test
+  public void dryRunStdinChanged() throws Exception {
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    String input = "class Test {\n}\n";
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(err, true),
+            new ByteArrayInputStream(input.getBytes(UTF_8)));
+    assertThat(main.format("-n", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo("<stdin>\n");
+    assertThat(err.toString()).isEmpty();
+  }
+
+  @Test
+  public void dryRunFiles() throws Exception {
+    Path a = testFolder.newFile("A.java").toPath();
+    Path b = testFolder.newFile("B.java").toPath();
+    Path c = testFolder.newFile("C.java").toPath();
+    Files.write(a, "class A {}\n".getBytes(UTF_8));
+    Files.write(b, "class B {\n}\n".getBytes(UTF_8));
+    Files.write(c, "class C {\n}\n".getBytes(UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    int exitCode =
+        main.format(
+            "-n",
+            a.toAbsolutePath().toAbsolutePath().toString(),
+            b.toAbsolutePath().toString(),
+            c.toAbsolutePath().toString());
+
+    assertThat(exitCode).isEqualTo(0);
+
+    assertThat(out.toString())
+        .isEqualTo(b.toAbsolutePath().toString() + "\n" + c.toAbsolutePath().toString() + "\n");
+    assertThat(err.toString()).isEmpty();
+  }
+
+  @Test
+  public void exitIfChangedStdin() throws Exception {
+    Path path = testFolder.newFile("Test.java").toPath();
+    Files.write(path, "class Test {\n}\n".getBytes(UTF_8));
+    Process process =
+        new ProcessBuilder(
+                ImmutableList.of(
+                    Paths.get(System.getProperty("java.home")).resolve("bin/java").toString(),
+                    "-cp",
+                    System.getProperty("java.class.path"),
+                    Main.class.getName(),
+                    "-n",
+                    "--set-exit-if-changed",
+                    "-"))
+            .redirectInput(path.toFile())
+            .redirectError(Redirect.PIPE)
+            .redirectOutput(Redirect.PIPE)
+            .start();
+    process.waitFor();
+    String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
+    String out = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
+    assertThat(err).isEmpty();
+    assertThat(out).isEqualTo("<stdin>\n");
+    assertThat(process.exitValue()).isEqualTo(1);
+  }
+
+  @Test
+  public void exitIfChangedFiles() throws Exception {
+    Path path = testFolder.newFile("Test.java").toPath();
+    Files.write(path, "class Test {\n}\n".getBytes(UTF_8));
+    Process process =
+        new ProcessBuilder(
+                ImmutableList.of(
+                    Paths.get(System.getProperty("java.home")).resolve("bin/java").toString(),
+                    "-cp",
+                    System.getProperty("java.class.path"),
+                    Main.class.getName(),
+                    "-n",
+                    "--set-exit-if-changed",
+                    path.toAbsolutePath().toString()))
+            .redirectError(Redirect.PIPE)
+            .redirectOutput(Redirect.PIPE)
+            .start();
+    process.waitFor();
+    String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
+    String out = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
+    assertThat(err).isEmpty();
+    assertThat(out).isEqualTo(path.toAbsolutePath().toString() + "\n");
+    assertThat(process.exitValue()).isEqualTo(1);
+  }
 }

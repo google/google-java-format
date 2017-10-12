@@ -44,6 +44,11 @@ public final class UsageException extends Exception {
     "    Do not fix the import order. Unused imports will still be removed.",
     "  --skip-removing-unused-imports",
     "    Do not remove unused imports. Imports will still be sorted.",
+    "  --dry-run, -n",
+    "    Prints the paths of the files whose contents would change if the formatter were run"
+        + " normally.",
+    "  --set-exit-if-changed",
+    "    Return exit code 1 if there are any formatting changes.",
     "  --length, -length",
     "    Character length to format.",
     "  --lines, -lines, --line, -line",

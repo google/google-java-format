@@ -38,6 +38,8 @@ final class CommandLineOptions {
   private final boolean removeJavadocOnlyImports;
   private final boolean sortImports;
   private final boolean removeUnusedImports;
+  private final boolean dryRun;
+  private final boolean setExitIfChanged;
 
   CommandLineOptions(
       ImmutableList<String> files,
@@ -52,7 +54,9 @@ final class CommandLineOptions {
       boolean fixImportsOnly,
       boolean removeJavadocOnlyImports,
       boolean sortImports,
-      boolean removeUnusedImports) {
+      boolean removeUnusedImports,
+      boolean dryRun,
+      boolean setExitIfChanged) {
     this.files = files;
     this.inPlace = inPlace;
     this.lines = lines;
@@ -66,6 +70,8 @@ final class CommandLineOptions {
     this.removeJavadocOnlyImports = removeJavadocOnlyImports;
     this.sortImports = sortImports;
     this.removeUnusedImports = removeUnusedImports;
+    this.dryRun = dryRun;
+    this.setExitIfChanged = setExitIfChanged;
   }
 
   /** The files to format. */
@@ -136,6 +142,18 @@ final class CommandLineOptions {
     return removeUnusedImports;
   }
 
+  /**
+   * Print the paths of the files whose contents would change if the formatter were run normally.
+   */
+  boolean dryRun() {
+    return dryRun;
+  }
+
+  /** Return exit code 1 if there are any formatting changes. */
+  boolean setExitIfChanged() {
+    return setExitIfChanged;
+  }
+
   /** Returns true if partial formatting was selected. */
   boolean isSelection() {
     return !lines().isEmpty() || !offsets().isEmpty() || !lengths().isEmpty();
@@ -151,15 +169,17 @@ final class CommandLineOptions {
     private final ImmutableRangeSet.Builder<Integer> lines = ImmutableRangeSet.builder();
     private final ImmutableList.Builder<Integer> offsets = ImmutableList.builder();
     private final ImmutableList.Builder<Integer> lengths = ImmutableList.builder();
-    private Boolean inPlace = false;
-    private Boolean aosp = false;
-    private Boolean version = false;
-    private Boolean help = false;
-    private Boolean stdin = false;
-    private Boolean fixImportsOnly = false;
-    private Boolean removeJavadocOnlyImports = false;
-    private Boolean sortImports = true;
-    private Boolean removeUnusedImports = true;
+    private boolean inPlace = false;
+    private boolean aosp = false;
+    private boolean version = false;
+    private boolean help = false;
+    private boolean stdin = false;
+    private boolean fixImportsOnly = false;
+    private boolean removeJavadocOnlyImports = false;
+    private boolean sortImports = true;
+    private boolean removeUnusedImports = true;
+    private boolean dryRun = false;
+    private boolean setExitIfChanged = false;
 
     ImmutableList.Builder<String> filesBuilder() {
       return files;
@@ -224,21 +244,33 @@ final class CommandLineOptions {
       return this;
     }
 
+    Builder dryRun(boolean dryRun) {
+      this.dryRun = dryRun;
+      return this;
+    }
+
+    Builder setExitIfChanged(boolean setExitIfChanged) {
+      this.setExitIfChanged = setExitIfChanged;
+      return this;
+    }
+
     CommandLineOptions build() {
       return new CommandLineOptions(
-          this.files.build(),
-          this.inPlace,
-          this.lines.build(),
-          this.offsets.build(),
-          this.lengths.build(),
-          this.aosp,
-          this.version,
-          this.help,
-          this.stdin,
-          this.fixImportsOnly,
-          this.removeJavadocOnlyImports,
-          this.sortImports,
-          this.removeUnusedImports);
+          files.build(),
+          inPlace,
+          lines.build(),
+          offsets.build(),
+          lengths.build(),
+          aosp,
+          version,
+          help,
+          stdin,
+          fixImportsOnly,
+          removeJavadocOnlyImports,
+          sortImports,
+          removeUnusedImports,
+          dryRun,
+          setExitIfChanged);
     }
   }
 }

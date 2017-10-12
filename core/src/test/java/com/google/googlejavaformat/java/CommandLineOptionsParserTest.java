@@ -42,6 +42,8 @@ public class CommandLineOptionsParserTest {
     assertThat(options.version()).isFalse();
     assertThat(options.sortImports()).isTrue();
     assertThat(options.removeUnusedImports()).isTrue();
+    assertThat(options.dryRun()).isFalse();
+    assertThat(options.setExitIfChanged()).isFalse();
   }
 
   @Test
@@ -102,7 +104,7 @@ public class CommandLineOptionsParserTest {
 
   @Test
   public void inPlace() {
-    assertThat(CommandLineOptionsParser.parse(Arrays.asList("-i")).inPlace()).isTrue();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("-i", "A.java")).inPlace()).isTrue();
   }
 
   @Test
@@ -125,6 +127,20 @@ public class CommandLineOptionsParserTest {
         .isFalse();
   }
 
+  @Test
+  public void dryRun() {
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--dry-run")).dryRun()).isTrue();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("-n")).dryRun()).isTrue();
+  }
+
+  @Test
+  public void setExitIfChanged() {
+    assertThat(
+            CommandLineOptionsParser.parse(Arrays.asList("--set-exit-if-changed"))
+                .setExitIfChanged())
+        .isTrue();
+  }
+
   // TODO(cushon): consider handling this in the parser and reporting a more detailed error
   @Test
   public void illegalLines() {
@@ -135,4 +151,5 @@ public class CommandLineOptionsParserTest {
       assertThat(e.getMessage()).contains("overlap");
     }
   }
+
 }

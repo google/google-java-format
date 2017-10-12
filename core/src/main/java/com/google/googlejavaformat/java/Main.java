@@ -132,6 +132,7 @@ public final class Main {
 
     boolean allOk = true;
     for (Map.Entry<Path, Future<String>> result : results.entrySet()) {
+      Path path = result.getKey();
       String formatted;
       try {
         formatted = result.getValue().get();
@@ -142,25 +143,33 @@ public final class Main {
       } catch (ExecutionException e) {
         if (e.getCause() instanceof FormatterException) {
           for (FormatterDiagnostic diagnostic : ((FormatterException) e.getCause()).diagnostics()) {
-            errWriter.println(result.getKey() + ":" + diagnostic.toString());
+            errWriter.println(path + ":" + diagnostic.toString());
           }
         } else {
-          errWriter.println(result.getKey() + ": error: " + e.getCause().getMessage());
+          errWriter.println(path + ": error: " + e.getCause().getMessage());
           e.getCause().printStackTrace(errWriter);
         }
         allOk = false;
         continue;
       }
+      boolean changed = !formatted.equals(inputs.get(path));
+      if (changed && parameters.setExitIfChanged()) {
+        allOk = false;
+      }
       if (parameters.inPlace()) {
-        if (formatted.equals(inputs.get(result.getKey()))) {
+        if (!changed) {
           continue; // preserve original file
         }
         try {
-          Files.write(result.getKey(), formatted.getBytes(UTF_8));
+          Files.write(path, formatted.getBytes(UTF_8));
         } catch (IOException e) {
-          errWriter.println(result.getKey() + ": could not write file: " + e.getMessage());
+          errWriter.println(path + ": could not write file: " + e.getMessage());
           allOk = false;
           continue;
+        }
+      } else if (parameters.dryRun()) {
+        if (changed) {
+          outWriter.println(path);
         }
       } else {
         outWriter.write(formatted);
@@ -176,17 +185,28 @@ public final class Main {
     } catch (IOException e) {
       throw new IOError(e);
     }
+    boolean ok = true;
     try {
       String output = new FormatFileCallable(parameters, input, options).call();
-      outWriter.write(output);
-      return 0;
+      boolean changed = !input.equals(output);
+      if (changed && parameters.setExitIfChanged()) {
+        ok = false;
+      }
+      if (parameters.dryRun()) {
+        if (changed) {
+          outWriter.println(STDIN_FILENAME);
+        }
+      } else {
+        outWriter.write(output);
+      }
     } catch (FormatterException e) {
       for (FormatterDiagnostic diagnostic : e.diagnostics()) {
         errWriter.println(STDIN_FILENAME + ":" + diagnostic.toString());
       }
-      return 1;
+      ok = false;
       // TODO(cpovirk): Catch other types of exception (as we do in the formatFiles case).
     }
+    return ok ? 0 : 1;
   }
 
   /** Parses and validates command-line flags. */
@@ -212,11 +232,16 @@ public final class Main {
       throw new UsageException("partial formatting is only support for a single file");
     }
     if (parameters.offsets().size() != parameters.lengths().size()) {
-      throw new UsageException(
-          String.format("-offsets and -lengths flags must be provided in matching pairs"));
+      throw new UsageException("-offsets and -lengths flags must be provided in matching pairs");
     }
     if (filesToFormat <= 0 && !parameters.version() && !parameters.help()) {
       throw new UsageException("no files were provided");
+    }
+    if (parameters.stdin() && !parameters.files().isEmpty()) {
+      throw new UsageException("cannot format from standard input and files simultaneously");
+    }
+    if (parameters.dryRun() && parameters.inPlace()) {
+      throw new UsageException("cannot use --dry-run and --in-place at the same time");
     }
     return parameters;
   }

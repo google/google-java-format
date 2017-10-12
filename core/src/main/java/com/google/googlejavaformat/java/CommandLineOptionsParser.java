@@ -98,6 +98,13 @@ final class CommandLineOptionsParser {
         case "-":
           optionsBuilder.stdin(true);
           break;
+        case "-n":
+        case "--dry-run":
+          optionsBuilder.dryRun(true);
+          break;
+        case "--set-exit-if-changed":
+          optionsBuilder.setExitIfChanged(true);
+          break;
         default:
           throw new IllegalArgumentException("unexpected flag: " + flag);
       }

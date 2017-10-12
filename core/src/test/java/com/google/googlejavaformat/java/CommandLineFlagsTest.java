@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
@@ -146,6 +147,42 @@ public class CommandLineFlagsTest {
       fail();
     } catch (UsageException e) {
       // expected
+    }
+  }
+
+  @Test
+  public void stdinAndFiles() {
+    try {
+      Main.processArgs("-", "A.java");
+      fail();
+    } catch (UsageException e) {
+      assertThat(e)
+          .hasMessageThat()
+          .contains("cannot format from standard input and files simultaneously");
+    }
+  }
+
+  @Test
+  public void inPlaceStdin() {
+    try {
+      Main.processArgs("-i", "-");
+      fail();
+    } catch (UsageException e) {
+      assertThat(e)
+          .hasMessageThat()
+          .contains("in-place formatting was requested but no files were provided");
+    }
+  }
+
+  @Test
+  public void inPlaceDryRun() {
+    try {
+      Main.processArgs("-i", "-n", "A.java");
+      fail();
+    } catch (UsageException e) {
+      assertThat(e)
+          .hasMessageThat()
+          .contains("cannot use --dry-run and --in-place at the same time");
     }
   }
 }
