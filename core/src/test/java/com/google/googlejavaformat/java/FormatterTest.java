@@ -249,6 +249,25 @@ public final class FormatterTest {
   }
 
   @Test
+  public void importsFixedIfRequested() throws FormatterException {
+    String input =
+        "package com.google.example;\n"
+            + UNORDERED_IMPORTS
+            + "\npublic class ExampleTest {\n"
+            + "  @Nullable List<?> xs;\n"
+            + "}\n";
+    String output = new Formatter().formatSourceAndFixImports(input);
+    String expect =
+        "package com.google.example;\n\n"
+            + "import java.util.List;\n"
+            + "import javax.annotations.Nullable;\n\n"
+            + "public class ExampleTest {\n"
+            + "  @Nullable List<?> xs;\n"
+            + "}\n";
+    assertThat(output).isEqualTo(expect);
+  }
+
+  @Test
   public void importOrderingWithoutFormatting() throws IOException, UsageException {
     importOrdering(
         "--fix-imports-only", "com/google/googlejavaformat/java/testimports/A.imports-only");
