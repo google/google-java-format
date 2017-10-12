@@ -17,7 +17,6 @@ package com.google.googlejavaformat.java;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
-import com.google.googlejavaformat.java.RemoveUnusedImports.JavadocOnlyImports;
 import java.util.concurrent.Callable;
 
 /**
@@ -50,12 +49,7 @@ public class FormatFileCallable implements Callable<String> {
 
   private String fixImports(String input) throws FormatterException {
     if (parameters.removeUnusedImports()) {
-      input =
-          RemoveUnusedImports.removeUnusedImports(
-              input,
-              parameters.removeJavadocOnlyImports()
-                  ? JavadocOnlyImports.REMOVE
-                  : JavadocOnlyImports.KEEP);
+      input = RemoveUnusedImports.removeUnusedImports(input);
     }
     if (parameters.sortImports()) {
       input = ImportOrderer.reorderImports(input);

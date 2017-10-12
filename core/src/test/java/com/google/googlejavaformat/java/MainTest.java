@@ -179,49 +179,26 @@ public class MainTest {
       "  public static List<String> names;",
       "}",
     };
-    {
-      String[] expected = {
-        "import java.util.ArrayList;",
-        "import java.util.List;",
-        "",
-        "class Test {",
-        "  /**",
-        "   * May be an {@link ArrayList}.",
-        "   */",
-        "  public static List<String> names;",
-        "}",
-      };
-      InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
-      StringWriter out = new StringWriter();
-      Main main =
-          new Main(
-              new PrintWriter(out, true),
-              new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
-              in);
-      assertThat(main.format("-", "--fix-imports-only")).isEqualTo(0);
-      assertThat(out.toString()).isEqualTo(joiner.join(expected));
-    }
-    {
-      String[] expected = {
-        "import java.util.List;",
-        "",
-        "class Test {",
-        "  /** May be an {@link java.util.ArrayList}. */",
-        "  public static List<String> names;",
-        "}",
-      };
-      InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
-      StringWriter out = new StringWriter();
-      Main main =
-          new Main(
-              new PrintWriter(out, true),
-              new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
-              in);
-      assertThat(
-              main.format("-", "--fix-imports-only", "--experimental-remove-javadoc-only-imports"))
-          .isEqualTo(0);
-      assertThat(out.toString()).isEqualTo(joiner.join(expected));
-    }
+    String[] expected = {
+      "import java.util.ArrayList;",
+      "import java.util.List;",
+      "",
+      "class Test {",
+      "  /**",
+      "   * May be an {@link ArrayList}.",
+      "   */",
+      "  public static List<String> names;",
+      "}",
+    };
+    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
+    assertThat(main.format("-", "--fix-imports-only")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(joiner.join(expected));
   }
 
   // test that -lines handling works with import removal

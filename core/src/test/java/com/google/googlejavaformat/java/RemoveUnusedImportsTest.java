@@ -15,8 +15,6 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.googlejavaformat.java.RemoveUnusedImports.JavadocOnlyImports.KEEP;
-import static com.google.googlejavaformat.java.RemoveUnusedImports.JavadocOnlyImports.REMOVE;
 import static com.google.googlejavaformat.java.RemoveUnusedImports.removeUnusedImports;
 
 import com.google.common.base.Joiner;
@@ -52,14 +50,6 @@ public class RemoveUnusedImportsTest {
           "  List<String> xs;",
           "}",
         },
-        {
-          "import java.util.List;",
-          "",
-          "class Test {",
-          "  /** could be an {@link java.util.ArrayList} */",
-          "  List<String> xs;",
-          "}",
-        },
       },
       {
         {
@@ -74,10 +64,6 @@ public class RemoveUnusedImportsTest {
           "/** {@link ArrayList#add} {@link Collection#remove(Object)} */",
           "class Test {}",
         },
-        {
-          "/** {@link java.util.ArrayList#add} {@link java.util.Collection#remove(Object)} */",
-          "class Test {}",
-        }
       },
       {
         {
@@ -98,24 +84,11 @@ public class RemoveUnusedImportsTest {
           "  void f() {}",
           "}",
         },
-        {
-          "class Test {", //
-          "  /** a {@link a.A} */",
-          "  void f() {}",
-          "}",
-        }
       },
       {
         {
           "import a.A;import a.B;", //
           "import a.C; // hello",
-          "class Test {",
-          "  B b;",
-          "}",
-        },
-        {
-          "import a.B;", //
-          "// hello",
           "class Test {",
           "  B b;",
           "}",
@@ -170,18 +143,6 @@ public class RemoveUnusedImportsTest {
           "class Test {",
           "}",
         },
-        {
-          "/**",
-          " * {@link a.A} {@linkplain b.B} {@value d.D#FOO}",
-          " *",
-          " * @exception e.E",
-          " * @throws f.F",
-          " * @see c.C",
-          " * @see h.H#foo",
-          " * @see <a href=\"whatever\">",
-          " */",
-          "class Test {}",
-        }
       },
       {
         {
@@ -194,10 +155,6 @@ public class RemoveUnusedImportsTest {
           "/** {@link Map.Entry#containsKey(Object)} } */",
           "class Test {}",
         },
-        {
-          "/** {@link java.util.Map.Entry#containsKey(Object)} } */", //
-          "class Test {}",
-        }
       },
       {
         {
@@ -208,10 +165,6 @@ public class RemoveUnusedImportsTest {
           "/** {@link #containsKey(Object)} } */", //
           "class Test {}",
         },
-        {
-          "/** {@link #containsKey(Object)} } */", //
-          "class Test {}",
-        }
       },
       {
         {
@@ -226,12 +179,6 @@ public class RemoveUnusedImportsTest {
           "  List<String> xs;",
           "}",
         },
-        {
-          "import java.util.*;", //
-          "class Test {",
-          "  List<String> xs;",
-          "}",
-        }
       },
       {
         {
@@ -239,16 +186,6 @@ public class RemoveUnusedImportsTest {
           "import static com.foo.Outer.A;",
           "import com.foo.*;",
           "import com.foo.B;",
-          "import com.bar.C;",
-          "class Test {",
-          "  A a;",
-          "  B b;",
-          "  C c;",
-          "}",
-        },
-        {
-          "package com.foo;",
-          "import static com.foo.Outer.A;",
           "import com.bar.C;",
           "class Test {",
           "  A a;",
@@ -279,13 +216,6 @@ public class RemoveUnusedImportsTest {
           "/** {@link #foo(Map.Entry[])} */",
           "public class Test {}",
         },
-        {
-          "/** {@link #foo(Map.Entry[])} */", //
-          // TODO(cushon): `Map` should be qualified, but javac's javadoc parser doesn't store
-          // position information for parameters in references
-          // "/** {@link #foo(java.util.Map.Entry[])} */",
-          "public class Test {}",
-        }
       },
       {
         {
@@ -297,13 +227,6 @@ public class RemoveUnusedImportsTest {
         {
           "import java.util.Collection;",
           "/** {@link java.util.List#containsAll(Collection)} */",
-          "public class Test {}",
-        },
-        {
-          "/** {@link java.util.List#containsAll(Collection)} */", //
-          // TODO(cushon): `Collection` should be qualified, but javac's javadoc parser doesn't
-          // store position information for parameters in references
-          // "/** {@link java.util.List#containsAll(java.util.Collection)} */",
           "public class Test {}",
         },
       },
@@ -322,12 +245,6 @@ public class RemoveUnusedImportsTest {
           "import p.Baz.Bork;",
           "public class Test implements Foo, Bar, Baz, Bork {}",
         },
-        {
-          "package p;",
-          "import java.lang.Foo.Bar;",
-          "import p.Baz.Bork;",
-          "public class Test implements Foo, Bar, Baz, Bork {}",
-        },
       },
       {
         {
@@ -337,21 +254,15 @@ public class RemoveUnusedImportsTest {
         {
           "interface Test { private static void foo() {} }",
         },
-        {
-          "interface Test { private static void foo() {} }",
-        },
       },
     };
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[][] inputAndOutput : inputsOutputs) {
-      assertThat(inputAndOutput.length).isEqualTo(3);
+      assertThat(inputAndOutput.length).isEqualTo(2);
       String[] input = inputAndOutput[0];
       String[] output = inputAndOutput[1];
-      String[] outputFixJavadoc = inputAndOutput[2];
       String[] parameters = {
-        Joiner.on('\n').join(input) + '\n',
-        Joiner.on('\n').join(output) + '\n',
-        Joiner.on('\n').join(outputFixJavadoc) + '\n',
+        Joiner.on('\n').join(input) + '\n', Joiner.on('\n').join(output) + '\n',
       };
       builder.add(parameters);
     }
@@ -360,21 +271,14 @@ public class RemoveUnusedImportsTest {
 
   private final String input;
   private final String expected;
-  private final String expectedFixJavadoc;
 
-  public RemoveUnusedImportsTest(String input, String expected, String expectedFixJavadoc) {
+  public RemoveUnusedImportsTest(String input, String expected) {
     this.input = input;
     this.expected = expected;
-    this.expectedFixJavadoc = expectedFixJavadoc;
   }
 
   @Test
   public void removeUnused() throws FormatterException {
-    assertThat(removeUnusedImports(input, KEEP)).isEqualTo(expected);
-  }
-
-  @Test
-  public void fixJavadoc() throws FormatterException {
-    assertThat(removeUnusedImports(input, REMOVE)).isEqualTo(expectedFixJavadoc);
+    assertThat(removeUnusedImports(input)).isEqualTo(expected);
   }
 }

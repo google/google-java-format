@@ -35,7 +35,6 @@ final class CommandLineOptions {
   private final boolean help;
   private final boolean stdin;
   private final boolean fixImportsOnly;
-  private final boolean removeJavadocOnlyImports;
   private final boolean sortImports;
   private final boolean removeUnusedImports;
   private final boolean dryRun;
@@ -52,7 +51,6 @@ final class CommandLineOptions {
       boolean help,
       boolean stdin,
       boolean fixImportsOnly,
-      boolean removeJavadocOnlyImports,
       boolean sortImports,
       boolean removeUnusedImports,
       boolean dryRun,
@@ -67,7 +65,6 @@ final class CommandLineOptions {
     this.help = help;
     this.stdin = stdin;
     this.fixImportsOnly = fixImportsOnly;
-    this.removeJavadocOnlyImports = removeJavadocOnlyImports;
     this.sortImports = sortImports;
     this.removeUnusedImports = removeUnusedImports;
     this.dryRun = dryRun;
@@ -124,14 +121,6 @@ final class CommandLineOptions {
     return fixImportsOnly;
   }
 
-  /**
-   * When fixing imports, remove imports that are used only in javadoc and fully-qualify any
-   * {@code @link} tags referring to the imported types.
-   */
-  boolean removeJavadocOnlyImports() {
-    return removeJavadocOnlyImports;
-  }
-
   /** Sort imports. */
   boolean sortImports() {
     return sortImports;
@@ -175,7 +164,6 @@ final class CommandLineOptions {
     private boolean help = false;
     private boolean stdin = false;
     private boolean fixImportsOnly = false;
-    private boolean removeJavadocOnlyImports = false;
     private boolean sortImports = true;
     private boolean removeUnusedImports = true;
     private boolean dryRun = false;
@@ -229,11 +217,6 @@ final class CommandLineOptions {
       return this;
     }
 
-    Builder removeJavadocOnlyImports(boolean removeJavadocOnlyImports) {
-      this.removeJavadocOnlyImports = removeJavadocOnlyImports;
-      return this;
-    }
-
     Builder sortImports(boolean sortImports) {
       this.sortImports = sortImports;
       return this;
@@ -266,7 +249,6 @@ final class CommandLineOptions {
           help,
           stdin,
           fixImportsOnly,
-          removeJavadocOnlyImports,
           sortImports,
           removeUnusedImports,
           dryRun,

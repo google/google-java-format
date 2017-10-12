@@ -73,7 +73,12 @@ import org.openjdk.tools.javac.util.Options;
  */
 public class RemoveUnusedImports {
 
-  /** Configuration for javadoc-only imports. */
+  /**
+   * Configuration for javadoc-only imports.
+   *
+   * @deprecated This configuration is no longer supported and will be removed in the future.
+   */
+  @Deprecated
   public enum JavadocOnlyImports {
     /** Remove imports that are only used in javadoc, and fully qualify any {@code @link} tags. */
     REMOVE,
@@ -193,8 +198,14 @@ public class RemoveUnusedImports {
     }
   }
 
+  /** @deprecated use {@link removeUnusedImports(String)} instead. */
+  @Deprecated
   public static String removeUnusedImports(
       final String contents, JavadocOnlyImports javadocOnlyImports) {
+    return removeUnusedImports(contents);
+  }
+
+  public static String removeUnusedImports(final String contents) {
     Context context = new Context();
     // TODO(cushon): this should default to the latest supported source level, same as in Formatter
     Options.instance(context).put(Option.SOURCE, "9");
@@ -206,9 +217,7 @@ public class RemoveUnusedImports {
     UnusedImportScanner scanner = new UnusedImportScanner(JavacTrees.instance(context));
     scanner.scan(unit, null);
     return applyReplacements(
-        contents,
-        buildReplacements(
-            contents, unit, scanner.usedNames, scanner.usedInJavadoc, javadocOnlyImports));
+        contents, buildReplacements(contents, unit, scanner.usedNames, scanner.usedInJavadoc));
   }
 
   private static JCCompilationUnit parse(Context context, String javaInput) {
@@ -251,12 +260,11 @@ public class RemoveUnusedImports {
       String contents,
       JCCompilationUnit unit,
       Set<String> usedNames,
-      Multimap<String, Range<Integer>> usedInJavadoc,
-      JavadocOnlyImports javadocOnlyImports) {
+      Multimap<String, Range<Integer>> usedInJavadoc) {
     RangeMap<Integer, String> replacements = TreeRangeMap.create();
     for (JCImport importTree : unit.getImports()) {
       String simpleName = getSimpleName(importTree);
-      if (!isUnused(unit, usedNames, usedInJavadoc, javadocOnlyImports, importTree, simpleName)) {
+      if (!isUnused(unit, usedNames, usedInJavadoc, importTree, simpleName)) {
         continue;
       }
       // delete the import
@@ -293,7 +301,6 @@ public class RemoveUnusedImports {
       JCCompilationUnit unit,
       Set<String> usedNames,
       Multimap<String, Range<Integer>> usedInJavadoc,
-      JavadocOnlyImports javadocOnlyImports,
       JCImport importTree,
       String simpleName) {
     String qualifier =
@@ -316,7 +323,7 @@ public class RemoveUnusedImports {
     if (usedNames.contains(simpleName)) {
       return false;
     }
-    if (usedInJavadoc.containsKey(simpleName) && javadocOnlyImports == JavadocOnlyImports.KEEP) {
+    if (usedInJavadoc.containsKey(simpleName)) {
       return false;
     }
     return true;
