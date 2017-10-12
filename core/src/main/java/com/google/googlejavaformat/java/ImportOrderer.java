@@ -54,6 +54,12 @@ public class ImportOrderer {
   private static final ImmutableSet<String> IMPORT_OR_CLASS_START =
       ImmutableSet.of("import", "class", "interface", "enum");
 
+  /**
+   * With this Java property being set, the Eclipse IDE sorting order for static imports is used.
+   */
+  private static final boolean containerOrderingForStaticImport =
+      Boolean.getBoolean("containerOrderingForStaticImport");
+
   private final String text;
   private final ImmutableList<Tok> toks;
   private final String lineSeparator;
@@ -87,7 +93,21 @@ public class ImportOrderer {
       if (this.isStatic != that.isStatic) {
         return this.isStatic ? -1 : +1;
       }
-      return this.imported.compareTo(that.imported);
+      if (containerOrderingForStaticImport && this.isStatic && that.isStatic) {
+        int result = staticImportCompareContainerFirstEclipseStyle(this.imported, that.imported);
+        if (result != 0) {
+          return result;
+        }
+      }
+      return imported.compareTo(that.imported);
+    }
+
+    private static int staticImportCompareContainerFirstEclipseStyle(String first, String second) {
+      return container(first).compareTo(container(second));
+    }
+
+    private static String container(String s) {
+      return s.substring(0, s.lastIndexOf('.'));
     }
 
     // This is a complete line to be output for this import, including the line terminator.
