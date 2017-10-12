@@ -82,6 +82,7 @@ public class JavacTokens {
     Scanner scanner =
         new AccessibleScanner(fac, new CommentSavingTokenizer(fac, buffer, buffer.length));
     ImmutableList.Builder<RawTok> tokens = ImmutableList.builder();
+    int end = source.length();
     int last = 0;
     do {
       scanner.nextToken();
@@ -97,6 +98,9 @@ public class JavacTokens {
         }
       }
       if (stopTokens.contains(t.kind)) {
+        if (t.kind != TokenKind.EOF) {
+          end = t.endPos - 1;
+        }
         break;
       }
       if (last < t.pos) {
@@ -110,8 +114,8 @@ public class JavacTokens {
               t.endPos));
       last = t.endPos;
     } while (scanner.token().kind != TokenKind.EOF);
-    if (last < source.length()) {
-      tokens.add(new RawTok(null, null, last, source.length()));
+    if (last < end) {
+      tokens.add(new RawTok(null, null, last, end));
     }
     return tokens.build();
   }
