@@ -15,18 +15,26 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.Range;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 /** {@link CommandLineOptionsParser}Test */
 @RunWith(JUnit4.class)
 public class CommandLineOptionsParserTest {
+
+  @Rule public TemporaryFolder testFolder = new TemporaryFolder();
 
   @Test
   public void defaults() {
@@ -152,4 +160,19 @@ public class CommandLineOptionsParserTest {
     }
   }
 
+  @Test
+  public void paramsFile() throws IOException {
+    Path outer = testFolder.newFile("outer").toPath();
+    Path exit = testFolder.newFile("exit").toPath();
+    Path nested = testFolder.newFile("nested").toPath();
+
+    String[] args = {"--dry-run", "@" + exit, "L", "@" + outer, "Q"};
+
+    Files.write(exit, "--set-exit-if-changed".getBytes(UTF_8));
+    Files.write(outer, ("M\n@" + nested.toAbsolutePath() + "\nP").getBytes(UTF_8));
+    Files.write(nested, "ℕ\n\n   \n@@O\n".getBytes(UTF_8));
+
+    CommandLineOptions options = CommandLineOptionsParser.parse(Arrays.asList(args));
+    assertThat(options.files()).containsExactly("L", "M", "ℕ", "@O", "P", "Q");
+  }
 }
