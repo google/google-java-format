@@ -81,7 +81,8 @@ public final class OpsBuilder {
      * Explicitly preserve blank lines from the input (e.g. before the first member in a class
      * declaration). Overrides conditional blank lines.
      */
-    public static final BlankLineWanted PRESERVE = new SimpleBlankLine(Optional.<Boolean>absent());
+    public static final BlankLineWanted PRESERVE =
+        new SimpleBlankLine(/* wanted= */ Optional.absent());
 
     /** Is the blank line wanted? */
     public abstract Optional<Boolean> wanted();
@@ -239,7 +240,10 @@ public final class OpsBuilder {
         Input.Token token = tokens.get(tokenI++);
         add(
             Doc.Token.make(
-                token, Doc.Token.RealOrImaginary.IMAGINARY, ZERO, Optional.<Indent>absent()));
+                token,
+                Doc.Token.RealOrImaginary.IMAGINARY,
+                ZERO,
+                /* breakAndIndentTrailingComment= */ Optional.absent()));
       }
     }
     this.inputPosition = inputPosition;
@@ -265,7 +269,7 @@ public final class OpsBuilder {
     ImmutableList<? extends Input.Token> tokens = input.getTokens();
     return tokenI < tokens.size()
         ? Optional.of(tokens.get(tokenI).getTok().getOriginalText())
-        : Optional.<String>absent();
+        : Optional.absent();
   }
 
   /**
@@ -275,7 +279,11 @@ public final class OpsBuilder {
    * @param token the optional token
    */
   public final void guessToken(String token) {
-    token(token, Doc.Token.RealOrImaginary.IMAGINARY, ZERO, Optional.<Indent>absent());
+    token(
+        token,
+        Doc.Token.RealOrImaginary.IMAGINARY,
+        ZERO,
+        /* breakAndIndentTrailingComment=  */ Optional.absent());
   }
 
   public final void token(
@@ -314,7 +322,10 @@ public final class OpsBuilder {
     int opN = op.length();
     for (int i = 0; i < opN; i++) {
       token(
-          op.substring(i, i + 1), Doc.Token.RealOrImaginary.REAL, ZERO, Optional.<Indent>absent());
+          op.substring(i, i + 1),
+          Doc.Token.RealOrImaginary.REAL,
+          ZERO,
+          /* breakAndIndentTrailingComment=  */ Optional.absent());
     }
   }
 
@@ -382,7 +393,7 @@ public final class OpsBuilder {
    * @param plusIndent extra indent if taken
    */
   public final void breakOp(Doc.FillMode fillMode, String flat, Indent plusIndent) {
-    breakOp(fillMode, flat, plusIndent, Optional.<BreakTag>absent());
+    breakOp(fillMode, flat, plusIndent, /* optionalTag=  */ Optional.absent());
   }
 
   /**
@@ -596,8 +607,8 @@ public final class OpsBuilder {
 
   private static List<Op> makeComment(Input.Tok comment) {
     return comment.isSlashStarComment()
-        ? ImmutableList.<Op>of(Doc.Tok.make(comment))
-        : ImmutableList.<Op>of(Doc.Tok.make(comment), Doc.Break.makeForced());
+        ? ImmutableList.of(Doc.Tok.make(comment))
+        : ImmutableList.of(Doc.Tok.make(comment), Doc.Break.makeForced());
   }
 
   @Override

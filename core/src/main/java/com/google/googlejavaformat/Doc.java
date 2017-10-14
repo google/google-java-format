@@ -271,11 +271,11 @@ public abstract class Doc {
     private static void splitByBreaks(List<Doc> docs, List<List<Doc>> splits, List<Break> breaks) {
       splits.clear();
       breaks.clear();
-      splits.add(new ArrayList<Doc>());
+      splits.add(new ArrayList<>());
       for (Doc doc : docs) {
         if (doc instanceof Break) {
           breaks.add((Break) doc);
-          splits.add(new ArrayList<Doc>());
+          splits.add(new ArrayList<>());
         } else {
           getLast(splits).add(doc);
         }
@@ -288,7 +288,7 @@ public abstract class Doc {
 
       state =
           computeBreakAndSplit(
-              commentsHelper, maxWidth, state, Optional.<Break>absent(), splits.get(0));
+              commentsHelper, maxWidth, state, /* optBreakDoc= */ Optional.absent(), splits.get(0));
 
       // Handle following breaks and split.
       for (int i = 0; i < breaks.size(); i++) {
@@ -571,19 +571,19 @@ public abstract class Doc {
      * Make a {@code Break}.
      *
      * @param fillMode the {@link FillMode}
-     * @param flat the the text when not broken
+     * @param flat the text when not broken
      * @param plusIndent extra indent if taken
      * @return the new {@code Break}
      */
     public static Break make(FillMode fillMode, String flat, Indent plusIndent) {
-      return new Break(fillMode, flat, plusIndent, Optional.<BreakTag>absent());
+      return new Break(fillMode, flat, plusIndent, /* optTag= */ Optional.absent());
     }
 
     /**
      * Make a {@code Break}.
      *
      * @param fillMode the {@link FillMode}
-     * @param flat the the text when not broken
+     * @param flat the text when not broken
      * @param plusIndent extra indent if taken
      * @param optTag an optional tag for remembering whether the break was taken
      * @return the new {@code Break}
