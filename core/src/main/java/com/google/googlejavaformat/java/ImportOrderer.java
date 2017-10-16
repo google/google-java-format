@@ -65,7 +65,7 @@ public class ImportOrderer {
   }
 
   /** An import statement. */
-  private static class Import implements Comparable<Import> {
+  private class Import implements Comparable<Import> {
     /** The name being imported, for example {@code java.util.List}. */
     final String imported;
 
@@ -77,7 +77,7 @@ public class ImportOrderer {
 
     Import(String imported, String trailing, boolean isStatic) {
       this.imported = imported;
-      this.trailing = trailing;
+      this.trailing = trailing.trim();
       this.isStatic = isStatic;
     }
 
@@ -93,8 +93,17 @@ public class ImportOrderer {
     // This is a complete line to be output for this import, including the line terminator.
     @Override
     public String toString() {
-      String staticString = isStatic ? "static " : "";
-      return "import " + staticString + imported + ";" + trailing;
+      StringBuilder sb = new StringBuilder();
+      sb.append("import ");
+      if (isStatic) {
+        sb.append("static ");
+      }
+      sb.append(imported).append(';');
+      if (!trailing.isEmpty()) {
+        sb.append(' ').append(trailing);
+      }
+      sb.append(lineSeparator);
+      return sb.toString();
     }
   }
 
@@ -215,11 +224,14 @@ public class ImportOrderer {
         trailing.append(tokenAt(i));
         i++;
       }
-      if (!isNewlineToken(i)) {
+      if (isNewlineToken(i)) {
+        trailing.append(tokenAt(i));
+        i++;
+      } else if (tokenAt(i).equals("import")) {
+        // continue
+      } else {
         throw new FormatterException("Extra tokens after import: " + tokenAt(i));
       }
-      trailing.append(tokenAt(i));
-      i++;
       imports.add(new Import(importedName, trailing.toString(), isStatic));
       // Remember the position just after the import we just saw, before skipping blank lines.
       // If the next thing after the blank lines is not another import then we don't want to

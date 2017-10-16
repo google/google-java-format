@@ -345,11 +345,13 @@ public class ImportOrdererTest {
       },
       {
         {
-          // we don't introduce new line breaks
-          "import com.foo.Second; import com.foo.First;",
+          "import com.foo.Second; import com.foo.First;", "class Test {}",
         },
         {
-          "!!Extra tokens after import: import",
+          "import com.foo.First;", //
+          "import com.foo.Second;",
+          "",
+          "class Test {}",
         }
       }
     };
@@ -362,7 +364,7 @@ public class ImportOrdererTest {
         output = input;
       }
       String[] parameters = {
-        Joiner.on('\n').join(input) + '\n',
+        Joiner.on('\n').join(input) + '\n', //
         Joiner.on('\n').join(output) + '\n',
       };
       parameters[0] = parameters[0].replace("\\\n", "");
