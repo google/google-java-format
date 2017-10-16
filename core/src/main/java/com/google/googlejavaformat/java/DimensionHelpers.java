@@ -34,7 +34,7 @@ import org.openjdk.tools.javac.tree.JCTree;
  *
  * <p>For example, {@code int [] a;} cannot be distinguished from {@code int [] a [];} in the AST.
  */
-public class DimensionHelpers {
+class DimensionHelpers {
 
   /** The array dimension specifiers (including any type annotations) associated with a type. */
   static class TypeWithDims {

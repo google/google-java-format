@@ -23,7 +23,7 @@ import java.util.concurrent.Callable;
  * Encapsulates information about a file to be formatted, including which parts of the file to
  * format.
  */
-public class FormatFileCallable implements Callable<String> {
+class FormatFileCallable implements Callable<String> {
   private final String input;
   private final CommandLineOptions parameters;
   private final JavaFormatterOptions options;

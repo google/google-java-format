@@ -31,7 +31,7 @@ import org.openjdk.tools.javac.tree.Pretty;
 import org.openjdk.tools.javac.tree.TreeInfo;
 
 /** Utilities for working with {@link Tree}s. */
-public class Trees {
+class Trees {
   /** Returns the length of the source for the node. */
   static int getLength(Tree tree, TreePath path) {
     return getEndPosition(tree, path) - getStartPosition(tree);

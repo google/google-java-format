@@ -30,7 +30,7 @@ import org.openjdk.tools.javac.parser.UnicodeReader;
 import org.openjdk.tools.javac.util.Context;
 
 /** A wrapper around javac's lexer. */
-public class JavacTokens {
+class JavacTokens {
 
   /** The lexer eats terminal comments, so feed it one we don't care about. */
   // TODO(b/33103797): fix javac and remove the work-around
