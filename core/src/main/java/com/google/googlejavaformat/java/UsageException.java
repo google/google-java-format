@@ -87,9 +87,13 @@ final class UsageException extends Exception {
     appendLines(builder, USAGE);
     appendLines(builder, ADDITIONAL_USAGE);
     appendLines(builder, new String[] {""});
-    appendLines(builder, Main.VERSION);
+    appendLine(builder, Main.versionString());
     appendLines(builder, DOCS_LINK);
     return builder.toString();
+  }
+
+  private static void appendLine(StringBuilder builder, String line) {
+    builder.append(line).append(System.lineSeparator());
   }
 
   private static void appendLines(StringBuilder builder, String[] lines) {
