@@ -227,10 +227,6 @@ public class ImportOrderer {
       if (isNewlineToken(i)) {
         trailing.append(tokenAt(i));
         i++;
-      } else if (tokenAt(i).equals("import")) {
-        // continue
-      } else {
-        throw new FormatterException("Extra tokens after import: " + tokenAt(i));
       }
       imports.add(new Import(importedName, trailing.toString(), isStatic));
       // Remember the position just after the import we just saw, before skipping blank lines.

@@ -99,7 +99,7 @@ class JavacTokens {
       }
       if (stopTokens.contains(t.kind)) {
         if (t.kind != TokenKind.EOF) {
-          end = t.endPos - 1;
+          end = t.pos;
         }
         break;
       }

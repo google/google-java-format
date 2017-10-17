@@ -286,7 +286,7 @@ public class ImportOrdererTest {
           "import com.foo.First;",
         },
         {
-          "!!Extra tokens after import: /* no block comments after imports */",
+          "!!Imports not contiguous (perhaps a comment separates them?)",
         }
       },
       {
@@ -353,7 +353,18 @@ public class ImportOrdererTest {
           "",
           "class Test {}",
         }
-      }
+      },
+      {
+        {
+          "import com.foo.Second; import com.foo.First; class Test {}",
+        },
+        {
+          "import com.foo.First;", //
+          "import com.foo.Second;",
+          "",
+          "class Test {}",
+        }
+      },
     };
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[][] inputAndOutput : inputsOutputs) {
