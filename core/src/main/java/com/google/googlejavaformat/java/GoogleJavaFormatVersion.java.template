@@ -18,8 +18,7 @@ import java.util.Optional;
 
 class GoogleJavaFormatVersion {
 
-  static Object version() {
-    return Optional.ofNullable(Main.class.getPackage().getImplementationVersion())
-        .orElse("unknown");
+  static String version() {
+    return "%VERSION%";
   }
 }
