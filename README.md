@@ -17,7 +17,7 @@ java -jar /path/to/google-java-format-1.5-all-deps.jar <options> [files...]
 ```
 
 The formatter can act on whole files, on limited lines (`--lines`), on specific
-ofsets (`--offset`), passing through to standard-out (default) or altered
+offsets (`--offset`), passing through to standard-out (default) or altered
 in-place (`--replace`).
 
 To reformat changed lines in a specific patch, use
@@ -40,7 +40,7 @@ checkbox.
 To enable it by default in new projects, use "File→Other Settings→Default
 Settings...".
 
-When enabled, it will replace the normal "Refomat Code" action, which can be
+When enabled, it will replace the normal "Reformat Code" action, which can be
 triggered from the "Code" menu or with the Ctrl-Alt-L (by default) keyboard
 shortcut.
 
@@ -48,7 +48,7 @@ shortcut.
 
 A [google-java-format Eclipse
 plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.3/google-java-format-eclipse-plugin-1.3.0.jar)
-can be downloaded from the releases page. Drop it into the Eclipse [dropins
+can be downloaded from the releases page. Drop it into the Eclipse [drop-ins
 folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fmisc%2Fp2_dropins_format.html)
 to activate the plugin.
 
