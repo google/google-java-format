@@ -539,7 +539,7 @@ final class JavadocLexer {
    * with matching only one character here. That would eliminate the need for the regex entirely.
    * That might be faster or slower than what we do now.
    */
-  private static final Pattern LITERAL_PATTERN = compile("^.[^ \t\n@<{}*]*");
+  private static final Pattern LITERAL_PATTERN = compile("^.[^ \t\n@<{}*]*", DOTALL);
 
   private static Pattern fullCommentPattern() {
     return compile("^<!--.*?-->", DOTALL);

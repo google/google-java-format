@@ -1394,4 +1394,25 @@ public final class JavadocFormattingTest {
       assertThat(actual).isEqualTo(Joiner.on(separator).join(input) + separator);
     }
   }
+
+  @Test
+  public void u2028LineSeparator() {
+    String[] input = {
+      "public class Foo {",
+      "  /**\u2028",
+      "   * Set and enable something.",
+      "   */",
+      "  public void setSomething() {}",
+      "}",
+    };
+    String[] expected = {
+      "public class Foo {",
+      "  /**",
+      "   * \u2028 Set and enable something.",
+      "   */",
+      "  public void setSomething() {}",
+      "}",
+    };
+    doFormatTest(input, expected);
+  }
 }
