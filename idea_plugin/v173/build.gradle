@@ -1,0 +1,14 @@
+intellij {
+  version = '173.3415.22'
+}
+
+patchPluginXml {
+  version = "${googleJavaFormatVersion}.0.173"
+  sinceBuild = '173'
+}
+
+sourceSets {
+  main {
+    java.srcDir 'src'
+  }
+}

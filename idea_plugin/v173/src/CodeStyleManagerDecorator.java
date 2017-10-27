@@ -27,6 +27,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.codeStyle.ChangedRangesInfo;
 import com.intellij.psi.codeStyle.CodeStyleManager;
+import com.intellij.psi.codeStyle.DocCommentSettings;
 import com.intellij.psi.codeStyle.FormattingModeAwareIndentAdjuster;
 import com.intellij.psi.codeStyle.Indent;
 import com.intellij.util.IncorrectOperationException;
@@ -183,6 +184,16 @@ class CodeStyleManagerDecorator extends CodeStyleManager
     return delegate.performActionWithFormatterDisabled(r);
   }
 
+  @Override
+  public int getSpacing(@NotNull PsiFile file, int offset) {
+    return delegate.getSpacing(file, offset);
+  }
+
+  @Override
+  public int getMinLineFeeds(@NotNull PsiFile file, int offset) {
+    return delegate.getMinLineFeeds(file, offset);
+  }
+
   /** Uses same fallback as {@link CodeStyleManager#getCurrentFormattingMode}. */
   @Override
   public FormattingMode getCurrentFormattingMode() {
@@ -201,5 +212,16 @@ class CodeStyleManagerDecorator extends CodeStyleManager
           .adjustLineIndent(document, offset, mode);
     }
     return offset;
+  }
+
+  @Override
+  public void runWithDocCommentFormattingDisabled(
+      @NotNull PsiFile file, @NotNull Runnable runnable) {
+    delegate.runWithDocCommentFormattingDisabled(file, runnable);
+  }
+
+  @Override
+  public DocCommentSettings getDocCommentSettings(@NotNull PsiFile file) {
+    return delegate.getDocCommentSettings(file);
   }
 }
