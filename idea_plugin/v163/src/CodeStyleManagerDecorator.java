@@ -31,7 +31,6 @@ import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.ThrowableRunnable;
 import java.util.Collection;
 import javax.annotation.Nullable;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Decorates the {@link CodeStyleManager} abstract class by delegating to a concrete implementation
@@ -41,99 +40,95 @@ import org.jetbrains.annotations.NotNull;
  */
 @SuppressWarnings("deprecation")
 class CodeStyleManagerDecorator extends CodeStyleManager {
-  @NotNull private final CodeStyleManager delegate;
+  private final CodeStyleManager delegate;
 
-  CodeStyleManagerDecorator(@NotNull CodeStyleManager delegate) {
+  CodeStyleManagerDecorator(CodeStyleManager delegate) {
     this.delegate = delegate;
   }
 
-  @NotNull
+  
   CodeStyleManager getDelegate() {
     return delegate;
   }
 
   @Override
-  @NotNull
+  
   public Project getProject() {
     return delegate.getProject();
   }
 
   @Override
-  @NotNull
-  public PsiElement reformat(@NotNull PsiElement element) throws IncorrectOperationException {
+  public PsiElement reformat(PsiElement element) throws IncorrectOperationException {
     return delegate.reformat(element);
   }
 
   @Override
-  @NotNull
-  public PsiElement reformat(@NotNull PsiElement element, boolean canChangeWhiteSpacesOnly)
+  public PsiElement reformat(PsiElement element, boolean canChangeWhiteSpacesOnly)
       throws IncorrectOperationException {
     return delegate.reformat(element, canChangeWhiteSpacesOnly);
   }
 
   @Override
-  public PsiElement reformatRange(@NotNull PsiElement element, int startOffset, int endOffset)
+  public PsiElement reformatRange(PsiElement element, int startOffset, int endOffset)
       throws IncorrectOperationException {
     return delegate.reformatRange(element, startOffset, endOffset);
   }
 
   @Override
   public PsiElement reformatRange(
-      @NotNull PsiElement element, int startOffset, int endOffset, boolean canChangeWhiteSpacesOnly)
+      PsiElement element, int startOffset, int endOffset, boolean canChangeWhiteSpacesOnly)
       throws IncorrectOperationException {
     return delegate.reformatRange(element, startOffset, endOffset, canChangeWhiteSpacesOnly);
   }
 
   @Override
-  public void reformatText(@NotNull PsiFile file, int startOffset, int endOffset)
+  public void reformatText(PsiFile file, int startOffset, int endOffset)
       throws IncorrectOperationException {
     delegate.reformatText(file, startOffset, endOffset);
   }
 
   @Override
-  public void reformatText(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
+  public void reformatText(PsiFile file, Collection<TextRange> ranges)
       throws IncorrectOperationException {
     delegate.reformatText(file, ranges);
   }
 
   @Override
-  public void reformatTextWithContext(
-      @NotNull PsiFile psiFile, @NotNull ChangedRangesInfo changedRangesInfo)
+  public void reformatTextWithContext(PsiFile psiFile, ChangedRangesInfo changedRangesInfo)
       throws IncorrectOperationException {
     delegate.reformatTextWithContext(psiFile, changedRangesInfo);
   }
 
   @Override
-  public void adjustLineIndent(@NotNull PsiFile file, TextRange rangeToAdjust)
+  public void adjustLineIndent(PsiFile file, TextRange rangeToAdjust)
       throws IncorrectOperationException {
     delegate.adjustLineIndent(file, rangeToAdjust);
   }
 
   @Override
-  public int adjustLineIndent(@NotNull PsiFile file, int offset)
-      throws IncorrectOperationException {
+  public int adjustLineIndent(PsiFile file, int offset) throws IncorrectOperationException {
     return delegate.adjustLineIndent(file, offset);
   }
 
   @Override
-  public int adjustLineIndent(@NotNull Document document, int offset) {
+  public int adjustLineIndent(Document document, int offset) {
     return delegate.adjustLineIndent(document, offset);
   }
 
   @Override
-  public boolean isLineToBeIndented(@NotNull PsiFile file, int offset) {
+  public boolean isLineToBeIndented(PsiFile file, int offset) {
     return delegate.isLineToBeIndented(file, offset);
   }
 
   @Override
   @Nullable
-  public String getLineIndent(@NotNull PsiFile file, int offset) {
+  public String getLineIndent(PsiFile file, int offset) {
     return delegate.getLineIndent(file, offset);
   }
 
   @Override
   @Nullable
-  public String getLineIndent(@NotNull Document document, int offset) {
+  public String getLineIndent(Document document, int offset) {
     return delegate.getLineIndent(document, offset);
   }
 
@@ -153,7 +148,7 @@ class CodeStyleManagerDecorator extends CodeStyleManager {
   }
 
   @Override
-  public void reformatNewlyAddedElement(@NotNull ASTNode block, @NotNull ASTNode addedElement)
+  public void reformatNewlyAddedElement(ASTNode block, ASTNode addedElement)
       throws IncorrectOperationException {
     delegate.reformatNewlyAddedElement(block, addedElement);
   }
