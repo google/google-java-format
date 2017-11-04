@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
@@ -407,5 +408,14 @@ public final class FormatterTest {
                 + "_chance_to_interrupt;\n"
                 + "  }\n"
                 + "}\n");
+  }
+
+  @Test
+  public void throwsFormatterException() throws Exception {
+    try {
+      new Formatter().formatSourceAndFixImports("package foo; public class {");
+      fail();
+    } catch (FormatterException expected) {
+    }
   }
 }

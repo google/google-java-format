@@ -14,9 +14,14 @@
 
 package com.google.googlejavaformat.java;
 
+import static java.util.Locale.ENGLISH;
+
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.googlejavaformat.FormatterDiagnostic;
 import java.util.List;
+import org.openjdk.javax.tools.Diagnostic;
+import org.openjdk.javax.tools.JavaFileObject;
 
 /** Checked exception class for formatter errors. */
 public final class FormatterException extends Exception {
@@ -38,5 +43,15 @@ public final class FormatterException extends Exception {
 
   public List<FormatterDiagnostic> diagnostics() {
     return diagnostics;
+  }
+
+  public static FormatterException fromJavacDiagnostics(
+      Iterable<Diagnostic<? extends JavaFileObject>> diagnostics) {
+    return new FormatterException(Iterables.transform(diagnostics, d -> toFormatterDiagnostic(d)));
+  }
+
+  private static FormatterDiagnostic toFormatterDiagnostic(Diagnostic<?> input) {
+    return FormatterDiagnostic.create(
+        (int) input.getLineNumber(), (int) input.getColumnNumber(), input.getMessage(ENGLISH));
   }
 }

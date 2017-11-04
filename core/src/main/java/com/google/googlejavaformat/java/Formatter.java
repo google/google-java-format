@@ -108,8 +108,8 @@ public final class Formatter {
    * @param javaOutput the {@link JavaOutput}
    * @param options the {@link JavaFormatterOptions}
    */
-  static void format(
-      final JavaInput javaInput, JavaOutput javaOutput, JavaFormatterOptions options) {
+  static void format(final JavaInput javaInput, JavaOutput javaOutput, JavaFormatterOptions options)
+      throws FormatterException {
     Context context = new Context();
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
     context.put(DiagnosticListener.class, diagnostics);
@@ -148,7 +148,7 @@ public final class Formatter {
     Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
         Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
     if (!Iterables.isEmpty(errorDiagnostics)) {
-      throw FormattingError.fromJavacDiagnostics(errorDiagnostics);
+      throw FormatterException.fromJavacDiagnostics(errorDiagnostics);
     }
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
