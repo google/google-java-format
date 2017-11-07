@@ -103,7 +103,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
   }
 
   private static final Pattern LINE_COMMENT_MISSING_SPACE_PREFIX =
-      Pattern.compile("^(//+)(?!noinspection)[^\\s/]");
+      Pattern.compile("^(//+)(?!noinspection)[\\w]");
 
   private List<String> wrapLineComments(
       List<String> lines, int column0, JavaFormatterOptions options) {
