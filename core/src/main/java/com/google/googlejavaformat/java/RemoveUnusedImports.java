@@ -28,7 +28,6 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
-import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Newlines;
 import java.io.IOError;
 import java.io.IOException;
@@ -201,11 +200,11 @@ public class RemoveUnusedImports {
   /** @deprecated use {@link removeUnusedImports(String)} instead. */
   @Deprecated
   public static String removeUnusedImports(
-      final String contents, JavadocOnlyImports javadocOnlyImports) {
+      final String contents, JavadocOnlyImports javadocOnlyImports) throws FormatterException {
     return removeUnusedImports(contents);
   }
 
-  public static String removeUnusedImports(final String contents) {
+  public static String removeUnusedImports(final String contents) throws FormatterException {
     Context context = new Context();
     // TODO(cushon): this should default to the latest supported source level, same as in Formatter
     Options.instance(context).put(Option.SOURCE, "9");
@@ -220,7 +219,8 @@ public class RemoveUnusedImports {
         contents, buildReplacements(contents, unit, scanner.usedNames, scanner.usedInJavadoc));
   }
 
-  private static JCCompilationUnit parse(Context context, String javaInput) {
+  private static JCCompilationUnit parse(Context context, String javaInput)
+      throws FormatterException {
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
     context.put(DiagnosticListener.class, diagnostics);
     Options.instance(context).put("allowStringFolding", "false");
@@ -250,7 +250,7 @@ public class RemoveUnusedImports {
         Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
     if (!Iterables.isEmpty(errorDiagnostics)) {
       // error handling is done during formatting
-      throw FormattingError.fromJavacDiagnostics(errorDiagnostics);
+      throw FormatterException.fromJavacDiagnostics(errorDiagnostics);
     }
     return unit;
   }

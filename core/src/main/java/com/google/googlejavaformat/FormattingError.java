@@ -14,13 +14,8 @@
 
 package com.google.googlejavaformat;
 
-import static java.util.Locale.ENGLISH;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import org.openjdk.javax.tools.Diagnostic;
-import org.openjdk.javax.tools.JavaFileObject;
 
 /** An unchecked formatting error. */
 public class FormattingError extends Error {
@@ -38,16 +33,5 @@ public class FormattingError extends Error {
 
   public ImmutableList<FormatterDiagnostic> diagnostics() {
     return diagnostics;
-  }
-
-  public static FormattingError fromJavacDiagnostics(
-      Iterable<Diagnostic<? extends JavaFileObject>> diagnostics) {
-    return new FormattingError(
-        Iterables.transform(diagnostics, FormattingError::toFormatterDiagnostic));
-  }
-
-  private static FormatterDiagnostic toFormatterDiagnostic(Diagnostic<?> input) {
-    return FormatterDiagnostic.create(
-        (int) input.getLineNumber(), (int) input.getColumnNumber(), input.getMessage(ENGLISH));
   }
 }
