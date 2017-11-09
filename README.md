@@ -99,7 +99,8 @@ Your starting point should be the instance methods of
 
 ## Building from source
 
-    mvn install
+    cd google-java-format/
+    mvn -f core/pom.xml install
 
 ## Contributing
 
