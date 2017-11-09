@@ -204,7 +204,7 @@
           </execution>
         </executions>
         <configuration>
-          <file>core/src/main/java/com/google/googlejavaformat/java/GoogleJavaFormatVersion.java.template</file>
+          <file>${project.basedir}/src/main/java/com/google/googlejavaformat/java/GoogleJavaFormatVersion.java.template</file>
           <outputFile>${project.build.directory}/generated-sources/java/com/google/googlejavaformat/java/GoogleJavaFormatVersion.java</outputFile>
           <replacements>
             <replacement>
