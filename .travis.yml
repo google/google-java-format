@@ -9,7 +9,9 @@ notifications:
 
 jdk:
   - oraclejdk8
-  - oraclejdk9
+
+# TODO(cushon): fix JDK 9 build and enable
+#  - oraclejdk9
 
 # see https://github.com/travis-ci/travis-ci/issues/8408
 before_install:
