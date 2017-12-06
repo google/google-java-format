@@ -7,11 +7,20 @@ notifications:
     on_success: change
     on_failure: always
 
-jdk:
-  - oraclejdk8
-
-# TODO(cushon): fix JDK 9 build and enable
-#  - oraclejdk9
+matrix:
+  allow_failures:
+    - jdk: oraclejdk9
+    - env: JDK_RELEASE='10 Early-Access'
+  include:
+# JDK 8
+    - jdk: oraclejdk8
+      env: JDK_RELEASE='8'
+# JDK 9
+    - jdk: oraclejdk9
+      env: JDK_RELEASE='9'
+# JDK 10
+    - env: JDK_RELEASE='10 Early-Access'
+      before_install: unset _JAVA_OPTIONS && . ./scripts/install-jdk-10.sh
 
 # see https://github.com/travis-ci/travis-ci/issues/8408
 before_install:
