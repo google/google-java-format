@@ -28,6 +28,7 @@ import org.junit.runners.Parameterized.Parameters;
 /** Tests for {@link ImportOrderer}. */
 @RunWith(Parameterized.class)
 public class ImportOrdererTest {
+
   @Parameters(name = "{index}: {0}")
   public static Collection<Object[]> parameters() {
     // A three-dimensional array! Each element of the outer array is a test case. It consists of
@@ -361,6 +362,42 @@ public class ImportOrdererTest {
         {
           "import com.foo.First;", //
           "import com.foo.Second;",
+          "",
+          "class Test {}",
+        }
+      },
+      {
+        {
+          "package p;", //
+          "",
+          "/** test */",
+          "",
+          "import a.A;",
+          "",
+          "/** test */",
+          "",
+          "class Test {}",
+        },
+        {
+          "package p;", //
+          "",
+          "/** test */",
+          "",
+          "import a.A;",
+          "",
+          "/** test */",
+          "",
+          "class Test {}",
+        }
+      },
+      {
+        {
+          "package p; import a.A; class Test {}",
+        },
+        {
+          "package p;", //
+          "",
+          "import a.A;",
           "",
           "class Test {}",
         }

@@ -418,4 +418,39 @@ public final class FormatterTest {
     } catch (FormatterException expected) {
     }
   }
+
+  @Test
+  public void blankLinesImportComment() throws FormatterException {
+    String withBlank =
+        "package p;\n"
+            + "\n"
+            + "/** test */\n"
+            + "\n"
+            + "import a.A;\n"
+            + "\n"
+            + "class T {\n"
+            + "  A a;\n"
+            + "}\n";
+    String withoutBlank =
+        "package p;\n"
+            + "\n"
+            + "/** test */\n"
+            + "import a.A;\n"
+            + "\n"
+            + "class T {\n"
+            + "  A a;\n"
+            + "}\n";
+
+    // Formatting deletes the blank line between the "javadoc" and the first import.
+    assertThat(new Formatter().formatSource(withBlank)).isEqualTo(withoutBlank);
+    assertThat(new Formatter().formatSourceAndFixImports(withBlank)).isEqualTo(withoutBlank);
+    assertThat(new Formatter().formatSource(withoutBlank)).isEqualTo(withoutBlank);
+    assertThat(new Formatter().formatSourceAndFixImports(withoutBlank)).isEqualTo(withoutBlank);
+
+    // Just fixing imports preserves whitespace around imports.
+    assertThat(RemoveUnusedImports.removeUnusedImports(withBlank)).isEqualTo(withBlank);
+    assertThat(ImportOrderer.reorderImports(withBlank)).isEqualTo(withBlank);
+    assertThat(RemoveUnusedImports.removeUnusedImports(withoutBlank)).isEqualTo(withoutBlank);
+    assertThat(ImportOrderer.reorderImports(withoutBlank)).isEqualTo(withoutBlank);
+  }
 }

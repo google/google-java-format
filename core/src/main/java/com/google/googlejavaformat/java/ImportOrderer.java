@@ -127,9 +127,9 @@ public class ImportOrderer {
     }
 
     StringBuilder result = new StringBuilder();
-    result.append(
-        CharMatcher.whitespace().trimTrailingFrom(tokString(0, unindentedFirstImportStart)));
-    if (result.length() > 0) {
+    String prefix = tokString(0, unindentedFirstImportStart);
+    result.append(prefix);
+    if (!prefix.isEmpty() && Newlines.getLineEnding(prefix) == null) {
       result.append(lineSeparator).append(lineSeparator);
     }
     result.append(reorderedImportsString(imports.imports));
