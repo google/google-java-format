@@ -420,6 +420,80 @@ public final class FormatterTest {
   }
 
   @Test
+  public void indentsIfStatementsWithoutBracesButWithCommentsOnTheSameLine()
+      throws FormatterException {
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    "public class CommentedTest {\n"
+                        + "\n"
+                        + "  public boolean compare(ProglangType other) {\n"
+                        + "    if (this == other) // comment\n"
+                        + "    return true;\n"
+                        + "    return false;\n"
+                        + "  }\n"
+                        + "}\n"))
+        .isEqualTo(
+            "public class CommentedTest {\n"
+                + "\n"
+                + "  public boolean compare(ProglangType other) {\n"
+                + "    if (this == other) // comment\n"
+                + "        return true;\n"
+                + "    return false;\n"
+                + "  }\n"
+                + "}\n");
+  }
+
+  @Test
+  public void indentsDoWhileLoopsWithoutBracesButWithCommentsOnTheSameLine()
+      throws FormatterException {
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    "public class CommentedTest {\n"
+                        + "\n"
+                        + "  public boolean something(ProglangType other) {\n"
+                        + "    do // comment\n"
+                        + "        return true;\n"
+                        + "    while (true);\n"
+                        + "  }\n"
+                        + "}\n"))
+        .isEqualTo(
+            "public class CommentedTest {\n"
+                + "\n"
+                + "  public boolean something(ProglangType other) {\n"
+                + "    do // comment\n"
+                + "        return true;\n"
+                + "    while (true);\n"
+                + "  }\n"
+                + "}\n");
+  }
+
+  @Test
+  public void indentsForLoopsWithoutBracesButWithCommentsOnTheSameLine() throws FormatterException {
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    "public class CommentedTest {\n"
+                        + "\n"
+                        + "  public boolean something(ProglangType other) {\n"
+                        + "    for (int i = 0; i < 10; i++) // comment\n"
+                        + "    return true;\n"
+                        + "    return false;\n"
+                        + "  }\n"
+                        + "}\n"))
+        .isEqualTo(
+            "public class CommentedTest {\n"
+                + "\n"
+                + "  public boolean something(ProglangType other) {\n"
+                + "    for (int i = 0; i < 10; i++) // comment\n"
+                + "        return true;\n"
+                + "    return false;\n"
+                + "  }\n"
+                + "}\n");
+  }
+
+  @Test
   public void blankLinesImportComment() throws FormatterException {
     String withBlank =
         "package p;\n"
