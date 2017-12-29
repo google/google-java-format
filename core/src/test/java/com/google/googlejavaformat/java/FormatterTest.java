@@ -438,7 +438,7 @@ public final class FormatterTest {
                 + "\n"
                 + "  public boolean compare(ProglangType other) {\n"
                 + "    if (this == other) // comment\n"
-                + "     return true;\n"
+                + "        return true;\n"
                 + "    return false;\n"
                 + "  }\n"
                 + "}\n");
@@ -454,7 +454,7 @@ public final class FormatterTest {
                         + "\n"
                         + "  public boolean something(ProglangType other) {\n"
                         + "    do // comment\n"
-                        + "    return true;\n"
+                        + "        return true;\n"
                         + "    while (true);\n"
                         + "  }\n"
                         + "}\n"))
@@ -463,7 +463,7 @@ public final class FormatterTest {
                 + "\n"
                 + "  public boolean something(ProglangType other) {\n"
                 + "    do // comment\n"
-                + "     return true;\n"
+                + "        return true;\n"
                 + "    while (true);\n"
                 + "  }\n"
                 + "}\n");
@@ -487,7 +487,7 @@ public final class FormatterTest {
                 + "\n"
                 + "  public boolean something(ProglangType other) {\n"
                 + "    for (int i = 0; i < 10; i++) // comment\n"
-                + "     return true;\n"
+                + "        return true;\n"
                 + "    return false;\n"
                 + "  }\n"
                 + "}\n");
