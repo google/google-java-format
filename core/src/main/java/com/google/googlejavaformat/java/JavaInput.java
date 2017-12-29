@@ -163,6 +163,11 @@ public final class JavaInput extends Input {
     }
 
     @Override
+    public boolean isSemi() {
+      return TokenKind.SEMI.equals(kind);
+    }
+
+    @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
           .add("index", index)
