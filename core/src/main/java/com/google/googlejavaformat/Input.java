@@ -71,6 +71,9 @@ public abstract class Input extends InputOutput {
 
     /** Is the {@code Tok} a comment? */
     boolean isComment();
+
+    /** Is the {@code Tok} a semicolon? */
+    boolean isSemi();
   }
 
   /** A {@code Token} is a language-level token. */

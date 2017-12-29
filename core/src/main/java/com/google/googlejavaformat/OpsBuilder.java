@@ -459,8 +459,15 @@ public final class OpsBuilder {
     // Rewrite the ops to insert comments.
     Multimap<Integer, Op> tokOps = ArrayListMultimap.create();
     int opsN = ops.size();
+    boolean shouldForceNextBreak = false;
     for (int i = 0; i < opsN; i++) {
       Op op = ops.get(i);
+      boolean isBreakAndShouldBeForced =
+          (op instanceof Doc.Break) && !((Doc.Break) op).isForced() && shouldForceNextBreak;
+      if (isBreakAndShouldBeForced) {
+        ops.set(i, ((Doc.Break) op).toForced());
+        shouldForceNextBreak = false;
+      }
       if (op instanceof Doc.Token) {
         /*
          * Token ops can have associated non-tokens, including comments, which we need to insert.
@@ -469,6 +476,9 @@ public final class OpsBuilder {
          */
         Doc.Token tokenOp = (Doc.Token) op;
         Input.Token token = tokenOp.getToken();
+        if (token.getTok().isSemi()) {
+          shouldForceNextBreak = false;
+        }
         int j = i; // Where to insert toksBefore before.
         while (0 < j && ops.get(j - 1) instanceof OpenOp) {
           --j;
@@ -520,6 +530,13 @@ public final class OpsBuilder {
           // Now we've seen the Token; output the toksAfter.
           for (Input.Tok tokAfter : token.getToksAfter()) {
             if (tokAfter.isComment()) {
+              /*
+               * If the current token is NOT a semicolon and is followed by a line comment,
+               * then the next break should be forced in order to apply the break's indent.
+               */
+              if (tokAfter.isSlashSlashComment() && !token.getTok().isSemi()) {
+                shouldForceNextBreak = true;
+              }
               boolean breakAfter =
                   tokAfter.isJavadocComment()
                       || (tokAfter.isSlashStarComment()

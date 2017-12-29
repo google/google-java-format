@@ -1472,7 +1472,6 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return null;
   }
 
-
   @Override
   public Void visitMemberSelect(MemberSelectTree node, Void unused) {
     sync(node);
@@ -2021,8 +2020,8 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         visitBlock((BlockTree) node, collapseEmptyOrNot, allowLeadingBlank, allowTrailingBlank);
         break;
       default:
-        builder.open(plusTwo);
-        builder.breakOp(" ");
+        builder.open(ZERO);
+        builder.breakOp(UNIFIED, " ", plusTwo);
         scan(node, null);
         builder.close();
     }

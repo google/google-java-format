@@ -603,6 +603,16 @@ public abstract class Doc {
     }
 
     /**
+     * Creates a new {@code Break} with the same state as the current one, but with {@code
+     * FillMode.FORCED}
+     *
+     * @return the new forced {@code Break}
+     */
+    public Break toForced() {
+      return make(FillMode.FORCED, this.flat, this.plusIndent, this.optTag);
+    }
+
+    /**
      * Return the {@code Break}'s extra indent.
      *
      * @return the extra indent
