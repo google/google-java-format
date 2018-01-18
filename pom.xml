@@ -266,9 +266,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
             <configuration>
-              <additionalOptions>
-                <additionalOption>-Xdoclint:none</additionalOption>
-              </additionalOptions>
+              <doclint>none</doclint>
             </configuration>
           </plugin>
         </plugins>
@@ -279,9 +277,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
             <configuration>
-              <additionalOptions>
-                <additionalOption>-Xdoclint:none</additionalOption>
-              </additionalOptions>
+              <doclint>none</doclint>
             </configuration>
           </plugin>
         </plugins>
