@@ -19,120 +19,136 @@ package com.google.googlejavaformat.intellij;
 import static java.util.Comparator.comparing;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Range;
 import com.google.googlejavaformat.java.Formatter;
-import com.google.googlejavaformat.java.FormatterException;
-import com.google.googlejavaformat.java.Replacement;
+import com.google.googlejavaformat.java.JavaFormatterOptions;
+import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.impl.CheckUtil;
 import com.intellij.util.IncorrectOperationException;
 import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * A {@link CodeStyleManager} implementation which formats .java files with google-java-format.
  * Formatting of all other types of files is delegated to IJ's default implementation.
- *
- * @author bcsf@google.com (Brian Chang)
  */
-public abstract class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
+class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
 
   public GoogleJavaFormatCodeStyleManager(@NotNull CodeStyleManager original) {
     super(original);
   }
 
   @Override
-  public void reformatText(@NotNull PsiFile file, int startOffset, int endOffset)
+  public void reformatText(PsiFile file, int startOffset, int endOffset)
       throws IncorrectOperationException {
-    Optional<Formatter> formatter = getFormatterForFile(file);
-    if (formatter.isPresent() && StdFileTypes.JAVA.equals(file.getFileType())) {
-      formatInternal(
-          formatter.get(), file, ImmutableList.of(Range.closedOpen(startOffset, endOffset)));
+    if (overrideFormatterForFile(file)) {
+      formatInternal(file, ImmutableList.of(new TextRange(startOffset, endOffset)));
     } else {
       super.reformatText(file, startOffset, endOffset);
     }
   }
 
   @Override
-  public void reformatText(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
+  public void reformatText(PsiFile file, Collection<TextRange> ranges)
       throws IncorrectOperationException {
-    Optional<Formatter> formatter = getFormatterForFile(file);
-    if (formatter.isPresent() && StdFileTypes.JAVA.equals(file.getFileType())) {
-      formatInternal(formatter.get(), file, convertToRanges(ranges));
+    if (overrideFormatterForFile(file)) {
+      formatInternal(file, ranges);
     } else {
       super.reformatText(file, ranges);
     }
   }
 
   @Override
-  public void reformatTextWithContext(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
-      throws IncorrectOperationException {
-    Optional<Formatter> formatter = getFormatterForFile(file);
-    if (formatter.isPresent() && StdFileTypes.JAVA.equals(file.getFileType())) {
-      formatInternal(formatter.get(), file, convertToRanges(ranges));
+  public void reformatTextWithContext(PsiFile file, Collection<TextRange> ranges) {
+    if (overrideFormatterForFile(file)) {
+      formatInternal(file, ranges);
     } else {
       super.reformatTextWithContext(file, ranges);
     }
   }
 
-  /**
-   * Get the {@link Formatter} to be used with the given file, or absent to use the built-in
-   * IntelliJ formatter.
-   */
-  protected abstract Optional<Formatter> getFormatterForFile(PsiFile file);
+  @Override
+  public PsiElement reformatRange(
+      PsiElement element, int startOffset, int endOffset, boolean canChangeWhiteSpacesOnly) {
+    // Only handle elements that are PsiFile for now -- otherwise we need to search for some
+    // element within the file at new locations given the original startOffset and endOffsets
+    // to serve as the return value.
+    PsiFile file = element instanceof PsiFile ? (PsiFile) element : null;
+    if (file != null && canChangeWhiteSpacesOnly && overrideFormatterForFile(file)) {
+      formatInternal(file, ImmutableList.of(new TextRange(startOffset, endOffset)));
+      return file;
+    } else {
+      return super.reformatRange(element, startOffset, endOffset, canChangeWhiteSpacesOnly);
+    }
+  }
 
-  private void formatInternal(Formatter formatter, PsiFile file, List<Range<Integer>> ranges)
-      throws IncorrectOperationException {
+  /** Return whether or not this formatter can handle formatting the given file. */
+  private boolean overrideFormatterForFile(PsiFile file) {
+    return StdFileTypes.JAVA.equals(file.getFileType())
+        && GoogleJavaFormatSettings.getInstance(getProject()).isEnabled();
+  }
+
+  private void formatInternal(PsiFile file, Collection<TextRange> ranges) {
     ApplicationManager.getApplication().assertWriteAccessAllowed();
-    PsiDocumentManager.getInstance(getProject()).commitAllDocuments();
+    PsiDocumentManager documentManager = PsiDocumentManager.getInstance(getProject());
+    documentManager.commitAllDocuments();
     CheckUtil.checkWritable(file);
 
-    Document document = PsiDocumentManager.getInstance(getProject()).getDocument(file);
-    if (document != null) {
-      try {
-        List<Replacement> replacements =
-            formatter
-                .getFormatReplacements(document.getText(), ranges)
-                .stream()
-                .sorted(
-                    comparing((Replacement r) -> r.getReplaceRange().lowerEndpoint()).reversed())
-                .collect(Collectors.toList());
-        performReplacements(document, replacements);
-      } catch (FormatterException e) {
-        // Do not format on errors
-      }
+    Document document = documentManager.getDocument(file);
+
+    if (document == null) {
+      return;
     }
+    // If there are postponed PSI changes (e.g., during a refactoring), just abort.
+    // If we apply them now, then the incoming text ranges may no longer be valid.
+    if (documentManager.isDocumentBlockedByPsi(document)) {
+      return;
+    }
+
+    format(document, ranges);
+  }
+
+  /**
+   * Format the ranges of the given document.
+   *
+   * <p>Overriding methods will need to modify the document with the result of the external
+   * formatter (usually using {@link #performReplacements(Document, Map)}.
+   */
+  private void format(Document document, Collection<TextRange> ranges) {
+    Style style = GoogleJavaFormatSettings.getInstance(getProject()).getStyle();
+    Formatter formatter = new Formatter(JavaFormatterOptions.builder().style(style).build());
+    performReplacements(
+        document, FormatterUtil.getReplacements(formatter, document.getText(), ranges));
   }
 
   private void performReplacements(
-      final Document document, final List<Replacement> reverseSortedReplacements) {
+      final Document document, final Map<TextRange, String> replacements) {
+
+    if (replacements.isEmpty()) {
+      return;
+    }
+
+    TreeMap<TextRange, String> sorted = new TreeMap<>(comparing(TextRange::getStartOffset));
+    sorted.putAll(replacements);
     WriteCommandAction.runWriteCommandAction(
         getProject(),
         () -> {
-          for (Replacement replacement : reverseSortedReplacements) {
-            Range<Integer> range = replacement.getReplaceRange();
+          for (Entry<TextRange, String> entry : sorted.descendingMap().entrySet()) {
             document.replaceString(
-                range.lowerEndpoint(), range.upperEndpoint(), replacement.getReplacementString());
+                entry.getKey().getStartOffset(), entry.getKey().getEndOffset(), entry.getValue());
           }
           PsiDocumentManager.getInstance(getProject()).commitDocument(document);
         });
-  }
-
-  private static List<Range<Integer>> convertToRanges(Collection<TextRange> textRanges) {
-    ImmutableList.Builder<Range<Integer>> ranges = ImmutableList.builder();
-    for (TextRange textRange : textRanges) {
-      ranges.add(Range.closedOpen(textRange.getStartOffset(), textRange.getEndOffset()));
-    }
-    return ranges.build();
   }
 }

@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /** Configuration options for the formatting style. */
-public enum UiFormatterStyle {
+enum UiFormatterStyle {
   GOOGLE("Default Google Java style", Style.GOOGLE),
   AOSP("Android Open Source Project (AOSP) style", Style.AOSP);
 

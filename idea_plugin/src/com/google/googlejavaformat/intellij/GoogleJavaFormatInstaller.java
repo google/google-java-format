@@ -24,21 +24,20 @@ import org.picocontainer.MutablePicoContainer;
  * A utility class to replace (and revert) the default IntelliJ {@link CodeStyleManager} with one
  * that formats via google-java-format.
  */
-public final class GoogleJavaFormatInstaller {
+final class GoogleJavaFormatInstaller {
 
   private static final String CODE_STYLE_MANAGER_KEY = CodeStyleManager.class.getName();
 
   private GoogleJavaFormatInstaller() {}
 
-  public static void installFormatter(
-      Project project, GoogleJavaFormatCodeStyleManagerFactory factory) {
+  public static void installFormatter(Project project) {
     CodeStyleManager currentManager = CodeStyleManager.getInstance(project);
 
     if (currentManager instanceof GoogleJavaFormatCodeStyleManager) {
       currentManager = ((GoogleJavaFormatCodeStyleManager) currentManager).getDelegate();
     }
 
-    setManager(project, factory.createFormatter(currentManager));
+    setManager(project, new GoogleJavaFormatCodeStyleManager(currentManager));
   }
 
   public static void removeFormatter(Project project) {
