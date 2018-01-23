@@ -74,9 +74,7 @@ class GoogleJavaFormatSettings extends AbstractProjectComponent
 
   private void updateFormatterState() {
     if (state.enabled) {
-      GoogleJavaFormatInstaller.installFormatter(
-          myProject,
-          (delegate) -> new BasicGoogleJavaFormatCodeStyleManager(delegate, state.style));
+      GoogleJavaFormatInstaller.installFormatter(myProject);
     } else {
       GoogleJavaFormatInstaller.removeFormatter(myProject);
     }
