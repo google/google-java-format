@@ -16,6 +16,7 @@
 
 package com.google.googlejavaformat.intellij;
 
+import com.intellij.formatting.FormattingMode;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileTypes.FileType;
@@ -26,6 +27,8 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.codeStyle.ChangedRangesInfo;
 import com.intellij.psi.codeStyle.CodeStyleManager;
+import com.intellij.psi.codeStyle.DocCommentSettings;
+import com.intellij.psi.codeStyle.FormattingModeAwareIndentAdjuster;
 import com.intellij.psi.codeStyle.Indent;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.ThrowableRunnable;
@@ -39,7 +42,9 @@ import javax.annotation.Nullable;
  * @author bcsf@google.com (Brian Chang)
  */
 @SuppressWarnings("deprecation")
-class CodeStyleManagerDecorator extends CodeStyleManager {
+class CodeStyleManagerDecorator extends CodeStyleManager
+    implements FormattingModeAwareIndentAdjuster {
+
   private final CodeStyleManager delegate;
 
   CodeStyleManagerDecorator(CodeStyleManager delegate) {
@@ -172,5 +177,44 @@ class CodeStyleManagerDecorator extends CodeStyleManager {
   @Override
   public <T> T performActionWithFormatterDisabled(Computable<T> r) {
     return delegate.performActionWithFormatterDisabled(r);
+  }
+
+  @Override
+  public int getSpacing(PsiFile file, int offset) {
+    return delegate.getSpacing(file, offset);
+  }
+
+  @Override
+  public int getMinLineFeeds(PsiFile file, int offset) {
+    return delegate.getMinLineFeeds(file, offset);
+  }
+
+  /** Uses same fallback as {@link CodeStyleManager#getCurrentFormattingMode}. */
+  @Override
+  public FormattingMode getCurrentFormattingMode() {
+    if (delegate instanceof FormattingModeAwareIndentAdjuster) {
+      return ((FormattingModeAwareIndentAdjuster) delegate).getCurrentFormattingMode();
+    }
+    return FormattingMode.REFORMAT;
+  }
+
+  @Override
+  public int adjustLineIndent(final Document document, final int offset, FormattingMode mode)
+      throws IncorrectOperationException {
+    if (delegate instanceof FormattingModeAwareIndentAdjuster) {
+      return ((FormattingModeAwareIndentAdjuster) delegate)
+          .adjustLineIndent(document, offset, mode);
+    }
+    return offset;
+  }
+
+  @Override
+  public void runWithDocCommentFormattingDisabled(PsiFile file, Runnable runnable) {
+    delegate.runWithDocCommentFormattingDisabled(file, runnable);
+  }
+
+  @Override
+  public DocCommentSettings getDocCommentSettings(PsiFile file) {
+    return delegate.getDocCommentSettings(file);
   }
 }
