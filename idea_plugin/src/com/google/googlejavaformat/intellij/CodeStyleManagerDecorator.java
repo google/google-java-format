@@ -51,13 +51,11 @@ class CodeStyleManagerDecorator extends CodeStyleManager
     this.delegate = delegate;
   }
 
-  
   CodeStyleManager getDelegate() {
     return delegate;
   }
 
   @Override
-  
   public Project getProject() {
     return delegate.getProject();
   }
