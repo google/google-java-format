@@ -82,7 +82,8 @@ class B20128760 {
   public class Foo
       extends Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
       implements Xxxxxxxxxxxxx<
-              Xxxxxxxxxxxxxxxxxxxxxxxxxxxxx, Xxxxxxxxxxxxxxxxxxxxxxxxxxxxx,
+              Xxxxxxxxxxxxxxxxxxxxxxxxxxxxx,
+              Xxxxxxxxxxxxxxxxxxxxxxxxxxxxx,
               Xxxxxxxxxxxxxxxxxxxxxxxxxxxxx>,
           Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx {}
 
