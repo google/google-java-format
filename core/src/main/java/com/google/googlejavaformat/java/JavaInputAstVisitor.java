@@ -1530,8 +1530,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       for (Tree typeArgument : node.getTypeArguments()) {
         if (!first) {
           token(",");
-          // TODO(cushon): unify breaks
-          builder.breakToFill(" ");
+          builder.breakOp(" ");
         }
         scan(typeArgument, null);
         first = false;
