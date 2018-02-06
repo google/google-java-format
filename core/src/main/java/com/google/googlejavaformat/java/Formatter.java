@@ -16,28 +16,6 @@ package com.google.googlejavaformat.java;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.IOError;
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import org.openjdk.javax.tools.Diagnostic;
-import org.openjdk.javax.tools.DiagnosticCollector;
-import org.openjdk.javax.tools.DiagnosticListener;
-import org.openjdk.javax.tools.JavaFileObject;
-import org.openjdk.javax.tools.SimpleJavaFileObject;
-import org.openjdk.javax.tools.StandardLocation;
-import org.openjdk.tools.javac.file.JavacFileManager;
-import org.openjdk.tools.javac.main.Option;
-import org.openjdk.tools.javac.parser.JavacParser;
-import org.openjdk.tools.javac.parser.ParserFactory;
-import org.openjdk.tools.javac.tree.JCTree.JCCompilationUnit;
-import org.openjdk.tools.javac.util.Context;
-import org.openjdk.tools.javac.util.Log;
-import org.openjdk.tools.javac.util.Options;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
@@ -53,6 +31,26 @@ import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
+import java.io.IOError;
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import org.openjdk.javax.tools.Diagnostic;
+import org.openjdk.javax.tools.DiagnosticCollector;
+import org.openjdk.javax.tools.DiagnosticListener;
+import org.openjdk.javax.tools.JavaFileObject;
+import org.openjdk.javax.tools.SimpleJavaFileObject;
+import org.openjdk.javax.tools.StandardLocation;
+import org.openjdk.tools.javac.file.JavacFileManager;
+import org.openjdk.tools.javac.main.Option;
+import org.openjdk.tools.javac.parser.JavacParser;
+import org.openjdk.tools.javac.parser.ParserFactory;
+import org.openjdk.tools.javac.tree.JCTree.JCCompilationUnit;
+import org.openjdk.tools.javac.util.Context;
+import org.openjdk.tools.javac.util.Log;
+import org.openjdk.tools.javac.util.Options;
 
 /**
  * This is google-java-format, a new Java formatter that follows the Google Java Style Guide quite
@@ -109,7 +107,7 @@ public final class Formatter {
 
   /**
    * Construct a {@code Formatter} given a Java compilation unit. Parses the code; builds a {@link
-   * JavaInput} and the corresponding {@link JavaOutput} .
+   * JavaInput} and the corresponding {@link JavaOutput}.
    *
    * @param javaInput the input, a Java compilation unit
    * @param javaOutput the {@link JavaOutput}
@@ -121,8 +119,7 @@ public final class Formatter {
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
     context.put(DiagnosticListener.class, diagnostics);
     Options.instance(context).put("allowStringFolding", "false");
-    // TODO(cushon): this should default to the latest supported source
-    // level, remove this after
+    // TODO(cushon): this should default to the latest supported source level, remove this after
     // backing out
     // https://github.com/google/error-prone-javac/commit/c97f34ddd2308302587ce2de6d0c984836ea5b9f
     Options.instance(context).put(Option.SOURCE, "9");
@@ -146,9 +143,9 @@ public final class Formatter {
     JavacParser parser =
         parserFactory.newParser(
             javaInput.getText(),
-            /* keepDocComments= */ true,
-            /* keepEndPos= */ true,
-            /* keepLineMap= */ true);
+            /*keepDocComments=*/ true,
+            /*keepEndPos=*/ true,
+            /*keepLineMap=*/ true);
     unit = parser.parseCompilationUnit();
     unit.sourcefile = source;
 
@@ -176,8 +173,7 @@ public final class Formatter {
     }
     switch (input.getCode()) {
       case "compiler.err.invalid.meth.decl.ret.type.req":
-        // accept constructor-like method declarations that don't match the
-        // name of their
+        // accept constructor-like method declarations that don't match the name of their
         // enclosing class
         return false;
       default:
@@ -219,8 +215,8 @@ public final class Formatter {
    * @param input the input string
    * @return the output string
    * @throws FormatterException if the input string cannot be parsed
-   * @see <a href=
-   *     "https://google.github.io/styleguide/javaguide.html#s3.3.3-import-ordering-and-spacing">
+   * @see <a
+   *     href="https://google.github.io/styleguide/javaguide.html#s3.3.3-import-ordering-and-spacing">
    *     Google Java Style Guide - 3.3.3 Import ordering and spacing</a>
    */
   public String formatSourceAndFixImports(String input) throws FormatterException {
@@ -255,10 +251,8 @@ public final class Formatter {
       String input, Collection<Range<Integer>> characterRanges) throws FormatterException {
     JavaInput javaInput = new JavaInput(input);
 
-    // TODO(cushon): this is only safe because the modifier ordering doesn't
-    // affect whitespace,
-    // and doesn't change the replacements that are output. This is not true
-    // in general for
+    // TODO(cushon): this is only safe because the modifier ordering doesn't affect whitespace,
+    // and doesn't change the replacements that are output. This is not true in general for
     // 'de-linting' changes (e.g. import ordering).
     javaInput = ModifierOrderer.reorderModifiers(javaInput, characterRanges);
 
@@ -287,8 +281,7 @@ public final class Formatter {
     for (Range<Integer> lineRange :
         lineRanges.subRangeSet(Range.closedOpen(0, lines.size() - 1)).asRanges()) {
       int lineStart = lines.get(lineRange.lowerEndpoint());
-      // Exclude the trailing newline. This isn't strictly necessary, but
-      // handling blank lines
+      // Exclude the trailing newline. This isn't strictly necessary, but handling blank lines
       // as empty ranges is convenient.
       int lineEnd = lines.get(lineRange.upperEndpoint()) - 1;
       Range<Integer> range = Range.closedOpen(lineStart, lineEnd);
