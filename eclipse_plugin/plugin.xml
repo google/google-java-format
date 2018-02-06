@@ -5,7 +5,12 @@
    <javaFormatter
          class="com.google.googlejavaformat.java.GoogleJavaFormatter"
          id="com.google.googlejavaformat.java.GoogleJavaFormatter"
-         name="google-java-format 1.4">
+         name="google-java-format 1.6">
+   </javaFormatter>
+   <javaFormatter
+         class="com.google.googlejavaformat.java.AospJavaFormatter"
+         id="com.google.googlejavaformat.java.AospJavaFormatter"
+         name="aosp-java-format 1.6">
    </javaFormatter>
    </extension>
 </plugin>

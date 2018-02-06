@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Google Inc.
+ * Copyright 2018 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,19 +11,20 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package com.google.googlejavaformat.java;
 
-/** Runs the Google Java formatter on the given code. */
-public class GoogleJavaFormatter extends AbstractJavaFormatter {
+import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
+
+/** Runs the AOSP Java formatter on the given code. */
+public class AospJavaFormatter extends AbstractJavaFormatter {
 
   @Override
   protected SnippetFormatter createSnippetFormatter() {
-    return new SnippetFormatter();
+    return new SnippetFormatter(JavaFormatterOptions.builder().style(Style.AOSP).build());
   }
 
   @Override
   protected int indentationSize() {
-    return 2;
+    return 4;
   }
 }
