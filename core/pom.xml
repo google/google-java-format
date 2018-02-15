@@ -143,6 +143,11 @@
                 true
               </addDefaultImplementationEntries>
             </manifest>
+            <manifestEntries>
+              <Automatic-Module-Name>
+                com.google.googlejavaformat
+              </Automatic-Module-Name>
+            </manifestEntries>
           </archive>
         </configuration>
       </plugin>
