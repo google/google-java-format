@@ -17,6 +17,7 @@ import static com.google.common.collect.Iterables.getLast;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
@@ -242,7 +243,7 @@ public class ImportOrderer {
 
   // Produces the sorted output based on the imports we have scanned.
   private String reorderedImportsString(ImmutableSortedSet<Import> imports) {
-    assert !imports.isEmpty();
+    Preconditions.checkArgument(!imports.isEmpty(), "imports");
 
     Import firstImport = imports.iterator().next();
 
