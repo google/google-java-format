@@ -291,7 +291,7 @@ public class ImportOrderer {
     // At the start of each iteration of this loop, i points to an identifier.
     // On exit from the loop, i points to a token after an identifier or after *.
     while (true) {
-      assert isIdentifierToken(i);
+      Preconditions.checkState(isIdentifierToken(i));
       imported.append(tokenAt(i));
       i++;
       if (!tokenAt(i).equals(".")) {
