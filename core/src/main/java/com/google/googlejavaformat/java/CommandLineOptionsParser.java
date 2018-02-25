@@ -115,6 +115,10 @@ final class CommandLineOptionsParser {
         case "--set-exit-if-changed":
           optionsBuilder.setExitIfChanged(true);
           break;
+        case "-assume-filename":
+        case "--assume-filename":
+          optionsBuilder.assumeFilename(getValue(flag, it, value));
+          break;
         default:
           throw new IllegalArgumentException("unexpected flag: " + flag);
       }

@@ -185,4 +185,16 @@ public class CommandLineFlagsTest {
           .contains("cannot use --dry-run and --in-place at the same time");
     }
   }
+
+  @Test
+  public void assumeFileNameOnlyWorksWithStdin() {
+    try {
+      Main.processArgs("--assume-filename=Foo.java", "Foo.java");
+      fail();
+    } catch (UsageException e) {
+      assertThat(e)
+          .hasMessageThat()
+          .contains("--assume-filename is only supported when formatting standard input");
+    }
+  }
 }
