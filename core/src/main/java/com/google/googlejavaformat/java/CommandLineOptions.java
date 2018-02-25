@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableRangeSet;
+import java.util.Optional;
 
 /**
  * Command line options for google-java-format.
@@ -39,6 +40,7 @@ final class CommandLineOptions {
   private final boolean removeUnusedImports;
   private final boolean dryRun;
   private final boolean setExitIfChanged;
+  private final Optional<String> assumeFilename;
 
   CommandLineOptions(
       ImmutableList<String> files,
@@ -54,7 +56,8 @@ final class CommandLineOptions {
       boolean sortImports,
       boolean removeUnusedImports,
       boolean dryRun,
-      boolean setExitIfChanged) {
+      boolean setExitIfChanged,
+      Optional<String> assumeFilename) {
     this.files = files;
     this.inPlace = inPlace;
     this.lines = lines;
@@ -69,6 +72,7 @@ final class CommandLineOptions {
     this.removeUnusedImports = removeUnusedImports;
     this.dryRun = dryRun;
     this.setExitIfChanged = setExitIfChanged;
+    this.assumeFilename = assumeFilename;
   }
 
   /** The files to format. */
@@ -143,6 +147,11 @@ final class CommandLineOptions {
     return setExitIfChanged;
   }
 
+  /** Return the name to use for diagnostics when formatting standard input. */
+  Optional<String> assumeFilename() {
+    return assumeFilename;
+  }
+
   /** Returns true if partial formatting was selected. */
   boolean isSelection() {
     return !lines().isEmpty() || !offsets().isEmpty() || !lengths().isEmpty();
@@ -168,6 +177,7 @@ final class CommandLineOptions {
     private boolean removeUnusedImports = true;
     private boolean dryRun = false;
     private boolean setExitIfChanged = false;
+    private Optional<String> assumeFilename = Optional.empty();
 
     ImmutableList.Builder<String> filesBuilder() {
       return files;
@@ -237,6 +247,11 @@ final class CommandLineOptions {
       return this;
     }
 
+    Builder assumeFilename(String assumeFilename) {
+      this.assumeFilename = Optional.of(assumeFilename);
+      return this;
+    }
+
     CommandLineOptions build() {
       return new CommandLineOptions(
           files.build(),
@@ -252,7 +267,8 @@ final class CommandLineOptions {
           sortImports,
           removeUnusedImports,
           dryRun,
-          setExitIfChanged);
+          setExitIfChanged,
+          assumeFilename);
     }
   }
 }
