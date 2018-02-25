@@ -36,6 +36,8 @@ final class UsageException extends Exception {
     "    Send formatted output back to files, not stdout.",
     "  -",
     "    Format stdin -> stdout",
+    "  --assume-filename, -assume-filename",
+    "    File name to use for diagnostics when formatting standard input (default is <stdin>).",
     "  --aosp, -aosp, -a",
     "    Use AOSP style instead of Google Style (4-space indentation).",
     "  --fix-imports-only",
