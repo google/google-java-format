@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
 
@@ -174,5 +175,15 @@ public class CommandLineOptionsParserTest {
 
     CommandLineOptions options = CommandLineOptionsParser.parse(Arrays.asList(args));
     assertThat(options.files()).containsExactly("L", "M", "ℕ", "@O", "P", "Q");
+  }
+
+  @Test
+  public void assumeFilename() {
+    assertThat(
+            CommandLineOptionsParser.parse(Arrays.asList("--assume-filename", "Foo.java"))
+                .assumeFilename())
+        .hasValue("Foo.java");
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("Foo.java")).assumeFilename())
+        .isEmpty();
   }
 }
