@@ -474,6 +474,6 @@ public class MainTest {
             new PrintWriter(err, true),
             new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
     assertThat(main.format("--dry-run", "--assume-filename=Foo.java", "-")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo("Foo.java\n");
+    assertThat(out.toString()).isEqualTo("Foo.java" + System.lineSeparator());
   }
 }
