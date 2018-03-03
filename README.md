@@ -34,14 +34,14 @@ plugin](https://plugins.jetbrains.com/plugin/8527) is available from the plugin
 repository.
 
 The plugin will not be enabled by default. To enable it in the current project,
-go to "File→Settings...→google-java-format Settings" and check the "Enable"
+go to `File`→`Settings`...→`google-java-format Settings` and check the `Enable`
 checkbox.
 
-To enable it by default in new projects, use "File→Other Settings→Default
-Settings...".
+To enable it by default in new projects, use `File`→`Other Settings`→`Default
+Settings...`.
 
-When enabled, it will replace the normal "Reformat Code" action, which can be
-triggered from the "Code" menu or with the Ctrl-Alt-L (by default) keyboard
+When enabled, it will replace the normal `Reformat Code` action, which can be
+triggered from the `Code` menu or with the Ctrl-Alt-L (by default) keyboard
 shortcut.
 
 ### Eclipse
@@ -53,13 +53,12 @@ folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc
 to activate the plugin.
 
 The plugin adds a `google-java-format` formatter implementation that can be
-configured in `Window > Preferences > Java > Code Style > Formatter > Formatter
-Implementation`.
+configured in `Window` > `Preferences` > `Java` > `Code Style` > `Formatter` > `Formatter Implementation`.
 
 ### as a library
 
 The formatter can be used in software which generates java to output more
-legible java code. Just include the library in your maven/gradle/etc.
+legible java code. Just include the library in your `maven/gradle/etc.
 configuration.
 
 #### Maven
@@ -98,9 +97,9 @@ Your starting point should be the instance methods of
 `com.google.googlejavaformat.java.Formatter`.
 
 ## Building from source
-
-    mvn install
-
+```
+    mvn install
+```
 ## Contributing
 
 Please see [the contributors guide](CONTRIBUTING.md) for details.
