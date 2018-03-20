@@ -9,22 +9,23 @@ notifications:
 
 matrix:
   allow_failures:
-    - jdk: oraclejdk9
-    - env: JDK_RELEASE='10 Early-Access'
+    - env: JDK='11'
   include:
-# JDK 8
-    - jdk: oraclejdk8
-      env: JDK_RELEASE='8'
-# JDK 9
-    - jdk: oraclejdk9
-      env: JDK_RELEASE='9'
-# JDK 10
-    - env: JDK_RELEASE='10 Early-Access'
-      before_install: unset _JAVA_OPTIONS && . ./scripts/install-jdk-10.sh
+    - env: JDK='8'
+      jdk: oraclejdk8
+      install: echo "The default Travis install script is being skipped!"
+    - env: JDK='9'
+      jdk: oraclejdk9
+      install: echo "The default Travis install script is being skipped!"
+    - env: JDK='10'
+      install: . ./install-jdk.sh -F 10 -L GPL
+    - env: JDK='11'
+      install: . ./install-jdk.sh -F 11 -L GPL
 
 # see https://github.com/travis-ci/travis-ci/issues/8408
 before_install:
-  - unset _JAVA_OPTIONS
+- unset _JAVA_OPTIONS
+- wget https://raw.githubusercontent.com/sormuras/bach/ae2f0bd71a40530f867b666d190b382672c44628/install-jdk.sh
 
 # use travis-ci docker based infrastructure
 sudo: false
@@ -33,9 +34,9 @@ cache:
   directories:
     - $HOME/.m2
 
-install: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
-
-script: mvn test -B
+script:
+- mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+- mvn test -B
 
 env:
   global:
