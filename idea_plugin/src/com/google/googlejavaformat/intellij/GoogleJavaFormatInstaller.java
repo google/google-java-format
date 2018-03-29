@@ -16,21 +16,31 @@
 
 package com.google.googlejavaformat.intellij;
 
+import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import org.picocontainer.MutablePicoContainer;
 
 /**
- * A utility class to replace (and revert) the default IntelliJ {@link CodeStyleManager} with one
- * that formats via google-java-format.
+ * A component that replaces the default IntelliJ {@link CodeStyleManager} with one that formats via
+ * google-java-format.
  */
-final class GoogleJavaFormatInstaller {
+final class GoogleJavaFormatInstaller implements ProjectComponent {
 
   private static final String CODE_STYLE_MANAGER_KEY = CodeStyleManager.class.getName();
 
-  private GoogleJavaFormatInstaller() {}
+  private final Project project;
 
-  public static void installFormatter(Project project) {
+  private GoogleJavaFormatInstaller(Project project) {
+    this.project = project;
+  }
+
+  @Override
+  public void projectOpened() {
+    installFormatter(project);
+  }
+
+  private static void installFormatter(Project project) {
     CodeStyleManager currentManager = CodeStyleManager.getInstance(project);
 
     if (currentManager instanceof GoogleJavaFormatCodeStyleManager) {
@@ -38,13 +48,6 @@ final class GoogleJavaFormatInstaller {
     }
 
     setManager(project, new GoogleJavaFormatCodeStyleManager(currentManager));
-  }
-
-  public static void removeFormatter(Project project) {
-    CodeStyleManager currentManager = CodeStyleManager.getInstance(project);
-    if (currentManager instanceof GoogleJavaFormatCodeStyleManager) {
-      setManager(project, ((GoogleJavaFormatCodeStyleManager) currentManager).getDelegate());
-    }
   }
 
   private static void setManager(Project project, CodeStyleManager newManager) {

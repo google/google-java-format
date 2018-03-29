@@ -21,7 +21,7 @@
   <project-components>
     <component>
       <implementation-class>
-        com.google.googlejavaformat.intellij.GoogleJavaFormatSettings
+        com.google.googlejavaformat.intellij.GoogleJavaFormatInstaller
       </implementation-class>
       <loadForDefaultProject/>
     </component>
@@ -31,6 +31,7 @@
     <projectConfigurable instance="com.google.googlejavaformat.intellij.GoogleJavaFormatConfigurable"
                          id="google-java-format.settings"
                          displayName="google-java-format Settings"/>
+    <projectService serviceImplementation="com.google.googlejavaformat.intellij.GoogleJavaFormatSettings"/>
   </extensions>
 
 </idea-plugin>

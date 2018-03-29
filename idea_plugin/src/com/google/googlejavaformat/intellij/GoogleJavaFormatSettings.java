@@ -17,9 +17,8 @@
 package com.google.googlejavaformat.intellij;
 
 import com.google.googlejavaformat.java.JavaFormatterOptions;
-import com.intellij.lifecycle.PeriodicalTasksCloser;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
@@ -29,18 +28,12 @@ import javax.annotation.Nullable;
   name = "GoogleJavaFormatSettings",
   storages = {@Storage("google-java-format.xml")}
 )
-class GoogleJavaFormatSettings extends AbstractProjectComponent
-    implements PersistentStateComponent<GoogleJavaFormatSettings.State> {
+class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFormatSettings.State> {
 
   private State state = new State();
 
-  protected GoogleJavaFormatSettings(Project project) {
-    super(project);
-  }
-
   static GoogleJavaFormatSettings getInstance(Project project) {
-    return PeriodicalTasksCloser.getInstance()
-        .safeGetComponent(project, GoogleJavaFormatSettings.class);
+    return ServiceManager.getService(project, GoogleJavaFormatSettings.class);
   }
 
   @Nullable
@@ -52,7 +45,6 @@ class GoogleJavaFormatSettings extends AbstractProjectComponent
   @Override
   public void loadState(State state) {
     this.state = state;
-    updateFormatterState();
   }
 
   boolean isEnabled() {
@@ -69,15 +61,6 @@ class GoogleJavaFormatSettings extends AbstractProjectComponent
 
   void setStyle(JavaFormatterOptions.Style style) {
     state.style = style;
-    updateFormatterState();
-  }
-
-  private void updateFormatterState() {
-    if (state.enabled) {
-      GoogleJavaFormatInstaller.installFormatter(myProject);
-    } else {
-      GoogleJavaFormatInstaller.removeFormatter(myProject);
-    }
   }
 
   static class State {
