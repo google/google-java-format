@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id "org.jetbrains.intellij" version "0.2.17"
+  id "org.jetbrains.intellij" version "0.3.1"
 }
 
 task showProps {
@@ -39,7 +39,7 @@ intellij {
   pluginName = "google-java-format"
   updateSinceUntilBuild = true
   sameSinceUntilBuild = true
-  version = "2017.3.3"
+  version = "2018.1"
 }
 
 patchPluginXml {

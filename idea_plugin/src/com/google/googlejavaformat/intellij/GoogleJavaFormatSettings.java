@@ -81,7 +81,7 @@ class GoogleJavaFormatSettings extends AbstractProjectComponent
   }
 
   static class State {
-    public boolean enabled = false;
+    public boolean enabled = true;
     public JavaFormatterOptions.Style style = JavaFormatterOptions.Style.GOOGLE;
   }
 }

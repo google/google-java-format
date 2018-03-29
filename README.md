@@ -33,16 +33,22 @@ A [google-java-format IntelliJ
 plugin](https://plugins.jetbrains.com/plugin/8527) is available from the plugin
 repository.
 
-The plugin will not be enabled by default. To enable it in the current project,
-go to "File→Settings...→google-java-format Settings" and check the "Enable"
-checkbox.
+The plugin will be enabled by default. To disable it in the current project, go
+to "File→Settings...→google-java-format Settings" (or "IntelliJ
+IDEA→Preferences...→Other Settings→google-java-format Settings" on macOS) and
+uncheck the "Enable google-java-format" checkbox.
 
-To enable it by default in new projects, use "File→Other Settings→Default
+To disable it by default in new projects, use "File→Other Settings→Default
 Settings...".
 
 When enabled, it will replace the normal "Reformat Code" action, which can be
 triggered from the "Code" menu or with the Ctrl-Alt-L (by default) keyboard
 shortcut.
+
+The import ordering is not handled by this plugin, unfortunately. To fix the
+import order, download the [IntelliJ Java Google Style
+file](https://github.com/google/styleguide/blob/gh-pages/intellij-java-google-style.xml)
+and import it into File→Settings→Editor→Code Style.
 
 ### Eclipse
 

@@ -38,8 +38,6 @@ import javax.annotation.Nullable;
 /**
  * Decorates the {@link CodeStyleManager} abstract class by delegating to a concrete implementation
  * instance (likely IJ's default instance).
- *
- * @author bcsf@google.com (Brian Chang)
  */
 @SuppressWarnings("deprecation")
 class CodeStyleManagerDecorator extends CodeStyleManager
