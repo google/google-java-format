@@ -38,14 +38,13 @@ apply plugin: 'java'
 intellij {
   pluginName = "google-java-format"
   updateSinceUntilBuild = true
-  sameSinceUntilBuild = true
   version = "2018.1"
 }
 
 patchPluginXml {
   pluginDescription = "Formats source code using the google-java-format tool. This version of " +
-                      "the plugin uses version ${googleJavaFormatVersion} of the tool." + googleJavaFormatVersion
-  version = "${googleJavaFormatVersion}.1.171"
+                      "the plugin uses version ${googleJavaFormatVersion} of the tool."
+  version = "${googleJavaFormatVersion}.1"
   sinceBuild = '171'
 }
 
