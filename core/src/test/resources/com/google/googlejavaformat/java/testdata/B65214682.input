@@ -1,10 +1,10 @@
-@BugPattern(category = GUAVA, severity = NOT_A_PROBLEM, maturity = EXPERIMENTAL)
 @BugPattern(
-    name = "AsyncFunctionReturnsImmediate",
-    summary = SIMPLIFY,
-    category = GUAVA,
-    severity = NOT_A_PROBLEM,
-    maturity = EXPERIMENTAL)
+  name = "AsyncFunctionReturnsImmediate",
+  summary = SIMPLIFY,
+  category = GUAVA,
+  severity = NOT_A_PROBLEM,
+  maturity = EXPERIMENTAL
+)
 @BugPattern(
     name = "AsyncFunctionReturnsImmediate",
     summary = SIMPLIFY,

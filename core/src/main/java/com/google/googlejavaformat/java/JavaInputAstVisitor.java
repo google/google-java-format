@@ -1225,7 +1225,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token("@");
     scan(node.getAnnotationType(), null);
     if (!node.getArguments().isEmpty()) {
-      builder.open(plusTwo);
+      builder.open(plusFour);
       token("(");
       builder.breakOp();
       boolean first = true;
@@ -1250,9 +1250,8 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         }
         first = false;
       }
-      builder.breakOp(UNIFIED, "", minusTwo, /* optionalTag= */ Optional.absent());
+      token(")");
       builder.close();
-      token(")", plusTwo);
       builder.close();
       return null;
 
