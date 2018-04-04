@@ -29,7 +29,6 @@ import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_OPEN
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
-import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.google.googlejavaformat.java.javadoc.Token.Type;
 
 /**
@@ -41,7 +40,7 @@ import com.google.googlejavaformat.java.javadoc.Token.Type;
  */
 final class JavadocWriter {
   private final int blockIndent;
-  private final JavaFormatterOptions options;
+  private final JavadocOptions options;
   private final StringBuilder output = new StringBuilder();
   /**
    * Whether we are inside an {@code <li>} element, excluding the case in which the {@code <li>}
@@ -61,7 +60,7 @@ final class JavadocWriter {
   private int indentForMoeEndStripComment;
   private boolean wroteAnythingSignificant;
 
-  JavadocWriter(int blockIndent, JavaFormatterOptions options) {
+  JavadocWriter(int blockIndent, JavadocOptions options) {
     this.blockIndent = blockIndent;
     this.options = checkNotNull(options);
   }
