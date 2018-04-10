@@ -53,7 +53,7 @@ and import it into File→Settings→Editor→Code Style.
 ### Eclipse
 
 A [google-java-format Eclipse
-plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.3/google-java-format-eclipse-plugin-1.3.0.jar)
+plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.5/google-java-format-eclipse-plugin_1.5.0.jar)
 can be downloaded from the releases page. Drop it into the Eclipse [drop-ins
 folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fmisc%2Fp2_dropins_format.html)
 to activate the plugin.
