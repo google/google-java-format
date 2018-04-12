@@ -12,3 +12,5 @@ target/
 
 bin/
 out/
+
+bazel-*
