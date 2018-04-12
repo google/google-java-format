@@ -1,6 +1,13 @@
 java_test(
     name = "FormatterTest",
     srcs = ["FormatterTest.java"],
+    resources = [
+        "//core/src/test/resources/com/google/googlejavaformat/java/testimports:A.formatting-and-import-sorting",
+        "//core/src/test/resources/com/google/googlejavaformat/java/testimports:A.formatting-and-unused-import-removal",
+        "//core/src/test/resources/com/google/googlejavaformat/java/testimports:A.imports-and-formatting",
+        "//core/src/test/resources/com/google/googlejavaformat/java/testimports:A.imports-only",
+        "//core/src/test/resources/com/google/googlejavaformat/java/testimports:A.input",
+    ],
     deps = [
         "//core/src/main/java/com/google/googlejavaformat/java",
         "//thirdparty/jvm/com/google/guava",
@@ -34,6 +41,7 @@ java_test(
 java_test(
     name = "FormatterIntegrationTest",
     srcs = ["FormatterIntegrationTest.java"],
+    resources = ["//core/src/test/resources/com/google/googlejavaformat/java/testdata"],
     deps = [
         "//core/src/main/java/com/google/googlejavaformat",
         "//core/src/main/java/com/google/googlejavaformat/java",
@@ -77,6 +85,12 @@ java_test(
 java_test(
     name = "JavadocFormattingTest",
     srcs = ["JavadocFormattingTest.java"],
+    resources = [
+        "//core/src/test/resources/com/google/googlejavaformat/java/testjavadoc:B28750242.input",
+        "//core/src/test/resources/com/google/googlejavaformat/java/testjavadoc:B28750242.output",
+        "//core/src/test/resources/com/google/googlejavaformat/java/testjavadoc:B31404367.input",
+        "//core/src/test/resources/com/google/googlejavaformat/java/testjavadoc:B31404367.output",
+    ],
     deps = [
         "//core/src/main/java/com/google/googlejavaformat/java",
         "//thirdparty/jvm/com/google/guava",
