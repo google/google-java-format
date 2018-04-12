@@ -1,0 +1,49 @@
+options:
+  languages: [ "java" ]
+  resolvers:
+    - id: "mavencentral"
+      type: "default"
+      url: https://repo.maven.apache.org/maven2/
+  transitivity: runtime_deps
+  versionConflictPolicy: highest
+  thirdPartyDirectory: "thirdparty/jvm"
+
+dependencies:
+  junit:
+    junit:
+      lang: java
+      version: "4.12"
+
+  com.google.guava:
+    guava:
+      version: "22.0"
+      lang: java
+    guava-testlib:
+      version: "22.0"
+      lang: java
+
+  com.google.errorprone:
+    javac-shaded:
+      version: "9+181-r4173-1"
+      lang: java
+    error_prone_core:
+      version: "2.1.3"
+      lang: java
+    error_prone_annotations:
+      version: "2.0.8"
+      lang: java
+
+  com.google.code.findbugs:
+    jsr305:
+      version: "2.0.1"
+      lang: java
+
+  com.google.truth:
+    truth:
+      version: "0.36"
+      lang: java
+
+  com.google.testing.compile:
+    compile-testing:
+      version: "0.15"
+      lang: java
