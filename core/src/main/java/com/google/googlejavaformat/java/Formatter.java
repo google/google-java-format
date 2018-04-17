@@ -65,8 +65,8 @@ import org.openjdk.tools.javac.util.Options;
  * is a final EOF token to hold final comments.
  *
  * <p>The formatter walks the AST to generate a Greg Nelson/Derek Oppen-style list of formatting
- * {@link Op}s [1--2] that then generates a structured {@link Doc}. Each AST node type has a visitor
- * to emit a sequence of {@link Op}s for the node.
+ * {@link Op}s [1--2] that then generates a structured {@link Doc} . Each AST node type has a
+ * visitor to emit a sequence of {@link Op}s for the node.
  *
  * <p>Some data-structure operations are easier in the list of {@link Op}s, while others become
  * easier in the {@link Doc}. The {@link Op}s are walked to attach the comments. As the {@link Op}s
@@ -98,6 +98,11 @@ public final class Formatter {
 
   public Formatter(JavaFormatterOptions options) {
     this.options = options;
+  }
+
+  /** @return The options used for this formatter. */
+  public JavaFormatterOptions options() {
+    return options;
   }
 
   /**

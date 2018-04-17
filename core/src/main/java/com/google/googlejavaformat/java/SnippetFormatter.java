@@ -14,14 +14,15 @@
 
 package com.google.googlejavaformat.java;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
-import java.util.ArrayList;
-import java.util.List;
 
 /** Formats a subset of a compilation unit. */
 public class SnippetFormatter {
@@ -56,16 +57,25 @@ public class SnippetFormatter {
     }
   }
 
-  private static final int INDENTATION_SIZE = 2;
-  private final Formatter formatter = new Formatter();
+  private static final int SPACES_PER_INDENT_LEVEL = 2;
+  private final Formatter formatter;
   private static final CharMatcher NOT_WHITESPACE = CharMatcher.whitespace().negate();
+
+  public SnippetFormatter() {
+    this(JavaFormatterOptions.defaultOptions());
+  }
+
+  public SnippetFormatter(JavaFormatterOptions options) {
+    Preconditions.checkNotNull(options);
+    this.formatter = new Formatter(options);
+  }
 
   public String createIndentationString(int indentationLevel) {
     Preconditions.checkArgument(
         indentationLevel >= 0,
         "Indentation level cannot be less than zero. Given: %s",
         indentationLevel);
-    int spaces = indentationLevel * INDENTATION_SIZE;
+    int spaces = indentationLevel * indentationSize();
     StringBuilder buf = new StringBuilder(spaces);
     for (int i = 0; i < spaces; i++) {
       buf.append(' ');
@@ -134,9 +144,10 @@ public class SnippetFormatter {
           "source = \"" + source + "\", replacement = \"" + replacement + "\"");
     }
     /*
-     * In the past we seemed to have problems touching non-whitespace text in the formatter, even
-     * just replacing some code with itself.  Retrospective attempts to reproduce this have failed,
-     * but this may be an issue for future changes.
+     * In the past we seemed to have problems touching non-whitespace text
+     * in the formatter, even just replacing some code with itself.
+     * Retrospective attempts to reproduce this have failed, but this may be
+     * an issue for future changes.
      */
     List<Replacement> replacements = new ArrayList<>();
     int i = NOT_WHITESPACE.indexIn(source);
@@ -163,8 +174,9 @@ public class SnippetFormatter {
 
   private SnippetWrapper snippetWrapper(SnippetKind kind, String source, int initialIndent) {
     /*
-     * Synthesize a dummy class around the code snippet provided by Eclipse.  The dummy class is
-     * correctly formatted -- the blocks use correct indentation, etc.
+     * Synthesize a dummy class around the code snippet provided by Eclipse.
+     * The dummy class is correctly formatted -- the blocks use correct
+     * indentation, etc.
      */
     switch (kind) {
       case COMPILATION_UNIT:
@@ -214,5 +226,9 @@ public class SnippetFormatter {
       default:
         throw new IllegalArgumentException("Unknown snippet kind: " + kind);
     }
+  }
+
+  private int indentationSize() {
+    return SPACES_PER_INDENT_LEVEL * formatter.options().indentationMultiplier();
   }
 }

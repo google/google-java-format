@@ -28,14 +28,15 @@
   <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.6-SNAPSHOT</version>
+  <version>1.6</version>
 
   <modules>
     <module>core</module>
     <!-- google-java-format#24
     <module>idea_plugin</module>
-    <module>eclipse_plugin</module>
     -->
+    <!-- TODO COMMENT OUT -->
+    <module>eclipse_plugin</module>
   </modules>
 
   <name>Google Java Format Parent</name>
