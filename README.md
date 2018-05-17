@@ -112,6 +112,22 @@ new Formatter().formatSource(source, output);
 Your starting point should be the instance methods of
 `com.google.googlejavaformat.java.Formatter`.
 
+#### Gradle via Spotless
+
+[Spotless](https://github.com/diffplug/spotless/tree/master/plugin-gradle#applying-to-java-source-google-java-format) can apply `google-java-format` automatically to all java sources in a project, as well as apply other kinds of formatter to other kinds of files.
+
+```gradle
+plugins {
+  id 'com.diffplug.gradle.spotless' version '3.1.0'
+}
+
+spotless {
+  java {
+    googleJavaFormat()
+  }
+}
+```
+
 ## Building from source
 
 ```
