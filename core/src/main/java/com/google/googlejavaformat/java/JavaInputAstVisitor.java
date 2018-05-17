@@ -48,6 +48,7 @@ import com.google.common.base.Throwables;
 import com.google.common.base.Verify;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Multiset;
@@ -1467,10 +1468,69 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   @Override
   public Void visitMethodInvocation(MethodInvocationTree node, Void unused) {
     sync(node);
+    if (handleLogStatement(node)) {
+      return null;
+    }
     visitDot(node);
     return null;
   }
 
+  /**
+   * Special-cases log statements, to output:
+   *
+   * <pre>{@code
+   * logger.atInfo().log(
+   *     "Number of foos: %d, foos.size());
+   * }</pre>
+   *
+   * <p>Instead of:
+   *
+   * <pre>{@code
+   * logger
+   *     .atInfo()
+   *     .log(
+   *         "Number of foos: %d, foos.size());
+   * }</pre>
+   */
+  private boolean handleLogStatement(MethodInvocationTree node) {
+    if (!getMethodName(node).contentEquals("log")) {
+      return false;
+    }
+    Deque<ExpressionTree> parts = new ArrayDeque<>();
+    ExpressionTree curr = node;
+    while (curr instanceof MethodInvocationTree) {
+      MethodInvocationTree method = (MethodInvocationTree) curr;
+      parts.addFirst(method);
+      if (!LOG_METHODS.contains(getMethodName(method).toString())) {
+        return false;
+      }
+      curr = Trees.getMethodReceiver(method);
+    }
+    if (!(curr instanceof IdentifierTree)) {
+      return false;
+    }
+    parts.addFirst(curr);
+    visitDotWithPrefix(ImmutableList.copyOf(parts), false, parts.size() - 1);
+    return true;
+  }
+
+  static final ImmutableSet<String> LOG_METHODS =
+      ImmutableSet.of(
+          "at",
+          "atConfig",
+          "atFine",
+          "atFiner",
+          "atFinest",
+          "atInfo",
+          "atMostEvery",
+          "atSevere",
+          "atWarning",
+          "every",
+          "log",
+          "logVarargs",
+          "perUnique",
+          "withCause",
+          "withStackTrace");
 
   @Override
   public Void visitMemberSelect(MemberSelectTree node, Void unused) {
