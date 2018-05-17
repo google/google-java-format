@@ -62,6 +62,15 @@ The plugin adds a `google-java-format` formatter implementation that can be
 configured in `Window > Preferences > Java > Code Style > Formatter > Formatter
 Implementation`.
 
+### Third-party integrations
+
+*   Gradle
+    *   [Spotless](https://github.com/diffplug/spotless/tree/master/plugin-gradle#applying-to-java-source-google-java-format):
+    *   [sherter/google-java-format-gradle-plugin](https://github.com/sherter/google-java-format-gradle-plugin)
+*   Apache Maven
+    *   [coveo/fmt-maven-plugin](https://github.com/coveo/fmt-maven-plugin)
+    *   [talios/googleformatter-maven-plugin](https://github.com/talios/googleformatter-maven-plugin):
+
 ### as a library
 
 The formatter can be used in software which generates java to output more
