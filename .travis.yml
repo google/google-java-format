@@ -25,7 +25,7 @@ matrix:
 # see https://github.com/travis-ci/travis-ci/issues/8408
 before_install:
 - unset _JAVA_OPTIONS
-- wget https://raw.githubusercontent.com/sormuras/bach/ae2f0bd71a40530f867b666d190b382672c44628/install-jdk.sh
+- wget https://raw.githubusercontent.com/sormuras/bach/fd1614bccf35bb6c4b035fe10174f74cea7c0188/install-jdk.sh
 
 # use travis-ci docker based infrastructure
 sudo: false
