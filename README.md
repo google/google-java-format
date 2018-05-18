@@ -64,12 +64,15 @@ Implementation`.
 
 ### Third-party integrations
 
-*   Gradle
+*   Gradle plugins
     *   [Spotless](https://github.com/diffplug/spotless/tree/master/plugin-gradle#applying-to-java-source-google-java-format):
     *   [sherter/google-java-format-gradle-plugin](https://github.com/sherter/google-java-format-gradle-plugin)
-*   Apache Maven
+*   Apache Maven plugins
     *   [coveo/fmt-maven-plugin](https://github.com/coveo/fmt-maven-plugin)
     *   [talios/googleformatter-maven-plugin](https://github.com/talios/googleformatter-maven-plugin):
+*   [Cosium/maven-git-code-format](https://github.com/Cosium/maven-git-code-format):
+    A maven plugin that automatically deploys google-java-format as a pre-commit
+    git hook.
 
 ### as a library
 
