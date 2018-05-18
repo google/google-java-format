@@ -834,10 +834,24 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       members.add(member);
     }
     if (enumConstants.isEmpty() && members.isEmpty()) {
-      builder.open(ZERO);
-      builder.blankLineWanted(BlankLineWanted.NO);
-      token("}");
-      builder.close();
+      if (builder.peekToken().equals(Optional.of(";"))) {
+        builder.open(plusTwo);
+        builder.forcedBreak();
+        token(";");
+        builder.forcedBreak();
+        dropEmptyDeclarations();
+        builder.close();
+        builder.open(ZERO);
+        builder.forcedBreak();
+        builder.blankLineWanted(BlankLineWanted.NO);
+        token("}", plusTwo);
+        builder.close();
+      } else {
+        builder.open(ZERO);
+        builder.blankLineWanted(BlankLineWanted.NO);
+        token("}");
+        builder.close();
+      }
     } else {
       builder.open(plusTwo);
       builder.blankLineWanted(BlankLineWanted.NO);
