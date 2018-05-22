@@ -943,9 +943,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           annotationDirection,
           Optional.of(fragment.getModifiers()),
           fragment.getType(),
-          VarArgsOrNot.fromVariable(fragment),
-          /* varargsAnnotations= */ ImmutableList.of(),
-          fragment.getName(),
+          /* name= */ fragment.getName(),
           "",
           "=",
           Optional.fromNullable(fragment.getInitializer()),
@@ -1838,9 +1836,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
               fieldAnnotationDirection(variableTree.getModifiers()),
               Optional.of(variableTree.getModifiers()),
               variableTree.getType(),
-              VarArgsOrNot.NO,
-              /* varargsAnnotations= */ ImmutableList.of(),
-              variableTree.getName(),
+              /* name= */ variableTree.getName(),
               "",
               "=",
               Optional.fromNullable(variableTree.getInitializer()),
@@ -2283,9 +2279,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         Direction.HORIZONTAL,
         /* modifiers= */ Optional.absent(),
         last,
-        VarArgsOrNot.NO,
-        /* varargsAnnotations= */ ImmutableList.of(),
-        declaration.getName(),
+        /* name= */ declaration.getName(),
         /* op= */ "",
         "=",
         Optional.fromNullable(declaration.getInitializer()),
@@ -2329,9 +2323,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           Direction.HORIZONTAL,
           Optional.of(receiver.get().getModifiers()),
           receiver.get().getType(),
-          VarArgsOrNot.NO,
-          /* varargsAnnotations= */ ImmutableList.of(),
-          receiver.get().getName(),
+          /* name= */ receiver.get().getName(),
           "",
           "",
           /* initializer= */ Optional.absent(),
@@ -2520,16 +2512,11 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       String equals,
       Optional<String> trailing) {
     sync(node);
-    boolean varargs = VarArgsOrNot.fromVariable(node).isYes();
-    List<? extends AnnotationTree> varargsAnnotations = ImmutableList.of();
-    Tree type = node.getType();
     declareOne(
         kind,
         annotationsDirection,
         Optional.of(node.getModifiers()),
-        type,
-        VarArgsOrNot.valueOf(varargs),
-        varargsAnnotations,
+        node.getType(),
         node.getName(),
         "",
         equals,
@@ -3183,8 +3170,6 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       Direction annotationsDirection,
       Optional<ModifiersTree> modifiers,
       Tree type,
-      VarArgsOrNot isVarargs,
-      List<? extends AnnotationTree> varargsAnnotations,
       Name name,
       String op,
       String equals,
@@ -3235,10 +3220,6 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
               baseDims = totalDims - dims.size();
             } else {
               scan(type, null);
-            }
-            if (isVarargs.isYes()) {
-              visitAnnotations(varargsAnnotations, BreakOrNot.YES, BreakOrNot.YES);
-              builder.op("...");
             }
           }
           builder.close();
@@ -3340,6 +3321,15 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             scan(dimExpressions.removeFirst(), null);
           }
           token("]");
+          lastWasAnnotation = false;
+          break;
+        case ".":
+          if (lastWasAnnotation) {
+            builder.breakToFill(" ");
+          } else {
+            builder.breakToFill();
+          }
+          builder.op("...");
           lastWasAnnotation = false;
           break;
         default:
