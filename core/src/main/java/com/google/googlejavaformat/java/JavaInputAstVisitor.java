@@ -3324,6 +3324,9 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           lastWasAnnotation = false;
           break;
         case ".":
+          if (!builder.peekToken().get().equals(".") || !builder.peekToken(1).get().equals(".")) {
+            return;
+          }
           if (lastWasAnnotation) {
             builder.breakToFill(" ");
           } else {

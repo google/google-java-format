@@ -6,4 +6,6 @@ public class ArrayVsVarargs {
   void i(String @B... arg) {}
   void j(String @C [] @D [] arg) {}
   void k(String @E [] @F... arg) {}
+
+  Class<?> c = byte[].class;
 }

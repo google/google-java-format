@@ -266,9 +266,15 @@ public final class OpsBuilder {
 
   /** Return the text of the next {@link Input.Token}, or absent if there is none. */
   public final Optional<String> peekToken() {
+    return peekToken(0);
+  }
+
+  /** Return the text of an upcoming {@link Input.Token}, or absent if there is none. */
+  public final Optional<String> peekToken(int skip) {
     ImmutableList<? extends Input.Token> tokens = input.getTokens();
-    return tokenI < tokens.size()
-        ? Optional.of(tokens.get(tokenI).getTok().getOriginalText())
+    int idx = tokenI + skip;
+    return idx < tokens.size()
+        ? Optional.of(tokens.get(idx).getTok().getOriginalText())
         : Optional.absent();
   }
 
