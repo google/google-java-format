@@ -20,11 +20,11 @@
   <parent>
     <groupId>com.google.googlejavaformat</groupId>
     <artifactId>google-java-format-parent</artifactId>
-    <version>1.5</version>
+    <version>1.6</version>
   </parent>
 
   <artifactId>google-java-format-eclipse-plugin</artifactId>
-  <version>1.5.0</version>
+  <version>1.6.0</version>
   <packaging>eclipse-plugin</packaging>
   <name>google-java-format Plugin for Eclipse 4.5+</name>
 
@@ -48,7 +48,7 @@
     <dependency>
       <groupId>com.google.googlejavaformat</groupId>
       <artifactId>google-java-format</artifactId>
-      <version>1.5</version>
+      <version>1.6</version>
     </dependency>
   </dependencies>
 
