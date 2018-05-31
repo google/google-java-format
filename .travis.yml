@@ -7,25 +7,21 @@ notifications:
     on_success: change
     on_failure: always
 
+jdk:
+  - oraclejdk8
+  - oraclejdk9
+  - oraclejdk10
+  - oraclejdk-ea
+
 matrix:
   allow_failures:
-    - env: JDK='11'
-  include:
-    - env: JDK='8'
-      jdk: oraclejdk8
-      install: echo "The default Travis install script is being skipped!"
-    - env: JDK='9'
-      jdk: oraclejdk9
-      install: echo "The default Travis install script is being skipped!"
-    - env: JDK='10'
-      install: . ./install-jdk.sh -F 10 -L GPL
-    - env: JDK='11'
-      install: . ./install-jdk.sh -F 11 -L GPL
+    - jdk: oraclejdk-ea
 
 # see https://github.com/travis-ci/travis-ci/issues/8408
 before_install:
 - unset _JAVA_OPTIONS
-- wget https://raw.githubusercontent.com/sormuras/bach/fd1614bccf35bb6c4b035fe10174f74cea7c0188/install-jdk.sh
+
+install: echo "The default Travis install script is being skipped!"
 
 # use travis-ci docker based infrastructure
 sudo: false
