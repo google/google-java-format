@@ -39,7 +39,7 @@ patchPluginXml {
   pluginDescription = "Formats source code using the google-java-format tool. This version of " +
                       "the plugin uses version ${googleJavaFormatVersion} of the tool."
   version = "${googleJavaFormatVersion}.0"
-  sinceBuild = '171'
+  sinceBuild = '173'
 }
 
 publishPlugin {
