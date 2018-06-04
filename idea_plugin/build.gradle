@@ -18,18 +18,12 @@ plugins {
   id "org.jetbrains.intellij" version "0.3.1"
 }
 
-task showProps {
-  doLast {
-    println "Your password is ${jetbrainsPluginRepoPassword}"
-  }
-}
-
 repositories {
   mavenCentral()
 }
 
 ext {
-  googleJavaFormatVersion = '1.5'
+  googleJavaFormatVersion = '1.6'
 }
 
 apply plugin: 'org.jetbrains.intellij'
@@ -44,7 +38,7 @@ intellij {
 patchPluginXml {
   pluginDescription = "Formats source code using the google-java-format tool. This version of " +
                       "the plugin uses version ${googleJavaFormatVersion} of the tool."
-  version = "${googleJavaFormatVersion}.1"
+  version = "${googleJavaFormatVersion}.0"
   sinceBuild = '171'
 }
 
