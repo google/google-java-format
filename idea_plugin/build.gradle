@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id "org.jetbrains.intellij" version "0.3.1"
+  id "org.jetbrains.intellij" version "0.3.2"
 }
 
 repositories {
@@ -32,7 +32,7 @@ apply plugin: 'java'
 intellij {
   pluginName = "google-java-format"
   updateSinceUntilBuild = true
-  version = "2018.1"
+  version = "IC-182.2757.3"
 }
 
 patchPluginXml {

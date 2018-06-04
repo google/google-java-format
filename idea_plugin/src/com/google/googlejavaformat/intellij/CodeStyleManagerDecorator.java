@@ -101,6 +101,12 @@ class CodeStyleManagerDecorator extends CodeStyleManager
   }
 
   @Override
+  public void reformatTextWithContext(PsiFile file, Collection<TextRange> ranges)
+      throws IncorrectOperationException {
+    delegate.reformatTextWithContext(file, ranges);
+  }
+
+  @Override
   public void adjustLineIndent(PsiFile file, TextRange rangeToAdjust)
       throws IncorrectOperationException {
     delegate.adjustLineIndent(file, rangeToAdjust);
@@ -125,6 +131,12 @@ class CodeStyleManagerDecorator extends CodeStyleManager
   @Nullable
   public String getLineIndent(PsiFile file, int offset) {
     return delegate.getLineIndent(file, offset);
+  }
+
+  @Override
+  @Nullable
+  public String getLineIndent(PsiFile file, int offset, FormattingMode mode) {
+    return delegate.getLineIndent(file, offset, mode);
   }
 
   @Override
@@ -185,6 +197,18 @@ class CodeStyleManagerDecorator extends CodeStyleManager
     return delegate.getMinLineFeeds(file, offset);
   }
 
+  @Override
+  public void runWithDocCommentFormattingDisabled(PsiFile file, Runnable runnable) {
+    delegate.runWithDocCommentFormattingDisabled(file, runnable);
+  }
+
+  @Override
+  public DocCommentSettings getDocCommentSettings(PsiFile file) {
+    return delegate.getDocCommentSettings(file);
+  }
+
+  // From FormattingModeAwareIndentAdjuster
+
   /** Uses same fallback as {@link CodeStyleManager#getCurrentFormattingMode}. */
   @Override
   public FormattingMode getCurrentFormattingMode() {
@@ -202,15 +226,5 @@ class CodeStyleManagerDecorator extends CodeStyleManager
           .adjustLineIndent(document, offset, mode);
     }
     return offset;
-  }
-
-  @Override
-  public void runWithDocCommentFormattingDisabled(PsiFile file, Runnable runnable) {
-    delegate.runWithDocCommentFormattingDisabled(file, runnable);
-  }
-
-  @Override
-  public DocCommentSettings getDocCommentSettings(PsiFile file) {
-    return delegate.getDocCommentSettings(file);
   }
 }
