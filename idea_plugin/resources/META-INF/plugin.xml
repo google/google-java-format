@@ -10,12 +10,27 @@
        reason. It won't crash PyCharm or anything, so whatever. -->
   <depends>com.intellij.modules.lang</depends>
 
+  <change-notes><![CDATA[
+    <dl>
+      <dt>1.6.1</dt>
+      <dd>Reverted the default to disabled. A notification will be presented the first time you
+        open a project asking if you want to enable google-java-format for that project.</dd>
+      <dt>1.6.0</dt>
+      <dd>Upgraded to google-java-format 1.6. Enabled the plugin by default.</dd>
+    </dl>
+  ]]></change-notes>
+
   <project-components>
     <component>
       <implementation-class>
         com.google.googlejavaformat.intellij.GoogleJavaFormatInstaller
       </implementation-class>
       <loadForDefaultProject/>
+    </component>
+    <component>
+      <implementation-class>
+        com.google.googlejavaformat.intellij.InitialConfigurationComponent
+      </implementation-class>
     </component>
   </project-components>
 

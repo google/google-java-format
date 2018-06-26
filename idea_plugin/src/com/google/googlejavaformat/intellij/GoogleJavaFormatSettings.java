@@ -25,9 +25,8 @@ import com.intellij.openapi.project.Project;
 import javax.annotation.Nullable;
 
 @State(
-  name = "GoogleJavaFormatSettings",
-  storages = {@Storage("google-java-format.xml")}
-)
+    name = "GoogleJavaFormatSettings",
+    storages = {@Storage("google-java-format.xml")})
 class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFormatSettings.State> {
 
   private State state = new State();
@@ -48,11 +47,19 @@ class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFor
   }
 
   boolean isEnabled() {
-    return state.enabled;
+    return state.enabled.equals(EnabledState.ENABLED);
   }
 
   void setEnabled(boolean enabled) {
+    setEnabled(enabled ? EnabledState.ENABLED : EnabledState.DISABLED);
+  }
+
+  void setEnabled(EnabledState enabled) {
     state.enabled = enabled;
+  }
+
+  boolean isUninitialized() {
+    return state.enabled.equals(EnabledState.UNKNOWN);
   }
 
   JavaFormatterOptions.Style getStyle() {
@@ -63,8 +70,37 @@ class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFor
     state.style = style;
   }
 
+  enum EnabledState {
+    UNKNOWN,
+    ENABLED,
+    DISABLED;
+  }
+
   static class State {
-    public boolean enabled = true;
+
+    private EnabledState enabled = EnabledState.UNKNOWN;
     public JavaFormatterOptions.Style style = JavaFormatterOptions.Style.GOOGLE;
+
+    // enabled used to be a boolean so we use bean property methods for backwards compatibility
+    public void setEnabled(@Nullable String enabledStr) {
+      if (enabledStr == null) {
+        enabled = EnabledState.UNKNOWN;
+      } else if (Boolean.valueOf(enabledStr)) {
+        enabled = EnabledState.ENABLED;
+      } else {
+        enabled = EnabledState.DISABLED;
+      }
+    }
+
+    public String getEnabled() {
+      switch (enabled) {
+        case ENABLED:
+          return "true";
+        case DISABLED:
+          return "false";
+        default:
+          return null;
+      }
+    }
   }
 }

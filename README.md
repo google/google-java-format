@@ -33,12 +33,13 @@ A [google-java-format IntelliJ
 plugin](https://plugins.jetbrains.com/plugin/8527) is available from the plugin
 repository.
 
-The plugin will be enabled by default. To disable it in the current project, go
+The plugin will be disabled by default. To enable it in the current project, go
 to `File→Settings...→google-java-format Settings` (or `IntelliJ
 IDEA→Preferences...→Other Settings→google-java-format Settings` on macOS) and
-uncheck the `Enable google-java-format` checkbox.
+uncheck the `Enable google-java-format` checkbox. (A notification will be
+presented when you first open a project offering to do this for you.)
 
-To disable it by default in new projects, use `File→Other Settings→Default
+To enable it by default in new projects, use `File→Other Settings→Default
 Settings...`.
 
 When enabled, it will replace the normal `Reformat Code` action, which can be
