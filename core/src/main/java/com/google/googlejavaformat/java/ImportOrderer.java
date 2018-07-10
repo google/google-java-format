@@ -16,7 +16,6 @@ package com.google.googlejavaformat.java;
 import static com.google.common.collect.Iterables.getLast;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -25,6 +24,7 @@ import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavaInput.Tok;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.openjdk.tools.javac.parser.Tokens.TokenKind;
 
 /** Orders imports in Java source code. */
@@ -310,7 +310,7 @@ public class ImportOrderer {
 
   /**
    * Returns the index of the first place where one of the given identifiers occurs, or {@code
-   * Optional.absent()} if there is none.
+   * Optional.empty()} if there is none.
    *
    * @param start the index to start looking at
    * @param identifiers the identifiers to look for
@@ -324,7 +324,7 @@ public class ImportOrderer {
         }
       }
     }
-    return Optional.absent();
+    return Optional.empty();
   }
 
   /** Returns the given token, or the preceding token if it is a whitespace token. */
