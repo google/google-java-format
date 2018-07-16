@@ -1186,7 +1186,6 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   @Override
   public Void visitLambdaExpression(LambdaExpressionTree node, Void unused) {
     sync(node);
-    boolean statementBody = node.getBodyKind() == LambdaExpressionTree.BodyKind.STATEMENT;
     boolean parens = builder.peekToken().equals(Optional.of("("));
     builder.open(parens ? plusFour : ZERO);
     if (parens) {
@@ -1207,12 +1206,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.close();
     builder.space();
     builder.op("->");
-    builder.open(statementBody ? ZERO : plusFour);
-    if (statementBody) {
-      builder.space();
-    } else {
-      builder.breakOp(" ");
-    }
+    builder.space();
     if (node.getBody().getKind() == Tree.Kind.BLOCK) {
       visitBlock(
           (BlockTree) node.getBody(),
@@ -1222,7 +1216,6 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     } else {
       scan(node.getBody(), null);
     }
-    builder.close();
     return null;
   }
 
@@ -2939,7 +2932,10 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    * @param plusIndent the extra indent for the arguments
    */
   void addArguments(List<? extends ExpressionTree> arguments, Indent plusIndent) {
-    builder.open(plusIndent);
+    boolean singleLambdaArg = arguments.size() == 1 && arguments.get(0) instanceof JCTree.JCLambda;
+    if (!singleLambdaArg) {
+      builder.open(plusIndent);
+    }
     token("(");
     if (!arguments.isEmpty()) {
       if (arguments.size() % 2 == 0 && argumentsAreTabular(arguments) == 2) {
@@ -2973,12 +2969,16 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         builder.close();
         builder.close();
       } else {
-        builder.breakOp();
+        if (!singleLambdaArg) {
+          builder.breakOp();
+        }
         argList(arguments);
       }
     }
     token(")");
-    builder.close();
+    if (!singleLambdaArg) {
+      builder.close();
+    }
   }
 
   private void argList(List<? extends ExpressionTree> arguments) {

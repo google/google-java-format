@@ -36,22 +36,20 @@ class B21305044 {
   {
     Function f = () -> moderatelyLongResult;
     Function f =
-        () ->
-            breakableResult
-                + breakableResult
-                + breakableResult
-                + breakableResult
-                + breakableResult
-                + breakableResult
-                + breakableResult
-                + breakableResult
-                + breakableResult;
+        () -> breakableResult
+            + breakableResult
+            + breakableResult
+            + breakableResult
+            + breakableResult
+            + breakableResult
+            + breakableResult
+            + breakableResult
+            + breakableResult;
     Function f =
-        () ->
-            System.err.println(
-                "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        () -> System.err.println(
+            "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     Function f =
-        (someParam) ->
-            System.err.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        (someParam) -> System.err.println(
+            "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
   }
 }
