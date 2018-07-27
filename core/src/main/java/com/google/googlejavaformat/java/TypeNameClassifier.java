@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java;
 
 import com.google.common.base.Verify;
 import java.util.List;
+import java.util.Optional;
 
 /** Heuristics for classifying qualified names as types. */
 public final class TypeNameClassifier {
@@ -121,16 +122,16 @@ public final class TypeNameClassifier {
    *   <li>com.google.ClassName.InnerClass.staticMemberName
    * </ul>
    */
-  static int typePrefixLength(List<String> nameParts) {
+  static Optional<Integer> typePrefixLength(List<String> nameParts) {
     TyParseState state = TyParseState.START;
-    int typeLength = -1;
+    Optional<Integer> typeLength = Optional.empty();
     for (int i = 0; i < nameParts.size(); i++) {
       state = state.next(JavaCaseFormat.from(nameParts.get(i)));
       if (state == TyParseState.REJECT) {
         break;
       }
       if (state.isSingleUnit()) {
-        typeLength = i;
+        typeLength = Optional.of(i);
       }
     }
     return typeLength;
