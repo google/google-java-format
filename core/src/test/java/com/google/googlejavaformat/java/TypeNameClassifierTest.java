@@ -15,9 +15,11 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 
 import com.google.common.base.Splitter;
 import com.google.googlejavaformat.java.TypeNameClassifier.JavaCaseFormat;
+import java.util.Optional;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -43,30 +45,30 @@ public final class TypeNameClassifierTest {
     assertThat(JavaCaseFormat.from("_A")).isEqualTo(JavaCaseFormat.UPPERCASE);
   }
 
-  private static int getPrefix(String qualifiedName) {
+  private static Optional<Integer> getPrefix(String qualifiedName) {
     return TypeNameClassifier.typePrefixLength(Splitter.on('.').splitToList(qualifiedName));
   }
 
   @Test
   public void typePrefixLength() {
-    assertThat(getPrefix("fieldName")).isEqualTo(-1);
-    assertThat(getPrefix("CONST")).isEqualTo(-1);
-    assertThat(getPrefix("ClassName")).isEqualTo(0);
-    assertThat(getPrefix("com.ClassName")).isEqualTo(1);
-    assertThat(getPrefix("ClassName.foo")).isEqualTo(1);
-    assertThat(getPrefix("com.ClassName.foo")).isEqualTo(2);
-    assertThat(getPrefix("ClassName.foo.bar")).isEqualTo(1);
-    assertThat(getPrefix("com.ClassName.foo.bar")).isEqualTo(2);
-    assertThat(getPrefix("ClassName.CONST")).isEqualTo(1);
-    assertThat(getPrefix("ClassName.varName")).isEqualTo(1);
-    assertThat(getPrefix("ClassName.Inner.varName")).isEqualTo(2);
+    assertThat(getPrefix("fieldName")).isEmpty();
+    assertThat(getPrefix("CONST")).isEmpty();
+    assertThat(getPrefix("ClassName")).hasValue(0);
+    assertThat(getPrefix("com.ClassName")).hasValue(1);
+    assertThat(getPrefix("ClassName.foo")).hasValue(1);
+    assertThat(getPrefix("com.ClassName.foo")).hasValue(2);
+    assertThat(getPrefix("ClassName.foo.bar")).hasValue(1);
+    assertThat(getPrefix("com.ClassName.foo.bar")).hasValue(2);
+    assertThat(getPrefix("ClassName.CONST")).hasValue(1);
+    assertThat(getPrefix("ClassName.varName")).hasValue(1);
+    assertThat(getPrefix("ClassName.Inner.varName")).hasValue(2);
   }
 
   @Test
   public void ambiguousClass() {
-    assertThat(getPrefix("com.google.security.acl.proto2api.ACL.Entry.newBuilder")).isEqualTo(7);
+    assertThat(getPrefix("com.google.security.acl.proto2api.ACL.Entry.newBuilder")).hasValue(7);
     // A human would probably identify this as "class-shaped", but just looking
     // at the case we have to assume it could be something like `field1.field2.CONST`.
-    assertThat(getPrefix("com.google.security.acl.proto2api.ACL.newBuilder")).isEqualTo(-1);
+    assertThat(getPrefix("com.google.security.acl.proto2api.ACL.newBuilder")).isEmpty();
   }
 }
