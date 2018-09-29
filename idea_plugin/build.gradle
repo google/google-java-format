@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id "org.jetbrains.intellij" version "0.3.2"
+  id "org.jetbrains.intellij" version "0.3.11"
 }
 
 repositories {
@@ -40,6 +40,7 @@ patchPluginXml {
                       "the plugin uses version ${googleJavaFormatVersion} of the tool."
   version = "${googleJavaFormatVersion}.1"
   sinceBuild = '173'
+  untilBuild = '189'
 }
 
 publishPlugin {
