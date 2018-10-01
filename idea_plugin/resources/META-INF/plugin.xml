@@ -12,6 +12,8 @@
 
   <change-notes><![CDATA[
     <dl>
+      <dt>1.6.2</dt>
+      <dd>Add support for 2018.3 IDEs.</dd>
       <dt>1.6.1</dt>
       <dd>Reverted the default to disabled. A notification will be presented the first time you
         open a project asking if you want to enable google-java-format for that project.</dd>
