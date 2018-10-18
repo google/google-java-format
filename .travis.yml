@@ -11,7 +11,7 @@ jdk:
   - oraclejdk8
   - oraclejdk9
   - openjdk10
-  - oraclejdk-ea
+  - openjdk-ea
 
 matrix:
   allow_failures:
