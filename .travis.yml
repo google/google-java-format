@@ -11,11 +11,12 @@ jdk:
   - oraclejdk8
   - oraclejdk9
   - openjdk10
+  - openjdk11
   - openjdk-ea
 
 matrix:
   allow_failures:
-    - jdk: oraclejdk-ea
+    - jdk: openjdk-ea
 
 # see https://github.com/travis-ci/travis-ci/issues/8408
 before_install:
