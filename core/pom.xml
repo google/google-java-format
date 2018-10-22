@@ -89,7 +89,7 @@
           <links>
             <link>http://google.github.io/guava/releases/${guava.version}/api/docs/</link>
             <link>http://jsr-305.googlecode.com/svn/trunk/javadoc/</link>
-            <link>http://docs.oracle.com/javase/7/docs/api/</link>
+            <link>https://docs.oracle.com/javase/8/docs/api/</link>
           </links>
         </configuration>
         <executions>
