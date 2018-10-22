@@ -98,6 +98,7 @@
     <guava.version>22.0</guava.version>
     <javac.version>9+181-r4173-1</javac.version>
     <truth.version>0.36</truth.version>
+    <jsr305.version>3.0.2</jsr305.version>
   </properties>
 
   <dependencyManagement>
@@ -118,7 +119,7 @@
       <dependency>
         <groupId>com.google.code.findbugs</groupId>
         <artifactId>jsr305</artifactId>
-        <version>2.0.1</version>
+        <version>${jsr305.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.errorprone</groupId>
