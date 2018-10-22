@@ -16,7 +16,6 @@ jdk:
 
 matrix:
   allow_failures:
-    - jdk: openjdk11
     - jdk: openjdk-ea
 
 # see https://github.com/travis-ci/travis-ci/issues/8408
