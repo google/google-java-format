@@ -31,8 +31,6 @@ import StringIO
 import sys
 from distutils.spawn import find_executable
 
-binary = find_executable('google-java-format') or '/usr/bin/google-java-format'
-
 def main():
   parser = argparse.ArgumentParser(description=
                                    'Reformat changed lines in diff. Without -i '
@@ -55,6 +53,7 @@ def main():
                       help='use AOSP style instead of Google Style (4-space indentation)')
   parser.add_argument('--skip-sorting-imports', action='store_true',
                       help='do not fix the import order')
+  parser.add_argument('-b', '--binary', help='path to google-java-format binary')
   args = parser.parse_args()
 
   # Extract changed lines for each file.
@@ -86,6 +85,11 @@ def main():
       end_line = start_line + line_count - 1;
       lines_by_file.setdefault(filename, []).extend(
           ['-lines', str(start_line) + ':' + str(end_line)])
+
+  if args.binary:
+    binary = args.binary
+  else:
+    binary = find_executable('google-java-format') or '/usr/bin/google-java-format'
 
   # Reformat files containing changes in place.
   for filename, lines in lines_by_file.iteritems():
