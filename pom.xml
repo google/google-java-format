@@ -98,6 +98,7 @@
     <guava.version>22.0</guava.version>
     <javac.version>9+181-r4173-1</javac.version>
     <truth.version>0.36</truth.version>
+    <jsr305.version>3.0.2</jsr305.version>
   </properties>
 
   <dependencyManagement>
@@ -118,7 +119,7 @@
       <dependency>
         <groupId>com.google.code.findbugs</groupId>
         <artifactId>jsr305</artifactId>
-        <version>2.0.1</version>
+        <version>${jsr305.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.errorprone</groupId>
@@ -185,26 +186,18 @@
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
-          <compilerId>javac-with-errorprone</compilerId>
-          <forceJavacCompilerUse>true</forceJavacCompilerUse>
+          <compilerArgs>
+            <arg>-XDcompilePolicy=simple</arg>
+            <arg>-Xplugin:ErrorProne</arg>
+          </compilerArgs>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>com.google.errorprone</groupId>
+              <artifactId>error_prone_core</artifactId>
+              <version>2.3.2</version>
+            </path>
+          </annotationProcessorPaths>
         </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>com.google.errorprone</groupId>
-            <artifactId>error_prone_core</artifactId>
-            <version>2.1.3</version>
-          </dependency>
-          <dependency>
-            <groupId>org.codehaus.plexus</groupId>
-            <artifactId>plexus-compiler-javac</artifactId>
-            <version>2.8.1</version>
-          </dependency>
-          <dependency>
-            <groupId>org.codehaus.plexus</groupId>
-            <artifactId>plexus-compiler-javac-errorprone</artifactId>
-            <version>2.8.2</version>
-          </dependency>
-        </dependencies>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -232,6 +225,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <doclint>none</doclint>
+        </configuration>
         <executions>
           <execution>
           <id>attach-javadocs</id>
@@ -254,30 +250,22 @@
   </build>
 
   <profiles>
+    <!-- using github.com/google/error-prone-javac is required when running on JDK 8 -->
     <profile>
       <id>jdk8</id>
       <activation>
-        <jdk>[1.8,)</jdk>
+        <jdk>1.8</jdk>
       </activation>
-      <!-- Disable doclint under JDK 8 -->
-      <reporting>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <configuration>
-              <doclint>none</doclint>
-            </configuration>
-          </plugin>
-        </plugins>
-      </reporting>
       <build>
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
+            <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
-              <doclint>none</doclint>
+              <fork>true</fork>
+              <compilerArgs combine.children="append">
+                <arg>-J-Xbootclasspath/p:${settings.localRepository}/com/google/errorprone/javac/${javac.version}/javac-${javac.version}.jar</arg>
+              </compilerArgs>
             </configuration>
           </plugin>
         </plugins>
