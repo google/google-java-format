@@ -58,8 +58,7 @@ there is no region, then formats the current line."
    (if (use-region-p)
        (list (region-beginning) (region-end))
      (list (point) (1+ (point)))))
-  (let ((cursor (point))
-        (temp-buffer (generate-new-buffer " *google-java-format-temp*"))
+  (let ((temp-buffer (generate-new-buffer " *google-java-format-temp*"))
         (stderr-file (make-temp-file "google-java-format")))
     (unwind-protect
         (let ((status (call-process-region
@@ -85,9 +84,7 @@ there is no region, then formats the current line."
            ((not (zerop status))
             (error "google-java-format failed with code %d%s" status stderr))
            (t (message "google-java-format succeeded%s" stderr)
-              (delete-region (point-min) (point-max))
-              (insert-buffer-substring temp-buffer)
-              (goto-char cursor))))
+              (replace-buffer-contents temp-buffer))))
       (delete-file stderr-file)
       (when (buffer-name temp-buffer) (kill-buffer temp-buffer)))))
 
