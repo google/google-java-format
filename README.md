@@ -36,7 +36,7 @@ repository.
 The plugin will be disabled by default. To enable it in the current project, go
 to `File→Settings...→google-java-format Settings` (or `IntelliJ
 IDEA→Preferences...→Other Settings→google-java-format Settings` on macOS) and
-uncheck the `Enable google-java-format` checkbox. (A notification will be
+check the `Enable google-java-format` checkbox. (A notification will be
 presented when you first open a project offering to do this for you.)
 
 To enable it by default in new projects, use `File→Other Settings→Default
