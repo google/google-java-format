@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -391,6 +392,38 @@ public class MainTest {
                 + c.toAbsolutePath().toString()
                 + System.lineSeparator());
     assertThat(err.toString()).isEmpty();
+  }
+
+  @Test
+  public void keepGoingWhenFilesDontExist() throws Exception {
+    Path a = testFolder.newFile("A.java").toPath();
+    Path b = testFolder.newFile("B.java").toPath();
+    File cFile = testFolder.newFile("C.java");
+    Path c = cFile.toPath();
+    cFile.delete();
+
+    Files.write(a, "class A{}\n".getBytes(UTF_8));
+    Files.write(b, "class B{}\n".getBytes(UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+
+    int exitCode =
+        main.format(
+            "",
+            a.toAbsolutePath().toString(),
+            c.toAbsolutePath().toString(),
+            b.toAbsolutePath().toString());
+
+    // Formatter returns failure if a file was not present.
+    assertThat(exitCode).isEqualTo(1);
+
+    // Present files were correctly formatted.
+    assertThat(out.toString()).isEqualTo("class A {}\nclass B {}\n");
+
+    // File not found still showed error.
+    assertThat(err.toString()).isNotEmpty();
   }
 
   @Test

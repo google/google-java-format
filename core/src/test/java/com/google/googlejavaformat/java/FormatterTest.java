@@ -83,8 +83,8 @@ public final class FormatterTest {
     assertThat(main.format("foo.go")).isEqualTo(0);
     assertThat(err.toString()).contains("Skipping non-Java file: " + "foo.go");
 
-    // should fail because the file does not exist
-    assertThat(main.format("Foo.java")).isNotEqualTo(0);
+    // format still fails on missing files
+    assertThat(main.format("Foo.java")).isEqualTo(1);
     assertThat(err.toString()).contains("Foo.java: could not read file: ");
   }
 
