@@ -95,9 +95,9 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.8</java.version>
-    <guava.version>22.0</guava.version>
+    <guava.version>27.0.1-jre</guava.version>
     <javac.version>9+181-r4173-1</javac.version>
-    <truth.version>0.36</truth.version>
+    <truth.version>0.42</truth.version>
     <jsr305.version>3.0.2</jsr305.version>
   </properties>
 
@@ -124,7 +124,7 @@
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
-        <version>2.0.8</version>
+        <version>2.3.2</version>
       </dependency>
 
       <!-- Test dependencies -->
