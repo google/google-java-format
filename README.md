@@ -29,9 +29,9 @@ a single format.*
 
 ### IntelliJ
 
-A [google-java-format IntelliJ
-plugin](https://plugins.jetbrains.com/plugin/8527) is available from the plugin
-repository.
+A
+[google-java-format IntelliJ plugin](https://plugins.jetbrains.com/plugin/8527)
+is available from the plugin repository.
 
 The plugin will be disabled by default. To enable it in the current project, go
 to `File→Settings...→google-java-format Settings` (or `IntelliJ
@@ -47,16 +47,16 @@ triggered from the `Code` menu or with the Ctrl-Alt-L (by default) keyboard
 shortcut.
 
 The import ordering is not handled by this plugin, unfortunately. To fix the
-import order, download the [IntelliJ Java Google Style
-file](https://github.com/google/styleguide/blob/gh-pages/intellij-java-google-style.xml)
+import order, download the
+[IntelliJ Java Google Style file](https://raw.githubusercontent.com/google/styleguide/gh-pages/intellij-java-google-style.xml)
 and import it into File→Settings→Editor→Code Style.
 
 ### Eclipse
 
-A [google-java-format Eclipse
-plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.6/google-java-format-eclipse-plugin_1.6.0.jar)
-can be downloaded from the releases page. Drop it into the Eclipse [drop-ins
-folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fmisc%2Fp2_dropins_format.html)
+A
+[google-java-format Eclipse plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.6/google-java-format-eclipse-plugin_1.6.0.jar)
+can be downloaded from the releases page. Drop it into the Eclipse
+[drop-ins folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fmisc%2Fp2_dropins_format.html)
 to activate the plugin.
 
 The plugin adds a `google-java-format` formatter implementation that can be
