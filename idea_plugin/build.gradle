@@ -40,6 +40,7 @@ patchPluginXml {
                       "the plugin uses version ${googleJavaFormatVersion} of the tool."
   version = "${googleJavaFormatVersion}.0.0"
   sinceBuild = '173'
+  untilBuild = '199'
 }
 
 publishPlugin {
