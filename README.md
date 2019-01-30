@@ -70,10 +70,10 @@ Implementation`.
     *   [sherter/google-java-format-gradle-plugin](https://github.com/sherter/google-java-format-gradle-plugin)
 *   Apache Maven plugins
     *   [coveo/fmt-maven-plugin](https://github.com/coveo/fmt-maven-plugin)
-    *   [talios/googleformatter-maven-plugin](https://github.com/talios/googleformatter-maven-plugin):
-*   [Cosium/maven-git-code-format](https://github.com/Cosium/maven-git-code-format):
-    A maven plugin that automatically deploys google-java-format as a pre-commit
-    git hook.
+    *   [talios/googleformatter-maven-plugin](https://github.com/talios/googleformatter-maven-plugin)
+    *   [Cosium/maven-git-code-format](https://github.com/Cosium/maven-git-code-format):
+         A maven plugin that automatically deploys google-java-format as a pre-commit
+         git hook.
 *   [maltzj/google-style-precommit-hook](https://github.com/maltzj/google-style-precommit-hook):
     A pre-commit (pre-commit.com) hook that will automatically run GJF whenever
     you commit code to your repository
