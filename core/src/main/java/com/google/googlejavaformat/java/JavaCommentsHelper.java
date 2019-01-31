@@ -117,6 +117,11 @@ public final class JavaCommentsHelper implements CommentsHelper {
         int length = matcher.group(1).length();
         line = Strings.repeat("/", length) + " " + line.substring(length);
       }
+      if (line.startsWith("// MOE:")) {
+        // don't wrap comments for https://github.com/google/MOE
+        result.add(line);
+        continue;
+      }
       while (line.length() + column0 > options.maxLineLength()) {
         int idx = options.maxLineLength() - column0;
         // only break on whitespace characters, and ignore the leading `// `

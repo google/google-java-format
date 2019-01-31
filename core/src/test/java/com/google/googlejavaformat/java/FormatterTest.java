@@ -453,4 +453,22 @@ public final class FormatterTest {
     assertThat(RemoveUnusedImports.removeUnusedImports(withoutBlank)).isEqualTo(withoutBlank);
     assertThat(ImportOrderer.reorderImports(withoutBlank)).isEqualTo(withoutBlank);
   }
+
+  @Test
+  public void dontWrapMoeLineComments() throws Exception {
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    "class T {\n"
+                        + "  // MOE: one long incredibly"
+                        + " unbroken sentence moving from topic to topic so that no-one had a"
+                        + " chance to interrupt;\n"
+                        + "}\n"))
+        .isEqualTo(
+            "class T {\n"
+                + "  // MOE: one long incredibly"
+                + " unbroken sentence moving from topic to topic so that no-one had a"
+                + " chance to interrupt;\n"
+                + "}\n");
+  }
 }
