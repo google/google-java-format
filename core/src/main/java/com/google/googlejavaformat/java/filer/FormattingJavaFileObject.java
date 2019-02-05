@@ -59,6 +59,11 @@ final class FormattingJavaFileObject extends ForwardingJavaFileObject<JavaFileOb
       }
 
       @Override
+      public void write(String string) throws IOException {
+        stringBuilder.append(string);
+      }
+
+      @Override
       public void flush() throws IOException {}
 
       @Override
