@@ -102,6 +102,9 @@ public class SnippetFormatterTest {
                 true);
     assertThat(replacements)
         .containsExactly(
-            Replacement.create(Range.closedOpen(0, 24), "/** a b */\nclass Test {}\n"));
+            Replacement.create(Range.closedOpen(5, 6), " "),
+            Replacement.create(Range.closedOpen(7, 7), " "),
+            Replacement.create(Range.closedOpen(9, 10), "\n        "),
+            Replacement.create(Range.closedOpen(22, 23), ""));
   }
 }
