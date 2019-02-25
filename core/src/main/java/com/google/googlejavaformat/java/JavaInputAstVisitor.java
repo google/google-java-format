@@ -383,6 +383,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   private void dropEmptyDeclarations() {
     if (builder.peekToken().equals(Optional.of(";"))) {
       while (builder.peekToken().equals(Optional.of(";"))) {
+        builder.forcedBreak();
         markForPartialFormat();
         token(";");
       }
