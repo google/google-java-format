@@ -67,7 +67,11 @@ class E<T> {
   }
 
   int f(int value) {
-    ;;;;;
+    ;
+    ;
+    ;
+    ;
+    ;
     for (Integer x :
         ImmutableList.<Integer>of(
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)) {}

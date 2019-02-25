@@ -1776,4 +1776,24 @@ public final class PartialFormattingTest {
     String output = doGetFormatReplacements(input, idx, idx + 1);
     assertThat(output).isEqualTo(expectedOutput);
   }
+
+  @Test
+  public void b117602702() throws Exception {
+    String input =
+        lines(
+            "class Foo {", //
+            "private Foo () {};",
+            "}",
+            "");
+    String expectedOutput =
+        lines(
+            "class Foo {", //
+            "  private Foo() {}",
+            "  ;",
+            "}",
+            "");
+
+    String output = runFormatter(input, new String[] {"-offset", "13", "-length", "1"});
+    assertThat(output).isEqualTo(expectedOutput);
+  }
 }
