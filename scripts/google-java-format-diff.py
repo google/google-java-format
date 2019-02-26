@@ -20,6 +20,10 @@ Example usage for git/svn users:
   git diff -U0 HEAD^ | google-java-format-diff.py -p1 -i
   svn diff --diff-cmd=diff -x-U0 | google-java-format-diff.py -i
 
+For perforce users:
+
+  P4DIFF="git --no-pager diff --no-index" p4 diff | ./google-java-format-diff.py -i -p7
+
 """
 
 import argparse
