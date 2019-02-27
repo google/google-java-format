@@ -1538,6 +1538,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       ImmutableSet.of(
           "at",
           "atConfig",
+          "atDebug",
           "atFine",
           "atFiner",
           "atFinest",
