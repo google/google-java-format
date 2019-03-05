@@ -12,15 +12,10 @@
 
   <change-notes><![CDATA[
     <dl>
+      <dt>1.7.0.1</dt>
+      <dd>Added support for 2019.1 IDEs.</dd>
       <dt>1.7.0.0</dt>
       <dd>Upgraded to google-java-format 1.7.</dd>
-      <dt>1.6.2</dt>
-      <dd>Add support for 2018.3 IDEs.</dd>
-      <dt>1.6.1</dt>
-      <dd>Reverted the default to disabled. A notification will be presented the first time you
-        open a project asking if you want to enable google-java-format for that project.</dd>
-      <dt>1.6.0</dt>
-      <dd>Upgraded to google-java-format 1.6. Enabled the plugin by default.</dd>
     </dl>
   ]]></change-notes>
 
