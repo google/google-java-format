@@ -53,6 +53,7 @@ public class CommandLineOptionsParserTest {
     assertThat(options.removeUnusedImports()).isTrue();
     assertThat(options.dryRun()).isFalse();
     assertThat(options.setExitIfChanged()).isFalse();
+    assertThat(options.reflowLongStrings()).isTrue();
   }
 
   @Test
@@ -185,5 +186,13 @@ public class CommandLineOptionsParserTest {
         .hasValue("Foo.java");
     assertThat(CommandLineOptionsParser.parse(Arrays.asList("Foo.java")).assumeFilename())
         .isEmpty();
+  }
+
+  @Test
+  public void skipReflowLongStrings() {
+    assertThat(
+            CommandLineOptionsParser.parse(Arrays.asList("--skip-reflowing-long-strings"))
+                .reflowLongStrings())
+        .isFalse();
   }
 }

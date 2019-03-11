@@ -41,6 +41,7 @@ final class CommandLineOptions {
   private final boolean dryRun;
   private final boolean setExitIfChanged;
   private final Optional<String> assumeFilename;
+  private final boolean reflowLongStrings;
 
   CommandLineOptions(
       ImmutableList<String> files,
@@ -57,7 +58,8 @@ final class CommandLineOptions {
       boolean removeUnusedImports,
       boolean dryRun,
       boolean setExitIfChanged,
-      Optional<String> assumeFilename) {
+      Optional<String> assumeFilename,
+      boolean reflowLongStrings) {
     this.files = files;
     this.inPlace = inPlace;
     this.lines = lines;
@@ -73,6 +75,7 @@ final class CommandLineOptions {
     this.dryRun = dryRun;
     this.setExitIfChanged = setExitIfChanged;
     this.assumeFilename = assumeFilename;
+    this.reflowLongStrings = reflowLongStrings;
   }
 
   /** The files to format. */
@@ -152,6 +155,10 @@ final class CommandLineOptions {
     return assumeFilename;
   }
 
+  boolean reflowLongStrings() {
+    return reflowLongStrings;
+  }
+
   /** Returns true if partial formatting was selected. */
   boolean isSelection() {
     return !lines().isEmpty() || !offsets().isEmpty() || !lengths().isEmpty();
@@ -178,6 +185,7 @@ final class CommandLineOptions {
     private boolean dryRun = false;
     private boolean setExitIfChanged = false;
     private Optional<String> assumeFilename = Optional.empty();
+    private boolean reflowLongStrings = true;
 
     ImmutableList.Builder<String> filesBuilder() {
       return files;
@@ -252,6 +260,11 @@ final class CommandLineOptions {
       return this;
     }
 
+    Builder reflowLongStrings(boolean reflowLongStrings) {
+      this.reflowLongStrings = reflowLongStrings;
+      return this;
+    }
+
     CommandLineOptions build() {
       return new CommandLineOptions(
           files.build(),
@@ -268,7 +281,8 @@ final class CommandLineOptions {
           removeUnusedImports,
           dryRun,
           setExitIfChanged,
-          assumeFilename);
+          assumeFilename,
+          reflowLongStrings);
     }
   }
 }

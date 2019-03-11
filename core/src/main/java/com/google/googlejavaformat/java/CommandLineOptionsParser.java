@@ -105,6 +105,9 @@ final class CommandLineOptionsParser {
         case "--skip-removing-unused-imports":
           optionsBuilder.removeUnusedImports(false);
           break;
+        case "--skip-reflowing-long-strings":
+          optionsBuilder.reflowLongStrings(false);
+          break;
         case "-":
           optionsBuilder.stdin(true);
           break;

@@ -509,4 +509,59 @@ public class MainTest {
     assertThat(main.format("--dry-run", "--assume-filename=Foo.java", "-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo("Foo.java" + System.lineSeparator());
   }
+
+  @Test
+  public void reflowLongStrings() throws Exception {
+    String[] input = {
+      "class T {", //
+      "  String s = \"one long incredibly unbroken sentence moving from topic to topic so that no"
+          + " one had a chance to interrupt\";",
+      "}"
+    };
+    String[] expected = {
+      "class T {",
+      "  String s =",
+      "      \"one long incredibly unbroken sentence moving from topic to topic so that no one had"
+          + " a\"",
+      "          + \" chance to interrupt\";",
+      "}",
+      "",
+    };
+    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
+    assertThat(main.format("-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(joiner.join(expected));
+  }
+
+  @Test
+  public void noReflowLongStrings() throws Exception {
+    String[] input = {
+      "class T {", //
+      "  String s = \"one long incredibly unbroken sentence moving from topic to topic so that no"
+          + " one had a chance to interrupt\";",
+      "}"
+    };
+    String[] expected = {
+      "class T {",
+      "  String s =",
+      "      \"one long incredibly unbroken sentence moving from topic to topic so that no one had"
+          + " a chance to interrupt\";",
+      "}",
+      "",
+    };
+    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
+    assertThat(main.format("--skip-reflowing-long-strings", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(joiner.join(expected));
+  }
 }

@@ -46,6 +46,8 @@ final class UsageException extends Exception {
     "    Do not fix the import order. Unused imports will still be removed.",
     "  --skip-removing-unused-imports",
     "    Do not remove unused imports. Imports will still be sorted.",
+    " . --skip-reflowing-long-strings",
+    "    Do not reflow string literals that exceed the column limit.",
     "  --dry-run, -n",
     "    Prints the paths of the files whose contents would change if the formatter were run"
         + " normally.",
