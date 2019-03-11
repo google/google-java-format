@@ -1553,18 +1553,20 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           "withCause",
           "withStackTrace");
 
-  private static Optional<Long> handleStream(List<ExpressionTree> parts) {
-    return indexIn(
+  private static Stream<Long> handleStream(List<ExpressionTree> parts) {
+    return indexes(
         parts.stream(),
-        p ->
-            (p instanceof MethodInvocationTree)
-                && getMethodName((MethodInvocationTree) p).contentEquals("stream"));
+        p -> {
+          if (!(p instanceof MethodInvocationTree)) {
+            return false;
+          }
+          Name name = getMethodName((MethodInvocationTree) p);
+          return Stream.of("stream", "toBuilder").anyMatch(name::contentEquals);
+        });
   }
 
-  private static <T> Optional<Long> indexIn(Stream<T> stream, Predicate<T> predicate) {
-    return Streams.mapWithIndex(stream, (x, i) -> predicate.apply(x) ? i : -1)
-        .filter(x -> x != -1)
-        .findFirst();
+  private static <T> Stream<Long> indexes(Stream<T> stream, Predicate<T> predicate) {
+    return Streams.mapWithIndex(stream, (x, i) -> predicate.apply(x) ? i : -1).filter(x -> x != -1);
   }
 
   @Override
@@ -2687,7 +2689,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       }
     }
 
-    handleStream(items).ifPresent(x -> prefixes.add(x.intValue()));
+    handleStream(items).forEach(x -> prefixes.add(x.intValue()));
 
     if (!prefixes.isEmpty()) {
       visitDotWithPrefix(items, needDot, prefixes);
