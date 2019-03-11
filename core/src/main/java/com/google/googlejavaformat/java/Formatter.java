@@ -217,7 +217,9 @@ public final class Formatter {
   public String formatSourceAndFixImports(String input) throws FormatterException {
     input = ImportOrderer.reorderImports(input);
     input = RemoveUnusedImports.removeUnusedImports(input);
-    return formatSource(input);
+    String formatted = formatSource(input);
+    formatted = StringWrapper.wrap(formatted);
+    return formatted;
   }
 
   /**
