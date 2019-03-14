@@ -13,7 +13,7 @@
 and run it with:
 
 ```
-java -jar /path/to/google-java-format-1.6-all-deps.jar <options> [files...]
+java -jar /path/to/google-java-format-1.7-all-deps.jar <options> [files...]
 ```
 
 The formatter can act on whole files, on limited lines (`--lines`), on specific
@@ -54,7 +54,7 @@ and import it into File→Settings→Editor→Code Style.
 ### Eclipse
 
 A
-[google-java-format Eclipse plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.6/google-java-format-eclipse-plugin_1.6.0.jar)
+[google-java-format Eclipse plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.7/google-java-format-eclipse-plugin_1.7.0.jar)
 can be downloaded from the releases page. Drop it into the Eclipse
 [drop-ins folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fmisc%2Fp2_dropins_format.html)
 to activate the plugin.
@@ -90,7 +90,7 @@ configuration.
 <dependency>
   <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format</artifactId>
-  <version>1.6</version>
+  <version>1.7</version>
 </dependency>
 ```
 
@@ -98,7 +98,7 @@ configuration.
 
 ```groovy
 dependencies {
-  compile 'com.google.googlejavaformat:google-java-format:1.6'
+  compile 'com.google.googlejavaformat:google-java-format:1.7'
 }
 ```
 
