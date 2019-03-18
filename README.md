@@ -27,11 +27,13 @@ To reformat changed lines in a specific patch, use
 formatting. This is a deliberate design decision to unify our code formatting on
 a single format.*
 
-### IntelliJ
+### IntelliJ, Android Studio, and other JetBrains IDEs
 
 A
 [google-java-format IntelliJ plugin](https://plugins.jetbrains.com/plugin/8527)
-is available from the plugin repository.
+is available from the plugin repository. To install it, go to your IDE's
+settings and select the `Plugins` category. Click the `Marketplace` tab, search
+for the `google-java-format` plugin, and click the `Install` button.
 
 The plugin will be disabled by default. To enable it in the current project, go
 to `File→Settings...→google-java-format Settings` (or `IntelliJ
