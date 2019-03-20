@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.googlejavaformat.Doc.FillMode.INDEPENDENT;
@@ -1531,8 +1530,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       return false;
     }
     parts.addFirst(curr);
-    visitDotWithPrefix(
-        ImmutableList.copyOf(parts), false, ImmutableList.of(parts.size() - 1), INDEPENDENT);
+    visitDotWithPrefix(ImmutableList.copyOf(parts), false, ImmutableList.of(parts.size() - 1));
     return true;
   }
 
@@ -1555,17 +1553,16 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           "withCause",
           "withStackTrace");
 
-  private static ImmutableList<Long> handleStream(List<ExpressionTree> parts) {
+  private static Stream<Long> handleStream(List<ExpressionTree> parts) {
     return indexes(
-            parts.stream(),
-            p -> {
-              if (!(p instanceof MethodInvocationTree)) {
-                return false;
-              }
-              Name name = getMethodName((MethodInvocationTree) p);
-              return Stream.of("stream", "toBuilder").anyMatch(name::contentEquals);
-            })
-        .collect(toImmutableList());
+        parts.stream(),
+        p -> {
+          if (!(p instanceof MethodInvocationTree)) {
+            return false;
+          }
+          Name name = getMethodName((MethodInvocationTree) p);
+          return Stream.of("stream", "toBuilder").anyMatch(name::contentEquals);
+        });
   }
 
   private static <T> Stream<Long> indexes(Stream<T> stream, Predicate<T> predicate) {
@@ -2692,11 +2689,10 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       }
     }
 
-    ImmutableList<Long> streamPrefixes = handleStream(items);
-    streamPrefixes.forEach(x -> prefixes.add(x.intValue()));
+    handleStream(items).forEach(x -> prefixes.add(x.intValue()));
+
     if (!prefixes.isEmpty()) {
-      visitDotWithPrefix(
-          items, needDot, prefixes, streamPrefixes.isEmpty() ? INDEPENDENT : UNIFIED);
+      visitDotWithPrefix(items, needDot, prefixes);
     } else {
       visitRegularDot(items, needDot);
     }
@@ -2792,10 +2788,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    *     a syntactic unit
    */
   private void visitDotWithPrefix(
-      List<ExpressionTree> items,
-      boolean needDot,
-      Collection<Integer> prefixes,
-      FillMode prefixFillMode) {
+      List<ExpressionTree> items, boolean needDot, Collection<Integer> prefixes) {
     // Are there method invocations or field accesses after the prefix?
     boolean trailingDereferences = !prefixes.isEmpty() && getLast(prefixes) < items.size() - 1;
 
@@ -2811,7 +2804,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       if (needDot) {
         FillMode fillMode;
         if (!unconsumedPrefixes.isEmpty() && i <= unconsumedPrefixes.peekFirst()) {
-          fillMode = prefixFillMode;
+          fillMode = FillMode.INDEPENDENT;
         } else {
           fillMode = FillMode.UNIFIED;
         }
