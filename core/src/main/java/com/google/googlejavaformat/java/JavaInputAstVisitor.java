@@ -347,6 +347,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.forcedBreak();
       first = false;
     }
+    dropEmptyDeclarations();
     if (!node.getImports().isEmpty()) {
       if (!first) {
         builder.blankLineWanted(BlankLineWanted.YES);
