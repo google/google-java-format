@@ -106,6 +106,128 @@ public class ImportOrdererTest {
       },
       {
         {
+          "import java.util.Collection;",
+          "// BUG: diagnostic contains",
+          "import java.util.List;",
+          "",
+          "class B74235047 {}"
+        },
+        {
+          "import java.util.Collection;",
+          "// BUG: diagnostic contains",
+          "import java.util.List;",
+          "",
+          "class B74235047 {}"
+        }
+      },
+      {
+        {
+          "import java.util.Set;",
+          "import java.util.Collection;",
+          "// BUG: diagnostic contains",
+          "import java.util.List;",
+          "",
+          "class B74235047 {}"
+        },
+        {
+          "import java.util.Collection;",
+          "// BUG: diagnostic contains",
+          "import java.util.List;",
+          "import java.util.Set;",
+          "",
+          "class B74235047 {}"
+        }
+      },
+      {
+        {
+          "import java.util.List;",
+          "// BUG: diagnostic contains",
+          "import java.util.Set;",
+          "import java.util.Collection;",
+          "",
+          "class B74235047 {}"
+        },
+        {
+          "import java.util.Collection;",
+          "import java.util.List;",
+          "// BUG: diagnostic contains",
+          "import java.util.Set;",
+          "",
+          "class B74235047 {}"
+        }
+      },
+      {
+        {
+          "// BEGIN-STRIP",
+          "import com.google.testing.testsize.MediumTest;",
+          "import com.google.testing.testsize.MediumTestAttribute;",
+          "// END-STRIP",
+          "",
+          "class B74235047 {}"
+        },
+        {
+          "// BEGIN-STRIP",
+          "import com.google.testing.testsize.MediumTest;",
+          "import com.google.testing.testsize.MediumTestAttribute;",
+          "// END-STRIP",
+          "",
+          "class B74235047 {}"
+        }
+      },
+      {
+        {
+          "import com.google.testing.testsize.MediumTest;          // Keep this import",
+          "import com.google.testing.testsize.MediumTestAttribute; // Keep this import",
+          "",
+          "class B74235047 {}"
+        },
+        {
+          "import com.google.testing.testsize.MediumTest;          // Keep this import",
+          "import com.google.testing.testsize.MediumTestAttribute; // Keep this import",
+          "",
+          "class B74235047 {}"
+        }
+      },
+      {
+        {
+          "import java.util.Set;",
+          "import java.util.List;",
+          "",
+          "// This comment doesn't get moved because of the blank line.",
+          "",
+          "class B74235047 {}"
+        },
+        {
+          "import java.util.List;",
+          "import java.util.Set;",
+          "",
+          "// This comment doesn't get moved because of the blank line.",
+          "",
+          "class B74235047 {}"
+        }
+      },
+      {
+        {
+          "import b.B;",
+          "// MOE: end_strip",
+          "import c.C;",
+          "// MOE: begin_strip",
+          "import a.A;",
+          "",
+          "class B74235047 {}"
+        },
+        {
+          "import a.A;",
+          "import b.B;",
+          "// MOE: end_strip",
+          "import c.C;",
+          "// MOE: begin_strip",
+          "",
+          "class B74235047 {}"
+        }
+      },
+      {
+        {
           // Check double semicolons
           "package foo;",
           "",
@@ -254,19 +376,6 @@ public class ImportOrdererTest {
         },
         {
           "!!Could not parse imported name, at: ",
-        }
-      },
-      {
-        {
-          "package com.google.example;",
-          "",
-          "import com.foo.Second;",
-          "import com.foo.First;",
-          "// we don't support comments between imports",
-          "import com.foo.Third;",
-        },
-        {
-          "!!Imports not contiguous (perhaps a comment separates them?)",
         }
       },
       {

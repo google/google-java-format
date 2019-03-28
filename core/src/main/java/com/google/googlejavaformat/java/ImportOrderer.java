@@ -70,7 +70,12 @@ public class ImportOrderer {
     /** The name being imported, for example {@code java.util.List}. */
     final String imported;
 
-    /** The characters after the final {@code ;}, up to and including the line terminator. */
+    /**
+     * The {@code //} comment lines after the final {@code ;}, up to and including the line
+     * terminator of the last one. Note: In case two imports were separated by a space (which is
+     * disallowed by the style guide), the trailing whitespace of the first import does not include
+     * a line terminator.
+     */
     final String trailing;
 
     /** True if this is {@code import static}. */
@@ -78,7 +83,7 @@ public class ImportOrderer {
 
     Import(String imported, String trailing, boolean isStatic) {
       this.imported = imported;
-      this.trailing = trailing.trim();
+      this.trailing = trailing;
       this.isStatic = isStatic;
     }
 
@@ -91,7 +96,8 @@ public class ImportOrderer {
       return this.imported.compareTo(that.imported);
     }
 
-    // This is a complete line to be output for this import, including the line terminator.
+    // One or multiple lines, the import itself and following comments, including the line
+    // terminator.
     @Override
     public String toString() {
       StringBuilder sb = new StringBuilder();
@@ -100,10 +106,11 @@ public class ImportOrderer {
         sb.append("static ");
       }
       sb.append(imported).append(';');
-      if (!trailing.isEmpty()) {
-        sb.append(' ').append(trailing);
+      if (trailing.trim().isEmpty()) {
+        sb.append(lineSeparator);
+      } else {
+        sb.append(trailing);
       }
-      sb.append(lineSeparator);
       return sb.toString();
     }
   }
@@ -175,7 +182,7 @@ public class ImportOrderer {
    * <imports> -> (<end-of-line> | <import>)*
    * <import> -> "import" <whitespace> ("static" <whitespace>)?
    *    <identifier> ("." <identifier>)* ("." "*")? <whitespace>? ";"
-   *    <whitespace>? <line-comment>? <end-of-line>
+   *    <whitespace>? <end-of-line>? (<line-comment> <end-of-line>)*
    * }</pre>
    *
    * @param i the index to start parsing at.
@@ -221,13 +228,19 @@ public class ImportOrderer {
         trailing.append(tokenAt(i));
         i++;
       }
-      if (isSlashSlashCommentToken(i)) {
-        trailing.append(tokenAt(i));
-        i++;
-      }
       if (isNewlineToken(i)) {
         trailing.append(tokenAt(i));
         i++;
+      }
+      // Gather (if any) all single line comments and accompanied line terminators following this
+      // import
+      while (isSlashSlashCommentToken(i)) {
+        trailing.append(tokenAt(i));
+        i++;
+        if (isNewlineToken(i)) {
+          trailing.append(tokenAt(i));
+          i++;
+        }
       }
       imports.add(new Import(importedName, trailing.toString(), isStatic));
       // Remember the position just after the import we just saw, before skipping blank lines.
