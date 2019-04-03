@@ -190,7 +190,7 @@ public class StringWrapperIntegrationTest {
           "class T {", //
           "  String s = \"\\n\\n\\none\\n\\nlong\\n\\nincredibly\\n\\nunbroken\\n\\nsentence\\n\\n"
               + "moving\\n\\nfrom\\n\\n topic\\n\\nto\\n\\n topic\\n\\nso\\n\\nthat\\n\\nno-one"
-              + "\\n\\nhad\\n\\na\\n\\nchance\\n\\nto\\n\\ninterrupt\\n\\n\\n\";",
+              + "\\n\\nhad\\n\\na\\n\\nchance\\n\\nto\\n\\ninterrupt\\n\\n\";",
           "}"
         },
         {
@@ -214,7 +214,7 @@ public class StringWrapperIntegrationTest {
           "          + \"a\\n\\n\"",
           "          + \"chance\\n\\n\"",
           "          + \"to\\n\\n\"",
-          "          + \"interrupt\\n\\n\\n\";",
+          "          + \"interrupt\\n\\n\";",
           "}",
         },
       },
@@ -372,6 +372,18 @@ public class StringWrapperIntegrationTest {
   @Test
   public void test() throws Exception {
     assertThat(StringWrapper.wrap(40, new Formatter().formatSource(input))).isEqualTo(output);
+  }
+
+  @Test
+  public void testCR() throws Exception {
+    assertThat(StringWrapper.wrap(40, new Formatter().formatSource(input.replace("\n", "\r"))))
+        .isEqualTo(output.replace("\n", "\r"));
+  }
+
+  @Test
+  public void testCRLF() throws Exception {
+    assertThat(StringWrapper.wrap(40, new Formatter().formatSource(input.replace("\n", "\r\n"))))
+        .isEqualTo(output.replace("\n", "\r\n"));
   }
 
   @Test

@@ -75,6 +75,7 @@ public final class StringWrapper {
     }
 
     JCTree.JCCompilationUnit unit = parse(input, /* allowStringFolding= */ false);
+    String separator = Newlines.guessLineSeparator(input);
 
     // Paths to string literals that extend past the column limit.
     List<TreePath> toFix = new ArrayList<>();
@@ -133,7 +134,7 @@ public final class StringWrapper {
       ImmutableList<String> components = stringComponents(input, unit, flat);
       replacements.put(
           Range.closedOpen(getStartPosition(flat.get(0)), getEndPosition(unit, getLast(flat))),
-          reflow(columnLimit, startColumn, trailing, components, first.get()));
+          reflow(separator, columnLimit, startColumn, trailing, components, first.get()));
     }
     String result = applyReplacements(input, replacements);
 
@@ -207,7 +208,7 @@ public final class StringWrapper {
   }
 
   static int hasEscapedNewlineAt(String input, int idx) {
-    return Stream.of("\\n\\r", "\\r", "\\n")
+    return Stream.of("\\r\\n", "\\r", "\\n")
         .mapToInt(x -> input.startsWith(x, idx) ? x.length() : -1)
         .filter(x -> x != -1)
         .findFirst()
@@ -217,6 +218,7 @@ public final class StringWrapper {
   /**
    * Reflows the given source text, trying to split on word boundaries.
    *
+   * @param separator the line separator
    * @param columnLimit the number of columns to wrap at
    * @param startColumn the column position of the beginning of the original text
    * @param trailing extra space to leave after the last line
@@ -224,6 +226,7 @@ public final class StringWrapper {
    * @param first0 true if the text includes the beginning of its enclosing concat chain, i.e. a
    */
   private static String reflow(
+      String separator,
       int columnLimit,
       int startColumn,
       int trailing,
@@ -263,7 +266,7 @@ public final class StringWrapper {
     return lines.stream()
         .collect(
             joining(
-                "\"\n" + Strings.repeat(" ", startColumn + (first0 ? 4 : -2)) + "+ \"",
+                "\"" + separator + Strings.repeat(" ", startColumn + (first0 ? 4 : -2)) + "+ \"",
                 "\"",
                 "\""));
   }
