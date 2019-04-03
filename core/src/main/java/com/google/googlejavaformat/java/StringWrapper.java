@@ -161,35 +161,39 @@ public final class StringWrapper {
   private static ImmutableList<String> stringComponents(
       String input, JCTree.JCCompilationUnit unit, List<Tree> flat) {
     ImmutableList.Builder<String> result = ImmutableList.builder();
+    StringBuilder piece = new StringBuilder();
     for (Tree tree : flat) {
       // adjust for leading and trailing double quotes
       String text = input.substring(getStartPosition(tree) + 1, getEndPosition(unit, tree) - 1);
       int start = 0;
       for (int idx = 0; idx < text.length(); idx++) {
         if (CharMatcher.whitespace().matches(text.charAt(idx))) {
-          result.add(text.substring(start, idx));
-          start = idx;
-          continue;
-        }
-        if (hasEscapedWhitespaceAt(text, idx) != -1) {
-          result.add(text.substring(start, idx));
-          start = idx;
-          continue;
-        }
-
-        if (hasEscapedNewlineAt(text, idx) != -1) {
+          // continue below
+        } else if (hasEscapedWhitespaceAt(text, idx) != -1) {
+          // continue below
+        } else if (hasEscapedNewlineAt(text, idx) != -1) {
           int length;
           while ((length = hasEscapedNewlineAt(text, idx)) != -1) {
             idx += length;
           }
-          result.add(text.substring(start, idx));
-          start = idx;
+        } else {
           continue;
         }
+        piece.append(text, start, idx);
+        result.add(piece.toString());
+        piece = new StringBuilder();
+        start = idx;
+      }
+      if (piece.length() > 0) {
+        result.add(piece.toString());
+        piece = new StringBuilder();
       }
       if (start < text.length()) {
-        result.add(text.substring(start));
+        piece.append(text, start, text.length());
       }
+    }
+    if (piece.length() > 0) {
+      result.add(piece.toString());
     }
     return result.build();
   }

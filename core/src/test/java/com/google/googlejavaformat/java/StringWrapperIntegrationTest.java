@@ -139,13 +139,16 @@ public class StringWrapperIntegrationTest {
       {
         {
           "class T {", //
-          "  String s = \"onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto interrupt\";",
+          "  String s ="
+              + " \"onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto"
+              + " interrupt\";",
           "}"
         },
         {
           "class T {",
           "  String s =",
-          "      \"onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto\"",
+          "     "
+              + " \"onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto\"",
           "          + \" interrupt\";",
           "}",
         }
@@ -272,7 +275,8 @@ public class StringWrapperIntegrationTest {
         {
           "class T {",
           "  String s =",
-          "      \"__ onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto\"",
+          "      \"__"
+              + " onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto\"",
           "          + \" interrupt\";",
           "}",
         }
@@ -303,6 +307,44 @@ public class StringWrapperIntegrationTest {
           "          + \" chance to\"",
           "          // comment",
           "          + \" interrupt\";",
+          "}",
+        }
+      },
+      {
+        {
+          "class T {", //
+          "  String s =",
+          "      \"aaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbb ccccccccccccccccccccccccccc"
+              + " dddddddddddddddddd\";",
+          "}"
+        },
+        {
+          "class T {",
+          "  String s =",
+          "      \"aaaaaaaaaaaaaaaaaaaaaaaa\"",
+          "          + \" bbbbbbbbbbbbbbbbbb\"",
+          "          + \" ccccccccccccccccccccccccccc\"",
+          "          + \" dddddddddddddddddd\";",
+          "}",
+        }
+      },
+      {
+        {
+          "class T {", //
+          "  String s =",
+          "      \"aaaaaaaaaaaaaaaaaaaaaaaa \"",
+          "          + \"bbbbbbbbbbbbbbbbbb \"",
+          "          + \"ccccccccccccccccccccccccccc \"",
+          "          + \"dddddddddddddddddd\";",
+          "}"
+        },
+        {
+          "class T {",
+          "  String s =",
+          "      \"aaaaaaaaaaaaaaaaaaaaaaaa\"",
+          "          + \" bbbbbbbbbbbbbbbbbb\"",
+          "          + \" ccccccccccccccccccccccccccc\"",
+          "          + \" dddddddddddddddddd\";",
           "}",
         }
       },
