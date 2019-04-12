@@ -46,7 +46,9 @@ import org.openjdk.javax.tools.SimpleJavaFileObject;
 import org.openjdk.javax.tools.StandardLocation;
 import org.openjdk.source.tree.BinaryTree;
 import org.openjdk.source.tree.LiteralTree;
+import org.openjdk.source.tree.MemberSelectTree;
 import org.openjdk.source.tree.Tree;
+import org.openjdk.source.tree.Tree.Kind;
 import org.openjdk.source.util.TreePath;
 import org.openjdk.source.util.TreePathScanner;
 import org.openjdk.tools.javac.file.JavacFileManager;
@@ -83,7 +85,12 @@ public final class StringWrapper {
     new TreePathScanner<Void, Void>() {
       @Override
       public Void visitLiteral(LiteralTree literalTree, Void aVoid) {
-        if (literalTree.getKind() != Tree.Kind.STRING_LITERAL) {
+        if (literalTree.getKind() != Kind.STRING_LITERAL) {
+          return null;
+        }
+        Tree parent = getCurrentPath().getParentPath().getLeaf();
+        if (parent instanceof MemberSelectTree
+            && ((MemberSelectTree) parent).getExpression().equals(literalTree)) {
           return null;
         }
         int startPosition = getStartPosition(literalTree);
@@ -146,8 +153,9 @@ public final class StringWrapper {
       if (!expected.equals(actual)) {
         throw new FormatterException(
             String.format(
-                "Something has gone terribly wrong. Please file a bug.\n\n"
-                    + "=== Actual: ===\n%s\n=== Expected: ===\n%s\n",
+                "Something has gone terribly wrong. Please file a bug: "
+                    + "https://github.com/google/google-java-format/issues/new"
+                    + "\n\n=== Actual: ===\n%s\n=== Expected: ===\n%s\n",
                 actual, expected));
       }
     }

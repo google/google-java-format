@@ -348,6 +348,23 @@ public class StringWrapperIntegrationTest {
           "}",
         }
       },
+      {
+        {
+          "class T {", //
+          "  byte[] bytes =",
+          "      \"one long incredibly unbroken sentence moving from topic to topic so that no-one"
+              + " had a chance to interrupt\".getBytes();",
+          "}"
+        },
+        {
+          "class T {", //
+          "  byte[] bytes =",
+          "      \"one long incredibly unbroken sentence moving from topic to topic so that no-one"
+              + " had a chance to interrupt\"",
+          "          .getBytes();",
+          "}"
+        },
+      },
     };
     return Arrays.stream(inputsAndOutputs)
         .map(
