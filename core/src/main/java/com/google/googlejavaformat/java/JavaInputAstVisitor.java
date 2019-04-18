@@ -1564,7 +1564,8 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                 return false;
               }
               Name name = getMethodName((MethodInvocationTree) p);
-              return Stream.of("stream", "toBuilder").anyMatch(name::contentEquals);
+              return Stream.of("stream", "parallelStream", "toBuilder")
+                  .anyMatch(name::contentEquals);
             })
         .collect(toList());
   }
