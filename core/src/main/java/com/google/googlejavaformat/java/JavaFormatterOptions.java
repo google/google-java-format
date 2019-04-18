@@ -53,14 +53,17 @@ public class JavaFormatterOptions implements JavadocOptions {
 
   private final Style style;
 
-  private JavaFormatterOptions(Style style) {
+  private final int maxLineLength;
+
+  private JavaFormatterOptions(Style style, int maxLineLength) {
     this.style = style;
+    this.maxLineLength = maxLineLength;
   }
 
   /** Returns the maximum formatted width */
   @Override
   public int maxLineLength() {
-    return DEFAULT_MAX_LINE_LENGTH;
+    return maxLineLength;
   }
 
   /** Returns the multiplier for the unit of indent */
@@ -81,6 +84,7 @@ public class JavaFormatterOptions implements JavadocOptions {
   /** A builder for {@link JavaFormatterOptions}. */
   public static class Builder {
     private Style style = Style.GOOGLE;
+    private int maxLineLength = DEFAULT_MAX_LINE_LENGTH;
 
     private Builder() {}
 
@@ -89,8 +93,13 @@ public class JavaFormatterOptions implements JavadocOptions {
       return this;
     }
 
+    public Builder maxLineLength(int maxLineLength) {
+      this.maxLineLength = maxLineLength;
+      return this;
+    }
+
     public JavaFormatterOptions build() {
-      return new JavaFormatterOptions(style);
+      return new JavaFormatterOptions(style, maxLineLength);
     }
   }
 }
