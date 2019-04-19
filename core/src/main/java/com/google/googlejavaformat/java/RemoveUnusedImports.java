@@ -272,7 +272,7 @@ public class RemoveUnusedImports {
       endPosition = Math.max(CharMatcher.isNot(' ').indexIn(contents, endPosition), endPosition);
       String sep = Newlines.guessLineSeparator(contents);
       if (endPosition + sep.length() < contents.length()
-          && contents.subSequence(endPosition, endPosition + sep.length()).equals(sep)) {
+          && contents.subSequence(endPosition, endPosition + sep.length()).toString().equals(sep)) {
         endPosition += sep.length();
       }
       replacements.put(Range.closedOpen(importTree.getStartPosition(), endPosition), "");
@@ -304,9 +304,7 @@ public class RemoveUnusedImports {
       JCImport importTree,
       String simpleName) {
     String qualifier =
-        importTree.getQualifiedIdentifier() instanceof JCFieldAccess
-            ? ((JCFieldAccess) importTree.getQualifiedIdentifier()).getExpression().toString()
-            : null;
+        ((JCFieldAccess) importTree.getQualifiedIdentifier()).getExpression().toString();
     if (qualifier.equals("java.lang")) {
       return true;
     }
