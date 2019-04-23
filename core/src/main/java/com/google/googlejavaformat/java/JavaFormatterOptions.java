@@ -15,7 +15,6 @@
 package com.google.googlejavaformat.java;
 
 import com.google.errorprone.annotations.Immutable;
-import com.google.googlejavaformat.java.javadoc.JavadocOptions;
 
 /**
  * Options for a google-java-format invocation.
@@ -28,9 +27,7 @@ import com.google.googlejavaformat.java.javadoc.JavadocOptions;
  * preferences, and in fact it would work directly against our primary goals.
  */
 @Immutable
-public class JavaFormatterOptions implements JavadocOptions {
-
-  static final int DEFAULT_MAX_LINE_LENGTH = 100;
+public class JavaFormatterOptions {
 
   public enum Style {
 
@@ -55,12 +52,6 @@ public class JavaFormatterOptions implements JavadocOptions {
 
   private JavaFormatterOptions(Style style) {
     this.style = style;
-  }
-
-  /** Returns the maximum formatted width */
-  @Override
-  public int maxLineLength() {
-    return DEFAULT_MAX_LINE_LENGTH;
   }
 
   /** Returns the multiplier for the unit of indent */
