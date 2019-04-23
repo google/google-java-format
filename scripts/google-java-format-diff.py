@@ -58,6 +58,9 @@ def main():
   parser.add_argument('--skip-sorting-imports', action='store_true',
                       help='do not fix the import order')
   parser.add_argument('-b', '--binary', help='path to google-java-format binary')
+  parser.add_argument('--google-java-format-jar', metavar='ABSOLUTE_PATH', default=None,
+                      help='use a custom google-java-format jar')
+
   args = parser.parse_args()
 
   # Extract changed lines for each file.
@@ -91,15 +94,18 @@ def main():
           ['-lines', str(start_line) + ':' + str(end_line)])
 
   if args.binary:
-    binary = args.binary
+    base_command = [args.binary]
+  elif args.google_java_format_jar:
+    base_command = ['java', '-jar', args.google_java_format_jar]
   else:
     binary = find_executable('google-java-format') or '/usr/bin/google-java-format'
+    base_command = [binary]
 
   # Reformat files containing changes in place.
   for filename, lines in lines_by_file.iteritems():
     if args.i and args.verbose:
       print 'Formatting', filename
-    command = [binary]
+    command = base_command[:]
     if args.i:
       command.append('-i')
     if args.aosp:
