@@ -64,7 +64,7 @@ import org.openjdk.tools.javac.util.Position;
 public final class StringWrapper {
   /** Reflows long string literals in the given Java source code. */
   public static String wrap(String input) throws FormatterException {
-    return StringWrapper.wrap(JavaFormatterOptions.defaultOptions().maxLineLength(), input);
+    return StringWrapper.wrap(Formatter.MAX_LINE_LENGTH, input);
   }
 
   /**

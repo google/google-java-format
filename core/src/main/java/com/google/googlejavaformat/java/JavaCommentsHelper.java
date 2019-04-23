@@ -29,12 +29,10 @@ import java.util.regex.Pattern;
 /** {@code JavaCommentsHelper} extends {@link CommentsHelper} to rewrite Java comments. */
 public final class JavaCommentsHelper implements CommentsHelper {
 
-  private final JavaFormatterOptions options;
   private final String lineSeparator;
 
   public JavaCommentsHelper(String lineSeparator, JavaFormatterOptions options) {
     this.lineSeparator = lineSeparator;
-    this.options = options;
   }
 
   @Override
@@ -44,7 +42,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
     }
     String text = tok.getOriginalText();
     if (tok.isJavadocComment()) {
-      text = JavadocFormatter.formatJavadoc(text, column0, options);
+      text = JavadocFormatter.formatJavadoc(text, column0);
     }
     List<String> lines = new ArrayList<>();
     Iterator<String> it = Newlines.lineIterator(text);
@@ -92,7 +90,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
 
   // Wraps and re-indents line comments.
   private String indentLineComments(List<String> lines, int column0) {
-    lines = wrapLineComments(lines, column0, options);
+    lines = wrapLineComments(lines, column0);
     StringBuilder builder = new StringBuilder();
     builder.append(lines.get(0).trim());
     String indentString = Strings.repeat(" ", column0);
@@ -107,8 +105,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
   private static final Pattern LINE_COMMENT_MISSING_SPACE_PREFIX =
       Pattern.compile("^(//+)(?!noinspection|\\$NON-NLS-\\d+\\$)[^\\s/]");
 
-  private List<String> wrapLineComments(
-      List<String> lines, int column0, JavaFormatterOptions options) {
+  private List<String> wrapLineComments(List<String> lines, int column0) {
     List<String> result = new ArrayList<>();
     for (String line : lines) {
       // Add missing leading spaces to line comments: `//foo` -> `// foo`.
@@ -122,8 +119,8 @@ public final class JavaCommentsHelper implements CommentsHelper {
         result.add(line);
         continue;
       }
-      while (line.length() + column0 > options.maxLineLength()) {
-        int idx = options.maxLineLength() - column0;
+      while (line.length() + column0 > Formatter.MAX_LINE_LENGTH) {
+        int idx = Formatter.MAX_LINE_LENGTH - column0;
         // only break on whitespace characters, and ignore the leading `// `
         while (idx >= 2 && !CharMatcher.whitespace().matches(line.charAt(idx))) {
           idx--;
