@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
@@ -99,7 +100,7 @@ public class MainTest {
             new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             System.in);
     int errorCode = main.format("-replace", path.toAbsolutePath().toString());
-    assertThat(errorCode).named("Error Code").isEqualTo(0);
+    assertWithMessage("Error Code").that(errorCode).isEqualTo(0);
   }
 
   @Test
