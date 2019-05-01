@@ -55,7 +55,7 @@ class FormatFileCallable implements Callable<String> {
       input = RemoveUnusedImports.removeUnusedImports(input);
     }
     if (parameters.sortImports()) {
-      input = ImportOrderer.reorderImports(input);
+      input = ImportOrderer.reorderImports(input, options.style());
     }
     return input;
   }
