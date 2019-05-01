@@ -30,7 +30,6 @@ import com.google.errorprone.annotations.Immutable;
 public class JavaFormatterOptions {
 
   public enum Style {
-
     /** The default Google Java Style configuration. */
     GOOGLE(1),
 
@@ -54,9 +53,14 @@ public class JavaFormatterOptions {
     this.style = style;
   }
 
-  /** Returns the multiplier for the unit of indent */
+  /** Returns the multiplier for the unit of indent. */
   public int indentationMultiplier() {
     return style.indentationMultiplier();
+  }
+
+  /** Returns the code style. */
+  public Style style() {
+    return style;
   }
 
   /** Returns the default formatting options. */

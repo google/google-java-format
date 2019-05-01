@@ -14,105 +14,52 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.collect.Iterables.getLast;
+import static com.google.common.primitives.Booleans.trueFirst;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.googlejavaformat.Newlines;
+import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import com.google.googlejavaformat.java.JavaInput.Tok;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 import org.openjdk.tools.javac.parser.Tokens.TokenKind;
 
 /** Orders imports in Java source code. */
 public class ImportOrderer {
+
+  private static final Splitter DOT_SPLITTER = Splitter.on('.');
+
   /**
    * Reorder the inputs in {@code text}, a complete Java program. On success, another complete Java
    * program is returned, which is the same as the original except the imports are in order.
    *
    * @throws FormatterException if the input could not be parsed.
    */
-  public static String reorderImports(String text) throws FormatterException {
+  public static String reorderImports(String text, Style style) throws FormatterException {
     ImmutableList<Tok> toks = JavaInput.buildToks(text, CLASS_START);
-    return new ImportOrderer(text, toks).reorderImports();
+    return new ImportOrderer(text, toks, style).reorderImports();
   }
 
   /**
-   * {@link TokenKind}s that indicate the start of a type definition. We use this to avoid scanning
-   * the whole file, since we know that imports must precede any type definition.
+   * Reorder the inputs in {@code text}, a complete Java program, in Google style. On success,
+   * another complete Java program is returned, which is the same as the original except the imports
+   * are in order.
+   *
+   * @deprecated Use {@link #reorderImports(String, Style)} instead
+   * @throws FormatterException if the input could not be parsed.
    */
-  private static final ImmutableSet<TokenKind> CLASS_START =
-      ImmutableSet.of(TokenKind.CLASS, TokenKind.INTERFACE, TokenKind.ENUM);
-
-  /**
-   * We use this set to find the first import, and again to check that there are no imports after
-   * the place we stopped gathering them. An annotation definition ({@code @interface}) is two
-   * tokens, the second which is {@code interface}, so we don't need a separate entry for that.
-   */
-  private static final ImmutableSet<String> IMPORT_OR_CLASS_START =
-      ImmutableSet.of("import", "class", "interface", "enum");
-
-  private final String text;
-  private final ImmutableList<Tok> toks;
-  private final String lineSeparator;
-
-  private ImportOrderer(String text, ImmutableList<Tok> toks) throws FormatterException {
-    this.text = text;
-    this.toks = toks;
-    this.lineSeparator = Newlines.guessLineSeparator(text);
-  }
-
-  /** An import statement. */
-  private class Import implements Comparable<Import> {
-    /** The name being imported, for example {@code java.util.List}. */
-    final String imported;
-
-    /**
-     * The {@code //} comment lines after the final {@code ;}, up to and including the line
-     * terminator of the last one. Note: In case two imports were separated by a space (which is
-     * disallowed by the style guide), the trailing whitespace of the first import does not include
-     * a line terminator.
-     */
-    final String trailing;
-
-    /** True if this is {@code import static}. */
-    final boolean isStatic;
-
-    Import(String imported, String trailing, boolean isStatic) {
-      this.imported = imported;
-      this.trailing = trailing;
-      this.isStatic = isStatic;
-    }
-
-    // This is how the sorting happens, including sorting static imports before non-static ones.
-    @Override
-    public int compareTo(Import that) {
-      if (this.isStatic != that.isStatic) {
-        return this.isStatic ? -1 : +1;
-      }
-      return this.imported.compareTo(that.imported);
-    }
-
-    // One or multiple lines, the import itself and following comments, including the line
-    // terminator.
-    @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder();
-      sb.append("import ");
-      if (isStatic) {
-        sb.append("static ");
-      }
-      sb.append(imported).append(';');
-      if (trailing.trim().isEmpty()) {
-        sb.append(lineSeparator);
-      } else {
-        sb.append(trailing);
-      }
-      return sb.toString();
-    }
+  @Deprecated
+  public static String reorderImports(String text) throws FormatterException {
+    return reorderImports(text, Style.GOOGLE);
   }
 
   private String reorderImports() throws FormatterException {
@@ -157,6 +104,163 @@ public class ImportOrderer {
     return result.toString();
   }
 
+  /**
+   * {@link TokenKind}s that indicate the start of a type definition. We use this to avoid scanning
+   * the whole file, since we know that imports must precede any type definition.
+   */
+  private static final ImmutableSet<TokenKind> CLASS_START =
+      ImmutableSet.of(TokenKind.CLASS, TokenKind.INTERFACE, TokenKind.ENUM);
+
+  /**
+   * We use this set to find the first import, and again to check that there are no imports after
+   * the place we stopped gathering them. An annotation definition ({@code @interface}) is two
+   * tokens, the second which is {@code interface}, so we don't need a separate entry for that.
+   */
+  private static final ImmutableSet<String> IMPORT_OR_CLASS_START =
+      ImmutableSet.of("import", "class", "interface", "enum");
+
+  /**
+   * A {@link Comparator} that orders {@link Import}s by Google Style, defined at
+   * https://google.github.io/styleguide/javaguide.html#s3.3.3-import-ordering-and-spacing.
+   */
+  private static final Comparator<Import> GOOGLE_IMPORT_COMPARATOR =
+      Comparator.comparing(Import::isStatic, trueFirst()).thenComparing(Import::imported);
+
+  /**
+   * A {@link Comparator} that orders {@link Import}s by AOSP Style, defined at
+   * https://source.android.com/setup/contribute/code-style#order-import-statements and implemented
+   * in IntelliJ at
+   * https://android.googlesource.com/platform/development/+/master/ide/intellij/codestyles/AndroidStyle.xml.
+   */
+  private static final Comparator<Import> AOSP_IMPORT_COMPARATOR =
+      Comparator.comparing(Import::isStatic, trueFirst())
+          .thenComparing(Import::isAndroid, trueFirst())
+          .thenComparing(Import::isThirdParty, trueFirst())
+          .thenComparing(Import::isJava, trueFirst())
+          .thenComparing(Import::imported);
+
+  /**
+   * Determines whether to insert a blank line between the {@code prev} and {@code curr} {@link
+   * Import}s based on Google style.
+   */
+  private static boolean shouldInsertBlankLineGoogle(Import prev, Import curr) {
+    return prev.isStatic() && !curr.isStatic();
+  }
+
+  /**
+   * Determines whether to insert a blank line between the {@code prev} and {@code curr} {@link
+   * Import}s based on AOSP style.
+   */
+  private static boolean shouldInsertBlankLineAosp(Import prev, Import curr) {
+    if (prev.isStatic() && !curr.isStatic()) {
+      return true;
+    }
+    // insert blank line between "com.android" from "com.anythingelse"
+    if (prev.isAndroid() && !curr.isAndroid()) {
+      return true;
+    }
+    return !prev.topLevel().equals(curr.topLevel());
+  }
+
+  private final String text;
+  private final ImmutableList<Tok> toks;
+  private final String lineSeparator;
+  private final Comparator<Import> importComparator;
+  private final BiFunction<Import, Import, Boolean> shouldInsertBlankLineFn;
+
+  private ImportOrderer(String text, ImmutableList<Tok> toks, Style style) {
+    this.text = text;
+    this.toks = toks;
+    this.lineSeparator = Newlines.guessLineSeparator(text);
+    if (style.equals(Style.GOOGLE)) {
+      this.importComparator = GOOGLE_IMPORT_COMPARATOR;
+      this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineGoogle;
+    } else if (style.equals(Style.AOSP)) {
+      this.importComparator = AOSP_IMPORT_COMPARATOR;
+      this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineAosp;
+    } else {
+      throw new IllegalArgumentException("Unsupported code style: " + style);
+    }
+  }
+
+  /** An import statement. */
+  class Import {
+    private final String imported;
+    private final boolean isStatic;
+    private final String trailing;
+
+    Import(String imported, String trailing, boolean isStatic) {
+      this.imported = imported;
+      this.trailing = trailing;
+      this.isStatic = isStatic;
+    }
+
+    /** The name being imported, for example {@code java.util.List}. */
+    String imported() {
+      return imported;
+    }
+
+    /** True if this is {@code import static}. */
+    boolean isStatic() {
+      return isStatic;
+    }
+
+    /** The top-level package of the import. */
+    String topLevel() {
+      return DOT_SPLITTER.split(imported()).iterator().next();
+    }
+
+    /** True if this is an Android import per AOSP style. */
+    boolean isAndroid() {
+      return Stream.of("android.", "androidx.", "dalvik.", "libcore.", "com.android.")
+          .anyMatch(imported::startsWith);
+    }
+
+    /** True if this is a Java import per AOSP style. */
+    boolean isJava() {
+      switch (topLevel()) {
+        case "java":
+        case "javax":
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    /**
+     * The {@code //} comment lines after the final {@code ;}, up to and including the line
+     * terminator of the last one. Note: In case two imports were separated by a space (which is
+     * disallowed by the style guide), the trailing whitespace of the first import does not include
+     * a line terminator.
+     */
+    String trailing() {
+      return trailing;
+    }
+
+    /** True if this is a third-party import per AOSP style. */
+    public boolean isThirdParty() {
+      return !(isAndroid() || isJava());
+    }
+
+    // One or multiple lines, the import itself and following comments, including the line
+    // terminator.
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+      sb.append("import ");
+      if (isStatic()) {
+        sb.append("static ");
+      }
+      sb.append(imported()).append(';');
+      if (trailing().trim().isEmpty()) {
+        sb.append(lineSeparator);
+      } else {
+        sb.append(trailing());
+      }
+      return sb.toString();
+    }
+  }
+
   private String tokString(int start, int end) {
     StringBuilder sb = new StringBuilder();
     for (int i = start; i < end; i++) {
@@ -191,7 +295,7 @@ public class ImportOrderer {
    */
   private ImportsAndIndex scanImports(int i) throws FormatterException {
     int afterLastImport = i;
-    ImmutableSortedSet.Builder<Import> imports = ImmutableSortedSet.naturalOrder();
+    ImmutableSortedSet.Builder<Import> imports = ImmutableSortedSet.orderedBy(importComparator);
     // JavaInput.buildToks appends a zero-width EOF token after all tokens. It won't match any
     // of our tests here and protects us from running off the end of the toks list. Since it is
     // zero-width it doesn't matter if we include it in our string concatenation at the end.
@@ -258,20 +362,18 @@ public class ImportOrderer {
   private String reorderedImportsString(ImmutableSortedSet<Import> imports) {
     Preconditions.checkArgument(!imports.isEmpty(), "imports");
 
-    Import firstImport = imports.iterator().next();
-
-    // Pretend that the first import was preceded by another import of the same kind
-    // (static or non-static), so we don't insert a newline there.
-    boolean lastWasStatic = firstImport.isStatic;
+    // Pretend that the first import was preceded by another import of the same kind, so we don't
+    // insert a newline there.
+    Import prevImport = imports.iterator().next();
 
     StringBuilder sb = new StringBuilder();
-    for (Import thisImport : imports) {
-      if (lastWasStatic && !thisImport.isStatic) {
+    for (Import currImport : imports) {
+      if (shouldInsertBlankLineFn.apply(prevImport, currImport)) {
         // Blank line between static and non-static imports.
         sb.append(lineSeparator);
       }
-      lastWasStatic = thisImport.isStatic;
-      sb.append(thisImport);
+      sb.append(currImport);
+      prevImport = currImport;
     }
     return sb.toString();
   }

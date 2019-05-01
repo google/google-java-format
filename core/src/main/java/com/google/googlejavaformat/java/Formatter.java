@@ -216,7 +216,7 @@ public final class Formatter {
    *     Google Java Style Guide - 3.3.3 Import ordering and spacing</a>
    */
   public String formatSourceAndFixImports(String input) throws FormatterException {
-    input = ImportOrderer.reorderImports(input);
+    input = ImportOrderer.reorderImports(input, options.style());
     input = RemoveUnusedImports.removeUnusedImports(input);
     String formatted = formatSource(input);
     formatted = StringWrapper.wrap(formatted);
