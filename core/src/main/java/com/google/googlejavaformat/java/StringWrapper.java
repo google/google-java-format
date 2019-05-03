@@ -36,7 +36,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.openjdk.javax.tools.Diagnostic;
 import org.openjdk.javax.tools.DiagnosticCollector;
@@ -93,17 +92,12 @@ public final class StringWrapper {
             && ((MemberSelectTree) parent).getExpression().equals(literalTree)) {
           return null;
         }
-        int startPosition = getStartPosition(literalTree);
         int endPosition = getEndPosition(unit, literalTree);
-        int lineStart = startPosition - lineMap.getColumnNumber(startPosition);
         int lineEnd = endPosition;
         while (Newlines.hasNewlineAt(input, lineEnd) == -1) {
           lineEnd++;
         }
         if (lineMap.getColumnNumber(lineEnd) - 1 <= columnLimit) {
-          return null;
-        }
-        if (!lintable(input.substring(lineStart, lineEnd))) {
           return null;
         }
         toFix.add(getCurrentPath());
@@ -343,23 +337,13 @@ public final class StringWrapper {
     return ((JCTree) tree).getStartPosition();
   }
 
-  /**
-   * Match the heuristic in the Google Style checkstyle config which suppresses line length warnings
-   * if the given line contains a run of >80 non-whitespace characters, to allow e.g. URLs.
-   */
-  private static boolean lintable(String line) {
-    return !UNLINTABLE.matcher(line).matches();
-  }
-
-  private static final Pattern UNLINTABLE = Pattern.compile(".*[^ ]{80,}.*");
-
   /** Returns true if any lines in the given Java source exceed the column limit. */
   private static boolean longLines(int columnLimit, String input) {
     // TODO(cushon): consider adding Newlines.lineIterable?
     Iterator<String> it = Newlines.lineIterator(input);
     while (it.hasNext()) {
       String line = it.next();
-      if (line.length() > columnLimit && lintable(line)) {
+      if (line.length() > columnLimit) {
         return true;
       }
     }
