@@ -103,7 +103,6 @@ public class SnippetFormatter {
         throw new IllegalArgumentException(
             "comment formatting is only supported for compilation units");
       }
-      return formatter.getFormatReplacements(source, ranges);
     }
     SnippetWrapper wrapper = snippetWrapper(kind, source, initialIndent);
     ranges = offsetRanges(ranges, wrapper.offset);
