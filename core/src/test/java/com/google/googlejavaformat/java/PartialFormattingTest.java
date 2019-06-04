@@ -592,7 +592,10 @@ public final class PartialFormattingTest {
             "    // No maxResults",
             "    assertThat(achievementFirstPartyHelper.listDefinitionsByApplication(",
             "            STUB_GAIA_ID, STUB_APPLICATION_ID, Optional.<Integer>absent(),",
-            "            Optional.<String>absent()).getAchievements()).containsExactly(createExpectedDefinition(1), createIncrementalExpectedDefinition(2), createExpectedDefinition(3), createIncrementalExpectedDefinition(4)).inOrder();",
+            "           "
+                + " Optional.<String>absent()).getAchievements()).containsExactly(createExpectedDefinition(1),"
+                + " createIncrementalExpectedDefinition(2), createExpectedDefinition(3),"
+                + " createIncrementalExpectedDefinition(4)).inOrder();",
             "  }",
             "}",
             "",
@@ -892,7 +895,7 @@ public final class PartialFormattingTest {
       startPositions.add(replacement.getReplaceRange().lowerEndpoint());
     }
     assertThat(startPositions).hasSize(3);
-    assertThat(startPositions).isStrictlyOrdered();
+    assertThat(startPositions).isInStrictOrder();
   }
 
   @Test
@@ -920,7 +923,7 @@ public final class PartialFormattingTest {
       startPositions.add(replacement.getReplaceRange().lowerEndpoint());
     }
     assertThat(startPositions).hasSize(3);
-    assertThat(startPositions).isStrictlyOrdered();
+    assertThat(startPositions).isInStrictOrder();
   }
 
   private void testFormatLine(String input, String expectedOutput, int i) throws Exception {
