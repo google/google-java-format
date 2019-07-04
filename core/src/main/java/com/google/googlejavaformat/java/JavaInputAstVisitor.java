@@ -1217,7 +1217,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.close();
     builder.space();
     builder.op("->");
-    builder.open(statementBody ? ZERO : plusFour);
+    builder.open(statementBody ? ZERO : plusTwo);
     if (statementBody) {
       builder.space();
     } else {

@@ -92,14 +92,14 @@ class B20128760 {
         stream(members)
             .flatMap(
                 m ->
-                    m.getFieldValues().entrySet().stream()
-                        .filter(fv -> itemLinkFieldIds.contains(fv.getKey()))
-                        .flatMap(
-                            fv ->
-                                FieldDTO.deserializeStringToListOfStrings(fv.getValue()).stream()
-                                    .map(
-                                        id ->
-                                            new ItemKey(
-                                                fieldsById.get(fv.getKey()).getItemTypeId(), id))));
+                  m.getFieldValues().entrySet().stream()
+                      .filter(fv -> itemLinkFieldIds.contains(fv.getKey()))
+                      .flatMap(
+                          fv ->
+                            FieldDTO.deserializeStringToListOfStrings(fv.getValue()).stream()
+                                .map(
+                                    id ->
+                                      new ItemKey(
+                                          fieldsById.get(fv.getKey()).getItemTypeId(), id))));
   }
 }
