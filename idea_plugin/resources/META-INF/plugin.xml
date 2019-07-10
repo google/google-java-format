@@ -12,6 +12,8 @@
 
   <change-notes><![CDATA[
     <dl>
+      <dt>1.7.0.2</dt>
+      <dd>Added support for all IDEs after 2017.3.</dd>
       <dt>1.7.0.1</dt>
       <dd>Added support for 2019.1 IDEs.</dd>
       <dt>1.7.0.0</dt>
