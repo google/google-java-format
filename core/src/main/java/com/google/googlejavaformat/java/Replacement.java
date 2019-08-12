@@ -14,6 +14,9 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.Range;
 import java.util.Objects;
 
@@ -23,28 +26,20 @@ import java.util.Objects;
  * <p>google-java-format doesn't depend on AutoValue, to allow AutoValue to depend on
  * google-java-format.
  */
-public class Replacement {
+public final class Replacement {
 
   public static Replacement create(int startPosition, int endPosition, String replaceWith) {
+    checkArgument(startPosition >= 0, "startPosition must be non-negative");
+    checkArgument(startPosition <= endPosition, "startPosition cannot be after endPosition");
     return new Replacement(Range.closedOpen(startPosition, endPosition), replaceWith);
-  }
-
-  public static Replacement create(Range<Integer> range, String replaceWith) {
-    return new Replacement(range, replaceWith);
   }
 
   private final Range<Integer> replaceRange;
   private final String replacementString;
 
-  Replacement(Range<Integer> replaceRange, String replacementString) {
-    if (replaceRange == null) {
-      throw new NullPointerException("Null replaceRange");
-    }
-    this.replaceRange = replaceRange;
-    if (replacementString == null) {
-      throw new NullPointerException("Null replacementString");
-    }
-    this.replacementString = replacementString;
+  private Replacement(Range<Integer> replaceRange, String replacementString) {
+    this.replaceRange = checkNotNull(replaceRange, "Null replaceRange");
+    this.replacementString = checkNotNull(replacementString, "Null replacementString");
   }
 
   /** The range of characters in the original source to replace. */
