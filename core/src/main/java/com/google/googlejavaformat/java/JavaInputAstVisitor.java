@@ -454,9 +454,9 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
       Deque<ExpressionTree> dimExpressions = new ArrayDeque<>(node.getDimensions());
 
-      Deque<List<AnnotationTree>> annotations = new ArrayDeque<>();
+      Deque<List<? extends AnnotationTree>> annotations = new ArrayDeque<>();
       annotations.add(ImmutableList.copyOf(node.getAnnotations()));
-      annotations.addAll((List<List<AnnotationTree>>) node.getDimAnnotations());
+      annotations.addAll(node.getDimAnnotations());
       annotations.addAll(extractedDims.dims);
 
       scan(base, null);
@@ -578,7 +578,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     TypeWithDims extractedDims = DimensionHelpers.extractDims(node, SortedDims.YES);
     builder.open(plusFour);
     scan(extractedDims.node, null);
-    Deque<List<AnnotationTree>> dims = new ArrayDeque<>(extractedDims.dims);
+    Deque<List<? extends AnnotationTree>> dims = new ArrayDeque<>(extractedDims.dims);
     maybeAddDims(dims);
     Verify.verify(dims.isEmpty());
     builder.close();
@@ -1352,7 +1352,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             annotations, Direction.VERTICAL, /* declarationAnnotationBreak= */ Optional.empty()));
 
     Tree baseReturnType = null;
-    Deque<List<AnnotationTree>> dims = null;
+    Deque<List<? extends AnnotationTree>> dims = null;
     if (node.getReturnType() != null) {
       TypeWithDims extractedDims =
           DimensionHelpers.extractDims(node.getReturnType(), SortedDims.YES);
@@ -3234,7 +3234,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
     }
 
-    Deque<List<AnnotationTree>> dims =
+    Deque<List<? extends AnnotationTree>> dims =
         new ArrayDeque<>(
             typeWithDims.isPresent() ? typeWithDims.get().dims : Collections.emptyList());
     int baseDims = 0;
@@ -3321,7 +3321,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return baseDims;
   }
 
-  private void maybeAddDims(Deque<List<AnnotationTree>> annotations) {
+  private void maybeAddDims(Deque<List<? extends AnnotationTree>> annotations) {
     maybeAddDims(new ArrayDeque<>(), annotations);
   }
 
@@ -3338,7 +3338,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    *     [[@A, @B], [@C]]} for {@code int @A [] @B @C []}
    */
   private void maybeAddDims(
-      Deque<ExpressionTree> dimExpressions, Deque<List<AnnotationTree>> annotations) {
+      Deque<ExpressionTree> dimExpressions, Deque<List<? extends AnnotationTree>> annotations) {
     boolean lastWasAnnotation = false;
     while (builder.peekToken().isPresent()) {
       switch (builder.peekToken().get()) {
@@ -3346,7 +3346,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           if (annotations.isEmpty()) {
             return;
           }
-          List<AnnotationTree> dimAnnotations = annotations.removeFirst();
+          List<? extends AnnotationTree> dimAnnotations = annotations.removeFirst();
           if (dimAnnotations.isEmpty()) {
             continue;
           }
@@ -3396,7 +3396,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.open(plusFour);
     builder.open(ZERO);
     TypeWithDims extractedDims = DimensionHelpers.extractDims(type, SortedDims.YES);
-    Deque<List<AnnotationTree>> dims = new ArrayDeque<>(extractedDims.dims);
+    Deque<List<? extends AnnotationTree>> dims = new ArrayDeque<>(extractedDims.dims);
     scan(extractedDims.node, null);
     int baseDims = dims.size();
     maybeAddDims(dims);
