@@ -72,19 +72,6 @@ import org.openjdk.tools.javac.util.Options;
  */
 public class RemoveUnusedImports {
 
-  /**
-   * Configuration for javadoc-only imports.
-   *
-   * @deprecated This configuration is no longer supported and will be removed in the future.
-   */
-  @Deprecated
-  public enum JavadocOnlyImports {
-    /** Remove imports that are only used in javadoc, and fully qualify any {@code @link} tags. */
-    REMOVE,
-    /** Keep imports that are only used in javadoc. */
-    KEEP
-  }
-
   // Visits an AST, recording all simple names that could refer to imported
   // types and also any javadoc references that could refer to imported
   // types (`@link`, `@see`, `@throws`, etc.)
@@ -197,13 +184,6 @@ public class RemoveUnusedImports {
     }
   }
 
-  /** @deprecated use {@link removeUnusedImports(String)} instead. */
-  @Deprecated
-  public static String removeUnusedImports(
-      final String contents, JavadocOnlyImports javadocOnlyImports) throws FormatterException {
-    return removeUnusedImports(contents);
-  }
-
   public static String removeUnusedImports(final String contents) throws FormatterException {
     Context context = new Context();
     // TODO(cushon): this should default to the latest supported source level, same as in Formatter
@@ -276,17 +256,6 @@ public class RemoveUnusedImports {
         endPosition += sep.length();
       }
       replacements.put(Range.closedOpen(importTree.getStartPosition(), endPosition), "");
-      // fully qualify any javadoc references with the same simple name as a deleted
-      // non-static import
-      if (!importTree.isStatic()) {
-        for (Range<Integer> docRange : usedInJavadoc.get(simpleName)) {
-          if (docRange == null) {
-            continue;
-          }
-          String replaceWith = importTree.getQualifiedIdentifier().toString();
-          replacements.put(docRange, replaceWith);
-        }
-      }
     }
     return replacements;
   }
@@ -349,18 +318,6 @@ public class RemoveUnusedImports {
       }
       offset += replaceWith.length() - (range.upperEndpoint() - range.lowerEndpoint());
     }
-    String result = sb.toString();
-
-    // If there were any non-empty replaced ranges (e.g. javadoc), reformat the fixed regions.
-    // We could avoid formatting twice in --fix-imports=also mode, but that is not the default
-    // and removing imports won't usually affect javadoc.
-    if (!fixedRanges.isEmpty()) {
-      try {
-        result = new Formatter().formatSource(result, fixedRanges.asRanges());
-      } catch (FormatterException e) {
-        // javadoc reformatting is best-effort
-      }
-    }
-    return result;
+    return sb.toString();
   }
 }
