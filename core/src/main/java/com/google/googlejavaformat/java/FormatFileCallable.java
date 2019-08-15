@@ -41,11 +41,11 @@ class FormatFileCallable implements Callable<String> {
       return fixImports(input);
     }
 
-    String formatted =
-        new Formatter(options).formatSource(input, characterRanges(input).asRanges());
+    Formatter formatter = new Formatter(options);
+    String formatted = formatter.formatSource(input, characterRanges(input).asRanges());
     formatted = fixImports(formatted);
     if (parameters.reflowLongStrings()) {
-      formatted = StringWrapper.wrap(Formatter.MAX_LINE_LENGTH, formatted);
+      formatted = StringWrapper.wrap(Formatter.MAX_LINE_LENGTH, formatted, formatter);
     }
     return formatted;
   }

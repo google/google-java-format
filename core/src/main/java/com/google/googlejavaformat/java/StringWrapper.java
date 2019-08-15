@@ -62,19 +62,52 @@ import org.openjdk.tools.javac.util.Position;
 /** Wraps string literals that exceed the column limit. */
 public final class StringWrapper {
   /** Reflows long string literals in the given Java source code. */
-  public static String wrap(String input) throws FormatterException {
-    return StringWrapper.wrap(Formatter.MAX_LINE_LENGTH, input);
+  public static String wrap(String input, Formatter formatter) throws FormatterException {
+    return StringWrapper.wrap(Formatter.MAX_LINE_LENGTH, input, formatter);
   }
 
   /**
    * Reflows string literals in the given Java source code that extend past the given column limit.
    */
-  static String wrap(final int columnLimit, final String input) throws FormatterException {
+  static String wrap(final int columnLimit, String input, Formatter formatter)
+      throws FormatterException {
     if (!longLines(columnLimit, input)) {
       // fast path
       return input;
     }
 
+    TreeRangeMap<Integer, String> replacements = getReflowReplacements(columnLimit, input);
+    String firstPass = formatter.formatSource(input, replacements.asMapOfRanges().keySet());
+
+    if (!firstPass.equals(input)) {
+      // If formatting the replacement ranges resulted in a change, recalculate the replacements on
+      // the updated input.
+      input = firstPass;
+      replacements = getReflowReplacements(columnLimit, input);
+    }
+
+    String result = applyReplacements(input, replacements);
+
+    {
+      // We really don't want bugs in this pass to change the behaviour of programs we're
+      // formatting, so check that the pretty-printed AST is the same before and after reformatting.
+      String expected = parse(input, /* allowStringFolding= */ true).toString();
+      String actual = parse(result, /* allowStringFolding= */ true).toString();
+      if (!expected.equals(actual)) {
+        throw new FormatterException(
+            String.format(
+                "Something has gone terribly wrong. Please file a bug: "
+                    + "https://github.com/google/google-java-format/issues/new"
+                    + "\n\n=== Actual: ===\n%s\n=== Expected: ===\n%s\n",
+                actual, expected));
+      }
+    }
+
+    return result;
+  }
+
+  private static TreeRangeMap<Integer, String> getReflowReplacements(
+      int columnLimit, final String input) throws FormatterException {
     JCTree.JCCompilationUnit unit = parse(input, /* allowStringFolding= */ false);
     String separator = Newlines.guessLineSeparator(input);
 
@@ -137,24 +170,7 @@ public final class StringWrapper {
           Range.closedOpen(getStartPosition(flat.get(0)), getEndPosition(unit, getLast(flat))),
           reflow(separator, columnLimit, startColumn, trailing, components, first.get()));
     }
-    String result = applyReplacements(input, replacements);
-
-    {
-      // We really don't want bugs in this pass to change the behaviour of programs we're
-      // formatting, so check that the pretty-printed AST is the same before and after reformatting.
-      String expected = parse(input, /* allowStringFolding= */ true).toString();
-      String actual = parse(result, /* allowStringFolding= */ true).toString();
-      if (!expected.equals(actual)) {
-        throw new FormatterException(
-            String.format(
-                "Something has gone terribly wrong. Please file a bug: "
-                    + "https://github.com/google/google-java-format/issues/new"
-                    + "\n\n=== Actual: ===\n%s\n=== Expected: ===\n%s\n",
-                actual, expected));
-      }
-    }
-
-    return result;
+    return replacements;
   }
 
   /**
