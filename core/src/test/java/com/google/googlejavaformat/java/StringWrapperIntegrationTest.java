@@ -378,6 +378,8 @@ public class StringWrapperIntegrationTest {
         .collect(toImmutableList());
   }
 
+  private final Formatter formatter = new Formatter();
+
   private final String input;
   private final String output;
 
@@ -388,24 +390,25 @@ public class StringWrapperIntegrationTest {
 
   @Test
   public void test() throws Exception {
-    assertThat(StringWrapper.wrap(40, new Formatter().formatSource(input))).isEqualTo(output);
+    assertThat(StringWrapper.wrap(40, formatter.formatSource(input), formatter)).isEqualTo(output);
   }
 
   @Test
   public void testCR() throws Exception {
-    assertThat(StringWrapper.wrap(40, new Formatter().formatSource(input.replace("\n", "\r"))))
+    assertThat(StringWrapper.wrap(40, formatter.formatSource(input.replace("\n", "\r")), formatter))
         .isEqualTo(output.replace("\n", "\r"));
   }
 
   @Test
   public void testCRLF() throws Exception {
-    assertThat(StringWrapper.wrap(40, new Formatter().formatSource(input.replace("\n", "\r\n"))))
+    assertThat(
+            StringWrapper.wrap(40, formatter.formatSource(input.replace("\n", "\r\n")), formatter))
         .isEqualTo(output.replace("\n", "\r\n"));
   }
 
   @Test
   public void idempotent() throws Exception {
-    String wrap = StringWrapper.wrap(40, new Formatter().formatSource(input));
-    assertThat(wrap).isEqualTo(new Formatter().formatSource(wrap));
+    String wrap = StringWrapper.wrap(40, formatter.formatSource(input), formatter);
+    assertThat(wrap).isEqualTo(formatter.formatSource(wrap));
   }
 }
