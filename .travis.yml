@@ -8,7 +8,7 @@ notifications:
     on_failure: always
 
 jdk:
-  - oraclejdk8
+  - openjdk8
   - openjdk9
   - openjdk10
   - openjdk11
