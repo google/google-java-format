@@ -50,7 +50,7 @@ public final class JavadocFormattingTest {
       "class Test {}",
     };
     String[] expected = {
-      "/** */", "class Test {}",
+      "/***/", "class Test {}",
     };
     doFormatTest(input, expected);
   }

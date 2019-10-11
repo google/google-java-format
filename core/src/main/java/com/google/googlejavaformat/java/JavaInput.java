@@ -154,7 +154,9 @@ public final class JavaInput extends Input {
 
     @Override
     public boolean isJavadocComment() {
-      return text.startsWith("/**") && text.length() > 4;
+      // comments like `/***` are also javadoc, but their formatting probably won't be improved
+      // by the javadoc formatter
+      return text.startsWith("/**") && text.charAt("/**".length()) != '*' && text.length() > 4;
     }
 
     @Override
