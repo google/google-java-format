@@ -1,0 +1,6 @@
+public class T {
+  private static final double[] f = {
+    95.0, 75.0, -95.0, 75.0,
+    -95.0, 75.0, 95.0, 75.0
+  };
+}

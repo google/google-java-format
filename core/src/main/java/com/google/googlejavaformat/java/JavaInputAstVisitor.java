@@ -3190,7 +3190,12 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       if (column >= row.size()) {
         continue;
       }
-      nodeTypes.add(row.get(column).getKind());
+      // Treat negative and positive numeric literals as the same kind for the tabular comparison.
+      if (row.get(column).getKind() == Tree.Kind.UNARY_MINUS) {
+        nodeTypes.add(((UnaryTree) row.get(column)).getExpression().getKind());
+      } else {
+        nodeTypes.add(row.get(column).getKind());
+      }
     }
     for (Multiset.Entry<Tree.Kind> nodeType : nodeTypes.entrySet()) {
       if (nodeType.getCount() >= atLeastM) {
