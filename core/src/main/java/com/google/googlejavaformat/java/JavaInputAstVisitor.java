@@ -3190,8 +3190,9 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       if (column >= row.size()) {
         continue;
       }
-      // Treat negative and positive numeric literals as the same kind for the tabular comparison.
-      if (row.get(column).getKind() == Tree.Kind.UNARY_MINUS) {
+      // Treat UnaryTree expressions as their underlying type for the comparison (so, for example
+      // -ve and +ve numeric literals are considered the same).
+      if (row.get(column) instanceof UnaryTree) {
         nodeTypes.add(((UnaryTree) row.get(column)).getExpression().getKind());
       } else {
         nodeTypes.add(row.get(column).getKind());
