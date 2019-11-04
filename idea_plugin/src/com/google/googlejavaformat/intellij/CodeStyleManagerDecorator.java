@@ -122,6 +122,10 @@ class CodeStyleManagerDecorator extends CodeStyleManager
     return delegate.adjustLineIndent(document, offset);
   }
 
+  public void scheduleIndentAdjustment(Document document, int offset) {
+    delegate.scheduleIndentAdjustment(document, offset);
+  }
+
   @Override
   public boolean isLineToBeIndented(PsiFile file, int offset) {
     return delegate.isLineToBeIndented(file, offset);
