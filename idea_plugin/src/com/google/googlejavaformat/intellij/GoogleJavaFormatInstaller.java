@@ -16,9 +16,15 @@
 
 package com.google.googlejavaformat.intellij;
 
+import com.intellij.ide.plugins.IdeaPluginDescriptor;
+import com.intellij.ide.plugins.PluginManager;
+import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.application.impl.ApplicationInfoImpl;
 import com.intellij.openapi.components.ProjectComponent;
+import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.codeStyle.CodeStyleManager;
+import com.intellij.serviceContainer.PlatformComponentManagerImpl;
 import org.picocontainer.MutablePicoContainer;
 
 /**
@@ -51,10 +57,20 @@ final class GoogleJavaFormatInstaller implements ProjectComponent {
   }
 
   private static void setManager(Project project, CodeStyleManager newManager) {
-    if (newManager != null) {
+    if (useNewServicesApi()) {
+      PlatformComponentManagerImpl platformComponentManager =
+          (PlatformComponentManagerImpl) project;
+      IdeaPluginDescriptor plugin = PluginManager.getPlugin(PluginId.getId("google-java-format"));
+      platformComponentManager.registerServiceInstance(CodeStyleManager.class, newManager, plugin);
+    } else {
       MutablePicoContainer container = (MutablePicoContainer) project.getPicoContainer();
       container.unregisterComponent(CODE_STYLE_MANAGER_KEY);
       container.registerComponentInstance(CODE_STYLE_MANAGER_KEY, newManager);
     }
+  }
+
+  private static boolean useNewServicesApi() {
+    ApplicationInfo appInfo = ApplicationInfoImpl.getInstance();
+    return appInfo.getBuild().getBaselineVersion() >= 193;
   }
 }
