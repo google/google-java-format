@@ -178,7 +178,7 @@ public final class JavaOutput extends Output {
   }
 
   /** Flush any incomplete last line, then add the EOF token into our data structures. */
-  void flush() {
+  public void flush() {
     String lastLine = lineBuilder.toString();
     if (!CharMatcher.whitespace().matchesAllOf(lastLine)) {
       mutableLines.add(lastLine);
