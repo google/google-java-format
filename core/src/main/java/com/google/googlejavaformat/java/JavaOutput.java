@@ -46,7 +46,7 @@ import java.util.Map;
  */
 public final class JavaOutput extends Output {
   private final String lineSeparator;
-  private final JavaInput javaInput; // Used to follow along while emitting the output.
+  private final Input javaInput; // Used to follow along while emitting the output.
   private final CommentsHelper commentsHelper; // Used to re-flow comments.
   private final Map<Integer, BlankLineWanted> blankLines = new HashMap<>(); // Info on blank lines.
   private final RangeSet<Integer> partialFormatRanges = TreeRangeSet.create();
@@ -62,10 +62,10 @@ public final class JavaOutput extends Output {
   /**
    * {@code JavaOutput} constructor.
    *
-   * @param javaInput the {@link JavaInput}, used to match up blank lines in the output
+   * @param javaInput the {@link Input}, used to match up blank lines in the output
    * @param commentsHelper the {@link CommentsHelper}, used to rewrite comments
    */
-  public JavaOutput(String lineSeparator, JavaInput javaInput, CommentsHelper commentsHelper) {
+  public JavaOutput(String lineSeparator, Input javaInput, CommentsHelper commentsHelper) {
     this.lineSeparator = lineSeparator;
     this.javaInput = javaInput;
     this.commentsHelper = commentsHelper;
