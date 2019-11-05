@@ -111,6 +111,20 @@ public abstract class Input extends InputOutput {
 
   public abstract String getText();
 
+  /**
+   * Get the number of toks.
+   *
+   * @return the number of toks, including the EOF tok
+   */
+  public abstract int getkN();
+
+  /**
+   * Get the Token by index.
+   *
+   * @param k the token index
+   */
+  public abstract Token getToken(int k);
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("super", super.toString()).toString();
