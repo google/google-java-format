@@ -292,6 +292,17 @@ public final class OpsBuilder {
         /* breakAndIndentTrailingComment=  */ Optional.empty());
   }
 
+  /**
+   * If the next token matched the guessed token, consume it without expecting it to be in the
+   * output
+   */
+  public final void ignoreOptionalToken(String tokenToIgnore) {
+    Optional<String> nextToken = peekToken();
+    if (nextToken.isPresent() && nextToken.get().equals(tokenToIgnore)) {
+      tokenI++;
+    }
+  }
+
   public final void token(
       String token,
       Doc.Token.RealOrImaginary realOrImaginary,
