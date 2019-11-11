@@ -108,6 +108,9 @@ final class CommandLineOptionsParser {
         case "--skip-reflowing-long-strings":
           optionsBuilder.reflowLongStrings(false);
           break;
+        case "--skip-javadoc-formatting":
+          optionsBuilder.formatJavadoc(false);
+          break;
         case "-":
           optionsBuilder.stdin(true);
           break;
