@@ -565,4 +565,34 @@ public class MainTest {
     assertThat(main.format("--skip-reflowing-long-strings", "-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(joiner.join(expected));
   }
+
+  @Test
+  public void noFormatJavadoc() throws Exception {
+    String[] input = {
+      "/**",
+      " * graph",
+      " *",
+      " * graph",
+      " *",
+      " * @param foo lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do"
+          + " eiusmod tempor incididunt ut labore et dolore magna aliqua",
+      " */",
+      "class Test {",
+      "  /**",
+      "   * creates entropy",
+      "   */",
+      "  public static void main(String... args) {}",
+      "}",
+      "",
+    };
+    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
+    assertThat(main.format("--skip-javadoc-formatting", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(joiner.join(input));
+  }
 }

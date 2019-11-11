@@ -54,6 +54,7 @@ public class CommandLineOptionsParserTest {
     assertThat(options.dryRun()).isFalse();
     assertThat(options.setExitIfChanged()).isFalse();
     assertThat(options.reflowLongStrings()).isTrue();
+    assertThat(options.formatJavadoc()).isTrue();
   }
 
   @Test
@@ -193,6 +194,14 @@ public class CommandLineOptionsParserTest {
     assertThat(
             CommandLineOptionsParser.parse(Arrays.asList("--skip-reflowing-long-strings"))
                 .reflowLongStrings())
+        .isFalse();
+  }
+
+  @Test
+  public void skipJavadocFormatting() {
+    assertThat(
+            CommandLineOptionsParser.parse(Arrays.asList("--skip-javadoc-formatting"))
+                .formatJavadoc())
         .isFalse();
   }
 }

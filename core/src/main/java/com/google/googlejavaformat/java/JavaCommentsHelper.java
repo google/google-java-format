@@ -30,9 +30,11 @@ import java.util.regex.Pattern;
 public final class JavaCommentsHelper implements CommentsHelper {
 
   private final String lineSeparator;
+  private final JavaFormatterOptions options;
 
   public JavaCommentsHelper(String lineSeparator, JavaFormatterOptions options) {
     this.lineSeparator = lineSeparator;
+    this.options = options;
   }
 
   @Override
@@ -41,7 +43,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
       return tok.getOriginalText();
     }
     String text = tok.getOriginalText();
-    if (tok.isJavadocComment()) {
+    if (tok.isJavadocComment() && options.formatJavadoc()) {
       text = JavadocFormatter.formatJavadoc(text, column0);
     }
     List<String> lines = new ArrayList<>();

@@ -48,14 +48,20 @@ public class JavaFormatterOptions {
   }
 
   private final Style style;
+  private final boolean formatJavadoc;
 
-  private JavaFormatterOptions(Style style) {
+  private JavaFormatterOptions(Style style, boolean formatJavadoc) {
     this.style = style;
+    this.formatJavadoc = formatJavadoc;
   }
 
   /** Returns the multiplier for the unit of indent. */
   public int indentationMultiplier() {
     return style.indentationMultiplier();
+  }
+
+  boolean formatJavadoc() {
+    return formatJavadoc;
   }
 
   /** Returns the code style. */
@@ -76,6 +82,7 @@ public class JavaFormatterOptions {
   /** A builder for {@link JavaFormatterOptions}. */
   public static class Builder {
     private Style style = Style.GOOGLE;
+    private boolean formatJavadoc = true;
 
     private Builder() {}
 
@@ -84,8 +91,13 @@ public class JavaFormatterOptions {
       return this;
     }
 
+    Builder formatJavadoc(boolean formatJavadoc) {
+      this.formatJavadoc = formatJavadoc;
+      return this;
+    }
+
     public JavaFormatterOptions build() {
-      return new JavaFormatterOptions(style);
+      return new JavaFormatterOptions(style, formatJavadoc);
     }
   }
 }
