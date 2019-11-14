@@ -95,9 +95,9 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.8</java.version>
-    <guava.version>27.0.1-jre</guava.version>
+    <guava.version>28.1-jre</guava.version>
     <javac.version>9+181-r4173-1</javac.version>
-    <truth.version>0.45</truth.version>
+    <truth.version>1.0</truth.version>
     <jsr305.version>3.0.2</jsr305.version>
   </properties>
 
