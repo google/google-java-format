@@ -393,7 +393,7 @@ public final class JavaOutput extends Output {
     return MoreObjects.toStringHelper(this)
         .add("iLine", iLine)
         .add("lastK", lastK)
-        .add("peningSpaces", spacesPending.toString().replace("\t", "\\t"))
+        .add("spacesPending", spacesPending.toString().replace("\t", "\\t"))
         .add("newlinesPending", newlinesPending)
         .add("blankLines", blankLines)
         .add("super", super.toString())
