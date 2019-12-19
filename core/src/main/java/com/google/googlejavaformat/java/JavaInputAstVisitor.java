@@ -2542,18 +2542,20 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       String equals,
       Optional<String> trailing) {
     sync(node);
+    TypeWithDims extractedDims = DimensionHelpers.extractDims(node.getType(), SortedDims.YES);
+    Optional<TypeWithDims> typeWithDims = Optional.of(extractedDims);
     declareOne(
         kind,
         annotationsDirection,
         Optional.of(node.getModifiers()),
-        node.getType(),
+        extractedDims.node,
         node.getName(),
         "",
         equals,
         initializer,
         trailing,
         /* receiverExpression= */ Optional.empty(),
-        /* typeWithDims= */ Optional.empty());
+        typeWithDims);
   }
 
   /** Does not omit the leading '<', which should be associated with the type name. */
