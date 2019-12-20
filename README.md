@@ -76,6 +76,8 @@ Implementation`.
     *   [Cosium/maven-git-code-format](https://github.com/Cosium/maven-git-code-format):
         A maven plugin that automatically deploys google-java-format as a
         pre-commit git hook.
+*   SBT plugins
+    *   [sbt/sbt-java-formatter](https://github.com/sbt/sbt-java-formatter)
 *   [maltzj/google-style-precommit-hook](https://github.com/maltzj/google-style-precommit-hook):
     A pre-commit (pre-commit.com) hook that will automatically run GJF whenever
     you commit code to your repository
