@@ -472,4 +472,24 @@ public final class FormatterTest {
                 + " chance to interrupt;\n"
                 + "}\n");
   }
+
+  @Test
+  public void removeTrailingTabsInComments() throws Exception {
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    "class Foo {\n"
+                        + "  void f() {\n"
+                        + "    int x = 0; // comment\t\t\t\n"
+                        + "    return;\n"
+                        + "  }\n"
+                        + "}\n"))
+        .isEqualTo(
+            "class Foo {\n"
+                + "  void f() {\n"
+                + "    int x = 0; // comment\n"
+                + "    return;\n"
+                + "  }\n"
+                + "}\n");
+  }
 }
