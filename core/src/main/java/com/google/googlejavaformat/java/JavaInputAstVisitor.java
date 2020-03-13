@@ -81,7 +81,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openjdk.javax.lang.model.element.Name;
 import org.openjdk.source.tree.AnnotatedTypeTree;
 import org.openjdk.source.tree.AnnotationTree;
