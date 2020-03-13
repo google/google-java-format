@@ -98,7 +98,7 @@
     <guava.version>28.1-jre</guava.version>
     <javac.version>9+181-r4173-1</javac.version>
     <truth.version>1.0</truth.version>
-    <jsr305.version>3.0.2</jsr305.version>
+    <checker.version>2.0.0</checker.version>
   </properties>
 
   <dependencyManagement>
@@ -117,9 +117,9 @@
 
       <!-- Compile-time dependencies -->
       <dependency>
-        <groupId>com.google.code.findbugs</groupId>
-        <artifactId>jsr305</artifactId>
-        <version>${jsr305.version}</version>
+        <groupId>org.checkerframework</groupId>
+        <artifactId>checker-qual</artifactId>
+        <version>${checker.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.errorprone</groupId>

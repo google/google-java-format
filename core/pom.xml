@@ -46,8 +46,8 @@
 
     <!-- Compile-time dependencies -->
     <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>jsr305</artifactId>
+      <groupId>org.checkerframework</groupId>
+      <artifactId>checker-qual</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>
@@ -89,7 +89,6 @@
           <charset>UTF-8</charset>
           <links>
             <link>https://guava.dev/releases/${guava.version}/api/docs/</link>
-            <link>https://javadoc.io/static/com.google.code.findbugs/jsr305/${jsr305.version}/</link>
             <link>https://docs.oracle.com/javase/8/docs/api/</link>
           </links>
         </configuration>
