@@ -15,16 +15,16 @@
 package com.google.googlejavaformat.java;
 
 import com.google.common.collect.ImmutableList;
+import com.sun.source.tree.AnnotatedTypeTree;
+import com.sun.source.tree.AnnotationTree;
+import com.sun.source.tree.ArrayTypeTree;
+import com.sun.source.tree.Tree;
+import com.sun.tools.javac.tree.JCTree;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
-import org.openjdk.source.tree.AnnotatedTypeTree;
-import org.openjdk.source.tree.AnnotationTree;
-import org.openjdk.source.tree.ArrayTypeTree;
-import org.openjdk.source.tree.Tree;
-import org.openjdk.tools.javac.tree.JCTree;
 
 /**
  * Utilities for working with array dimensions.
