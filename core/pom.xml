@@ -39,10 +39,6 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.google.errorprone</groupId>
-      <artifactId>javac-shaded</artifactId>
-    </dependency>
 
     <!-- Compile-time dependencies -->
     <dependency>
@@ -83,14 +79,26 @@
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <source>8</source>
+          <source>11</source>
           <encoding>UTF-8</encoding>
           <docencoding>UTF-8</docencoding>
           <charset>UTF-8</charset>
           <links>
+            <!--
+            TODO: try again in JDK 12: https://bugs.openjdk.java.net/browse/JDK-8212233
             <link>https://guava.dev/releases/${guava.version}/api/docs/</link>
-            <link>https://docs.oracle.com/javase/8/docs/api/</link>
+            -->
+            <link>https://docs.oracle.com/en/java/javase/11/docs/api</link>
           </links>
+          <additionalJOptions>
+            <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac.file=com.google.googlejavaformat</additionalJOption>
+            <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac.main=com.google.googlejavaformat</additionalJOption>
+            <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac.parser=com.google.googlejavaformat</additionalJOption>
+            <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac.tree=com.google.googlejavaformat</additionalJOption>
+            <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac.util=com.google.googlejavaformat</additionalJOption>
+            <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac.code=com.google.googlejavaformat</additionalJOption>
+            <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac.api=com.google.googlejavaformat</additionalJOption>
+          </additionalJOptions>
         </configuration>
         <executions>
           <execution>
@@ -237,6 +245,14 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>11</source>
+          <target>11</target>
+        </configuration>
       </plugin>
     </plugins>
   </build>
