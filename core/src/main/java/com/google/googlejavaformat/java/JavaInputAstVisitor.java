@@ -3251,7 +3251,9 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         visitAndBreakModifiers(
             modifiers.get(), annotationsDirection, Optional.of(verticalAnnotationBreak));
       }
-      builder.open(type != null ? plusFour : ZERO);
+      boolean isVar = builder.peekToken().get().equals("var");
+      boolean hasType = type != null || isVar;
+      builder.open(hasType ? plusFour : ZERO);
       {
         builder.open(ZERO);
         {
@@ -3264,13 +3266,15 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
               maybeAddDims(dims);
               builder.close();
               baseDims = totalDims - dims.size();
+            } else if (isVar) {
+              token("var");
             } else {
               scan(type, null);
             }
           }
           builder.close();
 
-          if (type != null) {
+          if (hasType) {
             builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO, Optional.of(typeBreak));
           }
 

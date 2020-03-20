@@ -40,7 +40,6 @@ import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.DCTree;
@@ -186,8 +185,6 @@ public class RemoveUnusedImports {
 
   public static String removeUnusedImports(final String contents) throws FormatterException {
     Context context = new Context();
-    // TODO(cushon): this should default to the latest supported source level, same as in Formatter
-    Options.instance(context).put(Option.SOURCE, "9");
     JCCompilationUnit unit = parse(context, contents);
     if (unit == null) {
       // error handling is done during formatting

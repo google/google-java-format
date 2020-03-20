@@ -32,7 +32,6 @@ import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
 import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
@@ -116,10 +115,6 @@ public final class Formatter {
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
     context.put(DiagnosticListener.class, diagnostics);
     Options.instance(context).put("allowStringFolding", "false");
-    // TODO(cushon): this should default to the latest supported source level, remove this after
-    // backing out
-    // https://github.com/google/error-prone-javac/commit/c97f34ddd2308302587ce2de6d0c984836ea5b9f
-    Options.instance(context).put(Option.SOURCE, "9");
     JCCompilationUnit unit;
     JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
     try {
