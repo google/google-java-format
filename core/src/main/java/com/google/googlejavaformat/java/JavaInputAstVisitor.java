@@ -3192,7 +3192,13 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       if (column >= row.size()) {
         continue;
       }
-      nodeTypes.add(row.get(column).getKind());
+      // Treat UnaryTree expressions as their underlying type for the comparison (so, for example
+      // -ve and +ve numeric literals are considered the same).
+      if (row.get(column) instanceof UnaryTree) {
+        nodeTypes.add(((UnaryTree) row.get(column)).getExpression().getKind());
+      } else {
+        nodeTypes.add(row.get(column).getKind());
+      }
     }
     for (Multiset.Entry<Tree.Kind> nodeType : nodeTypes.entrySet()) {
       if (nodeType.getCount() >= atLeastM) {
