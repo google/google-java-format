@@ -39,6 +39,7 @@ import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
+import com.sun.tools.javac.util.Options;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -347,6 +348,7 @@ public final class JavaInput extends Input {
       throws FormatterException {
     stopTokens = ImmutableSet.<TokenKind>builder().addAll(stopTokens).add(TokenKind.EOF).build();
     Context context = new Context();
+    Options.instance(context).put("--enable-preview", "true");
     new JavacFileManager(context, true, UTF_8);
     DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<>();
     context.put(DiagnosticListener.class, diagnosticCollector);

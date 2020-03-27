@@ -372,6 +372,7 @@ public final class StringWrapper {
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
     Context context = new Context();
     context.put(DiagnosticListener.class, diagnostics);
+    Options.instance(context).put("--enable-preview", "true");
     Options.instance(context).put("allowStringFolding", Boolean.toString(allowStringFolding));
     JCTree.JCCompilationUnit unit;
     JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
