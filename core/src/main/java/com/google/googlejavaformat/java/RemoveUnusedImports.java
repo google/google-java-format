@@ -200,6 +200,7 @@ public class RemoveUnusedImports {
       throws FormatterException {
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
     context.put(DiagnosticListener.class, diagnostics);
+    Options.instance(context).put("--enable-preview", "true");
     Options.instance(context).put("allowStringFolding", "false");
     JCCompilationUnit unit;
     JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);

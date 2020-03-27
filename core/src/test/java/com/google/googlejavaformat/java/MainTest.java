@@ -294,7 +294,7 @@ public class MainTest {
               new PrintWriter(err, true),
               new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
       assertThat(main.format("-")).isEqualTo(1);
-      assertThat(err.toString()).contains("<stdin>:4:3: error: class, interface, or enum expected");
+      assertThat(err.toString()).contains("<stdin>:4:3: error: class, interface");
 
     } finally {
       Locale.setDefault(backupLocale);
@@ -491,7 +491,7 @@ public class MainTest {
             new PrintWriter(err, true),
             new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
     assertThat(main.format("--assume-filename=Foo.java", "-")).isEqualTo(1);
-    assertThat(err.toString()).contains("Foo.java:1:15: error: class, interface, or enum expected");
+    assertThat(err.toString()).contains("Foo.java:1:15: error: class, interface");
   }
 
   @Test

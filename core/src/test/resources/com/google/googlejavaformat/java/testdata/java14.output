@@ -1,0 +1,39 @@
+class Java14 {
+  void f() {
+    if (obj instanceof String s) {
+    } else {
+    }
+  }
+
+  record Range<T extends Number>(T lo, T hi) implements Comparable<Range<T>> {
+
+    public Range {}
+
+    Range(T lo) {
+      this(lo, lo);
+    }
+
+    @Override
+    public int compareTo(Range<T> other) {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  void g() {
+    var block = """
+    hello
+      text
+        blocks
+    """.indent(6);
+  }
+
+  void h() {
+    int numLetters =
+        switch (day) {
+          case MONDAY, FRIDAY, SUNDAY -> 6;
+          case TUESDAY -> 7;
+          case THURSDAY, SATURDAY -> 8;
+          case WEDNESDAY -> 9;
+        };
+  }
+}
