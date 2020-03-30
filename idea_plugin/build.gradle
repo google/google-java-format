@@ -31,7 +31,7 @@ apply plugin: 'java'
 
 intellij {
   pluginName = "google-java-format"
-  version = "193.4932.9-EAP-SNAPSHOT"
+  version = "201.6668.13-EAP-SNAPSHOT"
 }
 
 patchPluginXml {
