@@ -2574,7 +2574,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         typeWithDims);
   }
 
-  /** Does not omit the leading '<', which should be associated with the type name. */
+  /** Does not omit the leading {@code "<"}, which should be associated with the type name. */
   protected void typeParametersRest(
       List<? extends TypeParameterTree> typeParameters, Indent plusIndent) {
     builder.open(plusIndent);
