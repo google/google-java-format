@@ -3273,7 +3273,9 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         visitAndBreakModifiers(
             modifiers.get(), annotationsDirection, Optional.of(verticalAnnotationBreak));
       }
-      boolean isVar = builder.peekToken().get().equals("var");
+      boolean isVar =
+          builder.peekToken().get().equals("var")
+              && (!name.contentEquals("var") || builder.peekToken(1).get().equals("var"));
       boolean hasType = type != null || isVar;
       builder.open(hasType ? plusFour : ZERO);
       {
