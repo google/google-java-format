@@ -19,6 +19,14 @@ class Java14 {
     }
   }
 
+  record Foo(int id) {}
+
+  record Rcv(int id) {
+    public Rcv(Rcv this, int id) {
+      this.id = id;
+    }
+  }
+
   void g() {
     var block = """
     hello
