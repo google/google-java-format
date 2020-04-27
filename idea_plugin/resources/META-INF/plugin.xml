@@ -12,6 +12,10 @@
 
   <change-notes><![CDATA[
     <dl>
+      <dt>1.7.0.5</dt>
+      <dd>Added a version for 2020.1+ IDEs.</dd>
+      <dt>1.7.0.4</dt>
+      <dd>Marked the plugin as being incompatible with 2020.1+ IDEs.</dd>
       <dt>1.7.0.3</dt>
       <dd>Fixed the plugin on 2019.3 IDEs.</dd>
       <dt>1.7.0.2</dt>
@@ -23,19 +27,12 @@
     </dl>
   ]]></change-notes>
 
-  <project-components>
-    <component>
-      <implementation-class>
-        com.google.googlejavaformat.intellij.GoogleJavaFormatInstaller
-      </implementation-class>
-      <loadForDefaultProject/>
-    </component>
-    <component>
-      <implementation-class>
-        com.google.googlejavaformat.intellij.InitialConfigurationComponent
-      </implementation-class>
-    </component>
-  </project-components>
+  <applicationListeners>
+    <listener class="com.google.googlejavaformat.intellij.InitialConfigurationProjectManagerListener"
+              topic="com.intellij.openapi.project.ProjectManagerListener"/>
+    <listener class="com.google.googlejavaformat.intellij.GoogleJavaFormatInstaller"
+              topic="com.intellij.openapi.project.ProjectManagerListener"/>
+  </applicationListeners>
 
   <extensions defaultExtensionNs="com.intellij">
     <projectConfigurable instance="com.google.googlejavaformat.intellij.GoogleJavaFormatConfigurable"

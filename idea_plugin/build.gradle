@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id "org.jetbrains.intellij" version "0.4.11"
+  id "org.jetbrains.intellij" version "0.4.18"
 }
 
 repositories {
@@ -31,14 +31,14 @@ apply plugin: 'java'
 
 intellij {
   pluginName = "google-java-format"
-  version = "193.4932.9-EAP-SNAPSHOT"
+  version = "2020.1"
 }
 
 patchPluginXml {
   pluginDescription = "Formats source code using the google-java-format tool. This version of " +
                       "the plugin uses version ${googleJavaFormatVersion} of the tool."
-  version = "${googleJavaFormatVersion}.0.3"
-  sinceBuild = '173'
+  version = "${googleJavaFormatVersion}.0.5"
+  sinceBuild = '201'
   untilBuild = ''
 }
 
