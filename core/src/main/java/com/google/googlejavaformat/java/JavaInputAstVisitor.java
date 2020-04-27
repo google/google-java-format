@@ -1332,8 +1332,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return null;
   }
 
-  // TODO(cushon): Use Flags.COMPACT_RECORD_CONSTRUCTOR once if/when we drop support for Java 11
+  // TODO(cushon): Use Flags if/when we drop support for Java 11
+
   protected static final long COMPACT_RECORD_CONSTRUCTOR = 1L << 51;
+
+  protected static final long RECORD = 1L << 61;
 
   @Override
   public Void visitMethod(MethodTree node, Void unused) {
