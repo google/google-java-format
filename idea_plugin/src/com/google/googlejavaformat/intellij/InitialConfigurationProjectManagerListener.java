@@ -20,32 +20,28 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationType;
-import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManagerListener;
+import org.jetbrains.annotations.NotNull;
 
-final class InitialConfigurationComponent implements ProjectComponent {
+final class InitialConfigurationProjectManagerListener implements ProjectManagerListener {
 
   private static final String NOTIFICATION_TITLE = "Enable google-java-format";
   private static final NotificationGroup NOTIFICATION_GROUP =
       new NotificationGroup(NOTIFICATION_TITLE, NotificationDisplayType.STICKY_BALLOON, true);
 
-  private final Project project;
-  private final GoogleJavaFormatSettings settings;
-
-  public InitialConfigurationComponent(Project project, GoogleJavaFormatSettings settings) {
-    this.project = project;
-    this.settings = settings;
-  }
-
   @Override
-  public void projectOpened() {
+  public void projectOpened(@NotNull Project project) {
+
+    GoogleJavaFormatSettings settings = GoogleJavaFormatSettings.getInstance(project);
+
     if (settings.isUninitialized()) {
       settings.setEnabled(false);
-      displayNewUserNotification();
+      displayNewUserNotification(project, settings);
     }
   }
 
-  private void displayNewUserNotification() {
+  private void displayNewUserNotification(Project project, GoogleJavaFormatSettings settings) {
     Notification notification =
         new Notification(
             NOTIFICATION_GROUP.getDisplayId(),
