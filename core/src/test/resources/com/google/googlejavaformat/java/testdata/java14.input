@@ -43,4 +43,8 @@ class Java14 {
         case WEDNESDAY              -> 9;
     };
   }
+
+  {
+    for (var arg : List.of()) {}
+  }
 }
