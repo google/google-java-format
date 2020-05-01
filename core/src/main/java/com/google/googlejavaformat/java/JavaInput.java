@@ -562,7 +562,7 @@ public final class JavaInput extends Input {
    * @param offset the {@code 0}-based offset in characters
    * @param length the length in characters
    * @return the {@code 0}-based {@link Range} of tokens
-   * @throws FormatterException
+   * @throws FormatterException if offset + length is outside the file
    */
   Range<Integer> characterRangeToTokenRange(int offset, int length) throws FormatterException {
     int requiredLength = offset + length;
