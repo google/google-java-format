@@ -225,9 +225,9 @@ public class ImportOrdererTest {
         {
           {
             "import b.B;",
-            "// MOE: end_strip",
+            "// M" + "OE: end_strip",
             "import c.C;",
-            "// MOE: begin_strip",
+            "// M" + "OE: begin_strip",
             "import a.A;",
             "",
             "class B74235047 {}"
@@ -235,9 +235,9 @@ public class ImportOrdererTest {
           {
             "import a.A;",
             "import b.B;",
-            "// MOE: end_strip",
+            "// M" + "OE: end_strip",
             "import c.C;",
-            "// MOE: begin_strip",
+            "// M" + "OE: begin_strip",
             "",
             "class B74235047 {}"
           }
