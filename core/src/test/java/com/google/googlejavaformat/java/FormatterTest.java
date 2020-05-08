@@ -461,13 +461,15 @@ public final class FormatterTest {
             new Formatter()
                 .formatSource(
                     "class T {\n"
-                        + "  // MOE: one long incredibly"
+                        + "  // M"
+                        + "OE: one long incredibly"
                         + " unbroken sentence moving from topic to topic so that no-one had a"
                         + " chance to interrupt;\n"
                         + "}\n"))
         .isEqualTo(
             "class T {\n"
-                + "  // MOE: one long incredibly"
+                + "  // M"
+                + "OE: one long incredibly"
                 + " unbroken sentence moving from topic to topic so that no-one had a"
                 + " chance to interrupt;\n"
                 + "}\n");
