@@ -223,7 +223,7 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
         token(">");
         builder.space();
         scan(node.getBody(), null);
-        token(";");
+        builder.guessToken(";");
         break;
       default:
         throw new AssertionError(node.getCaseKind());
