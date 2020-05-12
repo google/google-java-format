@@ -115,48 +115,48 @@ public final class JavadocFormattingTest {
     String[] input = {
       "/**",
       " * Deatomizes the given user.",
-      " * <!-- MOE:begin_intracomment_strip -->",
-      " * See go/deatomizer-v5 for the design doc.",
-      " * <!-- MOE:end_intracomment_strip -->",
+      " * <!-- M" + "OE:begin_intracomment_strip -->",
+      " * See deatomizer-v5 for the design doc.",
+      " * <!-- M" + "OE:end_intracomment_strip -->",
       " * To reatomize, call {@link reatomize}.",
       " *",
-      " * <!-- MOE:begin_intracomment_strip -->",
+      " * <!-- M" + "OE:begin_intracomment_strip -->",
       " * <p>This method is used in the Google teleporter.",
       " *",
       " * <p>Yes, we have a teleporter.",
-      " * <!-- MOE:end_intracomment_strip -->",
+      " * <!-- M" + "OE:end_intracomment_strip -->",
       " *",
       " * @param user the person to teleport.",
-      " *     <!-- MOE:begin_intracomment_strip -->",
-      " *     Users must sign go/deatomize-waiver ahead of time.",
-      " *     <!-- MOE:end_intracomment_strip -->",
-      " * <!-- MOE:begin_intracomment_strip -->",
+      " *     <!-- M" + "OE:begin_intracomment_strip -->",
+      " *     Users must sign deatomize-waiver ahead of time.",
+      " *     <!-- M" + "OE:end_intracomment_strip -->",
+      " * <!-- M" + "OE:begin_intracomment_strip -->",
       " * @deprecated Sometimes turns the user into a goat.",
-      " * <!-- MOE:end_intracomment_strip -->",
+      " * <!-- M" + "OE:end_intracomment_strip -->",
       " */",
       "class Test {}",
     };
     String[] expected = {
       "/**",
       " * Deatomizes the given user.",
-      " * <!-- MOE:begin_intracomment_strip -->",
-      " * See go/deatomizer-v5 for the design doc.",
-      " * <!-- MOE:end_intracomment_strip -->",
+      " * <!-- M" + "OE:begin_intracomment_strip -->",
+      " * See deatomizer-v5 for the design doc.",
+      " * <!-- M" + "OE:end_intracomment_strip -->",
       " * To reatomize, call {@link reatomize}.",
       " *",
-      " * <!-- MOE:begin_intracomment_strip -->",
+      " * <!-- M" + "OE:begin_intracomment_strip -->",
       " * <p>This method is used in the Google teleporter.",
       " *",
       " * <p>Yes, we have a teleporter.",
-      " * <!-- MOE:end_intracomment_strip -->",
+      " * <!-- M" + "OE:end_intracomment_strip -->",
       " *",
       " * @param user the person to teleport.",
-      " *     <!-- MOE:begin_intracomment_strip -->",
-      " *     Users must sign go/deatomize-waiver ahead of time.",
-      " *     <!-- MOE:end_intracomment_strip -->",
-      " * <!-- MOE:begin_intracomment_strip -->",
+      " *     <!-- M" + "OE:begin_intracomment_strip -->",
+      " *     Users must sign deatomize-waiver ahead of time.",
+      " *     <!-- M" + "OE:end_intracomment_strip -->",
+      " * <!-- M" + "OE:begin_intracomment_strip -->",
       " * @deprecated Sometimes turns the user into a goat.",
-      " * <!-- MOE:end_intracomment_strip -->",
+      " * <!-- M" + "OE:end_intracomment_strip -->",
       " */",
       "class Test {}",
     };
@@ -169,7 +169,7 @@ public final class JavadocFormattingTest {
     String[] input = {
       "/**", //
       " * Foo.",
-      " * <!-- MOE:begin_intracomment_strip -->",
+      " * <!-- M" + "OE:begin_intracomment_strip -->",
       " * Bar.",
       " */",
       "class Test {}",
@@ -177,7 +177,7 @@ public final class JavadocFormattingTest {
     String[] expected = {
       "/**", //
       " * Foo.",
-      " * <!-- MOE:begin_intracomment_strip -->",
+      " * <!-- M" + "OE:begin_intracomment_strip -->",
       " * Bar.",
       " */",
       "class Test {}",
@@ -192,7 +192,7 @@ public final class JavadocFormattingTest {
     String[] input = {
       "/**", //
       " * Foo.",
-      " * <!-- MOE:begin_intracomment_strip -->",
+      " * <!-- M" + "OE:begin_intracomment_strip -->",
       " */",
       "class Test {}",
     };
@@ -209,14 +209,14 @@ public final class JavadocFormattingTest {
     String[] input = {
       "/**", //
       " * Foo.",
-      " * <!-- MOE:end_intracomment_strip -->",
+      " * <!-- M" + "OE:end_intracomment_strip -->",
       " */",
       "class Test {}",
     };
     String[] expected = {
       "/**", //
       " * Foo.",
-      " * <!-- MOE:end_intracomment_strip -->",
+      " * <!-- M" + "OE:end_intracomment_strip -->",
       " */",
       "class Test {}",
     };
