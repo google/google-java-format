@@ -507,9 +507,9 @@ final class JavadocLexer {
   // Match "@param <T>" specially in case the <T> is a <P> or other HTML tag we treat specially.
   private static final Pattern FOOTER_TAG_PATTERN = compile("^@(param\\s+<\\w+>|[a-z]\\w*)");
   private static final Pattern MOE_BEGIN_STRIP_COMMENT_PATTERN =
-      compile("^<!--\\s*MOE:begin_intracomment_strip\\s*-->");
+      compile("^<!--\\s*M" + "OE:begin_intracomment_strip\\s*-->");
   private static final Pattern MOE_END_STRIP_COMMENT_PATTERN =
-      compile("^<!--\\s*MOE:end_intracomment_strip\\s*-->");
+      compile("^<!--\\s*M" + "OE:end_intracomment_strip\\s*-->");
   private static final Pattern HTML_COMMENT_PATTERN = fullCommentPattern();
   private static final Pattern PRE_OPEN_PATTERN = openTagPattern("pre");
   private static final Pattern PRE_CLOSE_PATTERN = closeTagPattern("pre");
