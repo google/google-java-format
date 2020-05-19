@@ -7,24 +7,20 @@ notifications:
     on_success: change
     on_failure: always
 
+jdk:
+  - openjdk11
+  - openjdk14
+  - openjdk-ea
+
 matrix:
   allow_failures:
-    - jdk: oraclejdk9
-    - env: JDK_RELEASE='10 Early-Access'
-  include:
-# JDK 8
-    - jdk: oraclejdk8
-      env: JDK_RELEASE='8'
-# JDK 9
-    - jdk: oraclejdk9
-      env: JDK_RELEASE='9'
-# JDK 10
-    - env: JDK_RELEASE='10 Early-Access'
-      before_install: unset _JAVA_OPTIONS && . ./scripts/install-jdk-10.sh
+    - jdk: openjdk-ea
 
 # see https://github.com/travis-ci/travis-ci/issues/8408
 before_install:
-  - unset _JAVA_OPTIONS
+- unset _JAVA_OPTIONS
+
+install: echo "The default Travis install script is being skipped!"
 
 # use travis-ci docker based infrastructure
 sudo: false
@@ -33,9 +29,9 @@ cache:
   directories:
     - $HOME/.m2
 
-install: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
-
-script: mvn test -B
+script:
+- mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+- mvn test -B
 
 env:
   global:

@@ -96,7 +96,10 @@ public final class Main {
     }
 
     JavaFormatterOptions options =
-        JavaFormatterOptions.builder().style(parameters.aosp() ? Style.AOSP : Style.GOOGLE).build();
+        JavaFormatterOptions.builder()
+            .style(parameters.aosp() ? Style.AOSP : Style.GOOGLE)
+            .formatJavadoc(parameters.formatJavadoc())
+            .build();
 
     if (parameters.stdin()) {
       return formatStdin(parameters, options);
@@ -111,6 +114,8 @@ public final class Main {
 
     Map<Path, String> inputs = new LinkedHashMap<>();
     Map<Path, Future<String>> results = new LinkedHashMap<>();
+    boolean allOk = true;
+
     for (String fileName : parameters.files()) {
       if (!fileName.endsWith(".java")) {
         errWriter.println("Skipping non-Java file: " + fileName);
@@ -120,15 +125,15 @@ public final class Main {
       String input;
       try {
         input = new String(Files.readAllBytes(path), UTF_8);
+        inputs.put(path, input);
+        results.put(
+            path, executorService.submit(new FormatFileCallable(parameters, input, options)));
       } catch (IOException e) {
         errWriter.println(fileName + ": could not read file: " + e.getMessage());
-        return 1;
+        allOk = false;
       }
-      inputs.put(path, input);
-      results.put(path, executorService.submit(new FormatFileCallable(parameters, input, options)));
     }
 
-    boolean allOk = true;
     for (Map.Entry<Path, Future<String>> result : results.entrySet()) {
       Path path = result.getKey();
       String formatted;
@@ -183,6 +188,7 @@ public final class Main {
     } catch (IOException e) {
       throw new IOError(e);
     }
+    String stdinFilename = parameters.assumeFilename().orElse(STDIN_FILENAME);
     boolean ok = true;
     try {
       String output = new FormatFileCallable(parameters, input, options).call();
@@ -192,14 +198,14 @@ public final class Main {
       }
       if (parameters.dryRun()) {
         if (changed) {
-          outWriter.println(STDIN_FILENAME);
+          outWriter.println(stdinFilename);
         }
       } else {
         outWriter.write(output);
       }
     } catch (FormatterException e) {
       for (FormatterDiagnostic diagnostic : e.diagnostics()) {
-        errWriter.println(STDIN_FILENAME + ":" + diagnostic.toString());
+        errWriter.println(stdinFilename + ":" + diagnostic.toString());
       }
       ok = false;
       // TODO(cpovirk): Catch other types of exception (as we do in the formatFiles case).
@@ -237,6 +243,10 @@ public final class Main {
     }
     if (parameters.stdin() && !parameters.files().isEmpty()) {
       throw new UsageException("cannot format from standard input and files simultaneously");
+    }
+    if (parameters.assumeFilename().isPresent() && !parameters.stdin()) {
+      throw new UsageException(
+          "--assume-filename is only supported when formatting standard input");
     }
     if (parameters.dryRun() && parameters.inPlace()) {
       throw new UsageException("cannot use --dry-run and --in-place at the same time");

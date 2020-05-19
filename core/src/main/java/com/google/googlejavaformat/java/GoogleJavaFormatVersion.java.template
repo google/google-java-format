@@ -14,8 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import java.util.Optional;
-
 class GoogleJavaFormatVersion {
 
   static String version() {

@@ -21,7 +21,6 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.compile;
 
 import com.google.common.collect.ImmutableList;
-import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.google.googlejavaformat.java.javadoc.JavadocLexer.LexException;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -36,23 +35,26 @@ import java.util.regex.Pattern;
  * single blank line if it's empty.
  */
 public final class JavadocFormatter {
+
+  static final int MAX_LINE_LENGTH = 100;
+
   /**
    * Formats the given Javadoc comment, which must start with ∕✱✱ and end with ✱∕. The output will
    * start and end with the same characters.
    */
-  public static String formatJavadoc(String input, int blockIndent, JavaFormatterOptions options) {
+  public static String formatJavadoc(String input, int blockIndent) {
     ImmutableList<Token> tokens;
     try {
       tokens = lex(input);
     } catch (LexException e) {
       return input;
     }
-    String result = render(tokens, blockIndent, options);
-    return makeSingleLineIfPossible(blockIndent, result, options);
+    String result = render(tokens, blockIndent);
+    return makeSingleLineIfPossible(blockIndent, result);
   }
 
-  private static String render(List<Token> input, int blockIndent, JavaFormatterOptions options) {
-    JavadocWriter output = new JavadocWriter(blockIndent, options);
+  private static String render(List<Token> input, int blockIndent) {
+    JavadocWriter output = new JavadocWriter(blockIndent);
     for (Token token : input) {
       switch (token.getType()) {
         case BEGIN_JAVADOC:
@@ -163,9 +165,8 @@ public final class JavadocFormatter {
    * Returns the given string or a one-line version of it (e.g., "∕✱✱ Tests for foos. ✱∕") if it
    * fits on one line.
    */
-  private static String makeSingleLineIfPossible(
-      int blockIndent, String input, JavaFormatterOptions options) {
-    int oneLinerContentLength = options.maxLineLength() - "/**  */".length() - blockIndent;
+  private static String makeSingleLineIfPossible(int blockIndent, String input) {
+    int oneLinerContentLength = MAX_LINE_LENGTH - "/**  */".length() - blockIndent;
     Matcher matcher = ONE_CONTENT_LINE_PATTERN.matcher(input);
     if (matcher.matches() && matcher.group(1).isEmpty()) {
       return "/** */";

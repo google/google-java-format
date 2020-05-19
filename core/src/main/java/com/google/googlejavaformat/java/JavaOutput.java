@@ -18,6 +18,7 @@ import static java.util.Comparator.comparing;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Strings;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
@@ -46,7 +47,7 @@ import java.util.Map;
  */
 public final class JavaOutput extends Output {
   private final String lineSeparator;
-  private final JavaInput javaInput; // Used to follow along while emitting the output.
+  private final Input javaInput; // Used to follow along while emitting the output.
   private final CommentsHelper commentsHelper; // Used to re-flow comments.
   private final Map<Integer, BlankLineWanted> blankLines = new HashMap<>(); // Info on blank lines.
   private final RangeSet<Integer> partialFormatRanges = TreeRangeSet.create();
@@ -55,17 +56,17 @@ public final class JavaOutput extends Output {
   private final int kN; // The number of tokens or comments in the input, excluding the EOF.
   private int iLine = 0; // Closest corresponding line number on input.
   private int lastK = -1; // Last {@link Tok} index output.
-  private int spacesPending = 0;
   private int newlinesPending = 0;
   private StringBuilder lineBuilder = new StringBuilder();
+  private StringBuilder spacesPending = new StringBuilder();
 
   /**
    * {@code JavaOutput} constructor.
    *
-   * @param javaInput the {@link JavaInput}, used to match up blank lines in the output
+   * @param javaInput the {@link Input}, used to match up blank lines in the output
    * @param commentsHelper the {@link CommentsHelper}, used to rewrite comments
    */
-  public JavaOutput(String lineSeparator, JavaInput javaInput, CommentsHelper commentsHelper) {
+  public JavaOutput(String lineSeparator, Input javaInput, CommentsHelper commentsHelper) {
     this.lineSeparator = lineSeparator;
     this.javaInput = javaInput;
     this.commentsHelper = commentsHelper;
@@ -109,7 +110,7 @@ public final class JavaOutput extends Output {
        * there's a blank line here and it's a comment.
        */
       BlankLineWanted wanted = blankLines.getOrDefault(lastK, BlankLineWanted.NO);
-      if (isComment(text) ? sawNewlines : wanted.wanted().or(sawNewlines)) {
+      if (isComment(text) ? sawNewlines : wanted.wanted().orElse(sawNewlines)) {
         ++newlinesPending;
       }
     }
@@ -121,7 +122,7 @@ public final class JavaOutput extends Output {
       if (newlinesPending == 0) {
         ++newlinesPending;
       }
-      spacesPending = 0;
+      spacesPending = new StringBuilder();
     } else {
       boolean rangesSet = false;
       int textN = text.length();
@@ -129,7 +130,10 @@ public final class JavaOutput extends Output {
         char c = text.charAt(i);
         switch (c) {
           case ' ':
-            ++spacesPending;
+            spacesPending.append(' ');
+            break;
+          case '\t':
+            spacesPending.append('\t');
             break;
           case '\r':
             if (i + 1 < text.length() && text.charAt(i + 1) == '\n') {
@@ -137,7 +141,7 @@ public final class JavaOutput extends Output {
             }
             // falls through
           case '\n':
-            spacesPending = 0;
+            spacesPending = new StringBuilder();
             ++newlinesPending;
             break;
           default:
@@ -150,9 +154,9 @@ public final class JavaOutput extends Output {
               rangesSet = false;
               --newlinesPending;
             }
-            while (spacesPending > 0) {
-              lineBuilder.append(' ');
-              --spacesPending;
+            if (spacesPending.length() > 0) {
+              lineBuilder.append(spacesPending);
+              spacesPending = new StringBuilder();
             }
             lineBuilder.append(c);
             if (!range.isEmpty()) {
@@ -174,11 +178,11 @@ public final class JavaOutput extends Output {
 
   @Override
   public void indent(int indent) {
-    spacesPending = indent;
+    spacesPending.append(Strings.repeat(" ", indent));
   }
 
   /** Flush any incomplete last line, then add the EOF token into our data structures. */
-  void flush() {
+  public void flush() {
     String lastLine = lineBuilder.toString();
     if (!CharMatcher.whitespace().matchesAllOf(lastLine)) {
       mutableLines.add(lastLine);
@@ -387,7 +391,7 @@ public final class JavaOutput extends Output {
     return MoreObjects.toStringHelper(this)
         .add("iLine", iLine)
         .add("lastK", lastK)
-        .add("spacesPending", spacesPending)
+        .add("spacesPending", spacesPending.toString().replace("\t", "\\t"))
         .add("newlinesPending", newlinesPending)
         .add("blankLines", blankLines)
         .add("super", super.toString())

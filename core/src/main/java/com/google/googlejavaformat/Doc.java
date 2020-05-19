@@ -17,13 +17,13 @@ package com.google.googlejavaformat;
 import static com.google.common.collect.Iterables.getLast;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Optional;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.Output.BreakTag;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * {@link com.google.googlejavaformat.java.JavaInputAstVisitor JavaInputAstVisitor} outputs a
@@ -288,7 +288,7 @@ public abstract class Doc {
 
       state =
           computeBreakAndSplit(
-              commentsHelper, maxWidth, state, /* optBreakDoc= */ Optional.absent(), splits.get(0));
+              commentsHelper, maxWidth, state, /* optBreakDoc= */ Optional.empty(), splits.get(0));
 
       // Handle following breaks and split.
       for (int i = 0; i < breaks.size(); i++) {
@@ -576,7 +576,7 @@ public abstract class Doc {
      * @return the new {@code Break}
      */
     public static Break make(FillMode fillMode, String flat, Indent plusIndent) {
-      return new Break(fillMode, flat, plusIndent, /* optTag= */ Optional.absent());
+      return new Break(fillMode, flat, plusIndent, /* optTag= */ Optional.empty());
     }
 
     /**

@@ -14,6 +14,8 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
+import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
@@ -31,26 +33,26 @@ import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.parser.JavacParser;
+import com.sun.tools.javac.parser.ParserFactory;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Options;
 import java.io.IOError;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.openjdk.javax.tools.Diagnostic;
-import org.openjdk.javax.tools.DiagnosticCollector;
-import org.openjdk.javax.tools.DiagnosticListener;
-import org.openjdk.javax.tools.JavaFileObject;
-import org.openjdk.javax.tools.SimpleJavaFileObject;
-import org.openjdk.javax.tools.StandardLocation;
-import org.openjdk.tools.javac.file.JavacFileManager;
-import org.openjdk.tools.javac.main.Option;
-import org.openjdk.tools.javac.parser.JavacParser;
-import org.openjdk.tools.javac.parser.ParserFactory;
-import org.openjdk.tools.javac.tree.JCTree.JCCompilationUnit;
-import org.openjdk.tools.javac.util.Context;
-import org.openjdk.tools.javac.util.Log;
-import org.openjdk.tools.javac.util.Options;
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
+import javax.tools.StandardLocation;
 
 /**
  * This is google-java-format, a new Java formatter that follows the Google Java Style Guide quite
@@ -59,10 +61,10 @@ import org.openjdk.tools.javac.util.Options;
  * <p>This formatter uses the javac parser to generate an AST. Because the AST loses information
  * about the non-tokens in the input (including newlines, comments, etc.), and even some tokens
  * (e.g., optional commas or semicolons), this formatter lexes the input again and follows along in
- * the resulting list of tokens. Its lexer splits all multi-character operators (like ">>") into
- * multiple single-character operators. Each non-token is assigned to a token---non-tokens following
- * a token on the same line go with that token; those following go with the next token--- and there
- * is a final EOF token to hold final comments.
+ * the resulting list of tokens. Its lexer splits all multi-character operators (like "&gt;&gt;")
+ * into multiple single-character operators. Each non-token is assigned to a token---non-tokens
+ * following a token on the same line go with that token; those following go with the next token---
+ * and there is a final EOF token to hold final comments.
  *
  * <p>The formatter walks the AST to generate a Greg Nelson/Derek Oppen-style list of formatting
  * {@link Op}s [1--2] that then generates a structured {@link Doc}. Each AST node type has a visitor
@@ -86,6 +88,8 @@ import org.openjdk.tools.javac.util.Options;
  */
 @Immutable
 public final class Formatter {
+
+  public static final int MAX_LINE_LENGTH = 100;
 
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
 
@@ -114,10 +118,7 @@ public final class Formatter {
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
     context.put(DiagnosticListener.class, diagnostics);
     Options.instance(context).put("allowStringFolding", "false");
-    // TODO(cushon): this should default to the latest supported source level, remove this after
-    // backing out
-    // https://github.com/google/error-prone-javac/commit/c97f34ddd2308302587ce2de6d0c984836ea5b9f
-    Options.instance(context).put(Option.SOURCE, "9");
+    Options.instance(context).put("--enable-preview", "true");
     JCCompilationUnit unit;
     JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
     try {
@@ -152,14 +153,44 @@ public final class Formatter {
     }
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
-    new JavaInputAstVisitor(builder, options.indentationMultiplier()).scan(unit, null);
+    JavaInputAstVisitor visitor;
+    if (getMajor() >= 14) {
+      try {
+        visitor =
+            Class.forName("com.google.googlejavaformat.java.java14.Java14InputAstVisitor")
+                .asSubclass(JavaInputAstVisitor.class)
+                .getConstructor(OpsBuilder.class, int.class)
+                .newInstance(builder, options.indentationMultiplier());
+      } catch (ReflectiveOperationException e) {
+        throw new LinkageError(e.getMessage(), e);
+      }
+    } else {
+      visitor = new JavaInputAstVisitor(builder, options.indentationMultiplier());
+    }
+    visitor.scan(unit, null);
     builder.sync(javaInput.getText().length());
     builder.drain();
     Doc doc = new DocBuilder().withOps(builder.build()).build();
-    doc.computeBreaks(
-        javaOutput.getCommentsHelper(), options.maxLineLength(), new Doc.State(+0, 0));
+    doc.computeBreaks(javaOutput.getCommentsHelper(), MAX_LINE_LENGTH, new Doc.State(+0, 0));
     doc.write(javaOutput);
     javaOutput.flush();
+  }
+
+  // Runtime.Version was added in JDK 9, so use reflection to access it to preserve source
+  // compatibility with Java 8.
+  private static int getMajor() {
+    try {
+      Method versionMethod = Runtime.class.getMethod("version");
+      Object version = versionMethod.invoke(null);
+      return (int) version.getClass().getMethod("major").invoke(version);
+    } catch (Exception e) {
+      // continue below
+    }
+    int version = (int) Double.parseDouble(JAVA_CLASS_VERSION.value());
+    if (49 <= version && version <= 52) {
+      return version - (49 - 5);
+    }
+    throw new IllegalStateException("Unknown Java version: " + JAVA_SPECIFICATION_VERSION.value());
   }
 
   static boolean errorDiagnostic(Diagnostic<?> input) {
@@ -215,9 +246,11 @@ public final class Formatter {
    *     Google Java Style Guide - 3.3.3 Import ordering and spacing</a>
    */
   public String formatSourceAndFixImports(String input) throws FormatterException {
-    input = ImportOrderer.reorderImports(input);
+    input = ImportOrderer.reorderImports(input, options.style());
     input = RemoveUnusedImports.removeUnusedImports(input);
-    return formatSource(input);
+    String formatted = formatSource(input);
+    formatted = StringWrapper.wrap(formatted, this);
+    return formatted;
   }
 
   /**

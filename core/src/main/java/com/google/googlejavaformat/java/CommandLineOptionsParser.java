@@ -105,6 +105,12 @@ final class CommandLineOptionsParser {
         case "--skip-removing-unused-imports":
           optionsBuilder.removeUnusedImports(false);
           break;
+        case "--skip-reflowing-long-strings":
+          optionsBuilder.reflowLongStrings(false);
+          break;
+        case "--skip-javadoc-formatting":
+          optionsBuilder.formatJavadoc(false);
+          break;
         case "-":
           optionsBuilder.stdin(true);
           break;
@@ -114,6 +120,10 @@ final class CommandLineOptionsParser {
           break;
         case "--set-exit-if-changed":
           optionsBuilder.setExitIfChanged(true);
+          break;
+        case "-assume-filename":
+        case "--assume-filename":
+          optionsBuilder.assumeFilename(getValue(flag, it, value));
           break;
         default:
           throw new IllegalArgumentException("unexpected flag: " + flag);

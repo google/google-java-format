@@ -14,21 +14,21 @@
 
 package com.google.googlejavaformat.java;
 
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompoundAssignmentTree;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.MemberSelectTree;
+import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.ParenthesizedTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.util.TreePath;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.Pretty;
+import com.sun.tools.javac.tree.TreeInfo;
 import java.io.IOError;
 import java.io.IOException;
-import org.openjdk.javax.lang.model.element.Name;
-import org.openjdk.source.tree.ClassTree;
-import org.openjdk.source.tree.CompoundAssignmentTree;
-import org.openjdk.source.tree.ExpressionTree;
-import org.openjdk.source.tree.IdentifierTree;
-import org.openjdk.source.tree.MemberSelectTree;
-import org.openjdk.source.tree.MethodInvocationTree;
-import org.openjdk.source.tree.ParenthesizedTree;
-import org.openjdk.source.tree.Tree;
-import org.openjdk.source.util.TreePath;
-import org.openjdk.tools.javac.tree.JCTree;
-import org.openjdk.tools.javac.tree.Pretty;
-import org.openjdk.tools.javac.tree.TreeInfo;
+import javax.lang.model.element.Name;
 
 /** Utilities for working with {@link Tree}s. */
 class Trees {

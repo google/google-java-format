@@ -14,9 +14,12 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
@@ -87,7 +90,7 @@ public class SnippetFormatter {
   }
 
   /** Runs the Google Java formatter on the given source, with only the given ranges specified. */
-  public List<Replacement> format(
+  public ImmutableList<Replacement> format(
       SnippetKind kind,
       String source,
       List<Range<Integer>> ranges,
@@ -114,14 +117,9 @@ public class SnippetFormatter {
             wrapper.offset,
             replacement.length() - (wrapper.contents.length() - wrapper.offset - source.length()));
 
-    List<Replacement> replacements = toReplacements(source, replacement);
-    List<Replacement> filtered = new ArrayList<>();
-    for (Replacement r : replacements) {
-      if (rangeSet.encloses(r.getReplaceRange())) {
-        filtered.add(r);
-      }
-    }
-    return filtered;
+    return toReplacements(source, replacement).stream()
+        .filter(r -> rangeSet.encloses(r.getReplaceRange()))
+        .collect(toImmutableList());
   }
 
   /**
@@ -142,7 +140,7 @@ public class SnippetFormatter {
     int i = NOT_WHITESPACE.indexIn(source);
     int j = NOT_WHITESPACE.indexIn(replacement);
     if (i != 0 || j != 0) {
-      replacements.add(Replacement.create(Range.closedOpen(0, i), replacement.substring(0, j)));
+      replacements.add(Replacement.create(0, i, replacement.substring(0, j)));
     }
     while (i != -1 && j != -1) {
       int i2 = NOT_WHITESPACE.indexIn(source, i + 1);
@@ -152,8 +150,7 @@ public class SnippetFormatter {
       }
       if ((i2 - i) != (j2 - j)
           || !source.substring(i + 1, i2).equals(replacement.substring(j + 1, j2))) {
-        replacements.add(
-            Replacement.create(Range.closedOpen(i + 1, i2), replacement.substring(j + 1, j2)));
+        replacements.add(Replacement.create(i + 1, i2, replacement.substring(j + 1, j2)));
       }
       i = i2;
       j = j2;

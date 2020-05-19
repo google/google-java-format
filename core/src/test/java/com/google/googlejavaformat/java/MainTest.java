@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
@@ -22,6 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -98,7 +100,7 @@ public class MainTest {
             new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             System.in);
     int errorCode = main.format("-replace", path.toAbsolutePath().toString());
-    assertThat(errorCode).named("Error Code").isEqualTo(0);
+    assertWithMessage("Error Code").that(errorCode).isEqualTo(0);
   }
 
   @Test
@@ -292,7 +294,7 @@ public class MainTest {
               new PrintWriter(err, true),
               new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
       assertThat(main.format("-")).isEqualTo(1);
-      assertThat(err.toString()).contains("<stdin>:4:3: error: class, interface, or enum expected");
+      assertThat(err.toString()).contains("<stdin>:4:3: error: class, interface");
 
     } finally {
       Locale.setDefault(backupLocale);
@@ -394,6 +396,38 @@ public class MainTest {
   }
 
   @Test
+  public void keepGoingWhenFilesDontExist() throws Exception {
+    Path a = testFolder.newFile("A.java").toPath();
+    Path b = testFolder.newFile("B.java").toPath();
+    File cFile = testFolder.newFile("C.java");
+    Path c = cFile.toPath();
+    cFile.delete();
+
+    Files.write(a, "class A{}\n".getBytes(UTF_8));
+    Files.write(b, "class B{}\n".getBytes(UTF_8));
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+
+    int exitCode =
+        main.format(
+            "",
+            a.toAbsolutePath().toString(),
+            c.toAbsolutePath().toString(),
+            b.toAbsolutePath().toString());
+
+    // Formatter returns failure if a file was not present.
+    assertThat(exitCode).isEqualTo(1);
+
+    // Present files were correctly formatted.
+    assertThat(out.toString()).isEqualTo("class A {}\nclass B {}\n");
+
+    // File not found still showed error.
+    assertThat(err.toString()).isNotEmpty();
+  }
+
+  @Test
   public void exitIfChangedStdin() throws Exception {
     Path path = testFolder.newFile("Test.java").toPath();
     Files.write(path, "class Test {\n}\n".getBytes(UTF_8));
@@ -442,5 +476,123 @@ public class MainTest {
     assertThat(err).isEmpty();
     assertThat(out).isEqualTo(path.toAbsolutePath().toString() + System.lineSeparator());
     assertThat(process.exitValue()).isEqualTo(1);
+  }
+
+  @Test
+  public void assumeFilename_error() throws Exception {
+    String[] input = {
+      "class Test {}}",
+    };
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(err, true),
+            new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
+    assertThat(main.format("--assume-filename=Foo.java", "-")).isEqualTo(1);
+    assertThat(err.toString()).contains("Foo.java:1:15: error: class, interface");
+  }
+
+  @Test
+  public void assumeFilename_dryRun() throws Exception {
+    String[] input = {
+      "class Test {", //
+      "}",
+    };
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(err, true),
+            new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
+    assertThat(main.format("--dry-run", "--assume-filename=Foo.java", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo("Foo.java" + System.lineSeparator());
+  }
+
+  @Test
+  public void reflowLongStrings() throws Exception {
+    String[] input = {
+      "class T {", //
+      "  String s = \"one long incredibly unbroken sentence moving from topic to topic so that no"
+          + " one had a chance to interrupt\";",
+      "}"
+    };
+    String[] expected = {
+      "class T {",
+      "  String s =",
+      "      \"one long incredibly unbroken sentence moving from topic to topic so that no one had"
+          + " a\"",
+      "          + \" chance to interrupt\";",
+      "}",
+      "",
+    };
+    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
+    assertThat(main.format("-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(joiner.join(expected));
+  }
+
+  @Test
+  public void noReflowLongStrings() throws Exception {
+    String[] input = {
+      "class T {", //
+      "  String s = \"one long incredibly unbroken sentence moving from topic to topic so that no"
+          + " one had a chance to interrupt\";",
+      "}"
+    };
+    String[] expected = {
+      "class T {",
+      "  String s =",
+      "      \"one long incredibly unbroken sentence moving from topic to topic so that no one had"
+          + " a chance to interrupt\";",
+      "}",
+      "",
+    };
+    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
+    assertThat(main.format("--skip-reflowing-long-strings", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(joiner.join(expected));
+  }
+
+  @Test
+  public void noFormatJavadoc() throws Exception {
+    String[] input = {
+      "/**",
+      " * graph",
+      " *",
+      " * graph",
+      " *",
+      " * @param foo lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do"
+          + " eiusmod tempor incididunt ut labore et dolore magna aliqua",
+      " */",
+      "class Test {",
+      "  /**",
+      "   * creates entropy",
+      "   */",
+      "  public static void main(String... args) {}",
+      "}",
+      "",
+    };
+    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
+    assertThat(main.format("--skip-javadoc-formatting", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(joiner.join(input));
   }
 }

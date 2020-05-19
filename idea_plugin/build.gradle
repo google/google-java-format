@@ -15,13 +15,7 @@
  */
 
 plugins {
-  id "org.jetbrains.intellij" version "0.2.17"
-}
-
-task showProps {
-  doLast {
-    println "Your password is ${jetbrainsPluginRepoPassword}"
-  }
+  id "org.jetbrains.intellij" version "0.4.18"
 }
 
 repositories {
@@ -29,7 +23,7 @@ repositories {
 }
 
 ext {
-  googleJavaFormatVersion = '1.5'
+  googleJavaFormatVersion = '1.7'
 }
 
 apply plugin: 'org.jetbrains.intellij'
@@ -37,21 +31,19 @@ apply plugin: 'java'
 
 intellij {
   pluginName = "google-java-format"
-  updateSinceUntilBuild = true
-  sameSinceUntilBuild = true
-  version = "2017.3.3"
+  version = "2020.1"
 }
 
 patchPluginXml {
   pluginDescription = "Formats source code using the google-java-format tool. This version of " +
-                      "the plugin uses version ${googleJavaFormatVersion} of the tool." + googleJavaFormatVersion
-  version = "${googleJavaFormatVersion}.1.171"
-  sinceBuild = '171'
+                      "the plugin uses version ${googleJavaFormatVersion} of the tool."
+  version = "${googleJavaFormatVersion}.0.5"
+  sinceBuild = '201'
+  untilBuild = ''
 }
 
 publishPlugin {
-  username = project.ext.properties.jetbrainsPluginRepoUsername
-  password = project.ext.properties.jetbrainsPluginRepoPassword
+  token = project.ext.properties.jetbrainsPluginRepoToken
 }
 
 sourceSets {

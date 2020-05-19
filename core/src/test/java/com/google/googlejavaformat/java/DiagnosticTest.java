@@ -143,8 +143,7 @@ public class DiagnosticTest {
 
     int result = main.format("-i", pathOne.toString(), pathTwo.toString());
     assertThat(stdout.toString()).isEmpty();
-    assertThat(stderr.toString())
-        .contains("One.java:1:14: error: class, interface, or enum expected");
+    assertThat(stderr.toString()).contains("One.java:1:14: error: class, interface");
     assertThat(result).isEqualTo(1);
     // don't edit files with parse errors
     assertThat(Files.readAllLines(pathOne, UTF_8)).containsExactly("class One {}}");

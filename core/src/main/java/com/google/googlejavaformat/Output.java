@@ -15,16 +15,16 @@
 package com.google.googlejavaformat;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Optional;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
+import java.util.Optional;
 
 /** An output from the formatter. */
 public abstract class Output extends InputOutput {
   /** Unique identifier for a break. */
   public static final class BreakTag {
 
-    Optional<Boolean> taken = Optional.absent();
+    Optional<Boolean> taken = Optional.empty();
 
     public void recordBroken(boolean broken) {
       // TODO(cushon): enforce invariants.
@@ -36,7 +36,7 @@ public abstract class Output extends InputOutput {
     }
 
     public boolean wasBreakTaken() {
-      return taken.or(false);
+      return taken.orElse(false);
     }
   }
 

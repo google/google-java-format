@@ -29,10 +29,7 @@ import com.google.errorprone.annotations.Immutable;
 @Immutable
 public class JavaFormatterOptions {
 
-  static final int DEFAULT_MAX_LINE_LENGTH = 100;
-
   public enum Style {
-
     /** The default Google Java Style configuration. */
     GOOGLE(1),
 
@@ -51,19 +48,25 @@ public class JavaFormatterOptions {
   }
 
   private final Style style;
+  private final boolean formatJavadoc;
 
-  private JavaFormatterOptions(Style style) {
+  private JavaFormatterOptions(Style style, boolean formatJavadoc) {
     this.style = style;
+    this.formatJavadoc = formatJavadoc;
   }
 
-  /** Returns the maximum formatted width */
-  public int maxLineLength() {
-    return DEFAULT_MAX_LINE_LENGTH;
-  }
-
-  /** Returns the multiplier for the unit of indent */
+  /** Returns the multiplier for the unit of indent. */
   public int indentationMultiplier() {
     return style.indentationMultiplier();
+  }
+
+  boolean formatJavadoc() {
+    return formatJavadoc;
+  }
+
+  /** Returns the code style. */
+  public Style style() {
+    return style;
   }
 
   /** Returns the default formatting options. */
@@ -79,6 +82,7 @@ public class JavaFormatterOptions {
   /** A builder for {@link JavaFormatterOptions}. */
   public static class Builder {
     private Style style = Style.GOOGLE;
+    private boolean formatJavadoc = true;
 
     private Builder() {}
 
@@ -87,8 +91,13 @@ public class JavaFormatterOptions {
       return this;
     }
 
+    Builder formatJavadoc(boolean formatJavadoc) {
+      this.formatJavadoc = formatJavadoc;
+      return this;
+    }
+
     public JavaFormatterOptions build() {
-      return new JavaFormatterOptions(style);
+      return new JavaFormatterOptions(style, formatJavadoc);
     }
   }
 }

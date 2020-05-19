@@ -17,30 +17,22 @@
 package com.google.googlejavaformat.intellij;
 
 import com.google.googlejavaformat.java.JavaFormatterOptions;
-import com.intellij.lifecycle.PeriodicalTasksCloser;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 @State(
-  name = "GoogleJavaFormatSettings",
-  storages = {@Storage("google-java-format.xml")}
-)
-class GoogleJavaFormatSettings extends AbstractProjectComponent
-    implements PersistentStateComponent<GoogleJavaFormatSettings.State> {
+    name = "GoogleJavaFormatSettings",
+    storages = {@Storage("google-java-format.xml")})
+class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFormatSettings.State> {
 
   private State state = new State();
 
-  protected GoogleJavaFormatSettings(Project project) {
-    super(project);
-  }
-
   static GoogleJavaFormatSettings getInstance(Project project) {
-    return PeriodicalTasksCloser.getInstance()
-        .safeGetComponent(project, GoogleJavaFormatSettings.class);
+    return ServiceManager.getService(project, GoogleJavaFormatSettings.class);
   }
 
   @Nullable
@@ -52,15 +44,22 @@ class GoogleJavaFormatSettings extends AbstractProjectComponent
   @Override
   public void loadState(State state) {
     this.state = state;
-    updateFormatterState();
   }
 
   boolean isEnabled() {
-    return state.enabled;
+    return state.enabled.equals(EnabledState.ENABLED);
   }
 
   void setEnabled(boolean enabled) {
+    setEnabled(enabled ? EnabledState.ENABLED : EnabledState.DISABLED);
+  }
+
+  void setEnabled(EnabledState enabled) {
     state.enabled = enabled;
+  }
+
+  boolean isUninitialized() {
+    return state.enabled.equals(EnabledState.UNKNOWN);
   }
 
   JavaFormatterOptions.Style getStyle() {
@@ -69,19 +68,39 @@ class GoogleJavaFormatSettings extends AbstractProjectComponent
 
   void setStyle(JavaFormatterOptions.Style style) {
     state.style = style;
-    updateFormatterState();
   }
 
-  private void updateFormatterState() {
-    if (state.enabled) {
-      GoogleJavaFormatInstaller.installFormatter(myProject);
-    } else {
-      GoogleJavaFormatInstaller.removeFormatter(myProject);
-    }
+  enum EnabledState {
+    UNKNOWN,
+    ENABLED,
+    DISABLED;
   }
 
   static class State {
-    public boolean enabled = false;
+
+    private EnabledState enabled = EnabledState.UNKNOWN;
     public JavaFormatterOptions.Style style = JavaFormatterOptions.Style.GOOGLE;
+
+    // enabled used to be a boolean so we use bean property methods for backwards compatibility
+    public void setEnabled(@Nullable String enabledStr) {
+      if (enabledStr == null) {
+        enabled = EnabledState.UNKNOWN;
+      } else if (Boolean.valueOf(enabledStr)) {
+        enabled = EnabledState.ENABLED;
+      } else {
+        enabled = EnabledState.DISABLED;
+      }
+    }
+
+    public String getEnabled() {
+      switch (enabled) {
+        case ENABLED:
+          return "true";
+        case DISABLED:
+          return "false";
+        default:
+          return null;
+      }
+    }
   }
 }

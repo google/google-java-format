@@ -16,6 +16,7 @@
 
 package com.google.googlejavaformat.intellij;
 
+import com.google.googlejavaformat.intellij.GoogleJavaFormatSettings.EnabledState;
 import com.intellij.openapi.options.BaseConfigurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
@@ -25,12 +26,12 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import java.awt.Insets;
-import javax.annotation.Nullable;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -78,8 +79,15 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
   @Override
   public void apply() throws ConfigurationException {
     GoogleJavaFormatSettings settings = GoogleJavaFormatSettings.getInstance(project);
-    settings.setEnabled(enable.isSelected());
+    settings.setEnabled(enable.isSelected() ? EnabledState.ENABLED : getDisabledState());
     settings.setStyle(((UiFormatterStyle) styleComboBox.getSelectedItem()).convert());
+  }
+
+  private EnabledState getDisabledState() {
+    // The default settings (inherited by new projects) are either 'enabled' or
+    // 'show notification'. There's no way to default new projects to disabled. If someone wants
+    // that, we can add another checkbox, I suppose.
+    return project.isDefault() ? EnabledState.UNKNOWN : EnabledState.DISABLED;
   }
 
   @Override

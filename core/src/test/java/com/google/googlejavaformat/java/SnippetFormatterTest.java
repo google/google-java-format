@@ -39,9 +39,7 @@ public class SnippetFormatterTest {
                 4,
                 false);
     assertThat(replacements)
-        .containsExactly(
-            Replacement.create(Range.closedOpen(1, 2), " "),
-            Replacement.create(Range.closedOpen(3, 3), " "));
+        .containsExactly(Replacement.create(1, 2, " "), Replacement.create(3, 3, " "));
   }
 
   @Test
@@ -56,9 +54,7 @@ public class SnippetFormatterTest {
                 4,
                 false);
     assertThat(replacements)
-        .containsExactly(
-            Replacement.create(Range.closedOpen(5, 6), " "),
-            Replacement.create(Range.closedOpen(7, 7), " "));
+        .containsExactly(Replacement.create(5, 6, " "), Replacement.create(7, 7, " "));
   }
 
   @Test
@@ -72,7 +68,7 @@ public class SnippetFormatterTest {
                 ImmutableList.of(Range.closedOpen(0, input.length())),
                 4,
                 false);
-    assertThat(replacements).containsExactly(Replacement.create(Range.closedOpen(10, 11), ""));
+    assertThat(replacements).containsExactly(Replacement.create(10, 11, ""));
   }
 
   @Test
@@ -86,7 +82,7 @@ public class SnippetFormatterTest {
                 ImmutableList.of(Range.closedOpen(input.indexOf("class"), input.length())),
                 4,
                 false);
-    assertThat(replacements).containsExactly(Replacement.create(Range.closedOpen(22, 23), ""));
+    assertThat(replacements).containsExactly(Replacement.create(22, 23, ""));
   }
 
   @Test
@@ -101,7 +97,6 @@ public class SnippetFormatterTest {
                 4,
                 true);
     assertThat(replacements)
-        .containsExactly(
-            Replacement.create(Range.closedOpen(0, 24), "/** a b */\nclass Test {}\n"));
+        .containsExactly(Replacement.create(0, 24, "/** a b */\nclass Test {}\n"));
   }
 }

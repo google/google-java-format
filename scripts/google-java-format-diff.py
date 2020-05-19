@@ -20,6 +20,10 @@ Example usage for git/svn users:
   git diff -U0 HEAD^ | google-java-format-diff.py -p1 -i
   svn diff --diff-cmd=diff -x-U0 | google-java-format-diff.py -i
 
+For perforce users:
+
+  P4DIFF="git --no-pager diff --no-index" p4 diff | ./google-java-format-diff.py -i -p7
+
 """
 
 import argparse
@@ -30,8 +34,6 @@ import subprocess
 import StringIO
 import sys
 from distutils.spawn import find_executable
-
-binary = find_executable('google-java-format') or '/usr/bin/google-java-format'
 
 def main():
   parser = argparse.ArgumentParser(description=
@@ -55,6 +57,10 @@ def main():
                       help='use AOSP style instead of Google Style (4-space indentation)')
   parser.add_argument('--skip-sorting-imports', action='store_true',
                       help='do not fix the import order')
+  parser.add_argument('-b', '--binary', help='path to google-java-format binary')
+  parser.add_argument('--google-java-format-jar', metavar='ABSOLUTE_PATH', default=None,
+                      help='use a custom google-java-format jar')
+
   args = parser.parse_args()
 
   # Extract changed lines for each file.
@@ -87,11 +93,19 @@ def main():
       lines_by_file.setdefault(filename, []).extend(
           ['-lines', str(start_line) + ':' + str(end_line)])
 
+  if args.binary:
+    base_command = [args.binary]
+  elif args.google_java_format_jar:
+    base_command = ['java', '-jar', args.google_java_format_jar]
+  else:
+    binary = find_executable('google-java-format') or '/usr/bin/google-java-format'
+    base_command = [binary]
+
   # Reformat files containing changes in place.
   for filename, lines in lines_by_file.iteritems():
     if args.i and args.verbose:
       print 'Formatting', filename
-    command = [binary]
+    command = base_command[:]
     if args.i:
       command.append('-i')
     if args.aosp:

@@ -22,11 +22,11 @@ import com.google.googlejavaformat.java.Formatter;
 import com.google.googlejavaformat.java.FormatterException;
 import java.io.IOException;
 import java.io.Writer;
-import javax.annotation.Nullable;
 import javax.annotation.processing.Messager;
 import javax.tools.Diagnostic;
 import javax.tools.ForwardingJavaFileObject;
 import javax.tools.JavaFileObject;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A {@link JavaFileObject} decorator which {@linkplain Formatter formats} source code. */
 final class FormattingJavaFileObject extends ForwardingJavaFileObject<JavaFileObject> {
@@ -56,6 +56,11 @@ final class FormattingJavaFileObject extends ForwardingJavaFileObject<JavaFileOb
       @Override
       public void write(char[] chars, int start, int end) throws IOException {
         stringBuilder.append(chars, start, end - start);
+      }
+
+      @Override
+      public void write(String string) throws IOException {
+        stringBuilder.append(string);
       }
 
       @Override

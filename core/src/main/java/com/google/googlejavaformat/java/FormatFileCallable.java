@@ -41,9 +41,12 @@ class FormatFileCallable implements Callable<String> {
       return fixImports(input);
     }
 
-    String formatted =
-        new Formatter(options).formatSource(input, characterRanges(input).asRanges());
+    Formatter formatter = new Formatter(options);
+    String formatted = formatter.formatSource(input, characterRanges(input).asRanges());
     formatted = fixImports(formatted);
+    if (parameters.reflowLongStrings()) {
+      formatted = StringWrapper.wrap(Formatter.MAX_LINE_LENGTH, formatted, formatter);
+    }
     return formatted;
   }
 
@@ -52,7 +55,7 @@ class FormatFileCallable implements Callable<String> {
       input = RemoveUnusedImports.removeUnusedImports(input);
     }
     if (parameters.sortImports()) {
-      input = ImportOrderer.reorderImports(input);
+      input = ImportOrderer.reorderImports(input, options.style());
     }
     return input;
   }
