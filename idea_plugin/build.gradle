@@ -15,44 +15,42 @@
  */
 
 plugins {
-  id "org.jetbrains.intellij" version "0.4.18"
+    id "java"
+    id "org.jetbrains.intellij" version "0.4.10"
 }
 
 repositories {
-  mavenCentral()
+    mavenLocal()
+    mavenCentral()
 }
 
 ext {
-  googleJavaFormatVersion = '1.7'
+    googleJavaFormatVersion = '1.9-SNAPSHOT'
 }
 
 apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'java'
 
 intellij {
-  pluginName = "google-java-format"
-  version = "2020.1"
+    pluginName = "google-java-format"
+    version = "2020.1"
 }
 
 patchPluginXml {
-  pluginDescription = "Formats source code using the google-java-format tool. This version of " +
-                      "the plugin uses version ${googleJavaFormatVersion} of the tool."
-  version = "${googleJavaFormatVersion}.0.5"
-  sinceBuild = '201'
-  untilBuild = ''
-}
-
-publishPlugin {
-  token = project.ext.properties.jetbrainsPluginRepoToken
+    pluginDescription = "Formats source code using the google-java-format tool. This version of " +
+            "the plugin uses version ${googleJavaFormatVersion} of the tool."
+    version = "${googleJavaFormatVersion}.0.5"
+    sinceBuild = '201'
+    untilBuild = ''
 }
 
 sourceSets {
-  main {
-    java.srcDir 'src'
-    resources.srcDir 'resources'
-  }
+    main {
+        java.srcDir 'src'
+        resources.srcDir 'resources'
+    }
 }
 
 dependencies {
-  compile "com.google.googlejavaformat:google-java-format:${googleJavaFormatVersion}"
+    compile "com.google.googlejavaformat:google-java-format:${googleJavaFormatVersion}"
 }
