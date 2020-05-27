@@ -55,7 +55,7 @@ and import it into File→Settings→Editor→Code Style.
 
 ### Eclipse
 
-A
+Version 1.6 of the
 [google-java-format Eclipse plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.6/google-java-format-eclipse-plugin_1.6.0.jar)
 can be downloaded from the releases page. Drop it into the Eclipse
 [drop-ins folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fmisc%2Fp2_dropins_format.html)
@@ -81,6 +81,9 @@ Implementation`.
 *   [maltzj/google-style-precommit-hook](https://github.com/maltzj/google-style-precommit-hook):
     A pre-commit (pre-commit.com) hook that will automatically run GJF whenever
     you commit code to your repository
+*   [Github Actions](https://github.com/features/actions)
+    *   [googlejavaformat-action](https://github.com/axel-op/googlejavaformat-action):
+        Automatically format your Java files when you push on github
 
 ### as a library
 
