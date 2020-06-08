@@ -57,6 +57,8 @@ def main():
                       help='use AOSP style instead of Google Style (4-space indentation)')
   parser.add_argument('--skip-sorting-imports', action='store_true',
                       help='do not fix the import order')
+  parser.add_argument('--skip-removing-unused-imports', action='store_true',
+                      help='do not remove ununsed imports')
   parser.add_argument('-b', '--binary', help='path to google-java-format binary')
   parser.add_argument('--google-java-format-jar', metavar='ABSOLUTE_PATH', default=None,
                       help='use a custom google-java-format jar')
@@ -112,6 +114,8 @@ def main():
       command.append('--aosp')
     if args.skip_sorting_imports:
       command.append('--skip-sorting-imports')
+    if args.skip_removing_unused_imports:
+      command.append('--skip-removing-unused-imports')
     command.extend(lines)
     command.append(filename)
     p = subprocess.Popen(command, stdout=subprocess.PIPE,
