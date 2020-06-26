@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id "org.jetbrains.intellij" version "0.4.18"
+  id "org.jetbrains.intellij" version "0.4.21"
 }
 
 repositories {
@@ -23,7 +23,7 @@ repositories {
 }
 
 ext {
-  googleJavaFormatVersion = '1.7'
+  googleJavaFormatVersion = '1.8'
 }
 
 apply plugin: 'org.jetbrains.intellij'
@@ -37,7 +37,7 @@ intellij {
 patchPluginXml {
   pluginDescription = "Formats source code using the google-java-format tool. This version of " +
                       "the plugin uses version ${googleJavaFormatVersion} of the tool."
-  version = "${googleJavaFormatVersion}.0.5"
+  version = "${googleJavaFormatVersion}.0.0"
   sinceBuild = '201'
   untilBuild = ''
 }

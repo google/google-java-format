@@ -12,6 +12,8 @@
 
   <change-notes><![CDATA[
     <dl>
+      <dt>1.8.0.0</dt>
+      <dd>Updated to use google-java-format 1.8.<dd>
       <dt>1.7.0.5</dt>
       <dd>Added a version for 2020.1+ IDEs.</dd>
       <dt>1.7.0.4</dt>
