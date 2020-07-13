@@ -231,4 +231,9 @@ class CodeStyleManagerDecorator extends CodeStyleManager
     }
     return offset;
   }
+
+  @Override
+  public void scheduleReformatWhenSettingsComputed(PsiFile file) {
+    delegate.scheduleReformatWhenSettingsComputed(file);
+  }
 }
