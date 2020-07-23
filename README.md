@@ -68,9 +68,10 @@ Implementation`.
 ### Third-party integrations
 
 *   Gradle plugins
-    *   [Spotless](https://github.com/diffplug/spotless/tree/master/plugin-gradle#applying-to-java-source-google-java-format):
+    *   [spotless](https://github.com/diffplug/spotless/tree/main/plugin-gradle#google-java-format)
     *   [sherter/google-java-format-gradle-plugin](https://github.com/sherter/google-java-format-gradle-plugin)
 *   Apache Maven plugins
+    *   [spotless](https://github.com/diffplug/spotless/tree/main/plugin-maven#google-java-format)
     *   [coveo/fmt-maven-plugin](https://github.com/coveo/fmt-maven-plugin)
     *   [talios/googleformatter-maven-plugin](https://github.com/talios/googleformatter-maven-plugin)
     *   [Cosium/maven-git-code-format](https://github.com/Cosium/maven-git-code-format):
