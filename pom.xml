@@ -97,7 +97,7 @@
     <java.version>1.8</java.version>
     <guava.version>28.1-jre</guava.version>
     <truth.version>1.0</truth.version>
-    <checker.version>2.0.0</checker.version>
+    <checker.version>3.6.1</checker.version>
   </properties>
 
   <dependencyManagement>
