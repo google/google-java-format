@@ -2366,7 +2366,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.open(ZERO);
     boolean first = true;
     if (receiver.isPresent()) {
-      // TODO(jdd): Use builders.
+      // TODO(user): Use builders.
       declareOne(
           DeclarationKind.PARAMETER,
           Direction.HORIZONTAL,
@@ -2906,7 +2906,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         if (!methodInvocation.getTypeArguments().isEmpty()) {
           builder.open(plusFour);
           addTypeArguments(methodInvocation.getTypeArguments(), ZERO);
-          // TODO(jdd): Should indent the name -4.
+          // TODO(user): Should indent the name -4.
           builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, tyargTag);
           builder.close();
         }

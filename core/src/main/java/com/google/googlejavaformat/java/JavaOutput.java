@@ -89,7 +89,7 @@ public final class JavaOutput extends Output {
     partialFormatRanges.add(Range.closed(lo, hi));
   }
 
-  // TODO(jdd): Add invariant.
+  // TODO(user): Add invariant.
   @Override
   public void append(String text, Range<Integer> range) {
     if (!range.isEmpty()) {

@@ -1,6 +1,6 @@
 public class B20844369 {
   private static final String ID_PATTERN =
-      // TODO(daw): add min/max lengths for the numbers here, e.g. android ID
+      // TODO(user): add min/max lengths for the numbers here, e.g. android ID
       "(?:(?<androidId>\\d+)\\+)?" // optional Android ID
           + "(?<type>\\d+)" // type
           + ":"

@@ -17,13 +17,13 @@ class A {
   @X(x = 1)
   private @interface Y {}
 
-  // TODO(jdd): Add annotation declaration with empty body.
+  // TODO(user): Add annotation declaration with empty body.
 
   @X(x = 1)
   @Y
   protected @interface Z {}
 
-  // TODO(jdd): Include type annotations once we can include a higher language level.
+  // TODO(user): Include type annotations once we can include a higher language level.
 
   int[] array1 = new int[5];
   int[] array2 =

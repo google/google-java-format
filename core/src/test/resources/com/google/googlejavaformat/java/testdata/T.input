@@ -5,7 +5,7 @@ package com.google.googlejavaformat.java.test;
  * TypeDeclarations, TypeLiterals, TypeMethodReferences, TypeParameters, and Types.
  */
 class T<T1, T2, T3> {
-  // TODO(jdd): Add tests for higher language levels.
+  // TODO(user): Add tests for higher language levels.
 
   T f(int x) throws Exception {
     class TT {}
