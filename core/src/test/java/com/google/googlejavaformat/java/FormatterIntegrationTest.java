@@ -47,7 +47,8 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class FormatterIntegrationTest {
 
-  private static final ImmutableSet<String> JAVA14_TESTS = ImmutableSet.of("java14", "I477");
+  private static final ImmutableSet<String> JAVA14_TESTS =
+      ImmutableSet.of("I477", "Records", "RSLs", "Var", "ExpressionSwitch");
 
   @Parameters(name = "{index}: {0}")
   public static Iterable<Object[]> data() throws IOException {

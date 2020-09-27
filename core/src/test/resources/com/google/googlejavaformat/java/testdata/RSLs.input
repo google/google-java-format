@@ -1,0 +1,6 @@
+class RSLs {
+  String s = """
+  lorem
+      ipsum
+  """;
+}

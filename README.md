@@ -13,7 +13,7 @@
 and run it with:
 
 ```
-java -jar /path/to/google-java-format-1.8-all-deps.jar <options> [files...]
+java -jar /path/to/google-java-format-1.9-all-deps.jar <options> [files...]
 ```
 
 The formatter can act on whole files, on limited lines (`--lines`), on specific
@@ -55,7 +55,7 @@ and import it into File→Settings→Editor→Code Style.
 
 ### Eclipse
 
-A
+Version 1.6 of the
 [google-java-format Eclipse plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.6/google-java-format-eclipse-plugin_1.6.0.jar)
 can be downloaded from the releases page. Drop it into the Eclipse
 [drop-ins folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fmisc%2Fp2_dropins_format.html)
@@ -68,9 +68,10 @@ Implementation`.
 ### Third-party integrations
 
 *   Gradle plugins
-    *   [Spotless](https://github.com/diffplug/spotless/tree/master/plugin-gradle#applying-to-java-source-google-java-format):
+    *   [spotless](https://github.com/diffplug/spotless/tree/main/plugin-gradle#google-java-format)
     *   [sherter/google-java-format-gradle-plugin](https://github.com/sherter/google-java-format-gradle-plugin)
 *   Apache Maven plugins
+    *   [spotless](https://github.com/diffplug/spotless/tree/main/plugin-maven#google-java-format)
     *   [coveo/fmt-maven-plugin](https://github.com/coveo/fmt-maven-plugin)
     *   [talios/googleformatter-maven-plugin](https://github.com/talios/googleformatter-maven-plugin)
     *   [Cosium/maven-git-code-format](https://github.com/Cosium/maven-git-code-format):
@@ -81,6 +82,9 @@ Implementation`.
 *   [maltzj/google-style-precommit-hook](https://github.com/maltzj/google-style-precommit-hook):
     A pre-commit (pre-commit.com) hook that will automatically run GJF whenever
     you commit code to your repository
+*   [Github Actions](https://github.com/features/actions)
+    *   [googlejavaformat-action](https://github.com/axel-op/googlejavaformat-action):
+        Automatically format your Java files when you push on github
 
 ### as a library
 
@@ -94,7 +98,7 @@ configuration.
 <dependency>
   <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format</artifactId>
-  <version>1.8</version>
+  <version>1.9</version>
 </dependency>
 ```
 
@@ -102,7 +106,7 @@ configuration.
 
 ```groovy
 dependencies {
-  compile 'com.google.googlejavaformat:google-java-format:1.8'
+  compile 'com.google.googlejavaformat:google-java-format:1.9'
 }
 ```
 
