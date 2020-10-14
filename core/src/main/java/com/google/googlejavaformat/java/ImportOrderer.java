@@ -346,6 +346,10 @@ public class ImportOrderer {
           i++;
         }
       }
+      while (tokenAt(i).equals(";")) {
+        // Extra semicolons are not allowed by the JLS but are accepted by javac.
+        i++;
+      }
       imports.add(new Import(importedName, trailing.toString(), isStatic));
       // Remember the position just after the import we just saw, before skipping blank lines.
       // If the next thing after the blank lines is not another import then we don't want to
