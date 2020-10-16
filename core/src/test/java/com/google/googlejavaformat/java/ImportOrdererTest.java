@@ -527,6 +527,27 @@ public class ImportOrdererTest {
             "class Test {}",
           }
         },
+        {
+          {
+            "package p;",
+            "",
+            "import java.lang.Bar;",
+            "import java.lang.Baz;",
+            ";",
+            "import java.lang.Foo;",
+            "",
+            "interface Test {}",
+          },
+          {
+            "package p;",
+            "",
+            "import java.lang.Bar;",
+            "import java.lang.Baz;",
+            "import java.lang.Foo;",
+            "",
+            "interface Test {}",
+          }
+        }
       };
 
       ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
@@ -799,27 +820,6 @@ public class ImportOrdererTest {
             "",
             "public class Blim {}",
           },
-        },
-        {
-          {
-            "package p;",
-            "",
-            "import java.lang.Bar;",
-            "import java.lang.Baz;",
-            ";",
-            "import java.lang.Foo;",
-            "",
-            "interface Test {}",
-          },
-          {
-            "package p;",
-            "",
-            "import java.lang.Bar;",
-            "import java.lang.Baz;",
-            "import java.lang.Foo;",
-            "",
-            "interface Test {}",
-          }
         }
       };
       ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
