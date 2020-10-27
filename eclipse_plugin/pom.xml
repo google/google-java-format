@@ -22,7 +22,7 @@
   <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format-eclipse-plugin</artifactId>
   <packaging>eclipse-plugin</packaging>
-  <version>1.8.0</version>
+  <version>1.9.0</version>
 
   <name>Google Java Format Plugin for Eclipse 4.5+</name>
 
@@ -36,7 +36,7 @@
     <tycho-version>1.7.0</tycho-version>
 
     <!-- specific library versions; must match declarations in build.properties and META-INF/MANIFEST.MF -->
-    <google-java-format.version>1.8</google-java-format.version>
+    <google-java-format.version>1.9</google-java-format.version>
     <guava.version>28.1-jre</guava.version>
   </properties>
 
