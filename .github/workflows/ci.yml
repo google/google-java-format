@@ -9,7 +9,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
-        java: [ 14 ] # [ 15, 14, ..., 11 ]
+        java: [ 15 ] # [ 15, 14, ..., 11 ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: 'Check out repository'
@@ -26,6 +26,8 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
       - name: 'Install'
+        shell: bash
         run: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
       - name: 'Test'
+        shell: bash
         run: mvn test -B
