@@ -3,13 +3,13 @@ name: CI
 on: [ push, pull_request ]
 
 jobs:
-  build:
+  test:
     name: "JDK ${{ matrix.java }} on ${{ matrix.os }}"
     strategy:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
-        java: [ 15 ] # [ 15, 14, ..., 11 ]
+        java: [ 14 ] # [ 15, 14, ..., 11 ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: 'Check out repository'
@@ -29,8 +29,3 @@ jobs:
         run: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
       - name: 'Test'
         run: mvn test -B
-      - name: 'Publish snapshot'
-        if: github.ref == 'refs/heads/master' && ${{ matrix.os }} == 'ubuntu-latest' && ${{ matrix.java }} == '15'
-        shell: bash
-        run: |
-          echo "TODO util/publish-snapshot-on-commit.sh"
