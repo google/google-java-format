@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat.java;
 
+import static java.lang.Math.min;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.ByteStreams;
@@ -109,7 +110,7 @@ public final class Main {
   }
 
   private int formatFiles(CommandLineOptions parameters, JavaFormatterOptions options) {
-    int numThreads = Math.min(MAX_THREADS, parameters.files().size());
+    int numThreads = min(MAX_THREADS, parameters.files().size());
     ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
 
     Map<Path, String> inputs = new LinkedHashMap<>();
@@ -146,7 +147,7 @@ public final class Main {
       } catch (ExecutionException e) {
         if (e.getCause() instanceof FormatterException) {
           for (FormatterDiagnostic diagnostic : ((FormatterException) e.getCause()).diagnostics()) {
-            errWriter.println(path + ":" + diagnostic.toString());
+            errWriter.println(path + ":" + diagnostic);
           }
         } else {
           errWriter.println(path + ": error: " + e.getCause().getMessage());
@@ -205,7 +206,7 @@ public final class Main {
       }
     } catch (FormatterException e) {
       for (FormatterDiagnostic diagnostic : e.diagnostics()) {
-        errWriter.println(stdinFilename + ":" + diagnostic.toString());
+        errWriter.println(stdinFilename + ":" + diagnostic);
       }
       ok = false;
       // TODO(cpovirk): Catch other types of exception (as we do in the formatFiles case).

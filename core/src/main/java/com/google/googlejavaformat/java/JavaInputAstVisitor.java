@@ -139,7 +139,6 @@ import com.sun.tools.javac.tree.TreeScanner;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -3270,8 +3269,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
 
     Deque<List<? extends AnnotationTree>> dims =
-        new ArrayDeque<>(
-            typeWithDims.isPresent() ? typeWithDims.get().dims : Collections.emptyList());
+        new ArrayDeque<>(typeWithDims.isPresent() ? typeWithDims.get().dims : ImmutableList.of());
     int baseDims = 0;
 
     builder.open(

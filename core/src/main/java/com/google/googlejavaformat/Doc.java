@@ -15,6 +15,7 @@
 package com.google.googlejavaformat;
 
 import static com.google.common.collect.Iterables.getLast;
+import static java.lang.Math.max;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.DiscreteDomain;
@@ -653,7 +654,7 @@ public abstract class Doc {
 
       if (broken) {
         this.broken = true;
-        this.newIndent = Math.max(lastIndent + plusIndent.eval(), 0);
+        this.newIndent = max(lastIndent + plusIndent.eval(), 0);
         return state.withColumn(newIndent);
       } else {
         this.broken = false;

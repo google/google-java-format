@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java.javadoc;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Comparators.max;
 import static com.google.common.collect.Sets.immutableEnumSet;
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.AutoIndent.AUTO_INDENT;
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.AutoIndent.NO_AUTO_INDENT;
@@ -28,7 +29,6 @@ import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_OPEN
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Ordering;
 import com.google.googlejavaformat.java.javadoc.Token.Type;
 
 /**
@@ -270,8 +270,7 @@ final class JavadocWriter {
   }
 
   private void requestWhitespace(RequestedWhitespace requestedWhitespace) {
-    this.requestedWhitespace =
-        Ordering.natural().max(requestedWhitespace, this.requestedWhitespace);
+    this.requestedWhitespace = max(requestedWhitespace, this.requestedWhitespace);
   }
 
   /**

@@ -258,7 +258,7 @@ public class RemoveUnusedImportsTest {
     };
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[][] inputAndOutput : inputsOutputs) {
-      assertThat(inputAndOutput.length).isEqualTo(2);
+      assertThat(inputAndOutput).hasLength(2);
       String[] input = inputAndOutput[0];
       String[] output = inputAndOutput[1];
       String[] parameters = {

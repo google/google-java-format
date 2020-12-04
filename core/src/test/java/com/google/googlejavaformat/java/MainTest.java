@@ -14,6 +14,8 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_PATH;
+import static com.google.common.base.StandardSystemProperty.JAVA_HOME;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -108,9 +110,9 @@ public class MainTest {
     Process process =
         new ProcessBuilder(
                 ImmutableList.of(
-                    Paths.get(System.getProperty("java.home")).resolve("bin/java").toString(),
+                    Paths.get(JAVA_HOME.value()).resolve("bin/java").toString(),
                     "-cp",
-                    System.getProperty("java.class.path"),
+                    JAVA_CLASS_PATH.value(),
                     Main.class.getName()))
             .redirectError(Redirect.PIPE)
             .redirectOutput(Redirect.PIPE)
@@ -388,9 +390,9 @@ public class MainTest {
 
     assertThat(out.toString())
         .isEqualTo(
-            b.toAbsolutePath().toString()
+            b.toAbsolutePath()
                 + System.lineSeparator()
-                + c.toAbsolutePath().toString()
+                + c.toAbsolutePath()
                 + System.lineSeparator());
     assertThat(err.toString()).isEmpty();
   }
@@ -434,9 +436,9 @@ public class MainTest {
     Process process =
         new ProcessBuilder(
                 ImmutableList.of(
-                    Paths.get(System.getProperty("java.home")).resolve("bin/java").toString(),
+                    Paths.get(JAVA_HOME.value()).resolve("bin/java").toString(),
                     "-cp",
-                    System.getProperty("java.class.path"),
+                    JAVA_CLASS_PATH.value(),
                     Main.class.getName(),
                     "-n",
                     "--set-exit-if-changed",
@@ -460,9 +462,9 @@ public class MainTest {
     Process process =
         new ProcessBuilder(
                 ImmutableList.of(
-                    Paths.get(System.getProperty("java.home")).resolve("bin/java").toString(),
+                    Paths.get(JAVA_HOME.value()).resolve("bin/java").toString(),
                     "-cp",
-                    System.getProperty("java.class.path"),
+                    JAVA_CLASS_PATH.value(),
                     Main.class.getName(),
                     "-n",
                     "--set-exit-if-changed",
@@ -474,7 +476,7 @@ public class MainTest {
     String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
     String out = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
     assertThat(err).isEmpty();
-    assertThat(out).isEqualTo(path.toAbsolutePath().toString() + System.lineSeparator());
+    assertThat(out).isEqualTo(path.toAbsolutePath() + System.lineSeparator());
     assertThat(process.exitValue()).isEqualTo(1);
   }
 

@@ -259,7 +259,7 @@ public final class StringWrapper {
     while (!input.isEmpty()) {
       int length = 0;
       List<String> line = new ArrayList<>();
-      if (input.stream().mapToInt(x -> x.length()).sum() <= width) {
+      if (input.stream().mapToInt(String::length).sum() <= width) {
         width -= trailing;
       }
       while (!input.isEmpty() && (length <= 4 || (length + input.peekFirst().length()) < width)) {

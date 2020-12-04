@@ -395,8 +395,8 @@ public class StringWrapperIntegrationTest {
 
   @Test
   public void testCR() throws Exception {
-    assertThat(StringWrapper.wrap(40, formatter.formatSource(input.replace("\n", "\r")), formatter))
-        .isEqualTo(output.replace("\n", "\r"));
+    assertThat(StringWrapper.wrap(40, formatter.formatSource(input.replace('\n', '\r')), formatter))
+        .isEqualTo(output.replace('\n', '\r'));
   }
 
   @Test

@@ -14,6 +14,9 @@
 
 package com.google.googlejavaformat;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -39,14 +42,14 @@ public final class OpsBuilder {
     int start = startToken.getTok().getPosition();
     for (Tok tok : startToken.getToksBefore()) {
       if (tok.isComment()) {
-        start = Math.min(start, tok.getPosition());
+        start = min(start, tok.getPosition());
       }
     }
     Token endToken = input.getPositionTokenMap().get(position + length - 1);
     int end = endToken.getTok().getPosition() + endToken.getTok().length();
     for (Tok tok : endToken.getToksAfter()) {
       if (tok.isComment()) {
-        end = Math.max(end, tok.getPosition() + tok.length());
+        end = max(end, tok.getPosition() + tok.length());
       }
     }
     return end - start;
@@ -62,7 +65,7 @@ public final class OpsBuilder {
         return start;
       }
       if (tok.isComment()) {
-        start = Math.min(start, tok.getPosition());
+        start = min(start, tok.getPosition());
       }
     }
     return start;

@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
@@ -27,7 +28,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.Rule;
@@ -63,7 +63,7 @@ public final class FormatterTest {
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("A.java");
-    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+    Files.write(path, input.getBytes(UTF_8));
 
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
@@ -94,7 +94,7 @@ public final class FormatterTest {
     String input = "class Foo{\n" + "void f\n" + "() {\n" + "}\n" + "}\n";
     String expectedOutput = "class Foo {\n" + "  void f() {}\n" + "}\n";
 
-    InputStream in = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
 
@@ -115,7 +115,7 @@ public final class FormatterTest {
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("Foo.java");
-    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+    Files.write(path, input.getBytes(UTF_8));
 
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
@@ -132,7 +132,7 @@ public final class FormatterTest {
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("Foo.java");
-    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+    Files.write(path, input.getBytes(UTF_8));
 
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
@@ -302,7 +302,7 @@ public final class FormatterTest {
     String inputResourceName = "com/google/googlejavaformat/java/testimports/A.input";
     String input = getResource(inputResourceName);
     String expectedOutput = getResource(outputResourceName);
-    Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+    Files.write(path, input.getBytes(UTF_8));
 
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
@@ -315,14 +315,14 @@ public final class FormatterTest {
 
     assertThat(err.toString()).isEmpty();
     assertThat(out.toString()).isEmpty();
-    String output = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    String output = new String(Files.readAllBytes(path), UTF_8);
     assertThat(output).isEqualTo(expectedOutput);
   }
 
   private String getResource(String resourceName) throws IOException {
     try (InputStream stream = getClass().getClassLoader().getResourceAsStream(resourceName)) {
       assertWithMessage("Missing resource: " + resourceName).that(stream).isNotNull();
-      return CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
+      return CharStreams.toString(new InputStreamReader(stream, UTF_8));
     }
   }
 

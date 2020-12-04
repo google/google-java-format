@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat.java;
 
+import static java.lang.Math.min;
 import static java.util.Comparator.comparing;
 
 import com.google.common.base.CharMatcher;
@@ -261,8 +262,7 @@ public final class JavaOutput extends Output {
         }
       }
 
-      int replaceTo =
-          Math.min(endTok.getPosition() + endTok.length(), javaInput.getText().length());
+      int replaceTo = min(endTok.getPosition() + endTok.length(), javaInput.getText().length());
       // If the formatted ranged ended in the trailing trivia of the last token before EOF,
       // format all the way up to EOF to deal with trailing whitespace correctly.
       if (endTok.getIndex() == javaInput.getkN() - 1) {
@@ -304,7 +304,7 @@ public final class JavaOutput extends Output {
         } else {
           if (newline == -1) {
             // If there wasn't a trailing newline in the input, indent the next line.
-            replacement.append(after.substring(0, idx));
+            replacement.append(after, 0, idx);
           }
           break;
         }
@@ -352,7 +352,7 @@ public final class JavaOutput extends Output {
   public static int startPosition(Token token) {
     int min = token.getTok().getPosition();
     for (Input.Tok tok : token.getToksBefore()) {
-      min = Math.min(min, tok.getPosition());
+      min = min(min, tok.getPosition());
     }
     return min;
   }

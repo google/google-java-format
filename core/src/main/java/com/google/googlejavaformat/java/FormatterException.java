@@ -26,7 +26,7 @@ import javax.tools.JavaFileObject;
 /** Checked exception class for formatter errors. */
 public final class FormatterException extends Exception {
 
-  private ImmutableList<FormatterDiagnostic> diagnostics;
+  private final ImmutableList<FormatterDiagnostic> diagnostics;
 
   public FormatterException(String message) {
     this(FormatterDiagnostic.create(message));
@@ -47,7 +47,8 @@ public final class FormatterException extends Exception {
 
   public static FormatterException fromJavacDiagnostics(
       Iterable<Diagnostic<? extends JavaFileObject>> diagnostics) {
-    return new FormatterException(Iterables.transform(diagnostics, d -> toFormatterDiagnostic(d)));
+    return new FormatterException(
+        Iterables.transform(diagnostics, FormatterException::toFormatterDiagnostic));
   }
 
   private static FormatterDiagnostic toFormatterDiagnostic(Diagnostic<?> input) {

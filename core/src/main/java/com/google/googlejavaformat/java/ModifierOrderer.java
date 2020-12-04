@@ -130,7 +130,7 @@ final class ModifierOrderer {
           if (i > 0) {
             addTrivia(replacement, modifierTokens.get(i).getToksBefore());
           }
-          replacement.append(mods.get(i).toString());
+          replacement.append(mods.get(i));
           if (i < (modifierTokens.size() - 1)) {
             addTrivia(replacement, modifierTokens.get(i).getToksAfter());
           }
