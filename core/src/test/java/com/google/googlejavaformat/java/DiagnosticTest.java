@@ -97,8 +97,7 @@ public class DiagnosticTest {
 
     int result = main.format(path.toString());
     assertThat(stdout.toString()).isEmpty();
-    assertThat(stderr.toString())
-        .contains("InvalidSyntax.java:1:35: error: illegal unicode escape");
+    assertThat(stderr.toString()).contains("error: illegal unicode escape");
     assertThat(result).isEqualTo(1);
   }
 

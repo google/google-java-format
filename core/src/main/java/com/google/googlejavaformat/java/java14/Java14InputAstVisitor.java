@@ -29,6 +29,7 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.InstanceOfTree;
 import com.sun.source.tree.SwitchExpressionTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.YieldTree;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
@@ -37,6 +38,7 @@ import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeInfo;
 import java.util.List;
 import java.util.Optional;
+import javax.lang.model.element.Name;
 
 /**
  * Extends {@link JavaInputAstVisitor} with support for AST nodes that were added or modified for
@@ -51,10 +53,27 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
   @Override
   public Void visitBindingPattern(BindingPatternTree node, Void unused) {
     sync(node);
-    scan(node.getType(), null);
-    builder.breakOp(" ");
-    visit(node.getBinding());
+    try {
+      VariableTree variableTree =
+          (VariableTree) BindingPatternTree.class.getMethod("getVariable").invoke(node);
+      visitBindingPattern(variableTree.getType(), variableTree.getName());
+    } catch (ReflectiveOperationException e1) {
+      try {
+        Tree type = (Tree) BindingPatternTree.class.getMethod("getType").invoke(node);
+        Name name = (Name) BindingPatternTree.class.getMethod("getName").invoke(node);
+        visitBindingPattern(type, name);
+      } catch (ReflectiveOperationException e2) {
+        e2.addSuppressed(e1);
+        throw new LinkageError(e2.getMessage(), e2);
+      }
+    }
     return null;
+  }
+
+  private void visitBindingPattern(Tree type, Name name) {
+    scan(type, null);
+    builder.breakOp(" ");
+    visit(name);
   }
 
   @Override
