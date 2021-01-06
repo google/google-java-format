@@ -25,4 +25,17 @@ class ExpressionSwitch {
       default -> System.out.println("default");
     }
   }
+
+  String breakLongCaseArgs(MyEnum e) {
+    return switch (e) {
+      case SOME_RATHER_LONG_NAME_1, SOME_RATHER_LONG_NAME_2, SOME_RATHER_LONG_NAME_3, SOME_RATHER_LONG_NAME_4, SOME_RATHER_LONG_NAME_5, SOME_RATHER_LONG_NAME_6, SOME_RATHER_LONG_NAME_7 -> {}
+      case SOME_RATHER_LONG_NAME_8 -> {}
+    };
+  }
+
+  String dontBreakShortCaseArgs(MyEnum e) {
+    return switch (e) {
+      case CASE_A, CASE_B -> {}
+    };
+  }
 }
