@@ -1,9 +1,9 @@
 class B20701054 {
   void m() {
     ImmutableList<String> x = ImmutableList.builder().add(1).build();
-    OptionalBinder.<ASD>newOptionalBinder(binder(), InputWhitelist.class)
+    OptionalBinder.<ASD>newOptionalBinder(binder(), InputAllowlist.class)
         .setBinding()
-        .to(AllInputWhitelist.class);
+        .to(AllInputAllowlist.class);
 
     Foo z = Foo.INSTANCE.field;
     Foo z = Foo.INSTANCE.field.field;
