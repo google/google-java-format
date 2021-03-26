@@ -121,7 +121,7 @@ public abstract class Input extends InputOutput {
   /**
    * Get the Token by index.
    *
-   * @param k the token index
+   * @param k the Tok index
    */
   public abstract Token getToken(int k);
 

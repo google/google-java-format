@@ -604,7 +604,7 @@ public final class JavaInput extends Input {
   /**
    * Get the Token by index.
    *
-   * @param k the token index
+   * @param k the Tok index
    */
   @Override
   public Token getToken(int k) {
