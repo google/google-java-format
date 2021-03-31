@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.google.googlejavaformat</groupId>
     <artifactId>google-java-format-parent</artifactId>
-    <version>1.10-SNAPSHOT</version>
+    <version>1.10.0</version>
   </parent>
 
   <artifactId>google-java-format</artifactId>
