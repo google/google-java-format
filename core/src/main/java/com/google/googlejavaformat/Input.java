@@ -114,7 +114,7 @@ public abstract class Input extends InputOutput {
   /**
    * Get the number of toks.
    *
-   * @return the number of toks, including the EOF tok
+   * @return the number of toks, excluding the EOF tok
    */
   public abstract int getkN();
 
