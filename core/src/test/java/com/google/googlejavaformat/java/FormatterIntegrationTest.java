@@ -48,7 +48,7 @@ import org.junit.runners.Parameterized.Parameters;
 public class FormatterIntegrationTest {
 
   private static final ImmutableSet<String> JAVA14_TESTS =
-      ImmutableSet.of("I477", "Records", "RSLs", "Var", "ExpressionSwitch", "I574");
+      ImmutableSet.of("I477", "Records", "RSLs", "Var", "ExpressionSwitch", "I574", "I594");
 
   private static final ImmutableSet<String> JAVA16_TESTS = ImmutableSet.of("I588");
 

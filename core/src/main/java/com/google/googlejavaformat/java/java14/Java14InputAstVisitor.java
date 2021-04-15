@@ -60,7 +60,7 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
     } catch (ReflectiveOperationException e1) {
       try {
         Tree type = (Tree) BindingPatternTree.class.getMethod("getType").invoke(node);
-        Name name = (Name) BindingPatternTree.class.getMethod("getName").invoke(node);
+        Name name = (Name) BindingPatternTree.class.getMethod("getBinding").invoke(node);
         visitBindingPattern(/* modifiers= */ null, type, name);
       } catch (ReflectiveOperationException e2) {
         e2.addSuppressed(e1);
