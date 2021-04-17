@@ -52,6 +52,16 @@ public class MainTest {
   // PrintWriter instances used below are hard-coded to use system-default line separator.
   private final Joiner joiner = Joiner.on(System.lineSeparator());
 
+  private static final ImmutableList<String> ADD_EXPORTS =
+      ImmutableList.of(
+          "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+          "--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+          "--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+          "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+          "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+          "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+          "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED");
+
   @Test
   public void testUsageOutput() {
     StringWriter out = new StringWriter();
@@ -109,11 +119,13 @@ public class MainTest {
   public void testMain() throws Exception {
     Process process =
         new ProcessBuilder(
-                ImmutableList.of(
-                    Paths.get(JAVA_HOME.value()).resolve("bin/java").toString(),
-                    "-cp",
-                    JAVA_CLASS_PATH.value(),
-                    Main.class.getName()))
+                ImmutableList.<String>builder()
+                    .add(Paths.get(JAVA_HOME.value()).resolve("bin/java").toString())
+                    .addAll(ADD_EXPORTS)
+                    .add("-cp")
+                    .add(JAVA_CLASS_PATH.value())
+                    .add(Main.class.getName())
+                    .build())
             .redirectError(Redirect.PIPE)
             .redirectOutput(Redirect.PIPE)
             .start();
@@ -435,14 +447,16 @@ public class MainTest {
     Files.write(path, "class Test {\n}\n".getBytes(UTF_8));
     Process process =
         new ProcessBuilder(
-                ImmutableList.of(
-                    Paths.get(JAVA_HOME.value()).resolve("bin/java").toString(),
-                    "-cp",
-                    JAVA_CLASS_PATH.value(),
-                    Main.class.getName(),
-                    "-n",
-                    "--set-exit-if-changed",
-                    "-"))
+                ImmutableList.<String>builder()
+                    .add(Paths.get(JAVA_HOME.value()).resolve("bin/java").toString())
+                    .addAll(ADD_EXPORTS)
+                    .add("-cp")
+                    .add(JAVA_CLASS_PATH.value())
+                    .add(Main.class.getName())
+                    .add("-n")
+                    .add("--set-exit-if-changed")
+                    .add("-")
+                    .build())
             .redirectInput(path.toFile())
             .redirectError(Redirect.PIPE)
             .redirectOutput(Redirect.PIPE)
@@ -461,14 +475,16 @@ public class MainTest {
     Files.write(path, "class Test {\n}\n".getBytes(UTF_8));
     Process process =
         new ProcessBuilder(
-                ImmutableList.of(
-                    Paths.get(JAVA_HOME.value()).resolve("bin/java").toString(),
-                    "-cp",
-                    JAVA_CLASS_PATH.value(),
-                    Main.class.getName(),
-                    "-n",
-                    "--set-exit-if-changed",
-                    path.toAbsolutePath().toString()))
+                ImmutableList.<String>builder()
+                    .add(Paths.get(JAVA_HOME.value()).resolve("bin/java").toString())
+                    .addAll(ADD_EXPORTS)
+                    .add("-cp")
+                    .add(JAVA_CLASS_PATH.value())
+                    .add(Main.class.getName())
+                    .add("-n")
+                    .add("--set-exit-if-changed")
+                    .add(path.toAbsolutePath().toString())
+                    .build())
             .redirectError(Redirect.PIPE)
             .redirectOutput(Redirect.PIPE)
             .start();
@@ -525,8 +541,8 @@ public class MainTest {
       "class T {",
       "  String s =",
       "      \"one long incredibly unbroken sentence moving from topic to topic so that no one had"
-          + " a\"",
-      "          + \" chance to interrupt\";",
+          + " a chance\"",
+      "          + \" to interrupt\";",
       "}",
       "",
     };

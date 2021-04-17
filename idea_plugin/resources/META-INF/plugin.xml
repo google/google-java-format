@@ -14,7 +14,7 @@
   limitations under the License.
 -->
 
-<idea-plugin url="https://github.com/google/google-java-format/tree/master/idea_plugin">
+<idea-plugin url="https://github.com/google/google-java-format/tree/master/idea_plugin" require-restart="true">
   <id>google-java-format</id>
   <name>google-java-format</name>
   <vendor url="https://github.com/google/google-java-format">
@@ -28,12 +28,14 @@
 
   <change-notes><![CDATA[
     <dl>
+      <dt>1.10.0.0</dt>
+      <dd>Updated to use google-java-format 1.10.</dd>
       <dt>1.9.0.0</dt>
-      <dd>Updated to use google-java-format 1.9.<dd>
+      <dd>Updated to use google-java-format 1.9.</dd>
       <dt>1.8.0.1</dt>
-      <dd>Fixed support for 2020.2 IDEs.<dd>
+      <dd>Fixed support for 2020.2 IDEs.</dd>
       <dt>1.8.0.0</dt>
-      <dd>Updated to use google-java-format 1.8.<dd>
+      <dd>Updated to use google-java-format 1.8.</dd>
       <dt>1.7.0.5</dt>
       <dd>Added a version for 2020.1+ IDEs.</dd>
       <dt>1.7.0.4</dt>

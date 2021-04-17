@@ -28,7 +28,7 @@
   <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.10-SNAPSHOT</version>
+  <version>HEAD-SNAPSHOT</version>
 
   <modules>
     <module>core</module>
@@ -118,7 +118,7 @@
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
-        <version>2.0.8</version>
+        <version>2.5.1</version>
       </dependency>
 
       <!-- Test dependencies -->
@@ -180,7 +180,21 @@
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
+          <encoding>UTF-8</encoding>
+          <fork>true</fork>
           <compilerArgs>
+            <!-- runtime arguments for Error Prone -->
+            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+            <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+            <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+            <!-- compile-time arguments for google-java-format -->
             <arg>-XDcompilePolicy=simple</arg>
             <arg>-Xplugin:ErrorProne</arg>
             <arg>--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
@@ -195,7 +209,7 @@
             <path>
               <groupId>com.google.errorprone</groupId>
               <artifactId>error_prone_core</artifactId>
-              <version>2.3.2</version>
+              <version>2.5.1</version>
             </path>
           </annotationProcessorPaths>
         </configuration>
@@ -245,7 +259,7 @@
         <version>2.18</version>
         <configuration>
           <!-- set heap size to work around http://github.com/travis-ci/travis-ci/issues/3396 -->
-          <argLine>-Xmx1024m</argLine>
+          <argLine>-Xmx1024m --illegal-access=permit</argLine>
         </configuration>
       </plugin>
     </plugins>

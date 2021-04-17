@@ -33,7 +33,7 @@ final class FormatterUtil {
   private FormatterUtil() {}
 
   static Map<TextRange, String> getReplacements(
-      Formatter formatter, String text, Collection<TextRange> ranges) {
+      Formatter formatter, String text, Collection<? extends TextRange> ranges) {
     try {
       ImmutableMap.Builder<TextRange, String> replacements = ImmutableMap.builder();
       formatter
@@ -49,7 +49,7 @@ final class FormatterUtil {
     }
   }
 
-  private static Collection<Range<Integer>> toRanges(Collection<TextRange> textRanges) {
+  private static Collection<Range<Integer>> toRanges(Collection<? extends TextRange> textRanges) {
     return textRanges
         .stream()
         .map(textRange -> Range.closedOpen(textRange.getStartOffset(), textRange.getEndOffset()))

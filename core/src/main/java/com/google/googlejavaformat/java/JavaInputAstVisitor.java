@@ -1599,16 +1599,20 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public Void visitLiteral(LiteralTree node, Void unused) {
     sync(node);
     String sourceForNode = getSourceForNode(node, getCurrentPath());
-    // A negative numeric literal -n is usually represented as unary minus on n,
-    // but that doesn't work for integer or long MIN_VALUE. The parser works
-    // around that by representing it directly as a signed literal (with no
-    // unary minus), but the lexer still expects two tokens.
-    if (sourceForNode.startsWith("-")) {
+    if (isUnaryMinusLiteral(sourceForNode)) {
       token("-");
       sourceForNode = sourceForNode.substring(1).trim();
     }
     token(sourceForNode);
     return null;
+  }
+
+  // A negative numeric literal -n is usually represented as unary minus on n,
+  // but that doesn't work for integer or long MIN_VALUE. The parser works
+  // around that by representing it directly as a signed literal (with no
+  // unary minus), but the lexer still expects two tokens.
+  private static boolean isUnaryMinusLiteral(String literalTreeSource) {
+    return literalTreeSource.startsWith("-");
   }
 
   private void visitPackage(
@@ -1696,10 +1700,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       default:
         return false;
     }
-    if (!(node.getExpression() instanceof UnaryTree)) {
+    JCTree.Tag tag = unaryTag(node.getExpression());
+    if (tag == null) {
       return false;
     }
-    JCTree.Tag tag = ((JCTree) node.getExpression()).getTag();
     if (tag.isPostUnaryOp()) {
       return false;
     }
@@ -1707,6 +1711,17 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       return false;
     }
     return true;
+  }
+
+  private JCTree.Tag unaryTag(ExpressionTree expression) {
+    if (expression instanceof UnaryTree) {
+      return ((JCTree) expression).getTag();
+    }
+    if (expression instanceof LiteralTree
+        && isUnaryMinusLiteral(getSourceForNode(expression, getCurrentPath()))) {
+      return JCTree.Tag.MINUS;
+    }
+    return null;
   }
 
   @Override

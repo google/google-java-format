@@ -14,7 +14,13 @@
 
 name: CI
 
-on: [ push, pull_request ]
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
 
 jobs:
   test:
@@ -23,23 +29,27 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
-        java: [ 15, 11 ]
+        java: [ 16, 14, 11 ]
         experimental: [ false ]
         include:
           # Only test on macos and windows with a single recent JDK to avoid a
           # combinatorial explosion of test configurations.
           - os: macos-latest
-            java: 15
+            java: 16
             experimental: false
           - os: windows-latest
-            java: 15
+            java: 16
             experimental: false
           - os: ubuntu-latest
-            java: 16-ea
+            java: 17-ea
             experimental: true
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
     steps:
+      - name: Cancel previous
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ github.token }}
       - name: 'Check out repository'
         uses: actions/checkout@v2
       - name: 'Cache local Maven repository'

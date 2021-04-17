@@ -48,7 +48,9 @@ import org.junit.runners.Parameterized.Parameters;
 public class FormatterIntegrationTest {
 
   private static final ImmutableSet<String> JAVA14_TESTS =
-      ImmutableSet.of("I477", "Records", "RSLs", "Var", "ExpressionSwitch");
+      ImmutableSet.of("I477", "Records", "RSLs", "Var", "ExpressionSwitch", "I574", "I594");
+
+  private static final ImmutableSet<String> JAVA16_TESTS = ImmutableSet.of("I588");
 
   @Parameters(name = "{index}: {0}")
   public static Iterable<Object[]> data() throws IOException {
@@ -76,7 +78,7 @@ public class FormatterIntegrationTest {
           case "output":
             outputs.put(baseName, contents);
             break;
-          default:
+          default: // fall out
         }
       }
     }
@@ -88,6 +90,9 @@ public class FormatterIntegrationTest {
       assertTrue("unmatched input", outputs.containsKey(fileName));
       String expectedOutput = outputs.get(fileName);
       if (JAVA14_TESTS.contains(fileName) && getMajor() < 14) {
+        continue;
+      }
+      if (JAVA16_TESTS.contains(fileName) && getMajor() < 16) {
         continue;
       }
       testInputs.add(new Object[] {fileName, input, expectedOutput});
@@ -125,7 +130,9 @@ public class FormatterIntegrationTest {
   @Test
   public void format() {
     try {
-      String output = new Formatter().formatSource(input);
+      Formatter formatter = new Formatter();
+      String output = formatter.formatSource(input);
+      output = StringWrapper.wrap(output, formatter);
       assertEquals("bad output for " + name, expected, output);
     } catch (FormatterException e) {
       fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));

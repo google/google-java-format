@@ -15,7 +15,6 @@
 package com.google.googlejavaformat.java.java14;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.MoreCollectors.toOptional;
 
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
@@ -28,13 +27,13 @@ import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.InstanceOfTree;
+import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.SwitchExpressionTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.YieldTree;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeInfo;
 import java.util.List;
@@ -57,12 +56,13 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
     try {
       VariableTree variableTree =
           (VariableTree) BindingPatternTree.class.getMethod("getVariable").invoke(node);
-      visitBindingPattern(variableTree.getType(), variableTree.getName());
+      visitBindingPattern(
+          variableTree.getModifiers(), variableTree.getType(), variableTree.getName());
     } catch (ReflectiveOperationException e1) {
       try {
         Tree type = (Tree) BindingPatternTree.class.getMethod("getType").invoke(node);
-        Name name = (Name) BindingPatternTree.class.getMethod("getName").invoke(node);
-        visitBindingPattern(type, name);
+        Name name = (Name) BindingPatternTree.class.getMethod("getBinding").invoke(node);
+        visitBindingPattern(/* modifiers= */ null, type, name);
       } catch (ReflectiveOperationException e2) {
         e2.addSuppressed(e1);
         throw new LinkageError(e2.getMessage(), e2);
@@ -71,7 +71,10 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
     return null;
   }
 
-  private void visitBindingPattern(Tree type, Name name) {
+  private void visitBindingPattern(ModifiersTree modifiers, Tree type, Name name) {
+    if (modifiers != null) {
+      builder.addAll(visitModifiers(modifiers, Direction.HORIZONTAL, Optional.empty()));
+    }
     scan(type, null);
     builder.breakOp(" ");
     visit(name);
@@ -137,10 +140,7 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
       if (!node.getTypeParameters().isEmpty()) {
         typeParametersRest(node.getTypeParameters(), hasSuperInterfaceTypes ? plusFour : ZERO);
       }
-      ImmutableList<JCVariableDecl> parameters =
-          compactRecordConstructor(node)
-              .map(m -> ImmutableList.copyOf(m.getParameters()))
-              .orElseGet(() -> recordVariables(node));
+      ImmutableList<JCVariableDecl> parameters = recordVariables(node);
       token("(");
       if (!parameters.isEmpty()) {
         // Break before args.
@@ -177,14 +177,6 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
       addBodyDeclarations(members, BracesOrNot.YES, FirstDeclarationsOrNot.YES);
     }
     dropEmptyDeclarations();
-  }
-
-  private static Optional<JCMethodDecl> compactRecordConstructor(ClassTree node) {
-    return node.getMembers().stream()
-        .filter(JCMethodDecl.class::isInstance)
-        .map(JCMethodDecl.class::cast)
-        .filter(m -> (m.mods.flags & COMPACT_RECORD_CONSTRUCTOR) == COMPACT_RECORD_CONSTRUCTOR)
-        .collect(toOptional());
   }
 
   private static ImmutableList<JCVariableDecl> recordVariables(ClassTree node) {

@@ -594,7 +594,7 @@ public final class JavaInput extends Input {
   /**
    * Get the number of toks.
    *
-   * @return the number of toks, including the EOF tok
+   * @return the number of toks, excluding the EOF tok
    */
   @Override
   public int getkN() {
@@ -604,7 +604,7 @@ public final class JavaInput extends Input {
   /**
    * Get the Token by index.
    *
-   * @param k the token index
+   * @param k the Tok index
    */
   @Override
   public Token getToken(int k) {
