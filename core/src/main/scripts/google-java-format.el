@@ -46,7 +46,7 @@
 
 A string containing the name or the full path of the executable."
   :group 'google-java-format
-  :type '(file :must-match t :match #'file-executable-p)
+  :type '(file :must-match t :match (lambda (widget file) (file-executable-p file)))
   :risky t)
 
 ;;;###autoload
