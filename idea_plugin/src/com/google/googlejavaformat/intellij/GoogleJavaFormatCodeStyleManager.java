@@ -34,8 +34,9 @@ import com.intellij.psi.codeStyle.ChangedRangesInfo;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.impl.CheckUtil;
 import com.intellij.util.IncorrectOperationException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -72,9 +73,14 @@ class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
   }
 
   @Override
-  public void reformatTextWithContext(PsiFile file, ChangedRangesInfo changedRangesInfo)
+  public void reformatTextWithContext(PsiFile file, ChangedRangesInfo info)
       throws IncorrectOperationException {
-    reformatTextWithContext(file, Collections.singletonList(file.getTextRange()));
+    List<TextRange> ranges = new ArrayList<>();
+    if (info.insertedRanges != null) {
+      ranges.addAll(info.insertedRanges);
+    }
+    ranges.addAll(info.allChangedRanges);
+    reformatTextWithContext(file, ranges);
   }
 
   @Override
