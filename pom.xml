@@ -98,6 +98,7 @@
     <guava.version>30.0-jre</guava.version>
     <truth.version>1.0</truth.version>
     <checker.version>3.6.1</checker.version>
+    <errorprone.version>2.7.1</errorprone.version>
   </properties>
 
   <dependencyManagement>
@@ -118,7 +119,7 @@
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
-        <version>2.5.1</version>
+        <version>${errorprone.version}</version>
       </dependency>
 
       <!-- Test dependencies -->
@@ -209,7 +210,7 @@
             <path>
               <groupId>com.google.errorprone</groupId>
               <artifactId>error_prone_core</artifactId>
-              <version>2.5.1</version>
+              <version>${errorprone.version}</version>
             </path>
           </annotationProcessorPaths>
         </configuration>
