@@ -20,14 +20,17 @@ import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
+import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.java.JavaInputAstVisitor;
 import com.sun.source.tree.BindingPatternTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.InstanceOfTree;
 import com.sun.source.tree.ModifiersTree;
+import com.sun.source.tree.ModuleTree;
 import com.sun.source.tree.SwitchExpressionTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
@@ -48,6 +51,24 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
 
   public Java14InputAstVisitor(OpsBuilder builder, int indentMultiplier) {
     super(builder, indentMultiplier);
+  }
+
+  @Override
+  protected void handleModule(boolean first, CompilationUnitTree node) {
+    try {
+      ModuleTree module =
+          (ModuleTree) CompilationUnitTree.class.getMethod("getModule").invoke(node);
+      if (module != null) {
+        if (!first) {
+          builder.blankLineWanted(BlankLineWanted.YES);
+        }
+        markForPartialFormat();
+        visitModule(module, null);
+        builder.forcedBreak();
+      }
+    } catch (ReflectiveOperationException e) {
+      // Java < 17, see https://bugs.openjdk.java.net/browse/JDK-8255464
+    }
   }
 
   @Override

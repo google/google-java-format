@@ -376,10 +376,13 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       first = false;
       dropEmptyDeclarations();
     }
+    handleModule(first, node);
     // set a partial format marker at EOF to make sure we can format the entire file
     markForPartialFormat();
     return null;
   }
+
+  protected void handleModule(boolean first, CompilationUnitTree node) {}
 
   /** Skips over extra semi-colons at the top-level, or in a class member declaration lists. */
   protected void dropEmptyDeclarations() {
