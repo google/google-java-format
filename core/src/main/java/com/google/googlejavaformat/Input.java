@@ -63,7 +63,7 @@ public abstract class Input extends InputOutput {
     /** Is the {@code Tok} a "//" comment? */
     boolean isSlashSlashComment();
 
-    /** Is the {@code Tok} a "//" comment? */
+    /** Is the {@code Tok} a "/*" comment? */
     boolean isSlashStarComment();
 
     /** Is the {@code Tok} a javadoc comment? */
