@@ -20,6 +20,14 @@ The formatter can act on whole files, on limited lines (`--lines`), on specific
 offsets (`--offset`), passing through to standard-out (default) or altered
 in-place (`--replace`).
 
+It is convenient to have a shell script named `google-java-format` with the
+java command:
+
+```
+#!/bin/sh
+java -jar /path/to/google-java-format-1.7-all-deps.jar "$@"
+```
+
 To reformat changed lines in a specific patch, use
 [`google-java-format-diff.py`](https://github.com/google/google-java-format/blob/master/scripts/google-java-format-diff.py).
 
