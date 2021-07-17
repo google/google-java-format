@@ -169,10 +169,10 @@ public class CommandLineOptionsParserTest {
     Path exit = testFolder.newFile("exit").toPath();
     Path nested = testFolder.newFile("nested").toPath();
 
-    String[] args = {"--dry-run", "@" + exit, "L", "@" + outer, "Q"};
+    String[] args = {"--dry-run", "@\"" + exit + "\"", "L", "@\"" + outer + "\"", "Q"};
 
     Files.write(exit, "--set-exit-if-changed".getBytes(UTF_8));
-    Files.write(outer, ("M\n@" + nested.toAbsolutePath() + "\nP").getBytes(UTF_8));
+    Files.write(outer, ("M\n@\"" + nested.toAbsolutePath() + "\"\nP").getBytes(UTF_8));
     Files.write(nested, "ℕ\n\n   \n@@O\n".getBytes(UTF_8));
 
     CommandLineOptions options = CommandLineOptionsParser.parse(Arrays.asList(args));

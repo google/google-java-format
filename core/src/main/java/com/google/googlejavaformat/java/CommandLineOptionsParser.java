@@ -14,9 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
@@ -26,16 +23,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Predicate;
 
 /** A parser for {@link CommandLineOptions}. */
 final class CommandLineOptionsParser {
 
   private static final Splitter COMMA_SPLITTER = Splitter.on(',');
   private static final Splitter COLON_SPLITTER = Splitter.on(':');
-  private static final Splitter ARG_SPLITTER =
-      Splitter.on(CharMatcher.breakingWhitespace()).omitEmptyStrings().trimResults();
 
   /** Parses {@link CommandLineOptions}. */
   static CommandLineOptions parse(Iterable<String> options) {
@@ -196,10 +193,17 @@ final class CommandLineOptionsParser {
       } else if (arg.startsWith("@@")) {
         expanded.add(arg.substring(1));
       } else {
-        Path path = Paths.get(arg.substring(1));
+        String pathArg = arg.substring(1);
+        if (pathArg.startsWith("\"") && pathArg.endsWith("\"")) {
+          pathArg = pathArg.substring(1, pathArg.length() - 1);
+        }
+        Path path = Paths.get(pathArg);
         try {
-          String sequence = new String(Files.readAllBytes(path), UTF_8);
-          expandParamsFiles(ARG_SPLITTER.split(sequence), expanded);
+          Files.lines(path)
+              .map(String::trim)
+              .filter(Predicate.not(String::isEmpty))
+              .forEach(sequence -> expandParamsFiles(Collections.singleton(sequence), expanded));
+
         } catch (IOException e) {
           throw new UncheckedIOException(path + ": could not read file: " + e.getMessage(), e);
         }
