@@ -62,8 +62,14 @@ def main():
   parser.add_argument('-b', '--binary', help='path to google-java-format binary')
   parser.add_argument('--google-java-format-jar', metavar='ABSOLUTE_PATH', default=None,
                       help='use a custom google-java-format jar')
+  parser.add_argument('--verify', action='store_true',
+                      help="Only verify that the diff is formated and skip reformatting")
 
   args = parser.parse_args()
+
+  if args.i and args.verify:
+    sys.stderr.write("Cannot use -i and --verify simultaneously")
+    sys.exit(-1)
 
   # Extract changed lines for each file.
   filename = None
@@ -116,15 +122,23 @@ def main():
       command.append('--skip-sorting-imports')
     if args.skip_removing_unused_imports:
       command.append('--skip-removing-unused-imports')
+    if args.verify:
+      command.append("--dry-run")
+      command.append("--set-exit-if-changed")
     command.extend(lines)
     command.append(filename)
     p = subprocess.Popen(command, stdout=subprocess.PIPE,
                          stderr=None, stdin=subprocess.PIPE)
     stdout, stderr = p.communicate()
     if p.returncode != 0:
-      sys.exit(p.returncode);
+      if args.verify:
+        sys.stderr.write(
+            "The following file is not formated: " + filename + "\n")
+        continue
+      else:
+        sys.exit(p.returncode)
 
-    if not args.i:
+    if not args.i and not args.verify:
       with open(filename) as f:
         code = f.readlines()
       formatted_code = StringIO.StringIO(stdout).readlines()
