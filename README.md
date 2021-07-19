@@ -121,7 +121,7 @@ configuration.
 
 ```groovy
 dependencies {
-  compile 'com.google.googlejavaformat:google-java-format:1.10.0'
+  compileOnly 'com.google.googlejavaformat:google-java-format:1.10.0'
 }
 ```
 
