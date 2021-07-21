@@ -48,6 +48,12 @@
     <url>http://www.google.com/</url>
   </organization>
 
+  <developers>
+    <developer>
+      <name>John DeTreville</name>
+    </developer>
+  </developers>
+
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
