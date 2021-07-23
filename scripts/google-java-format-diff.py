@@ -59,6 +59,11 @@ def main():
                       help='do not fix the import order')
   parser.add_argument('--skip-removing-unused-imports', action='store_true',
                       help='do not remove ununsed imports')
+  parser.add_argument(
+      '--skip-javadoc-formatting',
+      action='store_true',
+      default=False,
+      help='do not reformat javadoc')
   parser.add_argument('-b', '--binary', help='path to google-java-format binary')
   parser.add_argument('--google-java-format-jar', metavar='ABSOLUTE_PATH', default=None,
                       help='use a custom google-java-format jar')
@@ -116,6 +121,8 @@ def main():
       command.append('--skip-sorting-imports')
     if args.skip_removing_unused_imports:
       command.append('--skip-removing-unused-imports')
+    if args.skip_javadoc_formatting:
+      command.append('--skip-javadoc-formatting')
     command.extend(lines)
     command.append(filename)
     p = subprocess.Popen(command, stdout=subprocess.PIPE,
