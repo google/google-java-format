@@ -152,7 +152,11 @@ final class ModifierOrderer {
    * is not a modifier.
    */
   private static Modifier asModifier(Token token) {
-    return getModifier(((JavaInput.Tok) token.getTok()).kind());
+    Modifier m = getModifier(((JavaInput.Tok) token.getTok()).kind());
+    if (m != null) return m;
+    else if (token.getTok().getText().equals("sealed")) return Modifier.SEALED;
+    else if (token.getTok().getText().equals("non-sealed")) return Modifier.NON_SEALED;
+    else return null;
   }
 
   /** Applies replacements to the given string. */

@@ -1,0 +1,1 @@
+abstract sealed class T permits D, E {}

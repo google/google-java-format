@@ -50,7 +50,7 @@ public class FormatterIntegrationTest {
   private static final ImmutableSet<String> JAVA14_TESTS =
       ImmutableSet.of("I477", "Records", "RSLs", "Var", "ExpressionSwitch", "I574", "I594");
 
-  private static final ImmutableSet<String> JAVA16_TESTS = ImmutableSet.of("I588");
+  private static final ImmutableSet<String> JAVA16_TESTS = ImmutableSet.of("I588", "I603");
 
   @Parameters(name = "{index}: {0}")
   public static Iterable<Object[]> data() throws IOException {

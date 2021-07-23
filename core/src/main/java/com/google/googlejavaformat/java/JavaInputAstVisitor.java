@@ -1963,6 +1963,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             /* declarationAnnotationBreak= */ Optional.empty());
     boolean hasSuperclassType = node.getExtendsClause() != null;
     boolean hasSuperInterfaceTypes = !node.getImplementsClause().isEmpty();
+    boolean hasPermitsTypes = !node.getPermitsClause().isEmpty();
     builder.addAll(breaks);
     token(node.getKind() == Tree.Kind.INTERFACE ? "interface" : "class");
     builder.space();
@@ -1975,7 +1976,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       if (!node.getTypeParameters().isEmpty()) {
         typeParametersRest(
             node.getTypeParameters(),
-            hasSuperclassType || hasSuperInterfaceTypes ? plusFour : ZERO);
+            hasSuperclassType || hasSuperInterfaceTypes || hasPermitsTypes ? plusFour : ZERO);
       }
       if (hasSuperclassType) {
         builder.breakToFill(" ");
@@ -1983,22 +1984,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         builder.space();
         scan(node.getExtendsClause(), null);
       }
-      if (hasSuperInterfaceTypes) {
-        builder.breakToFill(" ");
-        builder.open(node.getImplementsClause().size() > 1 ? plusFour : ZERO);
-        token(node.getKind() == Tree.Kind.INTERFACE ? "extends" : "implements");
-        builder.space();
-        boolean first = true;
-        for (Tree superInterfaceType : node.getImplementsClause()) {
-          if (!first) {
-            token(",");
-            builder.breakOp(" ");
-          }
-          scan(superInterfaceType, null);
-          first = false;
-        }
-        builder.close();
-      }
+      classDeclarationTypeList(
+          node.getKind() == Tree.Kind.INTERFACE ? "extends" : "implements",
+          node.getImplementsClause());
+      classDeclarationTypeList("permits", node.getPermitsClause());
     }
     builder.close();
     if (node.getMembers() == null) {
@@ -2277,6 +2266,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       case "native":
       case "strictfp":
       case "default":
+      case "sealed":
+      case "non-sealed":
         return true;
       default:
         return false;
@@ -3547,6 +3538,24 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         builder.close();
       }
     }
+  }
+
+  private void classDeclarationTypeList(String token, List<? extends Tree> types) {
+    if (types.isEmpty()) return;
+    builder.breakToFill(" ");
+    builder.open(types.size() > 1 ? plusFour : ZERO);
+    token(token);
+    builder.space();
+    boolean first = true;
+    for (Tree type : types) {
+      if (!first) {
+        token(",");
+        builder.breakOp(" ");
+      }
+      scan(type, null);
+      first = false;
+    }
+    builder.close();
   }
 
   /**
