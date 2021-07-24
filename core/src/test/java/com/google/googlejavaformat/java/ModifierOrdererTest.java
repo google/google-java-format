@@ -31,20 +31,22 @@ public class ModifierOrdererTest {
 
   @Test
   public void simple() throws FormatterException {
-    assertThat(ModifierOrderer.reorderModifiers("static abstract class InnerClass {}").getText())
+    assertThat(
+            new ModifierOrderer().reorderModifiers("static abstract class InnerClass {}").getText())
         .isEqualTo("abstract static class InnerClass {}");
   }
 
   @Test
   public void comment() throws FormatterException {
-    assertThat(ModifierOrderer.reorderModifiers("static/*1*/abstract/*2*/public").getText())
+    assertThat(new ModifierOrderer().reorderModifiers("static/*1*/abstract/*2*/public").getText())
         .isEqualTo("public/*1*/abstract/*2*/static");
   }
 
   @Test
   public void everything() throws FormatterException {
     assertThat(
-            ModifierOrderer.reorderModifiers(
+            new ModifierOrderer()
+                .reorderModifiers(
                     "strictfp native synchronized volatile transient final static abstract"
                         + " private protected public")
                 .getText())
@@ -56,7 +58,8 @@ public class ModifierOrdererTest {
   @Test
   public void everythingIncludingDefault() throws FormatterException {
     assertThat(
-            ModifierOrderer.reorderModifiers(
+            new ModifierOrderer()
+                .reorderModifiers(
                     "strictfp native synchronized volatile transient final static default abstract"
                         + " private protected public")
                 .getText())
@@ -78,8 +81,8 @@ public class ModifierOrdererTest {
     int start = input.indexOf(substring);
     int end = start + substring.length();
     String output =
-        ModifierOrderer.reorderModifiers(
-                new JavaInput(input), Arrays.asList(Range.closedOpen(start, end)))
+        new ModifierOrderer()
+            .reorderModifiers(new JavaInput(input), Arrays.asList(Range.closedOpen(start, end)))
             .getText();
     assertThat(output).contains("public static int a;");
     assertThat(output).contains("static public int b;");
@@ -98,8 +101,8 @@ public class ModifierOrdererTest {
     int start = input.indexOf(substring);
     int end = start + substring.length();
     String output =
-        ModifierOrderer.reorderModifiers(
-                new JavaInput(input), Arrays.asList(Range.closedOpen(start, end)))
+        new ModifierOrderer()
+            .reorderModifiers(new JavaInput(input), Arrays.asList(Range.closedOpen(start, end)))
             .getText();
     assertThat(output).contains("public\n  static int a;");
   }

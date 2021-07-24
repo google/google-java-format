@@ -1961,9 +1961,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             node.getModifiers(),
             Direction.VERTICAL,
             /* declarationAnnotationBreak= */ Optional.empty());
+    List<? extends Tree> permitsTypes = getPermitsClause(node);
     boolean hasSuperclassType = node.getExtendsClause() != null;
     boolean hasSuperInterfaceTypes = !node.getImplementsClause().isEmpty();
-    boolean hasPermitsTypes = !node.getPermitsClause().isEmpty();
+    boolean hasPermitsTypes = !permitsTypes.isEmpty();
     builder.addAll(breaks);
     token(node.getKind() == Tree.Kind.INTERFACE ? "interface" : "class");
     builder.space();
@@ -1987,7 +1988,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       classDeclarationTypeList(
           node.getKind() == Tree.Kind.INTERFACE ? "extends" : "implements",
           node.getImplementsClause());
-      classDeclarationTypeList("permits", node.getPermitsClause());
+      classDeclarationTypeList("permits", permitsTypes);
     }
     builder.close();
     if (node.getMembers() == null) {
@@ -3538,6 +3539,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         builder.close();
       }
     }
+  }
+
+  /** Gets the permits clause for the given node.  This is only available in Java 15 and later. */
+  protected List<? extends Tree> getPermitsClause(ClassTree node) {
+    return ImmutableList.of();
   }
 
   private void classDeclarationTypeList(String token, List<? extends Tree> types) {
