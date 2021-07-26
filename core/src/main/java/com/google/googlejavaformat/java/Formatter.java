@@ -33,9 +33,6 @@ import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
-import com.google.googlejavaformat.java.java14.Java14InputAstVisitor;
-import com.google.googlejavaformat.java.java15.Java15InputAstVisitor;
-import com.google.googlejavaformat.java.java15.Java15ModifierOrderer;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
@@ -95,9 +92,6 @@ public final class Formatter {
   public static final int MAX_LINE_LENGTH = 100;
 
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
-
-  static final ModifierOrderer MODIFIER_ORDERER =
-      getMajor() >= 15 ? new Java15ModifierOrderer() : new ModifierOrderer();
 
   private final JavaFormatterOptions options;
 
@@ -160,11 +154,22 @@ public final class Formatter {
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
     JavaInputAstVisitor visitor;
-    if (getMajor() >= 15)
-      visitor = new Java15InputAstVisitor(builder, options.indentationMultiplier());
-    else if (getMajor() >= 14)
-      visitor = new Java14InputAstVisitor(builder, options.indentationMultiplier());
-    else visitor = new JavaInputAstVisitor(builder, options.indentationMultiplier());
+    if (getMajor() >= 14) {
+      try {
+        visitor =
+            Class.forName(
+                getMajor() >= 15 ?
+                "com.google.googlejavaformat.java.java15.Java15InputAstVisitor" :
+                "com.google.googlejavaformat.java.java14.Java14InputAstVisitor")
+                .asSubclass(JavaInputAstVisitor.class)
+                .getConstructor(OpsBuilder.class, int.class)
+                .newInstance(builder, options.indentationMultiplier());
+      } catch (ReflectiveOperationException e) {
+        throw new LinkageError(e.getMessage(), e);
+      }
+    } else {
+      visitor = new JavaInputAstVisitor(builder, options.indentationMultiplier());
+    }
     visitor.scan(unit, null);
     builder.sync(javaInput.getText().length());
     builder.drain();
@@ -280,7 +285,7 @@ public final class Formatter {
     // TODO(cushon): this is only safe because the modifier ordering doesn't affect whitespace,
     // and doesn't change the replacements that are output. This is not true in general for
     // 'de-linting' changes (e.g. import ordering).
-    javaInput = MODIFIER_ORDERER.reorderModifiers(javaInput, characterRanges);
+    javaInput = ModifierOrderer.reorderModifiers(javaInput, characterRanges);
 
     String lineSeparator = Newlines.guessLineSeparator(input);
     JavaOutput javaOutput =

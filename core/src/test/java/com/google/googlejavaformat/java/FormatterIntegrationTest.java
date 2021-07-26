@@ -50,7 +50,9 @@ public class FormatterIntegrationTest {
   private static final ImmutableSet<String> JAVA14_TESTS =
       ImmutableSet.of("I477", "Records", "RSLs", "Var", "ExpressionSwitch", "I574", "I594");
 
-  private static final ImmutableSet<String> JAVA16_TESTS = ImmutableSet.of("I588", "I603");
+  private static final ImmutableSet<String> JAVA15_TESTS = ImmutableSet.of("I603");
+
+  private static final ImmutableSet<String> JAVA16_TESTS = ImmutableSet.of("I588");
 
   @Parameters(name = "{index}: {0}")
   public static Iterable<Object[]> data() throws IOException {
@@ -90,6 +92,9 @@ public class FormatterIntegrationTest {
       assertTrue("unmatched input", outputs.containsKey(fileName));
       String expectedOutput = outputs.get(fileName);
       if (JAVA14_TESTS.contains(fileName) && getMajor() < 14) {
+        continue;
+      }
+      if (JAVA15_TESTS.contains(fileName) && getMajor() < 15) {
         continue;
       }
       if (JAVA16_TESTS.contains(fileName) && getMajor() < 16) {

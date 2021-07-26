@@ -34,7 +34,7 @@ import java.util.Map.Entry;
 import javax.lang.model.element.Modifier;
 
 /** Fixes sequences of modifiers to be in JLS order. */
-public class ModifierOrderer {
+final class ModifierOrderer {
 
   /**
    * Returns the {@link javax.lang.model.element.Modifier} for the given token kind, or {@code
@@ -75,7 +75,7 @@ public class ModifierOrderer {
   }
 
   /** Reorders all modifiers in the given text to be in JLS order. */
-  JavaInput reorderModifiers(String text) throws FormatterException {
+  static JavaInput reorderModifiers(String text) throws FormatterException {
     return reorderModifiers(
         new JavaInput(text), ImmutableList.of(Range.closedOpen(0, text.length())));
   }
@@ -84,7 +84,7 @@ public class ModifierOrderer {
    * Reorders all modifiers in the given text and within the given character ranges to be in JLS
    * order.
    */
-  public JavaInput reorderModifiers(JavaInput javaInput, Collection<Range<Integer>> characterRanges)
+  static JavaInput reorderModifiers(JavaInput javaInput, Collection<Range<Integer>> characterRanges)
       throws FormatterException {
     if (javaInput.getTokens().isEmpty()) {
       // There weren't any tokens, possible because of a lexing error.
@@ -151,8 +151,16 @@ public class ModifierOrderer {
    * Returns the given token as a {@link javax.lang.model.element.Modifier}, or {@code null} if it
    * is not a modifier.
    */
-  protected Modifier asModifier(Token token) {
-    return getModifier(((JavaInput.Tok) token.getTok()).kind());
+  private static Modifier asModifier(Token token) {
+    Modifier m = getModifier(((JavaInput.Tok) token.getTok()).kind());
+    if (m == null) {
+      if (token.getTok().getText().equals("sealed")) {
+        m = Modifier.valueOf("SEALED");
+      } else if (token.getTok().getText().equals("non-sealed")) {
+        m = Modifier.valueOf("NON_SEALED");
+      }
+    }
+    return m;
   }
 
   /** Applies replacements to the given string. */

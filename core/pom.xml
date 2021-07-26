@@ -280,5 +280,30 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>jdk14</id>
+      <activation>
+        <jdk>(,15)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <excludes combine.children="append">
+                <exclude>**/Java15InputAstVisitor.java</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <excludePackageNames>com.google.googlejavaformat.java.java14,com.google.googlejavaformat.java.java15</excludePackageNames>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
