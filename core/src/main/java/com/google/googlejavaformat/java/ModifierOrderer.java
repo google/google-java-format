@@ -36,44 +36,6 @@ import javax.lang.model.element.Modifier;
 /** Fixes sequences of modifiers to be in JLS order. */
 final class ModifierOrderer {
 
-  /**
-   * Returns the {@link javax.lang.model.element.Modifier} for the given token kind, or {@code
-   * null}.
-   */
-  private static Modifier getModifier(TokenKind kind) {
-    if (kind == null) {
-      return null;
-    }
-    switch (kind) {
-      case PUBLIC:
-        return Modifier.PUBLIC;
-      case PROTECTED:
-        return Modifier.PROTECTED;
-      case PRIVATE:
-        return Modifier.PRIVATE;
-      case ABSTRACT:
-        return Modifier.ABSTRACT;
-      case STATIC:
-        return Modifier.STATIC;
-      case DEFAULT:
-        return Modifier.DEFAULT;
-      case FINAL:
-        return Modifier.FINAL;
-      case TRANSIENT:
-        return Modifier.TRANSIENT;
-      case VOLATILE:
-        return Modifier.VOLATILE;
-      case SYNCHRONIZED:
-        return Modifier.SYNCHRONIZED;
-      case NATIVE:
-        return Modifier.NATIVE;
-      case STRICTFP:
-        return Modifier.STRICTFP;
-      default:
-        return null;
-    }
-  }
-
   /** Reorders all modifiers in the given text to be in JLS order. */
   static JavaInput reorderModifiers(String text) throws FormatterException {
     return reorderModifiers(
@@ -152,7 +114,44 @@ final class ModifierOrderer {
    * is not a modifier.
    */
   private static Modifier asModifier(Token token) {
-    return getModifier(((JavaInput.Tok) token.getTok()).kind());
+    TokenKind kind = ((JavaInput.Tok) token.getTok()).kind();
+    if (kind != null) {
+      switch (kind) {
+        case PUBLIC:
+          return Modifier.PUBLIC;
+        case PROTECTED:
+          return Modifier.PROTECTED;
+        case PRIVATE:
+          return Modifier.PRIVATE;
+        case ABSTRACT:
+          return Modifier.ABSTRACT;
+        case STATIC:
+          return Modifier.STATIC;
+        case DEFAULT:
+          return Modifier.DEFAULT;
+        case FINAL:
+          return Modifier.FINAL;
+        case TRANSIENT:
+          return Modifier.TRANSIENT;
+        case VOLATILE:
+          return Modifier.VOLATILE;
+        case SYNCHRONIZED:
+          return Modifier.SYNCHRONIZED;
+        case NATIVE:
+          return Modifier.NATIVE;
+        case STRICTFP:
+          return Modifier.STRICTFP;
+        default: // fall out
+      }
+    }
+    switch (token.getTok().getText()) {
+      case "non-sealed":
+        return Modifier.valueOf("NON_SEALED");
+      case "sealed":
+        return Modifier.valueOf("SEALED");
+      default:
+        return null;
+    }
   }
 
   /** Applies replacements to the given string. */
