@@ -72,6 +72,16 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
   }
 
   @Override
+  protected List<? extends Tree> getPermitsClause(ClassTree node) {
+    try {
+      return (List<? extends Tree>) ClassTree.class.getMethod("getPermitsClause").invoke(node);
+    } catch (ReflectiveOperationException e) {
+      // Java < 15
+      return super.getPermitsClause(node);
+    }
+  }
+
+  @Override
   public Void visitBindingPattern(BindingPatternTree node, Void unused) {
     sync(node);
     try {

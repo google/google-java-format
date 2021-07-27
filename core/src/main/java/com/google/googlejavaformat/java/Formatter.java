@@ -157,10 +157,7 @@ public final class Formatter {
     if (getMajor() >= 14) {
       try {
         visitor =
-            Class.forName(
-                getMajor() >= 15 ?
-                "com.google.googlejavaformat.java.java15.Java15InputAstVisitor" :
-                "com.google.googlejavaformat.java.java14.Java14InputAstVisitor")
+            Class.forName("com.google.googlejavaformat.java.java14.Java14InputAstVisitor")
                 .asSubclass(JavaInputAstVisitor.class)
                 .getConstructor(OpsBuilder.class, int.class)
                 .newInstance(builder, options.indentationMultiplier());
