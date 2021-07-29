@@ -90,7 +90,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.8</java.version>
-    <guava.version>30.0-jre</guava.version>
+    <guava.version>30.1.1-jre</guava.version>
     <truth.version>1.0</truth.version>
     <checker.version>3.6.1</checker.version>
     <errorprone.version>2.7.1</errorprone.version>

@@ -37,7 +37,7 @@
 
     <!-- specific library versions; must match declarations in build.properties and META-INF/MANIFEST.MF -->
     <google-java-format.version>1.9</google-java-format.version>
-    <guava.version>28.1-jre</guava.version>
+    <guava.version>30.1.1-jre</guava.version>
   </properties>
 
   <dependencies>
