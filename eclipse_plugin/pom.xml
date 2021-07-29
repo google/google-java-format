@@ -14,27 +14,46 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>com.google.googlejavaformat</groupId>
-    <artifactId>google-java-format-parent</artifactId>
-    <version>1.6</version>
-  </parent>
 
+  <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format-eclipse-plugin</artifactId>
-  <version>1.6.0</version>
   <packaging>eclipse-plugin</packaging>
-  <name>google-java-format Plugin for Eclipse 4.5+</name>
+  <version>1.9.0</version>
+
+  <name>Google Java Format Plugin for Eclipse 4.5+</name>
 
   <description>
-    A Java source code formatter that follows Google Java Style.
+    A Java source code formatter plugin for Eclipse that follows Google Java Style.
   </description>
 
   <properties>
-    <tycho-version>0.26.0</tycho-version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <tycho-version>1.7.0</tycho-version>
+
+    <!-- specific library versions; must match declarations in build.properties and META-INF/MANIFEST.MF -->
+    <google-java-format.version>1.9</google-java-format.version>
+    <guava.version>28.1-jre</guava.version>
   </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.google.googlejavaformat</groupId>
+      <artifactId>google-java-format</artifactId>
+      <version>${google-java-format.version}</version>
+      <type>jar</type>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+      <type>jar</type>
+    </dependency>
+  </dependencies>
 
   <repositories>
     <repository>
@@ -44,16 +63,28 @@
     </repository>
   </repositories>
 
-  <dependencies>
-    <dependency>
-      <groupId>com.google.googlejavaformat</groupId>
-      <artifactId>google-java-format</artifactId>
-      <version>1.6</version>
-    </dependency>
-  </dependencies>
-
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.1.2</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <outputDirectory>lib</outputDirectory>
+          <includeScope>runtime</includeScope>
+          <excludeTransitive>true</excludeTransitive>
+          <overWriteSnapshots>true</overWriteSnapshots>
+        </configuration>
+      </plugin>
 
       <plugin>
         <groupId>org.eclipse.tycho</groupId>
@@ -61,7 +92,6 @@
         <version>${tycho-version}</version>
         <extensions>true</extensions>
       </plugin>
-
       <plugin>
         <groupId>org.eclipse.tycho</groupId>
         <artifactId>target-platform-configuration</artifactId>
@@ -97,7 +127,15 @@
         </configuration>
       </plugin>
 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.7.0</version>
+        <configuration>
+          <source>11</source>
+          <target>11</target>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
-
 </project>
