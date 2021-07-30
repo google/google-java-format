@@ -8,14 +8,8 @@ See https://github.com/google/google-java-format#eclipse
 
 ### Prerequisites
 
-Make sure that the `build.properties` and `META-INF/MANIFEST.MF` contain all
-necessary dependencies for the build. Furthermore, make sure that the
-dependencies declared in the `pom.xml` match the entries in `build.properties`
-and `META-INF/MANIFEST.MF`.
-
-If the used google java format core version is a 'SNAPSHOT' release, the version
-for the Eclipse plugin in the `pom.xml` must end in '-SNAPSHOT' as well and the
-bundle version specified in `META-INF/MANIFEST.MF` must end in '.qualifier'.
+Before building the plugin, make sure to run `mvn tycho-versions:update-eclipse-metadata` to update
+the bundle version in `META-INF/MANIFEST.MF`.
 
 ### Building the Plugin
 
@@ -39,9 +33,8 @@ information on this issue is given
 #### Building against a local (snapshot) release of the core
 
 With the current build setup, the Eclipse plugin build pulls the needed build
-artifacts of the google java format core specified in the property
-`google-java-format.version` and copies it into the `eclipse_plugin/lib/`
-directory.
+artifacts of the google java format core from the maven repository and copies
+it into the `eclipse_plugin/lib/` directory.
 
 If you instead want to build against a local (snapshot) build of the core which
 is not available in a maven repository (local or otherwise), you will have to
