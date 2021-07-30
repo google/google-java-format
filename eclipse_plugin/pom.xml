@@ -22,7 +22,7 @@
   <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format-eclipse-plugin</artifactId>
   <packaging>eclipse-plugin</packaging>
-  <version>1.9.0</version>
+  <version>1.11.0</version>
 
   <name>Google Java Format Plugin for Eclipse 4.5+</name>
 
@@ -32,26 +32,14 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
     <tycho-version>1.7.0</tycho-version>
-
-    <!-- specific library versions; must match declarations in build.properties and META-INF/MANIFEST.MF -->
-    <google-java-format.version>1.9</google-java-format.version>
-    <guava.version>30.1.1-jre</guava.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.google.googlejavaformat</groupId>
       <artifactId>google-java-format</artifactId>
-      <version>${google-java-format.version}</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
-      <type>jar</type>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 
@@ -81,8 +69,10 @@
         <configuration>
           <outputDirectory>lib</outputDirectory>
           <includeScope>runtime</includeScope>
-          <excludeTransitive>true</excludeTransitive>
+          <stripVersion>true</stripVersion>
+          <overWriteReleases>true</overWriteReleases>
           <overWriteSnapshots>true</overWriteSnapshots>
+          <includeArtifactIds>guava,google-java-format</includeArtifactIds>
         </configuration>
       </plugin>
 
@@ -92,6 +82,16 @@
         <version>${tycho-version}</version>
         <extensions>true</extensions>
       </plugin>
+
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-versions-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <newVersion>${project.version}</newVersion>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.eclipse.tycho</groupId>
         <artifactId>target-platform-configuration</artifactId>
