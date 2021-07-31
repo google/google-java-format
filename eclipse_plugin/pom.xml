@@ -33,13 +33,14 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <tycho-version>1.7.0</tycho-version>
+    <google-java-format.version>1.11.0</google-java-format.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.google.googlejavaformat</groupId>
       <artifactId>google-java-format</artifactId>
-      <version>${project.version}</version>
+      <version>${google-java-format.version}</version>
     </dependency>
   </dependencies>
 

@@ -70,9 +70,9 @@ and import it into File→Settings→Editor→Code Style.
 
 ### Eclipse
 
-Version 1.6 of the
-[google-java-format Eclipse plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.6/google-java-format-eclipse-plugin_1.6.0.jar)
-can be downloaded from the releases page. Drop it into the Eclipse
+The current version of the google-java-format Eclipse plugin can be downloaded
+from the [releases page](https://github.com/google/google-java-format/releases)
+(`google-java-format-eclipse-plugin-X.jar`). Drop the jar into the Eclipse
 [drop-ins folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fmisc%2Fp2_dropins_format.html)
 to activate the plugin.
 
