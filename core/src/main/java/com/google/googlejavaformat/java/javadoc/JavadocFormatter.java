@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java.javadoc;
 
 import static com.google.googlejavaformat.java.javadoc.JavadocLexer.lex;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.BR_TAG;
+import static com.google.googlejavaformat.java.javadoc.Token.Type.LITERAL;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_OPEN_TAG;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.compile;
@@ -23,6 +24,7 @@ import static java.util.regex.Pattern.compile;
 import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.java.javadoc.JavadocLexer.LexException;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,7 +57,9 @@ public final class JavadocFormatter {
 
   private static String render(List<Token> input, int blockIndent) {
     JavadocWriter output = new JavadocWriter(blockIndent);
-    for (Token token : input) {
+    ListIterator<Token> it = input.listIterator();
+    while (it.hasNext()) {
+      Token token = it.next();
       switch (token.getType()) {
         case BEGIN_JAVADOC:
           output.writeBeginJavadoc();
@@ -95,7 +99,17 @@ public final class JavadocFormatter {
           output.writePreClose(token);
           break;
         case CODE_OPEN_TAG:
-          output.writeCodeOpen(token);
+          if (it.hasNext()) {
+            Token nextToken = it.next();
+            it.previous();
+            if (nextToken.getType() == LITERAL) {
+              output.writeCodeOpenWithBreakBeforeIfAtEndOfLine(token);
+            } else {
+              output.writeCodeOpen(token);
+            }
+          } else {
+            output.writeCodeOpen(token);
+          }
           break;
         case CODE_CLOSE_TAG:
           output.writeCodeClose(token);
