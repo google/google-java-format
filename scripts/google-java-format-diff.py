@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 #===- google-java-format-diff.py - google-java-format Diff Reformatter -----===#
 #
@@ -31,7 +31,7 @@ import difflib
 import re
 import string
 import subprocess
-import StringIO
+import io
 import sys
 from distutils.spawn import find_executable
 
@@ -109,9 +109,9 @@ def main():
     base_command = [binary]
 
   # Reformat files containing changes in place.
-  for filename, lines in lines_by_file.iteritems():
+  for filename, lines in lines_by_file.items():
     if args.i and args.verbose:
-      print 'Formatting', filename
+      print('Formatting', filename)
     command = base_command[:]
     if args.i:
       command.append('-i')
@@ -134,7 +134,7 @@ def main():
     if not args.i:
       with open(filename) as f:
         code = f.readlines()
-      formatted_code = StringIO.StringIO(stdout).readlines()
+      formatted_code = io.StringIO(stdout).readlines()
       diff = difflib.unified_diff(code, formatted_code,
                                   filename, filename,
                                   '(before formatting)', '(after formatting)')
