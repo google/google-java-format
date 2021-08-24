@@ -51,7 +51,11 @@
       <artifactId>error_prone_annotations</artifactId>
       <optional>true</optional>
     </dependency>
-
+    <dependency>
+      <groupId>com.google.auto.value</groupId>
+      <artifactId>auto-value-annotations</artifactId>
+      <optional>true</optional>
+    </dependency>
 
     <!-- Test dependencies -->
     <dependency>
