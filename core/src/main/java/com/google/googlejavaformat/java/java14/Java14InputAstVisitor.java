@@ -18,10 +18,10 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
+import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.java.JavaInputAstVisitor;
-import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.BindingPatternTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.CaseTree;
@@ -112,9 +112,7 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
 
   private void visitBindingPattern(ModifiersTree modifiers, Tree type, Name name) {
     if (modifiers != null) {
-      List<AnnotationTree> annotations =
-          visitModifiers(modifiers, Direction.HORIZONTAL, Optional.empty());
-      visitAnnotations(annotations, BreakOrNot.NO, BreakOrNot.YES);
+      builder.addAll(visitModifiers(modifiers, Direction.HORIZONTAL, Optional.empty()));
     }
     scan(type, null);
     builder.breakOp(" ");
@@ -162,9 +160,14 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
 
   public void visitRecordDeclaration(ClassTree node) {
     sync(node);
-    typeDeclarationModifiers(node.getModifiers());
+    List<Op> breaks =
+        visitModifiers(
+            node.getModifiers(),
+            Direction.VERTICAL,
+            /* declarationAnnotationBreak= */ Optional.empty());
     Verify.verify(node.getExtendsClause() == null);
     boolean hasSuperInterfaceTypes = !node.getImplementsClause().isEmpty();
+    builder.addAll(breaks);
     token("record");
     builder.space();
     visit(node.getSimpleName());
