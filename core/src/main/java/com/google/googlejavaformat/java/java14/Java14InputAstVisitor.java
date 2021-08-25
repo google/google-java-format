@@ -251,7 +251,7 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
       token("default", plusTwo);
     } else {
       token("case", plusTwo);
-      builder.open(plusFour);
+      builder.open(node.getExpressions().size() > 1 ? plusFour : ZERO);
       builder.space();
       boolean first = true;
       for (ExpressionTree expression : node.getExpressions()) {

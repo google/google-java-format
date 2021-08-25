@@ -1,0 +1,14 @@
+public class Foo {
+    static final int VERBOSE_WORDY_AND_LENGTHY_ONE = 1;
+    static final int VERBOSE_WORDY_AND_LENGTHY_TWO = 2;
+    static final int VERBOSE_WORDY_AND_LENGTHY_FOUR = 4;
+
+    public static int fn(int x) {
+        switch (x) {
+        case VERBOSE_WORDY_AND_LENGTHY_ONE | VERBOSE_WORDY_AND_LENGTHY_TWO | VERBOSE_WORDY_AND_LENGTHY_FOUR:
+            return 0;
+        default:
+            return 1;
+        }
+    }
+}
