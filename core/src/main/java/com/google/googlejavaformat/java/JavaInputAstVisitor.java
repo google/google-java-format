@@ -14,8 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.googlejavaformat.Doc.FillMode.INDEPENDENT;
@@ -55,6 +53,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
@@ -280,11 +279,19 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   }
 
   // TODO(cushon): generalize this
-  private static final ImmutableMultimap<String, String> TYPE_ANNOTATIONS =
-      Stream.of(
-              "org.jspecify.nullness.Nullable",
-              "org.checkerframework.checker.nullness.qual.Nullable")
-          .collect(toImmutableSetMultimap(x -> x.substring(x.lastIndexOf('.') + 1), x -> x));
+  private static final ImmutableMultimap<String, String> TYPE_ANNOTATIONS = typeAnnotations();
+
+  private static ImmutableSetMultimap<String, String> typeAnnotations() {
+    ImmutableSetMultimap.Builder<String, String> result = ImmutableSetMultimap.builder();
+    for (String annotation :
+        ImmutableList.of(
+            "org.jspecify.nullness.Nullable",
+            "org.checkerframework.checker.nullness.qual.Nullable")) {
+      String simpleName = annotation.substring(annotation.lastIndexOf('.') + 1);
+      result.put(simpleName, annotation);
+    }
+    return result.build();
+  }
 
   protected final OpsBuilder builder;
 
@@ -2420,14 +2427,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                 // we're seeing annotations or modifiers
                 annotationRanges.contains(tok.getPosition()) || isModifier(tok.getText()));
     ImmutableList<AnnotationOrModifier> modifiers =
-        Streams.concat(
-                toks.stream()
-                    // reject tokens from inside AnnotationTrees, we only want modifiers
-                    .filter(t -> !annotationRanges.contains(t.getPosition()))
-                    .map(AnnotationOrModifier::ofModifier),
-                annotations.stream().map(AnnotationOrModifier::ofAnnotation))
-            .sorted()
-            .collect(toImmutableList());
+        ImmutableList.copyOf(
+            Streams.concat(
+                    toks.stream()
+                        // reject tokens from inside AnnotationTrees, we only want modifiers
+                        .filter(t -> !annotationRanges.contains(t.getPosition()))
+                        .map(AnnotationOrModifier::ofModifier),
+                    annotations.stream().map(AnnotationOrModifier::ofAnnotation))
+                .sorted()
+                .collect(toList()));
     // Take a suffix of annotations that are well-known type annotations, and which appear after any
     // declaration annotations or modifiers
     ImmutableList.Builder<AnnotationTree> typeAnnotations = ImmutableList.builder();
