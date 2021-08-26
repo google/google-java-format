@@ -238,7 +238,7 @@ public final class FormatterTest {
               "",
               "import java.util.List;",
               "",
-              "import javax.annotations.Nullable;");
+              "import javax.annotation.Nullable;");
 
   @Test
   public void importsNotReorderedByDefault() throws FormatterException {
@@ -262,7 +262,7 @@ public final class FormatterTest {
     String expect =
         "package com.google.example;\n\n"
             + "import java.util.List;\n"
-            + "import javax.annotations.Nullable;\n\n"
+            + "import javax.annotation.Nullable;\n\n"
             + "public class ExampleTest {\n"
             + "  @Nullable List<?> xs;\n"
             + "}\n";

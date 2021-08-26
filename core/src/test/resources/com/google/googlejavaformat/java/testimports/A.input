@@ -8,7 +8,7 @@ import org.junit.runners.JUnit4;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import static org.junit.Assert.fail;
 import static com.google.truth.Truth.assertThat;
