@@ -3,9 +3,10 @@ package com.google.googlejavaformat.java;
 import java.io.PrintWriter;
 import java.util.spi.ToolProvider;
 
-public class FormatToolProvider implements ToolProvider {
+/** Provide a way to be invoked without necessarily starting a new VM. */
+public class GoogleJavaFormatToolProvider implements ToolProvider {
   public String name() {
-    return "format";
+    return "google-java-format";
   }
 
   public int run(PrintWriter out, PrintWriter err, String... args) {
