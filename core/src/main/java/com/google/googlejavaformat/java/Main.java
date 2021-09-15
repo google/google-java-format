@@ -63,20 +63,27 @@ public final class Main {
    * @param args the command-line arguments
    */
   public static void main(String[] args) {
-    int result;
     PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out, UTF_8));
     PrintWriter err = new PrintWriter(new OutputStreamWriter(System.err, UTF_8));
+    int result = main(out, err, args);
+    System.exit(result);
+  }
+
+  /**
+   * Package-private main entry point used this CLI program and the java.util.spi.ToolProvider
+   * implementation in the same package as this Main class.
+   */
+  static int main(PrintWriter out, PrintWriter err, String... args) {
     try {
       Main formatter = new Main(out, err, System.in);
-      result = formatter.format(args);
+      return formatter.format(args);
     } catch (UsageException e) {
       err.print(e.getMessage());
-      result = 0;
+      return 0;
     } finally {
       err.flush();
       out.flush();
     }
-    System.exit(result);
   }
 
   /**
