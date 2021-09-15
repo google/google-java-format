@@ -56,6 +56,11 @@
       <artifactId>auto-value-annotations</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>com.google.auto.service</groupId>
+      <artifactId>auto-service-annotations</artifactId>
+      <optional>true</optional>
+    </dependency>
 
     <!-- Test dependencies -->
     <dependency>

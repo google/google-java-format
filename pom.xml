@@ -95,6 +95,7 @@
     <checker.version>3.6.1</checker.version>
     <errorprone.version>2.7.1</errorprone.version>
     <auto-value.version>1.8.2</auto-value.version>
+    <auto-service.version>1.0</auto-service.version>
     <maven-javadoc-plugin.version>3.1.0</maven-javadoc-plugin.version>
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
   </properties>
@@ -123,6 +124,11 @@
         <groupId>com.google.auto.value</groupId>
         <artifactId>auto-value-annotations</artifactId>
         <version>${auto-value.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.auto.service</groupId>
+        <artifactId>auto-service-annotations</artifactId>
+        <version>${auto-service.version}</version>
       </dependency>
 
       <!-- Test dependencies -->
@@ -219,6 +225,11 @@
               <groupId>com.google.auto.value</groupId>
               <artifactId>auto-value</artifactId>
               <version>${auto-value.version}</version>
+            </path>
+            <path>
+              <groupId>com.google.auto.service</groupId>
+              <artifactId>auto-service</artifactId>
+              <version>${auto-service.version}</version>
             </path>
           </annotationProcessorPaths>
         </configuration>
