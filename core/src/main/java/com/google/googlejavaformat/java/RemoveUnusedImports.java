@@ -56,6 +56,7 @@ import com.sun.tools.javac.util.Options;
 import java.io.IOError;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -241,9 +242,11 @@ public class RemoveUnusedImports {
       Set<String> usedNames,
       Multimap<String, Range<Integer>> usedInJavadoc) {
     RangeMap<Integer, String> replacements = TreeRangeMap.create();
+    boolean isAllUnused = true;
     for (JCImport importTree : unit.getImports()) {
       String simpleName = getSimpleName(importTree);
       if (!isUnused(unit, usedNames, usedInJavadoc, importTree, simpleName)) {
+        isAllUnused = false;
         continue;
       }
       // delete the import
@@ -255,6 +258,36 @@ public class RemoveUnusedImports {
         endPosition += sep.length();
       }
       replacements.put(Range.closedOpen(importTree.getStartPosition(), endPosition), "");
+    }
+
+    // If after deleting all import statements, there are blank lines before or after,
+    // delete one blank line.
+    if (isAllUnused && replacements.asMapOfRanges().size() > 0) {
+      Iterator<Range<Integer>> iterator = replacements.asMapOfRanges().keySet().iterator();
+      Range<Integer> range = iterator.next();
+      int startPosition = range.lowerEndpoint();
+      int endPosition;
+      boolean isDuplicateRange = true;
+      while (iterator.hasNext()) {
+        int endPositionOfPrevious = range.upperEndpoint();
+        range = iterator.next();
+        if (endPositionOfPrevious != range.lowerEndpoint()) {
+          isDuplicateRange = false;
+          break;
+        }
+      }
+      endPosition = range.upperEndpoint();
+      if (isDuplicateRange) {
+        String sep = Newlines.guessLineSeparator(contents);
+        if (startPosition - sep.length() * 2 >= 0
+            && contents.subSequence(startPosition - sep.length(), startPosition).toString().equals(sep)
+            && contents.subSequence(startPosition - sep.length() * 2, startPosition - sep.length()).toString().equals(sep)) {
+          replacements.put(Range.closedOpen(startPosition - sep.length(), startPosition), "");
+        } else if (endPosition + sep.length() < contents.length()
+            && contents.subSequence(endPosition, endPosition + sep.length()).toString().equals(sep)) {
+          replacements.put(Range.closedOpen(endPosition, endPosition + sep.length()), "");
+        }
+      }
     }
     return replacements;
   }
