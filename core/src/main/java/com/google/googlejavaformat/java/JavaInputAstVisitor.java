@@ -3876,7 +3876,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         return Direction.VERTICAL;
       }
     }
-    return Direction.HORIZONTAL;
+    return Direction.VERTICAL;
   }
 
   /**
