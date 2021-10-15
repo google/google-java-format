@@ -961,7 +961,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     visitVariables(
         ImmutableList.of(node),
         DeclarationKind.NONE,
-        fieldAnnotationDirection(node.getModifiers()));
+        fieldAnnotationDirection(node.getModifiers(), DeclarationKind.NONE));
     return null;
   }
 
@@ -1948,7 +1948,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           VariableTree variableTree = (VariableTree) resource;
           declareOne(
               DeclarationKind.PARAMETER,
-              fieldAnnotationDirection(variableTree.getModifiers()),
+              fieldAnnotationDirection(variableTree.getModifiers(), DeclarationKind.PARAMETER),
               Optional.of(variableTree.getModifiers()),
               variableTree.getType(),
               /* name= */ variableTree.getName(),
@@ -3750,7 +3750,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           visitVariables(
               variableFragments(it, bodyDeclaration),
               DeclarationKind.FIELD,
-              fieldAnnotationDirection(((VariableTree) bodyDeclaration).getModifiers()));
+              fieldAnnotationDirection(((VariableTree) bodyDeclaration).getModifiers(), DeclarationKind.FIELD));
         } else {
           scan(bodyDeclaration, null);
         }
@@ -3870,12 +3870,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    * Should a field with a set of modifiers be declared with horizontal annotations? This is
    * currently true if all annotations are parameterless annotations.
    */
-  private static Direction fieldAnnotationDirection(ModifiersTree modifiers) {
+  private static Direction fieldAnnotationDirection(ModifiersTree modifiers, DeclarationKind declarationKind) {
     for (AnnotationTree annotation : modifiers.getAnnotations()) {
       if (!annotation.getArguments().isEmpty()) {
         return Direction.VERTICAL;
       }
     }
+    if (declarationKind == DeclarationKind.FIELD){
+      return Direction.VERTICAL;
+    }    
     return Direction.VERTICAL;
   }
 
