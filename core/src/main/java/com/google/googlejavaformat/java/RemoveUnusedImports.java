@@ -146,7 +146,9 @@ public class RemoveUnusedImports {
       public Void visitReference(ReferenceTree referenceTree, Void unused) {
         DCReference reference = (DCReference) referenceTree;
         long basePos =
-            reference.getSourcePosition((DCTree.DCDocComment) getCurrentPath().getDocComment());
+            reference
+                .pos((DCTree.DCDocComment) getCurrentPath().getDocComment())
+                .getStartPosition();
         // the position of trees inside the reference node aren't stored, but the qualifier's
         // start position is the beginning of the reference node
         if (reference.qualifierExpression != null) {
