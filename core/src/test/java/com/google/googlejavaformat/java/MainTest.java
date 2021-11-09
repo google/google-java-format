@@ -322,7 +322,7 @@ public class MainTest {
       "@ParametersAreNonnullByDefault",
       "package com.google.common.labs.base;",
       "",
-      "import javax.annotation.CheckReturnValue;",
+      "import com.google.errorprone.annotations.CheckReturnValue;",
       "import javax.annotation.ParametersAreNonnullByDefault;",
       "",
     };
