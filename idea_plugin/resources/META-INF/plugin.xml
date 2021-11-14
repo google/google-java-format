@@ -14,7 +14,8 @@
   limitations under the License.
 -->
 
-<idea-plugin url="https://github.com/google/google-java-format/tree/master/idea_plugin" require-restart="true">
+<idea-plugin url="https://github.com/google/google-java-format/tree/master/idea_plugin"
+  require-restart="true">
   <id>google-java-format</id>
   <name>google-java-format</name>
   <vendor url="https://github.com/google/google-java-format">
@@ -24,7 +25,7 @@
   <!-- Mark it as available on all JetBrains IDEs. It's really only useful in
        IDEA and Android Studio, but there's no way to specify that for some
        reason. It won't crash PyCharm or anything, so whatever. -->
-  <depends>com.intellij.modules.lang</depends>
+  <depends>com.intellij.java</depends>
 
   <change-notes><![CDATA[
     <dl>
@@ -58,17 +59,22 @@
   ]]></change-notes>
 
   <applicationListeners>
-    <listener class="com.google.googlejavaformat.intellij.InitialConfigurationProjectManagerListener"
-              topic="com.intellij.openapi.project.ProjectManagerListener"/>
+    <listener
+      class="com.google.googlejavaformat.intellij.InitialConfigurationProjectManagerListener"
+      topic="com.intellij.openapi.project.ProjectManagerListener"/>
     <listener class="com.google.googlejavaformat.intellij.GoogleJavaFormatInstaller"
-              topic="com.intellij.openapi.project.ProjectManagerListener"/>
+      topic="com.intellij.openapi.project.ProjectManagerListener"/>
   </applicationListeners>
 
   <extensions defaultExtensionNs="com.intellij">
-    <projectConfigurable instance="com.google.googlejavaformat.intellij.GoogleJavaFormatConfigurable"
-                         id="google-java-format.settings"
-                         displayName="google-java-format Settings"/>
-    <projectService serviceImplementation="com.google.googlejavaformat.intellij.GoogleJavaFormatSettings"/>
+    <projectConfigurable
+      instance="com.google.googlejavaformat.intellij.GoogleJavaFormatConfigurable"
+      id="google-java-format.settings"
+      displayName="google-java-format Settings"/>
+    <projectService
+      serviceImplementation="com.google.googlejavaformat.intellij.GoogleJavaFormatSettings"/>
+    <notificationGroup displayType="STICKY_BALLOON" id="Enable google-java-format"
+      isLogByDefault="true"/>
   </extensions>
 
 </idea-plugin>

@@ -17,8 +17,8 @@
 package com.google.googlejavaformat.intellij;
 
 import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
+import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManagerListener;
@@ -28,11 +28,10 @@ final class InitialConfigurationProjectManagerListener implements ProjectManager
 
   private static final String NOTIFICATION_TITLE = "Enable google-java-format";
   private static final NotificationGroup NOTIFICATION_GROUP =
-      new NotificationGroup(NOTIFICATION_TITLE, NotificationDisplayType.STICKY_BALLOON, true);
+      NotificationGroupManager.getInstance().getNotificationGroup(NOTIFICATION_TITLE);
 
   @Override
   public void projectOpened(@NotNull Project project) {
-
     GoogleJavaFormatSettings settings = GoogleJavaFormatSettings.getInstance(project);
 
     if (settings.isUninitialized()) {
