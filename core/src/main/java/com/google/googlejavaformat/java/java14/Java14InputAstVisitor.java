@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java.java14;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Iterables.getOnlyElement;
 
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
@@ -27,7 +28,6 @@ import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.InstanceOfTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.ModuleTree;
@@ -59,6 +59,7 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
       maybeGetMethod(BindingPatternTree.class, "getType");
   private static final Method BINDING_PATTERN_TREE_GET_BINDING =
       maybeGetMethod(BindingPatternTree.class, "getBinding");
+  private static final Method CASE_TREE_GET_LABELS = maybeGetMethod(CaseTree.class, "getLabels");
 
   public Java14InputAstVisitor(OpsBuilder builder, int indentMultiplier) {
     super(builder, indentMultiplier);
@@ -247,14 +248,25 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
     sync(node);
     markForPartialFormat();
     builder.forcedBreak();
-    if (node.getExpressions().isEmpty()) {
+    List<? extends Tree> labels;
+    boolean isDefault;
+    if (CASE_TREE_GET_LABELS != null) {
+      labels = (List<? extends Tree>) invoke(CASE_TREE_GET_LABELS, node);
+      isDefault =
+          labels.size() == 1
+              && getOnlyElement(labels).getKind().name().equals("DEFAULT_CASE_LABEL");
+    } else {
+      labels = node.getExpressions();
+      isDefault = labels.isEmpty();
+    }
+    if (isDefault) {
       token("default", plusTwo);
     } else {
       token("case", plusTwo);
-      builder.open(node.getExpressions().size() > 1 ? plusFour : ZERO);
+      builder.open(labels.size() > 1 ? plusFour : ZERO);
       builder.space();
       boolean first = true;
-      for (ExpressionTree expression : node.getExpressions()) {
+      for (Tree expression : labels) {
         if (!first) {
           token(",");
           builder.breakOp(" ");
