@@ -32,6 +32,7 @@ import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.Newlines;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.ReferenceTree;
+import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.Tree;
@@ -55,8 +56,10 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 import java.io.IOError;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.tools.Diagnostic;
@@ -113,6 +116,31 @@ public class RemoveUnusedImports {
       }
       usedNames.add(tree.getName().toString());
       return null;
+    }
+
+    // TODO(cushon): remove this override when pattern matching in switch is no longer a preview
+    // feature, and TreePathScanner visits CaseTree#getLabels instead of CaseTree#getExpressions
+    @SuppressWarnings("unchecked") // reflection
+    @Override
+    public Void visitCase(CaseTree tree, Void unused) {
+      if (CASE_TREE_GET_LABELS != null) {
+        try {
+          scan((List<? extends Tree>) CASE_TREE_GET_LABELS.invoke(tree), null);
+        } catch (ReflectiveOperationException e) {
+          throw new LinkageError(e.getMessage(), e);
+        }
+      }
+      return super.visitCase(tree, null);
+    }
+
+    private static final Method CASE_TREE_GET_LABELS = caseTreeGetLabels();
+
+    private static Method caseTreeGetLabels() {
+      try {
+        return CaseTree.class.getMethod("getLabels");
+      } catch (NoSuchMethodException e) {
+        return null;
+      }
     }
 
     @Override
