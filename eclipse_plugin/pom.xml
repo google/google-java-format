@@ -22,7 +22,7 @@
   <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format-eclipse-plugin</artifactId>
   <packaging>eclipse-plugin</packaging>
-  <version>1.11.0</version>
+  <version>1.13.0</version>
 
   <name>Google Java Format Plugin for Eclipse 4.5+</name>
 
