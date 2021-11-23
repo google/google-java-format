@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id "org.jetbrains.intellij" version "0.7.2"
+  id "org.jetbrains.intellij" version "1.3.0"
 }
 
 repositories {
@@ -23,7 +23,7 @@ repositories {
 }
 
 ext {
-  googleJavaFormatVersion = '1.10.0'
+  googleJavaFormatVersion = '1.13.0'
 }
 
 apply plugin: 'org.jetbrains.intellij'
@@ -31,7 +31,7 @@ apply plugin: 'java'
 
 intellij {
   pluginName = "google-java-format"
-  version = "211.6693.65-EAP-SNAPSHOT"
+  version = "IC-213.5744.18-EAP-SNAPSHOT"
 }
 
 patchPluginXml {
@@ -54,5 +54,5 @@ sourceSets {
 }
 
 dependencies {
-  compile "com.google.googlejavaformat:google-java-format:${googleJavaFormatVersion}"
+  implementation "com.google.googlejavaformat:google-java-format:${googleJavaFormatVersion}"
 }
