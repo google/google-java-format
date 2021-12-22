@@ -14,8 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
-import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
@@ -42,7 +40,6 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 import java.io.IOError;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -154,7 +151,7 @@ public final class Formatter {
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
     JavaInputAstVisitor visitor;
-    if (getMajor() >= 14) {
+    if (Runtime.version().feature() >= 14) {
       try {
         visitor =
             Class.forName("com.google.googlejavaformat.java.java14.Java14InputAstVisitor")
@@ -174,23 +171,6 @@ public final class Formatter {
     doc.computeBreaks(javaOutput.getCommentsHelper(), MAX_LINE_LENGTH, new Doc.State(+0, 0));
     doc.write(javaOutput);
     javaOutput.flush();
-  }
-
-  // Runtime.Version was added in JDK 9, so use reflection to access it to preserve source
-  // compatibility with Java 8.
-  private static int getMajor() {
-    try {
-      Method versionMethod = Runtime.class.getMethod("version");
-      Object version = versionMethod.invoke(null);
-      return (int) version.getClass().getMethod("major").invoke(version);
-    } catch (Exception e) {
-      // continue below
-    }
-    int version = (int) Double.parseDouble(JAVA_CLASS_VERSION.value());
-    if (49 <= version && version <= 52) {
-      return version - (49 - 5);
-    }
-    throw new IllegalStateException("Unknown Java version: " + JAVA_SPECIFICATION_VERSION.value());
   }
 
   static boolean errorDiagnostic(Diagnostic<?> input) {
