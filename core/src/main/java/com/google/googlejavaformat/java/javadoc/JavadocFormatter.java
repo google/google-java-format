@@ -168,13 +168,10 @@ public final class JavadocFormatter {
   private static String makeSingleLineIfPossible(int blockIndent, String input) {
     int oneLinerContentLength = MAX_LINE_LENGTH - "/**  */".length() - blockIndent;
     Matcher matcher = ONE_CONTENT_LINE_PATTERN.matcher(input);
-    if (matcher.matches()) {
-      String line = matcher.group(1);
-      if (line.isEmpty()) {
-        return "/** */";
-      } else if (line.length() <= oneLinerContentLength && !line.startsWith("@")) {
-        return "/** " + line + " */";
-      }
+    if (matcher.matches() && matcher.group(1).isEmpty()) {
+      return "/** */";
+    } else if (matcher.matches() && matcher.group(1).length() <= oneLinerContentLength) {
+      return "/** " + matcher.group(1) + " */";
     }
     return input;
   }
