@@ -76,9 +76,14 @@
       <artifactId>truth</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.google.truth.extensions</groupId>
+      <artifactId>truth-java8-extension</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.google.testing.compile</groupId>
       <artifactId>compile-testing</artifactId>
-      <version>0.15</version>
+      <version>0.19</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
