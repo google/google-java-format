@@ -95,7 +95,7 @@
     <checker.version>3.21.1</checker.version>
     <errorprone.version>2.10.0</errorprone.version>
     <auto-value.version>1.8.2</auto-value.version>
-    <auto-service.version>1.0</auto-service.version>
+    <auto-service.version>1.0.1</auto-service.version>
     <maven-javadoc-plugin.version>3.1.0</maven-javadoc-plugin.version>
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
   </properties>
