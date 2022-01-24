@@ -51,7 +51,7 @@ public class FormatterIntegrationTest {
           .putAll(14, "I477", "Records", "RSLs", "Var", "ExpressionSwitch", "I574", "I594")
           .putAll(15, "I603")
           .putAll(16, "I588")
-          .putAll(17, "I683", "I684")
+          .putAll(17, "I683", "I684", "I696")
           .build();
 
   @Parameters(name = "{index}: {0}")
