@@ -280,9 +280,9 @@
                 <param>${project.build.directory}/${project.artifactId}-${project.version}-all-deps.jar</param>
               </classpath>
               <buildArgs>
-                <buildArg>-H:IncludeResourceBundles=com.sun.tools.javac.resources.javac</buildArg>
-                <buildArg>--verbose</buildArg>
+                <buildArg>-H:IncludeResourceBundles=com.sun.tools.javac.resources.compiler</buildArg>
                 <buildArg>--no-fallback</buildArg>
+                <buildArg>--static</buildArg>
               </buildArgs>
             </configuration>
           </plugin>
