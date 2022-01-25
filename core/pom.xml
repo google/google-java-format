@@ -282,7 +282,6 @@
               <buildArgs>
                 <buildArg>-H:IncludeResourceBundles=com.sun.tools.javac.resources.compiler</buildArg>
                 <buildArg>--no-fallback</buildArg>
-                <buildArg>--static</buildArg>
               </buildArgs>
             </configuration>
           </plugin>
