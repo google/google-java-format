@@ -8,10 +8,10 @@ on:
         required: true
 
 jobs:
-  define-release:
+  build-maven-jars:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Setup Signing Key
         run: |
@@ -20,17 +20,14 @@ jobs:
           
       - name: Checkout
         uses: actions/checkout@2.4.0
-        
+
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
           java-version: 17
           distribution: 'zulu'
           cache: 'maven'
-
-      - name: Run Tests
-        run: mvn verify
-
+     
       - name: Bump Version Number
         env:
           NEW_VERSION: ${{ github.events.input.version }}
@@ -38,16 +35,15 @@ jobs:
           mvn versions:set versions:commit -DnewVersion="${NEW_VERSION}"
           git ls-files | grep 'pom.xml$' | xargs git add
           git commit -m "Release google-java-format ${NEW_VERSION}"
-          git tag "v${NEW_VERSION}"
-          git push origin "v${NEW_VERSION}"
-          
-      - name: Create Maven Jars
-        run: mvn clean deploy
+          git push
 
-      - name: Define Release Entry
+      - name: Build Jars
+        run: mvn clean verify gpg:sign -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
+
+      - name: Add Jars to Release Entry
         uses: softprops/action-gh-release@v1
         with:
           draft: true
           name: ${{ github.events.input.version }} 
           tag_name: "v${{ github.events.input.version }}"
-        
+          files: core/target/google-java-format-*.jar
