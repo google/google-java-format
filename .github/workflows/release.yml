@@ -11,7 +11,7 @@ jobs:
   build-maven-jars:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - name: Setup Signing Key
         run: |
