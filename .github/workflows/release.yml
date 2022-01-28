@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Setup Signing Key
         run: |
-          cat <(echo -e "${{ secrets.GPG_SIGNING_KEY }}") | gpg --batch --import
+          echo -e "${{ secrets.GPG_SIGNING_KEY }}") | gpg --batch --import --no-tty
           gpg --list-secret-keys --keyid-format LONG
           
       - name: Checkout
