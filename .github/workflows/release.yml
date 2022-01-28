@@ -39,7 +39,7 @@ jobs:
           git config --global user.email "gh-actions@github.com"
           git config --global user.name "GitHub Actions"
           git commit -m "Release google-java-format ${{ github.event.inputs.version }}"
-          git remote set-url https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/google/google-java-format.git
+          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/google/google-java-format.git
           git push
 
       - name: Build Jars
