@@ -41,6 +41,9 @@ jobs:
           git commit -m "Release google-java-format ${{ github.event.inputs.version }}"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/google/google-java-format.git
           git push
+          git tag "v${{ github.event.inputs.version }}"
+          git push --tags
+          
 
       - name: Build Jars
         run: mvn --no-transfer-progress clean verify gpg:sign -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
