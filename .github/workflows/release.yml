@@ -18,7 +18,7 @@ jobs:
           gpg-agent --daemon --default-cache-ttl 7200
           echo -e "${{ secrets.GPG_SIGNING_KEY }}" | gpg --batch --import --no-tty
           echo "hello world" > temp.txt
-          gpg --detach-sig --yes -v --output=/dev/null --pinentry-mode loopback --passphrase "${{ secrets.PASSPHRASE }}" temp.txt
+          gpg --detach-sig --yes -v --output=/dev/null --pinentry-mode loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" temp.txt
           rm temp.txt
           gpg --list-secret-keys --keyid-format LONG
           
