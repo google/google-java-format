@@ -7,9 +7,6 @@ on:
         description: "version number for this release."
         required: true
 
-env:
-  JAVA_HOME: "$JAVA_HOME_17_X64"
-
 jobs:
   define-release:
     runs-on: ubuntu-latest
