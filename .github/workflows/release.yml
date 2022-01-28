@@ -36,7 +36,7 @@ jobs:
         run: |
           mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.event.inputs.version }}"
           git ls-files | grep 'pom.xml$' | xargs git add
-          git config --global user.email "${{ github.actor}}}@users.noreply.github.com"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
           git config --global user.name "${{ github.actor }}"
           git commit -m "Release google-java-format ${{ github.event.inputs.version }}"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/google/google-java-format.git
