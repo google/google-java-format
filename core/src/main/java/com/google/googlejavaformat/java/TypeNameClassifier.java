@@ -164,7 +164,7 @@ public final class TypeNameClassifier {
         hasLowercase |= Character.isLowerCase(c);
       }
       if (firstUppercase) {
-        return hasLowercase ? UPPER_CAMEL : UPPERCASE;
+        return (hasLowercase || name.length() == 1) ? UPPER_CAMEL : UPPERCASE;
       } else {
         return hasUppercase ? LOWER_CAMEL : LOWERCASE;
       }
