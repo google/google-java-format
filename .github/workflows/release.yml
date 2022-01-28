@@ -19,7 +19,7 @@ jobs:
           gpg --list-secret-keys --keyid-format LONG
           
       - name: Checkout
-        uses: actions/checkout@2.4.0
+        uses: actions/checkout@v2
 
       - name: Set up JDK
         uses: actions/setup-java@v2
