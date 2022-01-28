@@ -34,11 +34,11 @@ jobs:
      
       - name: Bump Version Number
         run: |
-          mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.events.inputs.version }}"
+          mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.event.inputs.version }}"
           git ls-files | grep 'pom.xml$' | xargs git add
           git config --global user.email "gh-actions@github.com"
           git config --global user.name "GitHub Actions"
-          git commit -m "Release google-java-format ${{ github.events.inputs.version }}"
+          git commit -m "Release google-java-format ${{ github.event.inputs.version }}"
           git push
 
       - name: Build Jars
@@ -48,6 +48,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           draft: true
-          name: ${{ github.events.input.version }} 
-          tag_name: "v${{ github.events.inputs.version }}"
+          name: ${{ github.event.input.version }} 
+          tag_name: "v${{ github.event.inputs.version }}"
           files: core/target/google-java-format-*.jar
