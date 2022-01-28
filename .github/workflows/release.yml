@@ -36,7 +36,7 @@ jobs:
         env:
           NEW_VERSION: ${{ github.events.input.version }}
         run: |
-          mvn versions:set versions:commit -DnewVersion="${NEW_VERSION}"
+          mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${NEW_VERSION}"
           git ls-files | grep 'pom.xml$' | xargs git add
           git config --global user.email "gh-actions@github.com"
           git config --global user.name "GitHub Actions"
