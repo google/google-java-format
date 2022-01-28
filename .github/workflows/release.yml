@@ -39,12 +39,10 @@ jobs:
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
           git config --global user.name "${{ github.actor }}"
           git commit -m "Release google-java-format ${{ github.event.inputs.version }}"
+          echo "TARGET_COMMITISH=$(git rev-parse HEAD)" >> $GITHUB_ENV
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/google/google-java-format.git
           git push
-          git tag "v${{ github.event.inputs.version }}"
-          git push --tags
           
-
       - name: Build Jars
         run: mvn --no-transfer-progress clean verify gpg:sign -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
 
@@ -54,4 +52,5 @@ jobs:
           draft: true
           name: ${{ github.event.input.version }} 
           tag_name: "v${{ github.event.inputs.version }}"
+          target_commitish: ${{ env.TARGET_COMMITISH }}
           files: core/target/google-java-format-*.jar
