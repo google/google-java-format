@@ -44,7 +44,7 @@ jobs:
           git push
 
       - name: Build Jars
-        run: mvn clean verify gpg:sign -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
+        run: mvn --no-transfer-progress clean verify gpg:sign -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
 
       - name: Add Jars to Release Entry
         uses: softprops/action-gh-release@v1
