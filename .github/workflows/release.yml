@@ -33,14 +33,12 @@ jobs:
           cache: 'maven'
      
       - name: Bump Version Number
-        env:
-          NEW_VERSION: ${{ github.events.input.version }}
         run: |
-          mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${NEW_VERSION}"
+          mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.events.input.version }}"
           git ls-files | grep 'pom.xml$' | xargs git add
           git config --global user.email "gh-actions@github.com"
           git config --global user.name "GitHub Actions"
-          git commit -m "Release google-java-format ${NEW_VERSION}"
+          git commit -m "Release google-java-format ${{ github.events.input.version }}"
           git push
 
       - name: Build Jars
