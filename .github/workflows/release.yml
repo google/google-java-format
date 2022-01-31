@@ -53,4 +53,6 @@ jobs:
           name: ${{ github.event.input.version }} 
           tag_name: "v${{ github.event.inputs.version }}"
           target_commitish: ${{ env.TARGET_COMMITISH }}
-          files: core/target/google-java-format-*.jar
+          files: |
+            core/target/google-java-format-*.jar
+            eclipse_plugin/target/google-java-format-eclipse-plugin-*.jar

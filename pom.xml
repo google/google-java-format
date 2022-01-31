@@ -27,9 +27,9 @@
 
   <modules>
     <module>core</module>
+    <module>eclipse_plugin</module>
     <!-- google-java-format#24
     <module>idea_plugin</module>
-    <module>eclipse_plugin</module>
     -->
   </modules>
 
