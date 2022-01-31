@@ -282,6 +282,7 @@
               <buildArgs>
                 <buildArg>-H:IncludeResourceBundles=com.sun.tools.javac.resources.compiler</buildArg>
                 <buildArg>--no-fallback</buildArg>
+                <buildArg>--initialize-at-build-time=com.sun.tools.javac.file.Locations</buildArg>
               </buildArgs>
             </configuration>
           </plugin>
