@@ -166,14 +166,29 @@ public final class JavadocFormatter {
    * fits on one line.
    */
   private static String makeSingleLineIfPossible(int blockIndent, String input) {
-    int oneLinerContentLength = MAX_LINE_LENGTH - "/**  */".length() - blockIndent;
     Matcher matcher = ONE_CONTENT_LINE_PATTERN.matcher(input);
-    if (matcher.matches() && matcher.group(1).isEmpty()) {
-      return "/** */";
-    } else if (matcher.matches() && matcher.group(1).length() <= oneLinerContentLength) {
-      return "/** " + matcher.group(1) + " */";
+    if (matcher.matches()) {
+      String line = matcher.group(1);
+      if (line.isEmpty()) {
+        return "/** */";
+      } else if (oneLineJavadoc(line, blockIndent)) {
+        return "/** " + line + " */";
+      }
     }
     return input;
+  }
+
+  private static boolean oneLineJavadoc(String line, int blockIndent) {
+    int oneLinerContentLength = MAX_LINE_LENGTH - "/**  */".length() - blockIndent;
+    if (line.length() > oneLinerContentLength) {
+      return false;
+    }
+    // If the javadoc contains only a tag, use multiple lines to encourage writing a summary
+    // fragment, unless it's /* @hide */.
+    if (line.startsWith("@") && !line.equals("@hide")) {
+      return false;
+    }
+    return true;
   }
 
   private JavadocFormatter() {}
