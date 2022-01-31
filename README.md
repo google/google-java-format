@@ -13,7 +13,7 @@
 and run it with:
 
 ```
-java -jar /path/to/google-java-format-1.13.0-all-deps.jar <options> [files...]
+java -jar /path/to/google-java-format-${GJF_VERSION?}-all-deps.jar <options> [files...]
 ```
 
 The formatter can act on whole files, on limited lines (`--lines`), on specific
@@ -39,7 +39,7 @@ java \
   --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
   --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
   --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
-  -jar google-java-format-1.13.0-all-deps.jar <options> [files...]
+  -jar google-java-format-${GJF_VERSION?}-all-deps.jar <options> [files...]
 ```
 
 ### IntelliJ, Android Studio, and other JetBrains IDEs
@@ -70,9 +70,9 @@ and import it into File→Settings→Editor→Code Style.
 
 ### Eclipse
 
-Version 1.11 of the
-[google-java-format Eclipse plugin](https://github.com/google/google-java-format/releases/download/v1.13.0/google-java-format-eclipse-plugin-1.13.0.jar)
-can be downloaded from the releases page. Drop it into the Eclipse
+The latest version of the `google-java-format` Eclipse plugin can be downloaded
+from the [releases page](https://github.com/google/google-java-format/releases).
+Drop it into the Eclipse
 [drop-ins folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fmisc%2Fp2_dropins_format.html)
 to activate the plugin.
 
@@ -113,7 +113,7 @@ configuration.
 <dependency>
   <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format</artifactId>
-  <version>1.13.0</version>
+  <version>${google-java-format.version}</version>
 </dependency>
 ```
 
@@ -121,7 +121,7 @@ configuration.
 
 ```groovy
 dependencies {
-  implementation 'com.google.googlejavaformat:google-java-format:1.13.0'
+  implementation 'com.google.googlejavaformat:google-java-format:$googleJavaFormatVersion'
 }
 ```
 
