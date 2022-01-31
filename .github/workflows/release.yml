@@ -11,39 +11,49 @@ jobs:
   build-maven-jars:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - name: Setup Signing Key
         run: |
-          cat <(echo -e "${{ secrets.GPG_SIGNING_KEY }}") | gpg --batch --import
+          gpg-agent --daemon --default-cache-ttl 7200
+          echo -e "${{ secrets.GPG_SIGNING_KEY }}" | gpg --batch --import --no-tty
+          echo "hello world" > temp.txt
+          gpg --detach-sig --yes -v --output=/dev/null --pinentry-mode loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" temp.txt
+          rm temp.txt
           gpg --list-secret-keys --keyid-format LONG
           
       - name: Checkout
-        uses: actions/checkout@2.4.0
+        uses: actions/checkout@v2.4.0
 
       - name: Set up JDK
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v2.5.0
         with:
           java-version: 17
           distribution: 'zulu'
           cache: 'maven'
      
       - name: Bump Version Number
-        env:
-          NEW_VERSION: ${{ github.events.input.version }}
         run: |
-          mvn versions:set versions:commit -DnewVersion="${NEW_VERSION}"
+          mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.event.inputs.version }}"
+          mvn tycho-versions:update-eclipse-metadata -pl eclipse_plugin
           git ls-files | grep 'pom.xml$' | xargs git add
-          git commit -m "Release google-java-format ${NEW_VERSION}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}"
+          git commit -m "Release google-java-format ${{ github.event.inputs.version }}"
+          echo "TARGET_COMMITISH=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/google/google-java-format.git
           git push
-
+          
       - name: Build Jars
-        run: mvn clean verify gpg:sign -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
+        run: mvn --no-transfer-progress clean verify gpg:sign -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
 
       - name: Add Jars to Release Entry
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v0.1.14
         with:
           draft: true
-          name: ${{ github.events.input.version }} 
-          tag_name: "v${{ github.events.input.version }}"
-          files: core/target/google-java-format-*.jar
+          name: ${{ github.event.input.version }} 
+          tag_name: "v${{ github.event.inputs.version }}"
+          target_commitish: ${{ env.TARGET_COMMITISH }}
+          files: |
+            core/target/google-java-format-*.jar
+            eclipse_plugin/target/google-java-format-eclipse-plugin-*.jar
