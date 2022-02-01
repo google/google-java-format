@@ -311,7 +311,7 @@ public final class JavaInput extends Input {
     for (Tok tok : toks) {
       builder.put(tok.getPosition(), tok.getColumn());
     }
-    return builder.build();
+    return builder.buildOrThrow();
   }
 
   /**
