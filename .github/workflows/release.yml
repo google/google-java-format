@@ -49,7 +49,7 @@ jobs:
         run: mvn --no-transfer-progress clean verify gpg:sign -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
 
       - name: Add Jars to Release Entry
-        uses: softprops/action-gh-release@v0.1.14
+        uses: softprops/action-gh-release@v1
         with:
           draft: true
           name: ${{ github.event.input.version }} 
