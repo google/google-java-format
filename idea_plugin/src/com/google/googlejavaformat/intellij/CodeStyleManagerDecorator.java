@@ -91,7 +91,7 @@ class CodeStyleManagerDecorator extends CodeStyleManager
   }
 
   @Override
-  public void reformatText(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
+  public void reformatText(@NotNull PsiFile file, @NotNull Collection<? extends TextRange> ranges)
       throws IncorrectOperationException {
     delegate.reformatText(file, ranges);
   }
@@ -104,7 +104,7 @@ class CodeStyleManagerDecorator extends CodeStyleManager
   }
 
   @Override
-  public void reformatTextWithContext(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
+  public void reformatTextWithContext(@NotNull PsiFile file, @NotNull Collection<? extends TextRange> ranges)
       throws IncorrectOperationException {
     delegate.reformatTextWithContext(file, ranges);
   }

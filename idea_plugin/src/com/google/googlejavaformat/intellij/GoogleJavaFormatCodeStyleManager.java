@@ -63,7 +63,7 @@ class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
   }
 
   @Override
-  public void reformatText(@NotNull PsiFile file, @NotNull Collection<TextRange> ranges)
+  public void reformatText(@NotNull PsiFile file, @NotNull Collection<? extends TextRange> ranges)
       throws IncorrectOperationException {
     if (overrideFormatterForFile(file)) {
       formatInternal(file, ranges);
@@ -85,7 +85,7 @@ class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
 
   @Override
   public void reformatTextWithContext(
-      @NotNull PsiFile file, @NotNull Collection<TextRange> ranges) {
+      @NotNull PsiFile file, @NotNull Collection<? extends TextRange> ranges) {
     if (overrideFormatterForFile(file)) {
       formatInternal(file, ranges);
     } else {
