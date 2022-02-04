@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id "org.jetbrains.intellij" version "1.3.0"
+  id "org.jetbrains.intellij" version "1.3.1"
 }
 
 repositories {
@@ -23,23 +23,27 @@ repositories {
 }
 
 ext {
-  googleJavaFormatVersion = '1.13.0'
+  googleJavaFormatVersion = "1.13.0"
 }
 
-apply plugin: 'org.jetbrains.intellij'
-apply plugin: 'java'
+apply plugin: "org.jetbrains.intellij"
+apply plugin: "java"
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 intellij {
   pluginName = "google-java-format"
-  version = "IC-213.5744.18-EAP-SNAPSHOT"
+  plugins = ["java"]
+  version = "221.3427-EAP-CANDIDATE-SNAPSHOT"
 }
 
 patchPluginXml {
   pluginDescription = "Formats source code using the google-java-format tool. This version of " +
                       "the plugin uses version ${googleJavaFormatVersion} of the tool."
-  version = "${googleJavaFormatVersion}.0"
-  sinceBuild = '201'
-  untilBuild = ''
+  version.set("${googleJavaFormatVersion}.0")
+  sinceBuild = "203"
+  untilBuild = ""
 }
 
 publishPlugin {
@@ -48,8 +52,8 @@ publishPlugin {
 
 sourceSets {
   main {
-    java.srcDir 'src'
-    resources.srcDir 'resources'
+    java.srcDir "src"
+    resources.srcDir "resources"
   }
 }
 

@@ -50,8 +50,7 @@ final class FormatterUtil {
   }
 
   private static Collection<Range<Integer>> toRanges(Collection<? extends TextRange> textRanges) {
-    return textRanges
-        .stream()
+    return textRanges.stream()
         .map(textRange -> Range.closedOpen(textRange.getStartOffset(), textRange.getEndOffset()))
         .collect(Collectors.toList());
   }
