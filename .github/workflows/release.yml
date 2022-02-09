@@ -31,6 +31,9 @@ jobs:
           java-version: 17
           distribution: 'zulu'
           cache: 'maven'
+          server-id: sonatype-nexus-staging
+          server-username: CI_DEPLOY_USERNAME
+          server-password: CI_DEPLOY_PASSWORD
      
       - name: Bump Version Number
         run: |
@@ -43,11 +46,17 @@ jobs:
           git tag "v${{ github.event.inputs.version }}"
           echo "TARGET_COMMITISH=$(git rev-parse HEAD)" >> $GITHUB_ENV
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/google/google-java-format.git
-          git push origin "v${{ github.event.inputs.version }}"
           
       - name: Build Jars
+        env:
+          CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
+          CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
         run: mvn --no-transfer-progress -P sonatype-oss-release clean deploy -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
 
+      - name: Push tag
+        run: |
+          git push origin "v${{ github.event.inputs.version }}"
+          
       - name: Add Jars to Release Entry
         uses: softprops/action-gh-release@v0.1.14
         with:
