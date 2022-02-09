@@ -46,7 +46,7 @@ jobs:
           git push origin "v${{ github.event.inputs.version }}"
           
       - name: Build Jars
-        run: mvn --no-transfer-progress clean verify gpg:sign -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
+        run: mvn --no-transfer-progress -P sonatype-oss-release clean deploy -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
 
       - name: Add Jars to Release Entry
         uses: softprops/action-gh-release@v0.1.14
