@@ -87,7 +87,7 @@ Implementation`.
     *   [sherter/google-java-format-gradle-plugin](https://github.com/sherter/google-java-format-gradle-plugin)
 *   Apache Maven plugins
     *   [spotless](https://github.com/diffplug/spotless/tree/main/plugin-maven#google-java-format)
-    *   [coveo/fmt-maven-plugin](https://github.com/coveo/fmt-maven-plugin)
+    *   [spotify/fmt-maven-plugin](https://github.com/spotify/fmt-maven-plugin)
     *   [talios/googleformatter-maven-plugin](https://github.com/talios/googleformatter-maven-plugin)
     *   [Cosium/maven-git-code-format](https://github.com/Cosium/maven-git-code-format):
         A maven plugin that automatically deploys google-java-format as a
