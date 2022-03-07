@@ -27,21 +27,6 @@ To reformat changed lines in a specific patch, use
 formatting. This is a deliberate design decision to unify our code formatting on
 a single format.*
 
-#### JDK 16
-
-The following flags are required when running on JDK 16, due to
-[JEP 396: Strongly Encapsulate JDK Internals by Default](https://openjdk.java.net/jeps/396):
-
-```
-java \
-  --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
-  --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
-  --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
-  --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
-  --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
-  -jar google-java-format-${GJF_VERSION?}-all-deps.jar <options> [files...]
-```
-
 ### IntelliJ, Android Studio, and other JetBrains IDEs
 
 A
