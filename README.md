@@ -92,6 +92,18 @@ The formatter can be used in software which generates java to output more
 legible java code. Just include the library in your maven/gradle/etc.
 configuration.
 
+`google-java-format` uses internal javac APIs for parsing Java source. The
+following JVM flags are required when running on JDK 16 and newer, due to
+[JEP 396: Strongly Encapsulate JDK Internals by Default](https://openjdk.java.net/jeps/396):
+
+```
+--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+--add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+--add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+--add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+```
+
 #### Maven
 
 ```xml
