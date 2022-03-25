@@ -49,6 +49,7 @@ import java.util.List;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
@@ -349,7 +350,8 @@ public final class JavaInput extends Input {
     stopTokens = ImmutableSet.<TokenKind>builder().addAll(stopTokens).add(TokenKind.EOF).build();
     Context context = new Context();
     Options.instance(context).put("--enable-preview", "true");
-    new JavacFileManager(context, true, UTF_8);
+    JavaFileManager fileManager = new JavacFileManager(context, false, UTF_8);
+    context.put(JavaFileManager.class, fileManager);
     DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<>();
     context.put(DiagnosticListener.class, diagnosticCollector);
     Log log = Log.instance(context);
