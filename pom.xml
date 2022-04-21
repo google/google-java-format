@@ -93,7 +93,7 @@
     <errorprone.version>2.11.0</errorprone.version>
     <auto-value.version>1.9</auto-value.version>
     <auto-service.version>1.0.1</auto-service.version>
-    <maven-javadoc-plugin.version>3.3.1</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.4.0</maven-javadoc-plugin.version>
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
   </properties>
 
@@ -173,7 +173,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.3.1</version>
+          <version>3.4.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-gpg-plugin</artifactId>
@@ -264,7 +264,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.3.1</version>
+        <version>3.4.0</version>
         <configuration>
           <doclint>none</doclint>
         </configuration>
