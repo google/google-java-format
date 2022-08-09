@@ -32,7 +32,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <tycho-version>2.7.3</tycho-version>
+    <tycho-version>2.7.4</tycho-version>
   </properties>
 
   <dependencies>
