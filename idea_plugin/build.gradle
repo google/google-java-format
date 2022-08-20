@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id "org.jetbrains.intellij" version "1.4.0"
+  id "org.jetbrains.intellij" version "1.8.0"
 }
 
 repositories {
@@ -35,7 +35,7 @@ targetCompatibility = JavaVersion.VERSION_11
 intellij {
   pluginName = "google-java-format"
   plugins = ["java"]
-  version = "221.3427-EAP-CANDIDATE-SNAPSHOT"
+  version = "221.6008.13"
 }
 
 patchPluginXml {
