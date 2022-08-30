@@ -252,7 +252,10 @@ public class RemoveUnusedImports {
     ParserFactory parserFactory = ParserFactory.instance(context);
     JavacParser parser =
         parserFactory.newParser(
-            javaInput, /*keepDocComments=*/ true, /*keepEndPos=*/ true, /*keepLineMap=*/ true);
+            javaInput,
+            /* keepDocComments= */ true,
+            /* keepEndPos= */ true,
+            /* keepLineMap= */ true);
     unit = parser.parseCompilationUnit();
     unit.sourcefile = source;
     Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =

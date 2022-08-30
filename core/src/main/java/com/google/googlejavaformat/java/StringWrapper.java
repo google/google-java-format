@@ -396,7 +396,7 @@ public final class StringWrapper {
     ParserFactory parserFactory = ParserFactory.instance(context);
     JavacParser parser =
         parserFactory.newParser(
-            source, /*keepDocComments=*/ true, /*keepEndPos=*/ true, /*keepLineMap=*/ true);
+            source, /* keepDocComments= */ true, /* keepEndPos= */ true, /* keepLineMap= */ true);
     unit = parser.parseCompilationUnit();
     unit.sourcefile = sjfo;
     Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =

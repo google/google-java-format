@@ -136,9 +136,9 @@ public final class Formatter {
     JavacParser parser =
         parserFactory.newParser(
             javaInput.getText(),
-            /*keepDocComments=*/ true,
-            /*keepEndPos=*/ true,
-            /*keepLineMap=*/ true);
+            /* keepDocComments= */ true,
+            /* keepEndPos= */ true,
+            /* keepLineMap= */ true);
     unit = parser.parseCompilationUnit();
     unit.sourcefile = source;
 
