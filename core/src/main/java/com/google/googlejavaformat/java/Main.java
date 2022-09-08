@@ -42,7 +42,7 @@ public final class Main {
   private static final String STDIN_FILENAME = "<stdin>";
 
   static String versionString() {
-    return "google-java-format: Version " + GoogleJavaFormatVersion.version();
+    return "google-java-format-happn: Version " + GoogleJavaFormatVersion.version();
   }
 
   private final PrintWriter outWriter;

@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 @State(
     name = "GoogleJavaFormatSettings",
-    storages = {@Storage("google-java-format.xml")})
+    storages = {@Storage("google-java-format-happn.xml")})
 class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFormatSettings.State> {
 
   private State state = new State();

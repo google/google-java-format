@@ -23,7 +23,7 @@ import java.util.spi.ToolProvider;
 public class GoogleJavaFormatToolProvider implements ToolProvider {
   @Override
   public String name() {
-    return "google-java-format";
+    return "google-java-format-happn";
   }
 
   @Override

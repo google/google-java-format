@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 
 final class InitialConfigurationProjectManagerListener implements ProjectManagerListener {
 
-  private static final String NOTIFICATION_TITLE = "Enable google-java-format";
+  private static final String NOTIFICATION_TITLE = "Enable google-java-format-happn";
   private static final NotificationGroup NOTIFICATION_GROUP =
       NotificationGroupManager.getInstance().getNotificationGroup(NOTIFICATION_TITLE);
 
@@ -45,7 +45,7 @@ final class InitialConfigurationProjectManagerListener implements ProjectManager
         new Notification(
             NOTIFICATION_GROUP.getDisplayId(),
             NOTIFICATION_TITLE,
-            "The google-java-format plugin is disabled by default. "
+            "The google-java-format-happn plugin is disabled by default. "
                 + "<a href=\"enable\">Enable for this project</a>.",
             NotificationType.INFORMATION,
             (n, e) -> {

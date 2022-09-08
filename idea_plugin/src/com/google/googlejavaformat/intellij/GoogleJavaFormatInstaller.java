@@ -50,7 +50,7 @@ final class GoogleJavaFormatInstaller implements ProjectManagerListener {
 
   private static void setManager(Project project, CodeStyleManager newManager) {
     ComponentManagerImpl platformComponentManager = (ComponentManagerImpl) project;
-    IdeaPluginDescriptor plugin = PluginManagerCore.getPlugin(PluginId.getId("google-java-format"));
+    IdeaPluginDescriptor plugin = PluginManagerCore.getPlugin(PluginId.getId("google-java-format-happn"));
     checkState(plugin != null, "Couldn't locate our own PluginDescriptor.");
     platformComponentManager.registerServiceInstance(CodeStyleManager.class, newManager, plugin);
   }

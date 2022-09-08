@@ -14,11 +14,11 @@
   limitations under the License.
 -->
 
-<idea-plugin url="https://github.com/google/google-java-format/tree/master/idea_plugin"
+<idea-plugin url="https://github.com/happn-app/google-java-format/tree/master/idea_plugin"
   require-restart="true">
-  <id>google-java-format</id>
-  <name>google-java-format</name>
-  <vendor url="https://github.com/google/google-java-format">
+  <id>google-java-format-happn</id>
+  <name>google-java-format-happn</name>
+  <vendor url="https://github.com/happn-app/google-java-format">
     Google
   </vendor>
 
@@ -29,6 +29,8 @@
 
   <change-notes><![CDATA[
     <dl>
+      <dt>1.15.1.0</dt>
+      <dd>Switch To happn format.</dd>
       <dt>1.15.0.0</dt>
       <dd>Updated to use google-java-format 1.15.0.</dd>
       <dt>1.14.0.0</dt>
@@ -74,10 +76,10 @@
     <projectConfigurable
       instance="com.google.googlejavaformat.intellij.GoogleJavaFormatConfigurable"
       id="google-java-format.settings"
-      displayName="google-java-format Settings"/>
+      displayName="google-java-format-happn Settings"/>
     <projectService
       serviceImplementation="com.google.googlejavaformat.intellij.GoogleJavaFormatSettings"/>
-    <notificationGroup displayType="STICKY_BALLOON" id="Enable google-java-format"
+    <notificationGroup displayType="STICKY_BALLOON" id="Enable google-java-format-happn"
       isLogByDefault="true"/>
   </extensions>
 

@@ -49,7 +49,7 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
   @NotNull
   @Override
   public String getId() {
-    return "google-java-format.settings";
+    return "google-java-format-happn.settings";
   }
 
   @Nullable
@@ -61,7 +61,7 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
   @Nls
   @Override
   public String getDisplayName() {
-    return "google-java-format Settings";
+    return "google-java-format Happn Settings";
   }
 
   @Nullable
@@ -129,7 +129,7 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
     panel = new JPanel();
     panel.setLayout(new GridLayoutManager(3, 2, new Insets(0, 0, 0, 0), -1, -1));
     enable = new JCheckBox();
-    enable.setText("Enable google-java-format");
+    enable.setText("Enable google-java-format-happn");
     panel.add(
         enable,
         new GridConstraints(

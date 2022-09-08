@@ -27,13 +27,13 @@
 
   <modules>
     <module>core</module>
-    <module>eclipse_plugin</module>
   </modules>
 
-  <name>Google Java Format Parent</name>
+  <name>Google Java Format - Happn - Parent</name>
 
   <description>
     A Java source code formatter that follows Google Java Style.
+    Modifier for happn needs
   </description>
 
   <url>https://github.com/google/google-java-format</url>
@@ -300,18 +300,18 @@
       </plugin>
     </plugins>
   </build>
-
+  
   <distributionManagement>
-    <snapshotRepository>
-      <id>sonatype-nexus-snapshots</id>
-      <name>Sonatype Nexus Snapshots</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-    </snapshotRepository>
     <repository>
-      <id>sonatype-nexus-staging</id>
-      <name>Nexus Release Repository</name>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+      <id>happn-nexus-releases</id>
+      <name>Internal Releases</name>
+      <url>http://nexus.happn.io/content/repositories/releases/</url>
     </repository>
+    <snapshotRepository>
+      <id>happn-nexus-snapshots</id>
+      <name>Internal Releases</name>
+      <url>http://nexus.happn.io/content/repositories/snapshots/</url>
+    </snapshotRepository>
   </distributionManagement>
 
   <profiles>
@@ -341,20 +341,6 @@
                 <id>attach-javadocs</id>
                 <goals>
                   <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>3.0.1</version>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
                 </goals>
               </execution>
             </executions>

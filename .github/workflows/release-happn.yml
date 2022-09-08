@@ -1,0 +1,89 @@
+name: Release google-java-format
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "version number for this release. (ex: 1.15.0.1)"
+        required: true
+
+jobs:
+  build-maven-jars:
+    runs-on: [ self-hosted, java ]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2.5.0
+        with:
+          java-version: 17
+          server-id: happn-nexus-releases
+          server-username: NEXUS_USERNAME
+          server-password: NEXUS_PASSWORD
+          
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        
+      - name: Setup certs
+        run: |
+          keytool -delete -alias "happn Root Certificate" -noprompt -storepass changeit -cacerts || true
+          keytool -delete -alias "happn Intermediate Certificate" -noprompt -storepass changeit -cacerts || true
+          curl -s https://ca.1e42.net/happn_Root_CA.crt | keytool -importcert -alias "happn Root Certificate" -noprompt -storepass changeit -cacerts 
+          curl -s https://ca.1e42.net/happn_Intermediate_CA_2.crt | keytool -importcert -alias "happn Intermediate Certificate" -noprompt -storepass changeit -cacerts 
+
+      - name: Set maven settings
+        uses: whelk-io/maven-settings-xml-action@v12
+        with:
+          repositories: '[{ "id": "github", "url": "https://maven.pkg.github.com/happn-app", "releases": { "enabled": "true" }, "snapshots": { "enabled": "false" } },{ "id": "happn-nexus-releases", "url": "https://nexus.happn.io/content/repositories/releases/", "releases": { "enabled": "true" }, "snapshots": { "enabled": "false" } }]'
+          plugin_repositories: '[{ "id": "happn-nexus-releases", "url": "https://nexus.happn.io/content/repositories/releases/" }]'
+          servers: '[{ "id": "github", "username": "happn-app", "password": "${{ secrets.GITHUB_TOKEN }}" }, { "id": "happn-nexus-releases", "username": "${{ secrets.NEXUS_USERNAME }}", "password": "${{ secrets.NEXUS_PASSWORD }}" }]'      
+      
+      - name: Bump Version Number
+        run: |
+          mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.event.inputs.version }}" -DprocessAllModules
+          sed -i 's/GJFHAPPN-VERSION/${{ github.event.inputs.version }}/g' idea_plugin/build.gradle
+          git ls-files | grep 'pom.xml$' | xargs git add
+          git ls-files | grep 'build.gradle$' | xargs git add
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}"
+          git commit -m "Release google-java-format-happn ${{ github.event.inputs.version }}"
+          git tag "v${{ github.event.inputs.version }}"
+          echo "TARGET_COMMITISH=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/happn-app/google-java-format.git
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+
+      - name: Build core
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run:
+          mvn --no-transfer-progress -pl '!eclipse_plugin' clean install"
+          
+      - name: Build IJ plugin
+        run: ./gradlew build -p idea_plugin
+          
+      - name: Deploy to Nexus
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run:
+          mvn --no-transfer-progress -pl '!eclipse_plugin' clean deploy"
+      - name: Push tag
+        run: |
+          git push origin "v${{ github.event.inputs.version }}"
+          
+      - name: Add Jars to Release Entry
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          draft: true
+          name: ${{ github.event.input.version }} 
+          tag_name: "v${{ github.event.inputs.version }}"
+          target_commitish: ${{ env.TARGET_COMMITISH }}
+          files: |
+            core/target/google-java-format-*.jar
+            idea_plugin/build/distributions/google-java-format-*.zip

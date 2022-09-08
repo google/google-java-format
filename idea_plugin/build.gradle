@@ -15,15 +15,16 @@
  */
 
 plugins {
-  id "org.jetbrains.intellij" version "1.4.0"
+  id "org.jetbrains.intellij" version "1.9.0"
 }
 
 repositories {
+  mavenLocal()
   mavenCentral()
 }
 
 ext {
-  googleJavaFormatVersion = "1.15.0"
+  googleJavaFormatVersion = "GJFHAPPN-VERSION"
 }
 
 apply plugin: "org.jetbrains.intellij"
@@ -33,9 +34,9 @@ sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
 intellij {
-  pluginName = "google-java-format"
+  pluginName = "google-java-format-happn"
   plugins = ["java"]
-  version = "221.3427-EAP-CANDIDATE-SNAPSHOT"
+  version = "221.5080.210"
 }
 
 patchPluginXml {
