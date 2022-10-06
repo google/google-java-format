@@ -27,7 +27,6 @@
 
   <modules>
     <module>core</module>
-    <module>eclipse_plugin</module>
   </modules>
 
   <name>Google Java Format Parent</name>
@@ -361,6 +360,15 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>eclipse</id>
+      <activation>
+        <jdk>[17,)</jdk>
+      </activation>
+      <modules>
+        <module>eclipse_plugin</module>
+      </modules>
     </profile>
   </profiles>
 </project>
