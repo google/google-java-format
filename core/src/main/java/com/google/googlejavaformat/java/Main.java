@@ -79,7 +79,7 @@ public final class Main {
       return formatter.format(args);
     } catch (UsageException e) {
       err.print(e.getMessage());
-      return 0;
+      return 1;
     } finally {
       err.flush();
       out.flush();
