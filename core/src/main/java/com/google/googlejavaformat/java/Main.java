@@ -79,7 +79,8 @@ public final class Main {
       return formatter.format(args);
     } catch (UsageException e) {
       err.print(e.getMessage());
-      return 1;
+      // We return exit code 2 to differentiate usage issues from code formatting issues.
+      return 2;
     } finally {
       err.flush();
       out.flush();
