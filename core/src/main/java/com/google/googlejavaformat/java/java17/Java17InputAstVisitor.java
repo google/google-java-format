@@ -12,7 +12,7 @@
  * the License.
  */
 
-package com.google.googlejavaformat.java.java14;
+package com.google.googlejavaformat.java.java17;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getOnlyElement;
@@ -25,6 +25,7 @@ import com.google.googlejavaformat.java.JavaInputAstVisitor;
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.BindingPatternTree;
 import com.sun.source.tree.BlockTree;
+import com.sun.source.tree.CaseLabelTree;
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -39,39 +40,23 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeInfo;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import javax.lang.model.element.Name;
 
 /**
- * Extends {@link JavaInputAstVisitor} with support for AST nodes that were added or modified for
- * Java 14.
+ * Extends {@link JavaInputAstVisitor} with support for AST nodes that were added or modified in
+ * Java 17.
  */
-public class Java14InputAstVisitor extends JavaInputAstVisitor {
-  private static final Method COMPILATION_UNIT_TREE_GET_MODULE =
-      maybeGetMethod(CompilationUnitTree.class, "getModule");
-  private static final Method CLASS_TREE_GET_PERMITS_CLAUSE =
-      maybeGetMethod(ClassTree.class, "getPermitsClause");
-  private static final Method BINDING_PATTERN_TREE_GET_VARIABLE =
-      maybeGetMethod(BindingPatternTree.class, "getVariable");
-  private static final Method BINDING_PATTERN_TREE_GET_TYPE =
-      maybeGetMethod(BindingPatternTree.class, "getType");
-  private static final Method BINDING_PATTERN_TREE_GET_BINDING =
-      maybeGetMethod(BindingPatternTree.class, "getBinding");
-  private static final Method CASE_TREE_GET_LABELS = maybeGetMethod(CaseTree.class, "getLabels");
+public class Java17InputAstVisitor extends JavaInputAstVisitor {
 
-  public Java14InputAstVisitor(OpsBuilder builder, int indentMultiplier) {
+  public Java17InputAstVisitor(OpsBuilder builder, int indentMultiplier) {
     super(builder, indentMultiplier);
   }
 
   @Override
   protected void handleModule(boolean first, CompilationUnitTree node) {
-    if (COMPILATION_UNIT_TREE_GET_MODULE == null) {
-      // Java < 17, see https://bugs.openjdk.java.net/browse/JDK-8255464
-      return;
-    }
-    ModuleTree module = (ModuleTree) invoke(COMPILATION_UNIT_TREE_GET_MODULE, node);
+    ModuleTree module = node.getModule();
     if (module != null) {
       if (!first) {
         builder.blankLineWanted(BlankLineWanted.YES);
@@ -84,30 +69,15 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
 
   @Override
   protected List<? extends Tree> getPermitsClause(ClassTree node) {
-    if (CLASS_TREE_GET_PERMITS_CLAUSE != null) {
-      return (List<? extends Tree>) invoke(CLASS_TREE_GET_PERMITS_CLAUSE, node);
-    } else {
-      // Java < 15
-      return super.getPermitsClause(node);
-    }
+    return node.getPermitsClause();
   }
 
   @Override
   public Void visitBindingPattern(BindingPatternTree node, Void unused) {
     sync(node);
-    if (BINDING_PATTERN_TREE_GET_VARIABLE != null) {
-      VariableTree variableTree = (VariableTree) invoke(BINDING_PATTERN_TREE_GET_VARIABLE, node);
-      visitBindingPattern(
-          variableTree.getModifiers(), variableTree.getType(), variableTree.getName());
-    } else if (BINDING_PATTERN_TREE_GET_TYPE != null && BINDING_PATTERN_TREE_GET_BINDING != null) {
-      Tree type = (Tree) invoke(BINDING_PATTERN_TREE_GET_TYPE, node);
-      Name name = (Name) invoke(BINDING_PATTERN_TREE_GET_BINDING, node);
-      visitBindingPattern(/* modifiers= */ null, type, name);
-    } else {
-      throw new LinkageError(
-          "BindingPatternTree must have either getVariable() or both getType() and getBinding(),"
-              + " but does not");
-    }
+    VariableTree variableTree = node.getVariable();
+    visitBindingPattern(
+        variableTree.getModifiers(), variableTree.getType(), variableTree.getName());
     return null;
   }
 
@@ -248,17 +218,9 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
     sync(node);
     markForPartialFormat();
     builder.forcedBreak();
-    List<? extends Tree> labels;
-    boolean isDefault;
-    if (CASE_TREE_GET_LABELS != null) {
-      labels = (List<? extends Tree>) invoke(CASE_TREE_GET_LABELS, node);
-      isDefault =
-          labels.size() == 1
-              && getOnlyElement(labels).getKind().name().equals("DEFAULT_CASE_LABEL");
-    } else {
-      labels = node.getExpressions();
-      isDefault = labels.isEmpty();
-    }
+    List<? extends CaseLabelTree> labels = node.getLabels();
+    boolean isDefault =
+        labels.size() == 1 && getOnlyElement(labels).getKind().name().equals("DEFAULT_CASE_LABEL");
     if (isDefault) {
       token("default", plusTwo);
     } else {
@@ -304,21 +266,5 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
         throw new AssertionError(node.getCaseKind());
     }
     return null;
-  }
-
-  private static Method maybeGetMethod(Class<?> c, String name) {
-    try {
-      return c.getMethod(name);
-    } catch (ReflectiveOperationException e) {
-      return null;
-    }
-  }
-
-  private static Object invoke(Method m, Object target) {
-    try {
-      return m.invoke(target);
-    } catch (ReflectiveOperationException e) {
-      throw new LinkageError(e.getMessage(), e);
-    }
   }
 }

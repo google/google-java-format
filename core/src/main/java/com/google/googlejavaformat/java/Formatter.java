@@ -151,10 +151,10 @@ public final class Formatter {
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
     JavaInputAstVisitor visitor;
-    if (Runtime.version().feature() >= 14) {
+    if (Runtime.version().feature() >= 17) {
       try {
         visitor =
-            Class.forName("com.google.googlejavaformat.java.java14.Java14InputAstVisitor")
+            Class.forName("com.google.googlejavaformat.java.java17.Java17InputAstVisitor")
                 .asSubclass(JavaInputAstVisitor.class)
                 .getConstructor(OpsBuilder.class, int.class)
                 .newInstance(builder, options.indentationMultiplier());

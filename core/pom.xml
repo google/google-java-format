@@ -227,7 +227,7 @@
     <profile>
       <id>jdk11</id>
       <activation>
-        <jdk>(,14)</jdk>
+        <jdk>(,17)</jdk>
       </activation>
       <build>
         <plugins>
@@ -236,14 +236,14 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
               <excludes>
-                <exclude>**/Java14InputAstVisitor.java</exclude>
+                <exclude>**/Java17InputAstVisitor.java</exclude>
               </excludes>
             </configuration>
           </plugin>
           <plugin>
             <artifactId>maven-javadoc-plugin</artifactId>
             <configuration>
-              <excludePackageNames>com.google.googlejavaformat.java.java14</excludePackageNames>
+              <excludePackageNames>com.google.googlejavaformat.java.java17</excludePackageNames>
             </configuration>
           </plugin>
         </plugins>
