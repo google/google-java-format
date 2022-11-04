@@ -150,7 +150,9 @@ public final class Formatter {
     }
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
-    JavaInputAstVisitor visitor;
+    JavaInputAstVisitor visitor = new JavaInputAstVisitor(builder, options.indentationMultiplier());
+    // Android support, Runtime#version doesn't exist there
+    /*
     if (Runtime.version().feature() >= 17) {
       try {
         visitor =
@@ -164,6 +166,7 @@ public final class Formatter {
     } else {
       visitor = new JavaInputAstVisitor(builder, options.indentationMultiplier());
     }
+    */
     visitor.scan(unit, null);
     builder.sync(javaInput.getText().length());
     builder.drain();
