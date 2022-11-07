@@ -14,41 +14,41 @@ class B21283374 {
 
   {
     f(
-        /*flagA=*/ Boolean.TRUE,
-        /*flagB=*/ Boolean.FALSE,
-        /*flagC=*/ Boolean.FALSE,
-        /*flagD=*/ Boolean.FALSE,
-        /*flagE=*/ Boolean.FALSE,
-        /*flagF=*/ Boolean.FALSE,
-        /*flagG=*/ Boolean.FALSE,
-        /*flagH=*/ Boolean.FALSE,
-        /*flagI=*/ Boolean.FALSE,
-        /*flagJ=*/ Boolean.FALSE,
-        /*flagK=*/ Boolean.FALSE);
+        /* flagA= */ Boolean.TRUE,
+        /* flagB= */ Boolean.FALSE,
+        /* flagC= */ Boolean.FALSE,
+        /* flagD= */ Boolean.FALSE,
+        /* flagE= */ Boolean.FALSE,
+        /* flagF= */ Boolean.FALSE,
+        /* flagG= */ Boolean.FALSE,
+        /* flagH= */ Boolean.FALSE,
+        /* flagI= */ Boolean.FALSE,
+        /* flagJ= */ Boolean.FALSE,
+        /* flagK= */ Boolean.FALSE);
 
     f(
-        /*flagA=*/ Boolean.TRUE,
-        /*flagB=*/ Boolean.FALSE,
-        /*flagC=*/ Boolean.FALSE,
-        /*flagD=*/ Boolean.FALSE,
-        /*flagE=*/ Boolean.FALSE,
-        /*flagF=*/ Boolean.FALSE,
-        /*flagG=*/ Boolean.FALSE,
-        /*flagH=*/ Boolean.FALSE,
-        /*flagI=*/ Boolean.FALSE,
-        /*flagJ=*/ Boolean.FALSE,
-        /*flagK=*/ Boolean.FALSE);
+        /* flagA= */ Boolean.TRUE,
+        /* flagB= */ Boolean.FALSE,
+        /* flagC= */ Boolean.FALSE,
+        /* flagD= */ Boolean.FALSE,
+        /* flagE= */ Boolean.FALSE,
+        /* flagF= */ Boolean.FALSE,
+        /* flagG= */ Boolean.FALSE,
+        /* flagH= */ Boolean.FALSE,
+        /* flagI= */ Boolean.FALSE,
+        /* flagJ= */ Boolean.FALSE,
+        /* flagK= */ Boolean.FALSE);
 
-    assertThat(foo.barAndBaz(/*paramName=*/ false, thingy)).isEqualTo(new Something(""));
-    assertThat(foo.barAndBaz(/*paramName=*/ false, thingy)).isEqualTo(new Something(""));
-    assertThat(foo.barAndBaz(/*paramName=*/ false, thingy)).isEqualTo(new Something(""));
+    assertThat(foo.barAndBaz(/* paramName= */ false, thingy)).isEqualTo(new Something(""));
+    assertThat(foo.barAndBaz(/* paramName= */ false, thingy)).isEqualTo(new Something(""));
+    assertThat(foo.barAndBaz(/* paramName= */ false, thingy)).isEqualTo(new Something(""));
 
-    f(/*paramName=*/ false);
+    f(/* paramName= */ false);
 
     assertThat__________________________________________________________(
-        /*paramName=*/ false, thingy);
+        /* paramName= */ false, thingy);
     assertThat__________________________________________________________(
-        /*paramName=*/ false, thingy);
+        /* paramName= */ false, thingy);
 
     f(
         arg1, /* which arg is this attached to? */
