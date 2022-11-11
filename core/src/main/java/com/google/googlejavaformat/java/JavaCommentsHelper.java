@@ -53,11 +53,13 @@ public final class JavaCommentsHelper implements CommentsHelper {
     }
     if (tok.isSlashSlashComment()) {
       return indentLineComments(lines, column0);
-    } else if (javadocShaped(lines)) {
-      return indentJavadoc(lines, column0);
-    } else {
-      return preserveIndentation(lines, column0);
     }
+    return CommentsHelper.reformatParameterComment(tok)
+        .orElseGet(
+            () ->
+                javadocShaped(lines)
+                    ? indentJavadoc(lines, column0)
+                    : preserveIndentation(lines, column0));
   }
 
   // For non-javadoc-shaped block comments, shift the entire block to the correct
