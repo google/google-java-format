@@ -31,4 +31,8 @@ class Q {
         /* h= */ 1,
         /* i= */ 1);
   }
+
+  static void h(Object... xs) {
+    h(/* xs...= */ null);
+  }
 }
