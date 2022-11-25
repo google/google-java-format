@@ -46,5 +46,5 @@ public interface CommentsHelper {
 
   Pattern PARAMETER_COMMENT =
       Pattern.compile(
-          "/\\*\\s*(\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*)(\\Q...\\E)?\\s*=\\s*\\*/");
+          "/\\*\\s*(\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*(\\Q...\\E)?)\\s*=\\s*\\*/");
 }
