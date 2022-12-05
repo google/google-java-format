@@ -105,7 +105,7 @@ public final class Main {
 
     JavaFormatterOptions options =
         JavaFormatterOptions.builder()
-            .style(parameters.aosp() ? Style.AOSP : Style.GOOGLE)
+            .style(parameters.aosp() ? Style.AOSP : parameters.swiss() ? Style.SWISS : Style.GOOGLE)
             .formatJavadoc(parameters.formatJavadoc())
             .build();
 

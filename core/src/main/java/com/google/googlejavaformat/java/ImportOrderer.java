@@ -172,14 +172,18 @@ public class ImportOrderer {
     this.text = text;
     this.toks = toks;
     this.lineSeparator = Newlines.guessLineSeparator(text);
-    if (style.equals(Style.GOOGLE)) {
-      this.importComparator = GOOGLE_IMPORT_COMPARATOR;
-      this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineGoogle;
-    } else if (style.equals(Style.AOSP)) {
-      this.importComparator = AOSP_IMPORT_COMPARATOR;
-      this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineAosp;
-    } else {
-      throw new IllegalArgumentException("Unsupported code style: " + style);
+    switch (style) {
+      case SWISS:
+      case GOOGLE:
+        this.importComparator = GOOGLE_IMPORT_COMPARATOR;
+        this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineGoogle;
+        break;
+      case AOSP:
+        this.importComparator = AOSP_IMPORT_COMPARATOR;
+        this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineAosp;
+        break;
+      default:
+        throw new IllegalArgumentException("Unsupported code style: " + style);
     }
   }
 

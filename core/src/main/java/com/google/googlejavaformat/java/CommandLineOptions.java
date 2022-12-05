@@ -21,8 +21,7 @@ import java.util.Optional;
 /**
  * Command line options for google-java-format.
  *
- * <p>google-java-format doesn't depend on AutoValue, to allow AutoValue to depend on
- * google-java-format.
+ * <p>google-java-format doesn't depend on AutoValue, to allow AutoValue to depend on google-java-format.
  */
 final class CommandLineOptions {
 
@@ -32,6 +31,7 @@ final class CommandLineOptions {
   private final ImmutableList<Integer> offsets;
   private final ImmutableList<Integer> lengths;
   private final boolean aosp;
+  private final boolean swiss;
   private final boolean version;
   private final boolean help;
   private final boolean stdin;
@@ -45,29 +45,31 @@ final class CommandLineOptions {
   private final boolean formatJavadoc;
 
   CommandLineOptions(
-      ImmutableList<String> files,
-      boolean inPlace,
-      ImmutableRangeSet<Integer> lines,
-      ImmutableList<Integer> offsets,
-      ImmutableList<Integer> lengths,
-      boolean aosp,
-      boolean version,
-      boolean help,
-      boolean stdin,
-      boolean fixImportsOnly,
-      boolean sortImports,
-      boolean removeUnusedImports,
-      boolean dryRun,
-      boolean setExitIfChanged,
-      Optional<String> assumeFilename,
-      boolean reflowLongStrings,
-      boolean formatJavadoc) {
+      final ImmutableList<String> files,
+      final boolean inPlace,
+      final ImmutableRangeSet<Integer> lines,
+      final ImmutableList<Integer> offsets,
+      final ImmutableList<Integer> lengths,
+      final boolean aosp,
+      final boolean swiss,
+      final boolean version,
+      final boolean help,
+      final boolean stdin,
+      final boolean fixImportsOnly,
+      final boolean sortImports,
+      final boolean removeUnusedImports,
+      final boolean dryRun,
+      final boolean setExitIfChanged,
+      final Optional<String> assumeFilename,
+      final boolean reflowLongStrings,
+      final boolean formatJavadoc) {
     this.files = files;
     this.inPlace = inPlace;
     this.lines = lines;
     this.offsets = offsets;
     this.lengths = lengths;
     this.aosp = aosp;
+    this.swiss = swiss;
     this.version = version;
     this.help = help;
     this.stdin = stdin;
@@ -110,6 +112,10 @@ final class CommandLineOptions {
   boolean aosp() {
     return aosp;
   }
+  /** Use SWISS style instead of Google Style (120 Characters line length). */
+  boolean swiss() {
+    return swiss;
+  }
 
   /** Print the version. */
   boolean version() {
@@ -141,9 +147,7 @@ final class CommandLineOptions {
     return removeUnusedImports;
   }
 
-  /**
-   * Print the paths of the files whose contents would change if the formatter were run normally.
-   */
+  /** Print the paths of the files whose contents would change if the formatter were run normally. */
   boolean dryRun() {
     return dryRun;
   }
@@ -183,6 +187,7 @@ final class CommandLineOptions {
     private final ImmutableList.Builder<Integer> lengths = ImmutableList.builder();
     private boolean inPlace = false;
     private boolean aosp = false;
+    private boolean swiss = false;
     private boolean version = false;
     private boolean help = false;
     private boolean stdin = false;
@@ -199,7 +204,7 @@ final class CommandLineOptions {
       return files;
     }
 
-    Builder inPlace(boolean inPlace) {
+    Builder inPlace(final boolean inPlace) {
       this.inPlace = inPlace;
       return this;
     }
@@ -208,72 +213,77 @@ final class CommandLineOptions {
       return lines;
     }
 
-    Builder addOffset(Integer offset) {
+    Builder addOffset(final Integer offset) {
       offsets.add(offset);
       return this;
     }
 
-    Builder addLength(Integer length) {
+    Builder addLength(final Integer length) {
       lengths.add(length);
       return this;
     }
 
-    Builder aosp(boolean aosp) {
+    Builder aosp(final boolean aosp) {
       this.aosp = aosp;
       return this;
     }
 
-    Builder version(boolean version) {
+    Builder swiss(final boolean swiss) {
+      this.swiss = swiss;
+      return this;
+    }
+
+    Builder version(final boolean version) {
       this.version = version;
       return this;
     }
 
-    Builder help(boolean help) {
+    Builder help(final boolean help) {
       this.help = help;
       return this;
     }
 
-    Builder stdin(boolean stdin) {
+    Builder stdin(final boolean stdin) {
       this.stdin = stdin;
       return this;
     }
 
-    Builder fixImportsOnly(boolean fixImportsOnly) {
+    Builder fixImportsOnly(final boolean fixImportsOnly) {
       this.fixImportsOnly = fixImportsOnly;
       return this;
     }
 
-    Builder sortImports(boolean sortImports) {
+    Builder sortImports(final boolean sortImports) {
       this.sortImports = sortImports;
       return this;
     }
 
-    Builder removeUnusedImports(boolean removeUnusedImports) {
+    Builder removeUnusedImports(final boolean removeUnusedImports) {
       this.removeUnusedImports = removeUnusedImports;
       return this;
     }
 
-    Builder dryRun(boolean dryRun) {
+    Builder dryRun(final boolean dryRun) {
       this.dryRun = dryRun;
       return this;
     }
 
-    Builder setExitIfChanged(boolean setExitIfChanged) {
+    Builder setExitIfChanged(final boolean setExitIfChanged) {
       this.setExitIfChanged = setExitIfChanged;
       return this;
     }
 
-    Builder assumeFilename(String assumeFilename) {
+    Builder assumeFilename(final String assumeFilename) {
       this.assumeFilename = Optional.of(assumeFilename);
       return this;
     }
 
-    Builder reflowLongStrings(boolean reflowLongStrings) {
+    Builder reflowLongStrings(final boolean reflowLongStrings) {
       this.reflowLongStrings = reflowLongStrings;
       return this;
     }
 
-    Builder formatJavadoc(boolean formatJavadoc) {
+    Builder formatJavadoc(final boolean formatJavadoc) {
       this.formatJavadoc = formatJavadoc;
       return this;
     }
@@ -286,6 +296,7 @@ final class CommandLineOptions {
           offsets.build(),
           lengths.build(),
           aosp,
+          swiss,
           version,
           help,
           stdin,
