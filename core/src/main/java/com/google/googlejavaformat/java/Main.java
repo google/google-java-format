@@ -14,17 +14,11 @@
 
 package com.google.googlejavaformat.java;
 
-import static java.lang.Math.min;
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import com.google.common.io.ByteStreams;
 import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
-import java.io.IOError;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,6 +29,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import static java.lang.Math.min;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /** The main class for the Java formatter CLI. */
 public final class Main {
@@ -49,7 +46,7 @@ public final class Main {
   private final PrintWriter errWriter;
   private final InputStream inStream;
 
-  public Main(PrintWriter outWriter, PrintWriter errWriter, InputStream inStream) {
+  public Main(final PrintWriter outWriter, final PrintWriter errWriter, final InputStream inStream) {
     this.outWriter = outWriter;
     this.errWriter = errWriter;
     this.inStream = inStream;
@@ -62,10 +59,10 @@ public final class Main {
    *
    * @param args the command-line arguments
    */
-  public static void main(String[] args) {
-    PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out, UTF_8));
-    PrintWriter err = new PrintWriter(new OutputStreamWriter(System.err, UTF_8));
-    int result = main(out, err, args);
+  public static void main(final String[] args) {
+    final PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out, UTF_8));
+    final PrintWriter err = new PrintWriter(new OutputStreamWriter(System.err, UTF_8));
+    final int result = main(out, err, args);
     System.exit(result);
   }
 
@@ -73,11 +70,11 @@ public final class Main {
    * Package-private main entry point used this CLI program and the java.util.spi.ToolProvider
    * implementation in the same package as this Main class.
    */
-  static int main(PrintWriter out, PrintWriter err, String... args) {
+  static int main(final PrintWriter out, final PrintWriter err, final String... args) {
     try {
-      Main formatter = new Main(out, err, System.in);
+      final Main formatter = new Main(out, err, System.in);
       return formatter.format(args);
-    } catch (UsageException e) {
+    } catch (final UsageException e) {
       err.print(e.getMessage());
       return 0;
     } finally {
@@ -93,8 +90,8 @@ public final class Main {
    *
    * @param args the command-line arguments
    */
-  public int format(String... args) throws UsageException {
-    CommandLineOptions parameters = processArgs(args);
+  public int format(final String... args) throws UsageException {
+    final CommandLineOptions parameters = processArgs(args);
     if (parameters.version()) {
       errWriter.println(versionString());
       return 0;
@@ -103,10 +100,11 @@ public final class Main {
       throw new UsageException();
     }
 
-    JavaFormatterOptions options =
+    final JavaFormatterOptions options =
         JavaFormatterOptions.builder()
-            .style(parameters.aosp() ? Style.AOSP : parameters.swiss() ? Style.SWISS : Style.GOOGLE)
+            .style(parameters.aosp() ? Style.AOSP : Style.GOOGLE)
             .formatJavadoc(parameters.formatJavadoc())
+                .maxLineWidth(parameters.width())
             .build();
 
     if (parameters.stdin()) {
@@ -116,44 +114,44 @@ public final class Main {
     }
   }
 
-  private int formatFiles(CommandLineOptions parameters, JavaFormatterOptions options) {
-    int numThreads = min(MAX_THREADS, parameters.files().size());
-    ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+  private int formatFiles(final CommandLineOptions parameters, final JavaFormatterOptions options) {
+    final int numThreads = min(MAX_THREADS, parameters.files().size());
+    final ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
 
-    Map<Path, String> inputs = new LinkedHashMap<>();
-    Map<Path, Future<String>> results = new LinkedHashMap<>();
+    final Map<Path, String> inputs = new LinkedHashMap<>();
+    final Map<Path, Future<String>> results = new LinkedHashMap<>();
     boolean allOk = true;
 
-    for (String fileName : parameters.files()) {
+    for (final String fileName : parameters.files()) {
       if (!fileName.endsWith(".java")) {
         errWriter.println("Skipping non-Java file: " + fileName);
         continue;
       }
-      Path path = Paths.get(fileName);
-      String input;
+      final Path path = Paths.get(fileName);
+      final String input;
       try {
         input = new String(Files.readAllBytes(path), UTF_8);
         inputs.put(path, input);
         results.put(
             path, executorService.submit(new FormatFileCallable(parameters, input, options)));
-      } catch (IOException e) {
+      } catch (final IOException e) {
         errWriter.println(fileName + ": could not read file: " + e.getMessage());
         allOk = false;
       }
     }
 
-    for (Map.Entry<Path, Future<String>> result : results.entrySet()) {
-      Path path = result.getKey();
-      String formatted;
+    for (final Map.Entry<Path, Future<String>> result : results.entrySet()) {
+      final Path path = result.getKey();
+      final String formatted;
       try {
         formatted = result.getValue().get();
-      } catch (InterruptedException e) {
+      } catch (final InterruptedException e) {
         errWriter.println(e.getMessage());
         allOk = false;
         continue;
-      } catch (ExecutionException e) {
+      } catch (final ExecutionException e) {
         if (e.getCause() instanceof FormatterException) {
-          for (FormatterDiagnostic diagnostic : ((FormatterException) e.getCause()).diagnostics()) {
+          for (final FormatterDiagnostic diagnostic : ((FormatterException) e.getCause()).diagnostics()) {
             errWriter.println(path + ":" + diagnostic);
           }
         } else {
@@ -163,7 +161,7 @@ public final class Main {
         allOk = false;
         continue;
       }
-      boolean changed = !formatted.equals(inputs.get(path));
+      final boolean changed = !formatted.equals(inputs.get(path));
       if (changed && parameters.setExitIfChanged()) {
         allOk = false;
       }
@@ -173,7 +171,7 @@ public final class Main {
         }
         try {
           Files.write(path, formatted.getBytes(UTF_8));
-        } catch (IOException e) {
+        } catch (final IOException e) {
           errWriter.println(path + ": could not write file: " + e.getMessage());
           allOk = false;
           continue;
@@ -189,18 +187,18 @@ public final class Main {
     return allOk ? 0 : 1;
   }
 
-  private int formatStdin(CommandLineOptions parameters, JavaFormatterOptions options) {
-    String input;
+  private int formatStdin(final CommandLineOptions parameters, final JavaFormatterOptions options) {
+    final String input;
     try {
       input = new String(ByteStreams.toByteArray(inStream), UTF_8);
-    } catch (IOException e) {
+    } catch (final IOException e) {
       throw new IOError(e);
     }
-    String stdinFilename = parameters.assumeFilename().orElse(STDIN_FILENAME);
+    final String stdinFilename = parameters.assumeFilename().orElse(STDIN_FILENAME);
     boolean ok = true;
     try {
-      String output = new FormatFileCallable(parameters, input, options).call();
-      boolean changed = !input.equals(output);
+      final String output = new FormatFileCallable(parameters, input, options).call();
+      final boolean changed = !input.equals(output);
       if (changed && parameters.setExitIfChanged()) {
         ok = false;
       }
@@ -211,8 +209,8 @@ public final class Main {
       } else {
         outWriter.write(output);
       }
-    } catch (FormatterException e) {
-      for (FormatterDiagnostic diagnostic : e.diagnostics()) {
+    } catch (final FormatterException e) {
+      for (final FormatterDiagnostic diagnostic : e.diagnostics()) {
         errWriter.println(stdinFilename + ":" + diagnostic);
       }
       ok = false;
@@ -222,13 +220,13 @@ public final class Main {
   }
 
   /** Parses and validates command-line flags. */
-  public static CommandLineOptions processArgs(String... args) throws UsageException {
-    CommandLineOptions parameters;
+  public static CommandLineOptions processArgs(final String... args) throws UsageException {
+    final CommandLineOptions parameters;
     try {
       parameters = CommandLineOptionsParser.parse(Arrays.asList(args));
-    } catch (IllegalArgumentException e) {
+    } catch (final IllegalArgumentException e) {
       throw new UsageException(e.getMessage());
-    } catch (Throwable t) {
+    } catch (final Throwable t) {
       t.printStackTrace();
       throw new UsageException(t.getMessage());
     }

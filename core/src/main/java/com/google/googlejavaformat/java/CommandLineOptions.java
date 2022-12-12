@@ -31,7 +31,7 @@ final class CommandLineOptions {
   private final ImmutableList<Integer> offsets;
   private final ImmutableList<Integer> lengths;
   private final boolean aosp;
-  private final boolean swiss;
+  private final int width ;
   private final boolean version;
   private final boolean help;
   private final boolean stdin;
@@ -51,7 +51,7 @@ final class CommandLineOptions {
       final ImmutableList<Integer> offsets,
       final ImmutableList<Integer> lengths,
       final boolean aosp,
-      final boolean swiss,
+      final int width,
       final boolean version,
       final boolean help,
       final boolean stdin,
@@ -69,7 +69,7 @@ final class CommandLineOptions {
     this.offsets = offsets;
     this.lengths = lengths;
     this.aosp = aosp;
-    this.swiss = swiss;
+    this.width = width;
     this.version = version;
     this.help = help;
     this.stdin = stdin;
@@ -112,9 +112,10 @@ final class CommandLineOptions {
   boolean aosp() {
     return aosp;
   }
-  /** Use SWISS style instead of Google Style (120 Characters line length). */
-  boolean swiss() {
-    return swiss;
+
+  /** Maximal line length. */
+  int width() {
+    return width;
   }
 
   /** Print the version. */
@@ -187,7 +188,7 @@ final class CommandLineOptions {
     private final ImmutableList.Builder<Integer> lengths = ImmutableList.builder();
     private boolean inPlace = false;
     private boolean aosp = false;
-    private boolean swiss = false;
+    private int width = 100;
     private boolean version = false;
     private boolean help = false;
     private boolean stdin = false;
@@ -228,8 +229,8 @@ final class CommandLineOptions {
       return this;
     }
 
-    Builder swiss(final boolean swiss) {
-      this.swiss = swiss;
+    Builder width(final int width) {
+      this.width = width;
       return this;
     }
 
@@ -296,7 +297,7 @@ final class CommandLineOptions {
           offsets.build(),
           lengths.build(),
           aosp,
-          swiss,
+          width,
           version,
           help,
           stdin,

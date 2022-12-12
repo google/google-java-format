@@ -21,11 +21,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.github.mrdolch.googlejavaformat</groupId>
-        <artifactId>swiss-google-java-format-parent</artifactId>
+        <artifactId>configurable-google-java-format-parent</artifactId>
         <version>1.15.0</version>
     </parent>
 
-    <artifactId>swiss-google-java-format</artifactId>
+    <artifactId>configurable-google-java-format</artifactId>
 
     <name>Google Java Format</name>
 

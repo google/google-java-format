@@ -21,7 +21,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.mrdolch.googlejavaformat</groupId>
-    <artifactId>swiss-google-java-format-parent</artifactId>
+    <artifactId>configurable-google-java-format-parent</artifactId>
     <packaging>pom</packaging>
     <version>1.15.0</version>
 

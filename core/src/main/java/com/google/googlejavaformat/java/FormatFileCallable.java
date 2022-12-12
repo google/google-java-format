@@ -29,7 +29,7 @@ class FormatFileCallable implements Callable<String> {
   private final JavaFormatterOptions options;
 
   public FormatFileCallable(
-      CommandLineOptions parameters, String input, JavaFormatterOptions options) {
+          final CommandLineOptions parameters, final String input, final JavaFormatterOptions options) {
     this.input = input;
     this.parameters = parameters;
     this.options = options;
@@ -41,11 +41,11 @@ class FormatFileCallable implements Callable<String> {
       return fixImports(input);
     }
 
-    Formatter formatter = new Formatter(options);
+    final Formatter formatter = new Formatter(options);
     String formatted = formatter.formatSource(input, characterRanges(input).asRanges());
     formatted = fixImports(formatted);
     if (parameters.reflowLongStrings()) {
-      formatted = StringWrapper.wrap(options.style().getMaxLineLength(), formatted, formatter);
+      formatted = StringWrapper.wrap(options.getMaxLineLength(), formatted, formatter);
     }
     return formatted;
   }
@@ -60,7 +60,7 @@ class FormatFileCallable implements Callable<String> {
     return input;
   }
 
-  private RangeSet<Integer> characterRanges(String input) {
+  private RangeSet<Integer> characterRanges(final String input) {
     final RangeSet<Integer> characterRanges = TreeRangeSet.create();
 
     if (parameters.lines().isEmpty() && parameters.offsets().isEmpty()) {

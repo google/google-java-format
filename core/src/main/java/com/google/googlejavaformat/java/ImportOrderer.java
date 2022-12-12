@@ -13,9 +13,6 @@
  */
 package com.google.googlejavaformat.java;
 
-import static com.google.common.collect.Iterables.getLast;
-import static com.google.common.primitives.Booleans.trueFirst;
-
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
@@ -26,12 +23,16 @@ import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import com.google.googlejavaformat.java.JavaInput.Tok;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
+
+import static com.google.common.collect.Iterables.getLast;
+import static com.google.common.primitives.Booleans.trueFirst;
 
 /** Orders imports in Java source code. */
 public class ImportOrderer {
@@ -44,8 +45,8 @@ public class ImportOrderer {
    *
    * @throws FormatterException if the input could not be parsed.
    */
-  public static String reorderImports(String text, Style style) throws FormatterException {
-    ImmutableList<Tok> toks = JavaInput.buildToks(text, CLASS_START);
+  public static String reorderImports(final String text, final Style style) throws FormatterException {
+    final ImmutableList<Tok> toks = JavaInput.buildToks(text, CLASS_START);
     return new ImportOrderer(text, toks, style).reorderImports();
   }
 
@@ -58,42 +59,42 @@ public class ImportOrderer {
    * @throws FormatterException if the input could not be parsed.
    */
   @Deprecated
-  public static String reorderImports(String text) throws FormatterException {
+  public static String reorderImports(final String text) throws FormatterException {
     return reorderImports(text, Style.GOOGLE);
   }
 
   private String reorderImports() throws FormatterException {
-    int firstImportStart;
-    Optional<Integer> maybeFirstImport = findIdentifier(0, IMPORT_OR_CLASS_START);
+    final int firstImportStart;
+    final Optional<Integer> maybeFirstImport = findIdentifier(0, IMPORT_OR_CLASS_START);
     if (!maybeFirstImport.isPresent() || !tokenAt(maybeFirstImport.get()).equals("import")) {
       // No imports, so nothing to do.
       return text;
     }
     firstImportStart = maybeFirstImport.get();
-    int unindentedFirstImportStart = unindent(firstImportStart);
+    final int unindentedFirstImportStart = unindent(firstImportStart);
 
-    ImportsAndIndex imports = scanImports(firstImportStart);
-    int afterLastImport = imports.index;
+    final ImportsAndIndex imports = scanImports(firstImportStart);
+    final int afterLastImport = imports.index;
 
     // Make sure there are no more imports before the next class (etc) definition.
-    Optional<Integer> maybeLaterImport = findIdentifier(afterLastImport, IMPORT_OR_CLASS_START);
+    final Optional<Integer> maybeLaterImport = findIdentifier(afterLastImport, IMPORT_OR_CLASS_START);
     if (maybeLaterImport.isPresent() && tokenAt(maybeLaterImport.get()).equals("import")) {
       throw new FormatterException("Imports not contiguous (perhaps a comment separates them?)");
     }
 
-    StringBuilder result = new StringBuilder();
-    String prefix = tokString(0, unindentedFirstImportStart);
+    final StringBuilder result = new StringBuilder();
+    final String prefix = tokString(0, unindentedFirstImportStart);
     result.append(prefix);
     if (!prefix.isEmpty() && Newlines.getLineEnding(prefix) == null) {
       result.append(lineSeparator).append(lineSeparator);
     }
     result.append(reorderedImportsString(imports.imports));
 
-    List<String> tail = new ArrayList<>();
+    final List<String> tail = new ArrayList<>();
     tail.add(CharMatcher.whitespace().trimLeadingFrom(tokString(afterLastImport, toks.size())));
     if (!toks.isEmpty()) {
-      Tok lastTok = getLast(toks);
-      int tailStart = lastTok.getPosition() + lastTok.length();
+      final Tok lastTok = getLast(toks);
+      final int tailStart = lastTok.getPosition() + lastTok.length();
       tail.add(text.substring(tailStart));
     }
     if (tail.stream().anyMatch(s -> !s.isEmpty())) {
@@ -143,7 +144,7 @@ public class ImportOrderer {
    * Determines whether to insert a blank line between the {@code prev} and {@code curr} {@link
    * Import}s based on Google style.
    */
-  private static boolean shouldInsertBlankLineGoogle(Import prev, Import curr) {
+  private static boolean shouldInsertBlankLineGoogle(final Import prev, final Import curr) {
     return prev.isStatic() && !curr.isStatic();
   }
 
@@ -151,7 +152,7 @@ public class ImportOrderer {
    * Determines whether to insert a blank line between the {@code prev} and {@code curr} {@link
    * Import}s based on AOSP style.
    */
-  private static boolean shouldInsertBlankLineAosp(Import prev, Import curr) {
+  private static boolean shouldInsertBlankLineAosp(final Import prev, final Import curr) {
     if (prev.isStatic() && !curr.isStatic()) {
       return true;
     }
@@ -168,12 +169,11 @@ public class ImportOrderer {
   private final Comparator<Import> importComparator;
   private final BiFunction<Import, Import, Boolean> shouldInsertBlankLineFn;
 
-  private ImportOrderer(String text, ImmutableList<Tok> toks, Style style) {
+  private ImportOrderer(final String text, final ImmutableList<Tok> toks, final Style style) {
     this.text = text;
     this.toks = toks;
     this.lineSeparator = Newlines.guessLineSeparator(text);
     switch (style) {
-      case SWISS:
       case GOOGLE:
         this.importComparator = GOOGLE_IMPORT_COMPARATOR;
         this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineGoogle;
@@ -193,7 +193,7 @@ public class ImportOrderer {
     private final boolean isStatic;
     private final String trailing;
 
-    Import(String imported, String trailing, boolean isStatic) {
+    Import(final String imported, final String trailing, final boolean isStatic) {
       this.imported = imported;
       this.trailing = trailing;
       this.isStatic = isStatic;
@@ -250,7 +250,7 @@ public class ImportOrderer {
     // terminator.
     @Override
     public String toString() {
-      StringBuilder sb = new StringBuilder();
+      final StringBuilder sb = new StringBuilder();
       sb.append("import ");
       if (isStatic()) {
         sb.append("static ");
@@ -265,8 +265,8 @@ public class ImportOrderer {
     }
   }
 
-  private String tokString(int start, int end) {
-    StringBuilder sb = new StringBuilder();
+  private String tokString(final int start, final int end) {
+    final StringBuilder sb = new StringBuilder();
     for (int i = start; i < end; i++) {
       sb.append(toks.get(i).getOriginalText());
     }
@@ -277,7 +277,7 @@ public class ImportOrderer {
     final ImmutableSortedSet<Import> imports;
     final int index;
 
-    ImportsAndIndex(ImmutableSortedSet<Import> imports, int index) {
+    ImportsAndIndex(final ImmutableSortedSet<Import> imports, final int index) {
       this.imports = imports;
       this.index = index;
     }
@@ -299,7 +299,7 @@ public class ImportOrderer {
    */
   private ImportsAndIndex scanImports(int i) throws FormatterException {
     int afterLastImport = i;
-    ImmutableSortedSet.Builder<Import> imports = ImmutableSortedSet.orderedBy(importComparator);
+    final ImmutableSortedSet.Builder<Import> imports = ImmutableSortedSet.orderedBy(importComparator);
     // JavaInput.buildToks appends a zero-width EOF token after all tokens. It won't match any
     // of our tests here and protects us from running off the end of the toks list. Since it is
     // zero-width it doesn't matter if we include it in our string concatenation at the end.
@@ -308,7 +308,7 @@ public class ImportOrderer {
       if (isSpaceToken(i)) {
         i++;
       }
-      boolean isStatic = tokenAt(i).equals("static");
+      final boolean isStatic = tokenAt(i).equals("static");
       if (isStatic) {
         i++;
         if (isSpaceToken(i)) {
@@ -318,8 +318,8 @@ public class ImportOrderer {
       if (!isIdentifierToken(i)) {
         throw new FormatterException("Unexpected token after import: " + tokenAt(i));
       }
-      StringAndIndex imported = scanImported(i);
-      String importedName = imported.string;
+      final StringAndIndex imported = scanImported(i);
+      final String importedName = imported.string;
       i = imported.index;
       if (isSpaceToken(i)) {
         i++;
@@ -331,7 +331,7 @@ public class ImportOrderer {
         // Extra semicolons are not allowed by the JLS but are accepted by javac.
         i++;
       }
-      StringBuilder trailing = new StringBuilder();
+      final StringBuilder trailing = new StringBuilder();
       if (isSpaceToken(i)) {
         trailing.append(tokenAt(i));
         i++;
@@ -367,15 +367,15 @@ public class ImportOrderer {
   }
 
   // Produces the sorted output based on the imports we have scanned.
-  private String reorderedImportsString(ImmutableSortedSet<Import> imports) {
+  private String reorderedImportsString(final ImmutableSortedSet<Import> imports) {
     Preconditions.checkArgument(!imports.isEmpty(), "imports");
 
     // Pretend that the first import was preceded by another import of the same kind, so we don't
     // insert a newline there.
     Import prevImport = imports.iterator().next();
 
-    StringBuilder sb = new StringBuilder();
-    for (Import currImport : imports) {
+    final StringBuilder sb = new StringBuilder();
+    for (final Import currImport : imports) {
       if (shouldInsertBlankLineFn.apply(prevImport, currImport)) {
         // Blank line between static and non-static imports.
         sb.append(lineSeparator);
@@ -390,7 +390,7 @@ public class ImportOrderer {
     private final String string;
     private final int index;
 
-    StringAndIndex(String string, int index) {
+    StringAndIndex(final String string, final int index) {
       this.string = string;
       this.index = index;
     }
@@ -408,9 +408,9 @@ public class ImportOrderer {
    *     token after the imported thing ({@code ;} in the example).
    * @throws FormatterException if the imported name could not be parsed.
    */
-  private StringAndIndex scanImported(int start) throws FormatterException {
+  private StringAndIndex scanImported(final int start) throws FormatterException {
     int i = start;
-    StringBuilder imported = new StringBuilder();
+    final StringBuilder imported = new StringBuilder();
     // At the start of each iteration of this loop, i points to an identifier.
     // On exit from the loop, i points to a token after an identifier or after *.
     while (true) {
@@ -438,10 +438,10 @@ public class ImportOrderer {
    * @param start the index to start looking at
    * @param identifiers the identifiers to look for
    */
-  private Optional<Integer> findIdentifier(int start, ImmutableSet<String> identifiers) {
+  private Optional<Integer> findIdentifier(final int start, final ImmutableSet<String> identifiers) {
     for (int i = start; i < toks.size(); i++) {
       if (isIdentifierToken(i)) {
-        String id = tokenAt(i);
+        final String id = tokenAt(i);
         if (identifiers.contains(id)) {
           return Optional.of(i);
         }
@@ -451,7 +451,7 @@ public class ImportOrderer {
   }
 
   /** Returns the given token, or the preceding token if it is a whitespace token. */
-  private int unindent(int i) {
+  private int unindent(final int i) {
     if (i > 0 && isSpaceToken(i - 1)) {
       return i - 1;
     } else {
@@ -459,17 +459,17 @@ public class ImportOrderer {
     }
   }
 
-  private String tokenAt(int i) {
+  private String tokenAt(final int i) {
     return toks.get(i).getOriginalText();
   }
 
-  private boolean isIdentifierToken(int i) {
-    String s = tokenAt(i);
+  private boolean isIdentifierToken(final int i) {
+    final String s = tokenAt(i);
     return !s.isEmpty() && Character.isJavaIdentifierStart(s.codePointAt(0));
   }
 
-  private boolean isSpaceToken(int i) {
-    String s = tokenAt(i);
+  private boolean isSpaceToken(final int i) {
+    final String s = tokenAt(i);
     if (s.isEmpty()) {
       return false;
     } else {
@@ -477,11 +477,11 @@ public class ImportOrderer {
     }
   }
 
-  private boolean isSlashSlashCommentToken(int i) {
+  private boolean isSlashSlashCommentToken(final int i) {
     return toks.get(i).isSlashSlashComment();
   }
 
-  private boolean isNewlineToken(int i) {
+  private boolean isNewlineToken(final int i) {
     return toks.get(i).isNewline();
   }
 }

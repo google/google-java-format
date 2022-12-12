@@ -87,10 +87,10 @@ final class CommandLineOptionsParser {
         case "-a":
           optionsBuilder.aosp(true);
           break;
-        case "--swiss":
-        case "-swiss":
-        case "-s":
-          optionsBuilder.swiss(true);
+        case "--width":
+        case "-width":
+        case "-w":
+          optionsBuilder.width(parseInteger(it, flag, value));
           break;
         case "--version":
         case "-version":

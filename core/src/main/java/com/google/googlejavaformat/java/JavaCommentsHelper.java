@@ -32,13 +32,13 @@ public final class JavaCommentsHelper implements CommentsHelper {
   private final String lineSeparator;
   private final JavaFormatterOptions options;
 
-  public JavaCommentsHelper(String lineSeparator, JavaFormatterOptions options) {
+  public JavaCommentsHelper(final String lineSeparator, final JavaFormatterOptions options) {
     this.lineSeparator = lineSeparator;
     this.options = options;
   }
 
   @Override
-  public String rewrite(Tok tok, int maxWidth, int column0) {
+  public String rewrite(final Tok tok, final int maxWidth, final int column0) {
     if (!tok.isComment()) {
       return tok.getOriginalText();
     }
@@ -46,8 +46,8 @@ public final class JavaCommentsHelper implements CommentsHelper {
     if (tok.isJavadocComment() && options.formatJavadoc()) {
       text = JavadocFormatter.formatJavadoc(text, column0);
     }
-    List<String> lines = new ArrayList<>();
-    Iterator<String> it = Newlines.lineIterator(text);
+    final List<String> lines = new ArrayList<>();
+    final Iterator<String> it = Newlines.lineIterator(text);
     while (it.hasNext()) {
       lines.add(CharMatcher.whitespace().trimTrailingFrom(it.next()));
     }
@@ -64,13 +64,13 @@ public final class JavaCommentsHelper implements CommentsHelper {
 
   // For non-javadoc-shaped block comments, shift the entire block to the correct
   // column, but do not adjust relative indentation.
-  private String preserveIndentation(List<String> lines, int column0) {
-    StringBuilder builder = new StringBuilder();
+  private String preserveIndentation(final List<String> lines, final int column0) {
+    final StringBuilder builder = new StringBuilder();
 
     // find the leftmost non-whitespace character in all trailing lines
     int startCol = -1;
     for (int i = 1; i < lines.size(); i++) {
-      int lineIdx = CharMatcher.whitespace().negate().indexIn(lines.get(i));
+      final int lineIdx = CharMatcher.whitespace().negate().indexIn(lines.get(i));
       if (lineIdx >= 0 && (startCol == -1 || lineIdx < startCol)) {
         startCol = lineIdx;
       }
@@ -93,11 +93,11 @@ public final class JavaCommentsHelper implements CommentsHelper {
   }
 
   // Wraps and re-indents line comments.
-  private String indentLineComments(List<String> lines, int column0) {
+  private String indentLineComments(List<String> lines, final int column0) {
     lines = wrapLineComments(lines, column0);
-    StringBuilder builder = new StringBuilder();
+    final StringBuilder builder = new StringBuilder();
     builder.append(lines.get(0).trim());
-    String indentString = Strings.repeat(" ", column0);
+    final String indentString = Strings.repeat(" ", column0);
     for (int i = 1; i < lines.size(); ++i) {
       builder.append(lineSeparator).append(indentString).append(lines.get(i).trim());
     }
@@ -109,13 +109,13 @@ public final class JavaCommentsHelper implements CommentsHelper {
   private static final Pattern LINE_COMMENT_MISSING_SPACE_PREFIX =
       Pattern.compile("^(//+)(?!noinspection|\\$NON-NLS-\\d+\\$)[^\\s/]");
 
-  private List<String> wrapLineComments(List<String> lines, int column0) {
-    List<String> result = new ArrayList<>();
+  private List<String> wrapLineComments(final List<String> lines, final int column0) {
+    final List<String> result = new ArrayList<>();
     for (String line : lines) {
       // Add missing leading spaces to line comments: `//foo` -> `// foo`.
-      Matcher matcher = LINE_COMMENT_MISSING_SPACE_PREFIX.matcher(line);
+      final Matcher matcher = LINE_COMMENT_MISSING_SPACE_PREFIX.matcher(line);
       if (matcher.find()) {
-        int length = matcher.group(1).length();
+        final int length = matcher.group(1).length();
         line = Strings.repeat("/", length) + " " + line.substring(length);
       }
       if (line.startsWith("// MOE:")) {
@@ -123,8 +123,8 @@ public final class JavaCommentsHelper implements CommentsHelper {
         result.add(line);
         continue;
       }
-      while (line.length() + column0 > options.style().getMaxLineLength()) {
-        int idx = options.style().getMaxLineLength() - column0;
+      while (line.length() + column0 > options.getMaxLineLength()) {
+        int idx = options.getMaxLineLength() - column0;
         // only break on whitespace characters, and ignore the leading `// `
         while (idx >= 2 && !CharMatcher.whitespace().matches(line.charAt(idx))) {
           idx--;
@@ -142,14 +142,14 @@ public final class JavaCommentsHelper implements CommentsHelper {
 
   // Remove leading whitespace (trailing was already removed), and re-indent.
   // Add a +1 indent before '*', and add the '*' if necessary.
-  private String indentJavadoc(List<String> lines, int column0) {
-    StringBuilder builder = new StringBuilder();
+  private String indentJavadoc(final List<String> lines, final int column0) {
+    final StringBuilder builder = new StringBuilder();
     builder.append(lines.get(0).trim());
-    int indent = column0 + 1;
-    String indentString = Strings.repeat(" ", indent);
+    final int indent = column0 + 1;
+    final String indentString = Strings.repeat(" ", indent);
     for (int i = 1; i < lines.size(); ++i) {
       builder.append(lineSeparator).append(indentString);
-      String line = lines.get(i).trim();
+      final String line = lines.get(i).trim();
       if (!line.startsWith("*")) {
         builder.append("* ");
       }
@@ -159,12 +159,12 @@ public final class JavaCommentsHelper implements CommentsHelper {
   }
 
   // Returns true if the comment looks like javadoc
-  private static boolean javadocShaped(List<String> lines) {
-    Iterator<String> it = lines.iterator();
+  private static boolean javadocShaped(final List<String> lines) {
+    final Iterator<String> it = lines.iterator();
     if (!it.hasNext()) {
       return false;
     }
-    String first = it.next().trim();
+    final String first = it.next().trim();
     // if it's actually javadoc, we're done
     if (first.startsWith("/**")) {
       return true;

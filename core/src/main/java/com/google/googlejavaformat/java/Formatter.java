@@ -81,12 +81,12 @@ public final class Formatter {
     this(JavaFormatterOptions.defaultOptions());
   }
 
-  public Formatter(JavaFormatterOptions options) {
+  public Formatter(final JavaFormatterOptions options) {
     this.options = options;
   }
 
   public int getMaxLineLength() {
-    return this.options.style().getMaxLineLength();
+    return this.options.getMaxLineLength();
   }
   /**
    * Construct a {@code Formatter} given a Java compilation unit. Parses the code; builds a {@link
@@ -96,31 +96,31 @@ public final class Formatter {
    * @param javaOutput the {@link JavaOutput}
    * @param options the {@link JavaFormatterOptions}
    */
-  static void format(final JavaInput javaInput, JavaOutput javaOutput, JavaFormatterOptions options)
+  static void format(final JavaInput javaInput, final JavaOutput javaOutput, final JavaFormatterOptions options)
       throws FormatterException {
-    Context context = new Context();
-    DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+    final Context context = new Context();
+    final DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
     context.put(DiagnosticListener.class, diagnostics);
     Options.instance(context).put("allowStringFolding", "false");
     Options.instance(context).put("--enable-preview", "true");
-    JCCompilationUnit unit;
-    JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
+    final JCCompilationUnit unit;
+    final JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
     try {
       fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, ImmutableList.of());
-    } catch (IOException e) {
+    } catch (final IOException e) {
       // impossible
       throw new IOError(e);
     }
-    SimpleJavaFileObject source =
+    final SimpleJavaFileObject source =
         new SimpleJavaFileObject(URI.create("source"), JavaFileObject.Kind.SOURCE) {
           @Override
-          public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+          public CharSequence getCharContent(final boolean ignoreEncodingErrors) throws IOException {
             return javaInput.getText();
           }
         };
     Log.instance(context).useSource(source);
-    ParserFactory parserFactory = ParserFactory.instance(context);
-    JavacParser parser =
+    final ParserFactory parserFactory = ParserFactory.instance(context);
+    final JavacParser parser =
         parserFactory.newParser(
             javaInput.getText(),
             /* keepDocComments= */ true,
@@ -130,14 +130,14 @@ public final class Formatter {
     unit.sourcefile = source;
 
     javaInput.setCompilationUnit(unit);
-    Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
+    final Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
         Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
     if (!Iterables.isEmpty(errorDiagnostics)) {
       throw FormatterException.fromJavacDiagnostics(errorDiagnostics);
     }
-    OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
+    final OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
-    JavaInputAstVisitor visitor;
+    final JavaInputAstVisitor visitor;
     if (Runtime.version().feature() >= 17) {
       try {
         visitor =
@@ -145,7 +145,7 @@ public final class Formatter {
                 .asSubclass(JavaInputAstVisitor.class)
                 .getConstructor(OpsBuilder.class, int.class)
                 .newInstance(builder, options.indentationMultiplier());
-      } catch (ReflectiveOperationException e) {
+      } catch (final ReflectiveOperationException e) {
         throw new LinkageError(e.getMessage(), e);
       }
     } else {
@@ -154,24 +154,21 @@ public final class Formatter {
     visitor.scan(unit, null);
     builder.sync(javaInput.getText().length());
     builder.drain();
-    Doc doc = new DocBuilder().withOps(builder.build()).build();
+    final Doc doc = new DocBuilder().withOps(builder.build()).build();
     doc.computeBreaks(
-        javaOutput.getCommentsHelper(), options.style().getMaxLineLength(), new Doc.State(+0, 0));
+        javaOutput.getCommentsHelper(), options.getMaxLineLength(), new Doc.State(+0, 0));
     doc.write(javaOutput);
     javaOutput.flush();
   }
 
-  static boolean errorDiagnostic(Diagnostic<?> input) {
+  static boolean errorDiagnostic(final Diagnostic<?> input) {
     if (input.getKind() != Diagnostic.Kind.ERROR) {
       return false;
     }
-    switch (input.getCode()) {
-      case "compiler.err.invalid.meth.decl.ret.type.req":
-        // accept constructor-like method declarations that don't match the name of their
-        // enclosing class
-        return false;
-      default:
-        break;
+    if (input.getCode().equals("compiler.err.invalid.meth.decl.ret.type.req")) {
+      // accept constructor-like method declarations that don't match the name of their
+      // enclosing class
+      return false;
     }
     return true;
   }
@@ -181,7 +178,7 @@ public final class Formatter {
    *
    * @throws FormatterException if the input cannot be parsed
    */
-  public void formatSource(CharSource input, CharSink output)
+  public void formatSource(final CharSource input, final CharSink output)
       throws FormatterException, IOException {
     // TODO(cushon): proper support for streaming input/output. Input may
     // not be feasible (parsing) but output should be easier.
@@ -197,7 +194,7 @@ public final class Formatter {
    * @return the output string
    * @throws FormatterException if the input string cannot be parsed
    */
-  public String formatSource(String input) throws FormatterException {
+  public String formatSource(final String input) throws FormatterException {
     return formatSource(input, ImmutableList.of(Range.closedOpen(0, input.length())));
   }
 
@@ -230,7 +227,7 @@ public final class Formatter {
    * @return the output string
    * @throws FormatterException if the input string cannot be parsed
    */
-  public String formatSource(String input, Collection<Range<Integer>> characterRanges)
+  public String formatSource(final String input, final Collection<Range<Integer>> characterRanges)
       throws FormatterException {
     return JavaOutput.applyReplacements(input, getFormatReplacements(input, characterRanges));
   }
@@ -244,7 +241,7 @@ public final class Formatter {
    * @throws FormatterException if the input string cannot be parsed
    */
   public ImmutableList<Replacement> getFormatReplacements(
-      String input, Collection<Range<Integer>> characterRanges) throws FormatterException {
+          final String input, final Collection<Range<Integer>> characterRanges) throws FormatterException {
     JavaInput javaInput = new JavaInput(input);
 
     // TODO(cushon): this is only safe because the modifier ordering doesn't affect whitespace,
@@ -252,15 +249,15 @@ public final class Formatter {
     // 'de-linting' changes (e.g. import ordering).
     javaInput = ModifierOrderer.reorderModifiers(javaInput, characterRanges);
 
-    String lineSeparator = Newlines.guessLineSeparator(input);
-    JavaOutput javaOutput =
+    final String lineSeparator = Newlines.guessLineSeparator(input);
+    final JavaOutput javaOutput =
         new JavaOutput(lineSeparator, javaInput, new JavaCommentsHelper(lineSeparator, options));
     try {
       format(javaInput, javaOutput, options);
-    } catch (FormattingError e) {
+    } catch (final FormattingError e) {
       throw new FormatterException(e.diagnostics());
     }
-    RangeSet<Integer> tokenRangeSet = javaInput.characterRangesToTokenRanges(characterRanges);
+    final RangeSet<Integer> tokenRangeSet = javaInput.characterRangesToTokenRanges(characterRanges);
     return javaOutput.getFormatReplacements(tokenRangeSet);
   }
 
@@ -268,19 +265,19 @@ public final class Formatter {
    * Converts zero-indexed, [closed, open) line ranges in the given source file to character ranges.
    */
   public static RangeSet<Integer> lineRangesToCharRanges(
-      String input, RangeSet<Integer> lineRanges) {
-    List<Integer> lines = new ArrayList<>();
+          final String input, final RangeSet<Integer> lineRanges) {
+    final List<Integer> lines = new ArrayList<>();
     Iterators.addAll(lines, Newlines.lineOffsetIterator(input));
     lines.add(input.length() + 1);
 
     final RangeSet<Integer> characterRanges = TreeRangeSet.create();
-    for (Range<Integer> lineRange :
+    for (final Range<Integer> lineRange :
         lineRanges.subRangeSet(Range.closedOpen(0, lines.size() - 1)).asRanges()) {
-      int lineStart = lines.get(lineRange.lowerEndpoint());
+      final int lineStart = lines.get(lineRange.lowerEndpoint());
       // Exclude the trailing newline. This isn't strictly necessary, but handling blank lines
       // as empty ranges is convenient.
-      int lineEnd = lines.get(lineRange.upperEndpoint()) - 1;
-      Range<Integer> range = Range.closedOpen(lineStart, lineEnd);
+      final int lineEnd = lines.get(lineRange.upperEndpoint()) - 1;
+      final Range<Integer> range = Range.closedOpen(lineStart, lineEnd);
       characterRanges.add(range);
     }
     return characterRanges;

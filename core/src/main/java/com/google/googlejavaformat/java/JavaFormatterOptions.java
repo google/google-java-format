@@ -30,35 +30,30 @@ public class JavaFormatterOptions {
 
   public enum Style {
     /** The default Google Java Style configuration. */
-    GOOGLE(1, 100),
-    SWISS(1, 120),
-
+    GOOGLE(1),
     /** The AOSP-compliant configuration. */
-    AOSP(2, 100);
+    AOSP(2);
 
     private final int indentationMultiplier;
-    private final int maxLineLength;
 
-    Style(final int indentationMultiplier, final int maxLineLength) {
+    Style(final int indentationMultiplier) {
       this.indentationMultiplier = indentationMultiplier;
-      this.maxLineLength = maxLineLength;
     }
 
     int indentationMultiplier() {
       return indentationMultiplier;
     }
 
-    public int getMaxLineLength() {
-      return maxLineLength;
-    }
   }
 
   private final Style style;
   private final boolean formatJavadoc;
+  private final int maxLineWidth;
 
-  private JavaFormatterOptions(final Style style, final boolean formatJavadoc) {
+  private JavaFormatterOptions(final Style style, final boolean formatJavadoc, final int maxLineWidth) {
     this.style = style;
     this.formatJavadoc = formatJavadoc;
+    this.maxLineWidth = maxLineWidth;
   }
 
   /** Returns the multiplier for the unit of indent. */
@@ -68,6 +63,10 @@ public class JavaFormatterOptions {
 
   public boolean formatJavadoc() {
     return formatJavadoc;
+  }
+
+  public int getMaxLineLength() {
+    return maxLineWidth;
   }
 
   /** Returns the code style. */
@@ -89,6 +88,7 @@ public class JavaFormatterOptions {
   public static class Builder {
     private Style style = Style.GOOGLE;
     private boolean formatJavadoc = true;
+    private int maxLineWidth = 100;
 
     private Builder() {}
 
@@ -101,9 +101,13 @@ public class JavaFormatterOptions {
       this.formatJavadoc = formatJavadoc;
       return this;
     }
+    public Builder maxLineWidth(final int  maxLineWidth) {
+      this.maxLineWidth = maxLineWidth;
+      return this;
+    }
 
     public JavaFormatterOptions build() {
-      return new JavaFormatterOptions(style, formatJavadoc);
+      return new JavaFormatterOptions(style, formatJavadoc, maxLineWidth);
     }
   }
 }
