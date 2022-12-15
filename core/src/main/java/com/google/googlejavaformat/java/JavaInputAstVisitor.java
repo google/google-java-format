@@ -285,6 +285,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     ImmutableSetMultimap.Builder<String, String> result = ImmutableSetMultimap.builder();
     for (String annotation :
         ImmutableList.of(
+            "org.jspecify.annotations.Nullable",
             "org.jspecify.nullness.Nullable",
             "org.checkerframework.checker.nullness.qual.Nullable")) {
       String simpleName = annotation.substring(annotation.lastIndexOf('.') + 1);
