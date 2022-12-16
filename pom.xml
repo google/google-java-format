@@ -23,7 +23,7 @@
     <groupId>com.github.mrdolch.googlejavaformat</groupId>
     <artifactId>configurable-google-java-format-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.15.0.1</version>
+    <version>1.15.0.2</version>
 
     <modules>
         <module>core</module>
@@ -300,19 +300,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <distributionManagement>
-        <snapshotRepository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-        </snapshotRepository>
-        <repository>
-            <id>sonatype-nexus-staging</id>
-            <name>Nexus Release Repository</name>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
 
     <profiles>
         <profile>

@@ -22,7 +22,7 @@
     <parent>
         <groupId>com.github.mrdolch.googlejavaformat</groupId>
         <artifactId>configurable-google-java-format-parent</artifactId>
-        <version>1.15.0.1</version>
+        <version>1.15.0.2</version>
     </parent>
 
     <artifactId>configurable-google-java-format</artifactId>
