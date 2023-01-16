@@ -132,7 +132,7 @@ public class MainTest {
     process.waitFor();
     String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
     assertThat(err).contains("Usage: google-java-format");
-    assertThat(process.exitValue()).isEqualTo(0);
+    assertThat(process.exitValue()).isEqualTo(2);
   }
 
   // end to end javadoc formatting test
