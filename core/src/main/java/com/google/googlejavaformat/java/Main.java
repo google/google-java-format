@@ -18,6 +18,7 @@ import static java.lang.Math.min;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.ByteStreams;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import java.io.IOError;
@@ -35,6 +36,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /** The main class for the Java formatter CLI. */
 public final class Main {
@@ -187,6 +189,19 @@ public final class Main {
         outWriter.write(formatted);
       }
     }
+
+    // #846 Clean up any resources and threads created by the executorService.
+    final boolean completedShutdown =
+        MoreExecutors.shutdownAndAwaitTermination(executorService, 100, TimeUnit.MILLISECONDS);
+
+    if (!completedShutdown) {
+      // We wait for all formatting tasks to complete when looping through the formatting tasks
+      // before shutdown, so no tasks should be left over by the time we shut down the executor
+      // service.
+      throw new IllegalStateException(
+          "Failed to complete all formatting tasks and shut down the formatter.");
+    }
+
     return allOk ? 0 : 1;
   }
 
