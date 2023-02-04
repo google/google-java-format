@@ -18,6 +18,7 @@ import static java.lang.Math.min;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.ByteStreams;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import java.io.IOError;
@@ -28,6 +29,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -186,6 +188,10 @@ public final class Main {
       } else {
         outWriter.write(formatted);
       }
+    }
+    if (!MoreExecutors.shutdownAndAwaitTermination(executorService, Duration.ofSeconds(5))) {
+      errWriter.println("Failed to shut down ExecutorService");
+      allOk = false;
     }
     return allOk ? 0 : 1;
   }
