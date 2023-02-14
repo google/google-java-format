@@ -137,7 +137,8 @@ public final class Main {
       }
       Path path = Paths.get(fileName);
       try {
-        cs.submit(new FormatFileCallable(parameters, path, Files.readString(path), options));
+        String input = new String(Files.readAllBytes(path), UTF_8);
+        cs.submit(new FormatFileCallable(parameters, path, input, options));
         files++;
       } catch (IOException e) {
         errWriter.println(fileName + ": could not read file: " + e.getMessage());
