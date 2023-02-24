@@ -613,4 +613,27 @@ public class MainTest {
     assertThat(main.format("--skip-javadoc-formatting", "-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(joiner.join(input));
   }
+
+  @Test
+  public void reorderModifiersOptionTest() throws Exception {
+    String[] input = {
+      "class Test {", //
+      "  static public void main(String... args) {}",
+      "}",
+      "",
+    };
+    String[] fixed = {
+      "class Test {", //
+      "  public static void main(String... args) {}",
+      "}",
+      "",
+    };
+    String source = joiner.join(input);
+    assertThat(new Formatter(JavaFormatterOptions.builder().build()).formatSource(source))
+        .isEqualTo(joiner.join(fixed));
+    assertThat(
+            new Formatter(JavaFormatterOptions.builder().reorderModifiers(false).build())
+                .formatSource(source))
+        .isEqualTo(source);
+  }
 }
