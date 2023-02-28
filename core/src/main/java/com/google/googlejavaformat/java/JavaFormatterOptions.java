@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat.java;
 
+import com.google.auto.value.AutoValue;
 import com.google.errorprone.annotations.Immutable;
 
 /**
@@ -27,7 +28,8 @@ import com.google.errorprone.annotations.Immutable;
  * preferences, and in fact it would work directly against our primary goals.
  */
 @Immutable
-public class JavaFormatterOptions {
+@AutoValue
+public abstract class JavaFormatterOptions {
 
   public enum Style {
     /** The default Google Java Style configuration. */
@@ -47,27 +49,17 @@ public class JavaFormatterOptions {
     }
   }
 
-  private final Style style;
-  private final boolean formatJavadoc;
-
-  private JavaFormatterOptions(Style style, boolean formatJavadoc) {
-    this.style = style;
-    this.formatJavadoc = formatJavadoc;
-  }
-
   /** Returns the multiplier for the unit of indent. */
   public int indentationMultiplier() {
-    return style.indentationMultiplier();
+    return style().indentationMultiplier();
   }
 
-  public boolean formatJavadoc() {
-    return formatJavadoc;
-  }
+  public abstract boolean formatJavadoc();
+
+  public abstract boolean reorderModifiers();
 
   /** Returns the code style. */
-  public Style style() {
-    return style;
-  }
+  public abstract Style style();
 
   /** Returns the default formatting options. */
   public static JavaFormatterOptions defaultOptions() {
@@ -76,28 +68,22 @@ public class JavaFormatterOptions {
 
   /** Returns a builder for {@link JavaFormatterOptions}. */
   public static Builder builder() {
-    return new Builder();
+    return new AutoValue_JavaFormatterOptions.Builder()
+        .style(Style.GOOGLE)
+        .formatJavadoc(true)
+        .reorderModifiers(true);
   }
 
   /** A builder for {@link JavaFormatterOptions}. */
-  public static class Builder {
-    private Style style = Style.GOOGLE;
-    private boolean formatJavadoc = true;
+  @AutoValue.Builder
+  public abstract static class Builder {
 
-    private Builder() {}
+    public abstract Builder style(Style style);
 
-    public Builder style(Style style) {
-      this.style = style;
-      return this;
-    }
+    public abstract Builder formatJavadoc(boolean formatJavadoc);
 
-    public Builder formatJavadoc(boolean formatJavadoc) {
-      this.formatJavadoc = formatJavadoc;
-      return this;
-    }
+    public abstract Builder reorderModifiers(boolean reorderModifiers);
 
-    public JavaFormatterOptions build() {
-      return new JavaFormatterOptions(style, formatJavadoc);
-    }
+    public abstract JavaFormatterOptions build();
   }
 }

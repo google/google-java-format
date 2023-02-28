@@ -46,7 +46,7 @@ public class GoogleJavaFormatToolProviderTest {
 
     int result = format.run(new PrintWriter(out, true), new PrintWriter(err, true), "--help");
 
-    assertThat(result).isEqualTo(0);
+    assertThat(result).isEqualTo(2);
 
     String usage = err.toString();
 
