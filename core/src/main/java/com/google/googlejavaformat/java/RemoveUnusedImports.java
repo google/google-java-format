@@ -49,7 +49,6 @@ import com.sun.tools.javac.tree.DCTree.DCReference;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
-import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCImport;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
@@ -252,7 +251,10 @@ public class RemoveUnusedImports {
     ParserFactory parserFactory = ParserFactory.instance(context);
     JavacParser parser =
         parserFactory.newParser(
-            javaInput, /*keepDocComments=*/ true, /*keepEndPos=*/ true, /*keepLineMap=*/ true);
+            javaInput,
+            /* keepDocComments= */ true,
+            /* keepEndPos= */ true,
+            /* keepLineMap= */ true);
     unit = parser.parseCompilationUnit();
     unit.sourcefile = source;
     Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
@@ -290,9 +292,7 @@ public class RemoveUnusedImports {
   }
 
   private static String getSimpleName(JCImport importTree) {
-    return importTree.getQualifiedIdentifier() instanceof JCIdent
-        ? ((JCIdent) importTree.getQualifiedIdentifier()).getName().toString()
-        : ((JCFieldAccess) importTree.getQualifiedIdentifier()).getIdentifier().toString();
+    return getQualifiedIdentifier(importTree).getIdentifier().toString();
   }
 
   private static boolean isUnused(
@@ -301,18 +301,15 @@ public class RemoveUnusedImports {
       Multimap<String, Range<Integer>> usedInJavadoc,
       JCImport importTree,
       String simpleName) {
-    String qualifier =
-        ((JCFieldAccess) importTree.getQualifiedIdentifier()).getExpression().toString();
+    JCFieldAccess qualifiedIdentifier = getQualifiedIdentifier(importTree);
+    String qualifier = qualifiedIdentifier.getExpression().toString();
     if (qualifier.equals("java.lang")) {
       return true;
     }
     if (unit.getPackageName() != null && unit.getPackageName().toString().equals(qualifier)) {
       return true;
     }
-    if (importTree.getQualifiedIdentifier() instanceof JCFieldAccess
-        && ((JCFieldAccess) importTree.getQualifiedIdentifier())
-            .getIdentifier()
-            .contentEquals("*")) {
+    if (qualifiedIdentifier.getIdentifier().contentEquals("*")) {
       return false;
     }
 
@@ -323,6 +320,15 @@ public class RemoveUnusedImports {
       return false;
     }
     return true;
+  }
+
+  private static JCFieldAccess getQualifiedIdentifier(JCImport importTree) {
+    // Use reflection because the return type is JCTree in some versions and JCFieldAccess in others
+    try {
+      return (JCFieldAccess) JCImport.class.getMethod("getQualifiedIdentifier").invoke(importTree);
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
   }
 
   /** Applies the replacements to the given source, and re-format any edited javadoc. */

@@ -50,13 +50,6 @@ publishPlugin {
   token = project.ext.properties.jetbrainsPluginRepoToken
 }
 
-sourceSets {
-  main {
-    java.srcDir "src"
-    resources.srcDir "resources"
-  }
-}
-
 dependencies {
   implementation "com.google.googlejavaformat:google-java-format:${googleJavaFormatVersion}"
 }

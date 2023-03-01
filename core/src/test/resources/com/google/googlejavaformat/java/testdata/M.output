@@ -36,8 +36,16 @@ class M {
 
   /** JavaDoc. */
   void methodName3(int x)
-      throws Exception0, Exception1, Exception2, Exception3, Exception4, Exception5, Exception6,
-          Exception7, Exception8, Exception9 {}
+      throws Exception0,
+          Exception1,
+          Exception2,
+          Exception3,
+          Exception4,
+          Exception5,
+          Exception6,
+          Exception7,
+          Exception8,
+          Exception9 {}
 
   /** JavaDoc. */
   void methodName4(
@@ -114,8 +122,16 @@ class M {
       int t,
       int u,
       int v)
-      throws Exception0, Exception1, Exception2, Exception3, Exception4, Exception5, Exception6,
-          Exception7, Exception8, Exception9 {}
+      throws Exception0,
+          Exception1,
+          Exception2,
+          Exception3,
+          Exception4,
+          Exception5,
+          Exception6,
+          Exception7,
+          Exception8,
+          Exception9 {}
 
   Pair<
           Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>,
@@ -135,8 +151,16 @@ class M {
           Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>,
           Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>>
       methodName11(int x)
-          throws Exception0, Exception1, Exception2, Exception3, Exception4, Exception5, Exception6,
-              Exception7, Exception8, Exception9 {
+          throws Exception0,
+              Exception1,
+              Exception2,
+              Exception3,
+              Exception4,
+              Exception5,
+              Exception6,
+              Exception7,
+              Exception8,
+              Exception9 {
     return null;
   }
 
@@ -225,8 +249,16 @@ class M {
           int t,
           int u,
           int v)
-          throws Exception0, Exception1, Exception2, Exception3, Exception4, Exception5, Exception6,
-              Exception7, Exception8, Exception9 {
+          throws Exception0,
+              Exception1,
+              Exception2,
+              Exception3,
+              Exception4,
+              Exception5,
+              Exception6,
+              Exception7,
+              Exception8,
+              Exception9 {
     return null;
   }
 
@@ -338,8 +370,16 @@ class M {
           T30,
           T31>
       T methodName22(int x)
-          throws Exception0, Exception1, Exception2, Exception3, Exception4, Exception5, Exception6,
-              Exception7, Exception8, Exception9 {
+          throws Exception0,
+              Exception1,
+              Exception2,
+              Exception3,
+              Exception4,
+              Exception5,
+              Exception6,
+              Exception7,
+              Exception8,
+              Exception9 {
     return null;
   }
 
@@ -518,8 +558,16 @@ class M {
           int t,
           int u,
           int v)
-          throws Exception0, Exception1, Exception2, Exception3, Exception4, Exception5, Exception6,
-              Exception7, Exception8, Exception9 {
+          throws Exception0,
+              Exception1,
+              Exception2,
+              Exception3,
+              Exception4,
+              Exception5,
+              Exception6,
+              Exception7,
+              Exception8,
+              Exception9 {
     return null;
   }
 
@@ -640,8 +688,16 @@ class M {
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>,
               Pair<Pair<Pair<T, T>, Pair<T, T>>, Pair<Pair<T, T>, Pair<T, T>>>>
           methodName(int x)
-              throws Exception0, Exception1, Exception2, Exception3, Exception4, Exception5,
-                  Exception6, Exception7, Exception8, Exception9 {
+              throws Exception0,
+                  Exception1,
+                  Exception2,
+                  Exception3,
+                  Exception4,
+                  Exception5,
+                  Exception6,
+                  Exception7,
+                  Exception8,
+                  Exception9 {
     return null;
   }
 
@@ -829,8 +885,16 @@ class M {
               int t,
               int u,
               int v)
-              throws Exception0, Exception1, Exception2, Exception3, Exception4, Exception5,
-                  Exception6, Exception7, Exception8, Exception9 {
+              throws Exception0,
+                  Exception1,
+                  Exception2,
+                  Exception3,
+                  Exception4,
+                  Exception5,
+                  Exception6,
+                  Exception7,
+                  Exception8,
+                  Exception9 {
     return null;
   }
 
@@ -1011,6 +1075,14 @@ class M {
           ZZZZZZZZZZ z,
           ZZZZZZZZZZ z,
           ZZZZZZZZZZ z)
-          throws EEEEEEEEEE, EEEEEEEEEE, EEEEEEEEEE, EEEEEEEEEE, EEEEEEEEEE, EEEEEEEEEE, EEEEEEEEEE,
-              EEEEEEEEEE, EEEEEEEEEE, EEEEEEEEEE {}
+          throws EEEEEEEEEE,
+              EEEEEEEEEE,
+              EEEEEEEEEE,
+              EEEEEEEEEE,
+              EEEEEEEEEE,
+              EEEEEEEEEE,
+              EEEEEEEEEE,
+              EEEEEEEEEE,
+              EEEEEEEEEE,
+              EEEEEEEEEE {}
 }

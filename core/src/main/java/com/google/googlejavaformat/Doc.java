@@ -15,6 +15,7 @@
 package com.google.googlejavaformat;
 
 import static com.google.common.collect.Iterables.getLast;
+import static com.google.googlejavaformat.CommentsHelper.reformatParameterComment;
 import static java.lang.Math.max;
 
 import com.google.common.base.MoreObjects;
@@ -727,7 +728,7 @@ public abstract class Doc {
           // Account for line comments with missing spaces, see computeFlat.
           return tok.length() + 1;
         } else {
-          return tok.length();
+          return reformatParameterComment(tok).map(String::length).orElse(tok.length());
         }
       }
       return idx != -1 ? Float.POSITIVE_INFINITY : (float) tok.length();
@@ -741,7 +742,7 @@ public abstract class Doc {
       if (tok.isSlashSlashComment() && !tok.getOriginalText().startsWith("// ")) {
         return "// " + tok.getOriginalText().substring("//".length());
       }
-      return tok.getOriginalText();
+      return reformatParameterComment(tok).orElse(tok.getOriginalText());
     }
 
     @Override

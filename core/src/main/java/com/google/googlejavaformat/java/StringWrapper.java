@@ -96,7 +96,9 @@ public final class StringWrapper {
       if (!expected.equals(actual)) {
         throw new FormatterException(
             String.format(
-                "Something has gone terribly wrong. Please file a bug: "
+                "Something has gone terribly wrong. We planned to make the below formatting change,"
+                    + " but have aborted because it would unexpectedly change the AST.\n"
+                    + "Please file a bug: "
                     + "https://github.com/google/google-java-format/issues/new"
                     + "\n\n=== Actual: ===\n%s\n=== Expected: ===\n%s\n",
                 actual, expected));
@@ -396,7 +398,7 @@ public final class StringWrapper {
     ParserFactory parserFactory = ParserFactory.instance(context);
     JavacParser parser =
         parserFactory.newParser(
-            source, /*keepDocComments=*/ true, /*keepEndPos=*/ true, /*keepLineMap=*/ true);
+            source, /* keepDocComments= */ true, /* keepEndPos= */ true, /* keepLineMap= */ true);
     unit = parser.parseCompilationUnit();
     unit.sourcefile = sjfo;
     Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
