@@ -54,13 +54,12 @@ public class MainTest {
 
   private static final ImmutableList<String> ADD_EXPORTS =
       ImmutableList.of(
+          "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+          "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
           "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-          "--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
           "--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
           "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-          "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-          "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-          "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED");
+          "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED");
 
   @Test
   public void testUsageOutput() {
