@@ -75,8 +75,11 @@
       displayName="google-java-format Settings"/>
     <projectService
       serviceImplementation="com.google.googlejavaformat.intellij.GoogleJavaFormatSettings"/>
+    <projectService serviceImplementation="com.google.googlejavaformat.intellij.JreConfigurationChecker"/>
     <notificationGroup displayType="STICKY_BALLOON" id="Enable google-java-format"
       isLogByDefault="false"/>
+    <notificationGroup displayType="STICKY_BALLOON" id="Configure JRE for google-java-format"
+      isLogByDefault="true"/>
     <notificationGroup displayType="BALLOON" id="google-java-format parsing error"
       isLogByDefault="false"/>
   </extensions>

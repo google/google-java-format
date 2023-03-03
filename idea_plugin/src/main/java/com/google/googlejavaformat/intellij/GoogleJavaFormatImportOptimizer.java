@@ -35,7 +35,8 @@ public class GoogleJavaFormatImportOptimizer implements ImportOptimizer {
   @Override
   public boolean supports(@NotNull PsiFile file) {
     return JavaFileType.INSTANCE.equals(file.getFileType())
-        && GoogleJavaFormatSettings.getInstance(file.getProject()).isEnabled();
+        && GoogleJavaFormatSettings.getInstance(file.getProject()).isEnabled()
+        && JreConfigurationChecker.checkJreConfiguration(file.getProject());
   }
 
   @Override

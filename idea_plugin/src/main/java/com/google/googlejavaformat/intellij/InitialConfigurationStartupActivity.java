@@ -37,6 +37,8 @@ final class InitialConfigurationStartupActivity implements StartupActivity.Backg
     if (settings.isUninitialized()) {
       settings.setEnabled(false);
       displayNewUserNotification(project, settings);
+    } else if (settings.isEnabled()) {
+      JreConfigurationChecker.checkJreConfiguration(project);
     }
   }
 
