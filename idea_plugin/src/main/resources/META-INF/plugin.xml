@@ -65,15 +65,10 @@
     </dl>
   ]]></change-notes>
 
-  <applicationListeners>
-    <listener
-      class="com.google.googlejavaformat.intellij.InitialConfigurationProjectManagerListener"
-      topic="com.intellij.openapi.project.ProjectManagerListener"/>
-  </applicationListeners>
-
   <extensions defaultExtensionNs="com.intellij">
     <formattingService
       implementation="com.google.googlejavaformat.intellij.GoogleJavaFormatFormattingService"/>
+    <postStartupActivity implementation="com.google.googlejavaformat.intellij.InitialConfigurationStartupActivity"/>
     <projectConfigurable
       instance="com.google.googlejavaformat.intellij.GoogleJavaFormatConfigurable"
       id="google-java-format.settings"
