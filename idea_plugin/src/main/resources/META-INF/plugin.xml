@@ -26,6 +26,13 @@
   <depends>com.intellij.modules.lang</depends>
   <depends>com.intellij.modules.platform</depends>
 
+  <description><![CDATA[
+    Formats source code using the google-java-format tool.<p>
+
+    This plugin requires additional IDE configuration. For more information,
+    <a href="https://github.com/google/google-java-format/blob/master/README.md#intellij-jre-config">read
+    the documentation.</a>
+  ]]></description>
   <change-notes><![CDATA[
     <dl>
       <dt>1.16.0.0</dt>
