@@ -679,6 +679,7 @@ public final class PartialFormattingTest {
     String input =
         lines(
             "    package com.google.googlejavaformat.java;",
+            "",
             "/*",
             " * Copyright 2015 Google Inc.",
             " *",
