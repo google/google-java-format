@@ -159,7 +159,7 @@ public final class OpsBuilder {
   int depth = 0;
 
   /** Add an {@link Op}, and record open/close ops for later validation of unclosed levels. */
-  private void add(Op op) {
+  public final void add(Op op) {
     if (op instanceof OpenOp) {
       depth++;
     } else if (op instanceof CloseOp) {
