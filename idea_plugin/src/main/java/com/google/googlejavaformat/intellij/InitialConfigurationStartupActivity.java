@@ -21,22 +21,24 @@ import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManagerListener;
+import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 
-final class InitialConfigurationProjectManagerListener implements ProjectManagerListener {
+final class InitialConfigurationStartupActivity implements StartupActivity.Background {
 
   private static final String NOTIFICATION_TITLE = "Enable google-java-format";
   private static final NotificationGroup NOTIFICATION_GROUP =
       NotificationGroupManager.getInstance().getNotificationGroup(NOTIFICATION_TITLE);
 
   @Override
-  public void projectOpened(@NotNull Project project) {
+  public void runActivity(@NotNull Project project) {
     GoogleJavaFormatSettings settings = GoogleJavaFormatSettings.getInstance(project);
 
     if (settings.isUninitialized()) {
       settings.setEnabled(false);
       displayNewUserNotification(project, settings);
+    } else if (settings.isEnabled()) {
+      JreConfigurationChecker.checkJreConfiguration(project);
     }
   }
 
@@ -47,11 +49,12 @@ final class InitialConfigurationProjectManagerListener implements ProjectManager
             NOTIFICATION_TITLE,
             "The google-java-format plugin is disabled by default. "
                 + "<a href=\"enable\">Enable for this project</a>.",
-            NotificationType.INFORMATION,
-            (n, e) -> {
-              settings.setEnabled(true);
-              n.expire();
-            });
+            NotificationType.INFORMATION);
+    notification.setListener(
+        (n, e) -> {
+          settings.setEnabled(true);
+          n.expire();
+        });
     notification.notify(project);
   }
 }

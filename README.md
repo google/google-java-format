@@ -44,14 +44,25 @@ presented when you first open a project offering to do this for you.)
 To enable it by default in new projects, use `File→Other Settings→Default
 Settings...`.
 
-When enabled, it will replace the normal `Reformat Code` action, which can be
-triggered from the `Code` menu or with the Ctrl-Alt-L (by default) keyboard
-shortcut.
+When enabled, it will replace the normal `Reformat Code` and `Optimize Imports`
+actions.
 
-The import ordering is not handled by this plugin, unfortunately. To fix the
-import order, download the
-[IntelliJ Java Google Style file](https://raw.githubusercontent.com/google/styleguide/gh-pages/intellij-java-google-style.xml)
-and import it into File→Settings→Editor→Code Style.
+#### IntelliJ JRE Config
+
+The google-java-format plugin uses some internal classes that aren't available
+without extra configuration. To use the plugin, go to `Help→Edit Custom VM
+Options...` and paste in these lines:
+
+```
+--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+```
+
+Once you've done that, restart the IDE.
 
 ### Eclipse
 
@@ -94,11 +105,12 @@ following JVM flags are required when running on JDK 16 and newer, due to
 [JEP 396: Strongly Encapsulate JDK Internals by Default](https://openjdk.java.net/jeps/396):
 
 ```
---add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
---add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
---add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
---add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
---add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
 ```
 
 #### Maven

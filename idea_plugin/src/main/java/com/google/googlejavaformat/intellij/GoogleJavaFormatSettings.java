@@ -30,7 +30,13 @@ import org.jetbrains.annotations.NotNull;
     storages = {@Storage("google-java-format.xml")})
 class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFormatSettings.State> {
 
+  private final Project project;
+
   private State state = new State();
+
+  GoogleJavaFormatSettings(Project project) {
+    this.project = project;
+  }
 
   static GoogleJavaFormatSettings getInstance(Project project) {
     return ServiceManager.getService(project, GoogleJavaFormatSettings.class);
@@ -56,6 +62,9 @@ class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFor
   }
 
   void setEnabled(EnabledState enabled) {
+    if (enabled.equals(EnabledState.ENABLED)) {
+      JreConfigurationChecker.checkJreConfiguration(project);
+    }
     state.enabled = enabled;
   }
 

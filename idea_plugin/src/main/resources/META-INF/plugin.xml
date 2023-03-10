@@ -22,13 +22,23 @@
     Google
   </vendor>
 
-  <!-- Mark it as available on all JetBrains IDEs. It's really only useful in
-       IDEA and Android Studio, but there's no way to specify that for some
-       reason. It won't crash PyCharm or anything, so whatever. -->
-  <depends>com.intellij.java</depends>
+  <depends>com.intellij.modules.java</depends>
+  <depends>com.intellij.modules.lang</depends>
+  <depends>com.intellij.modules.platform</depends>
 
+  <description><![CDATA[
+    Formats source code using the google-java-format tool.<p>
+
+    This plugin requires additional IDE configuration. For more information,
+    <a href="https://github.com/google/google-java-format/blob/master/README.md#intellij-jre-config">read
+    the documentation.</a>
+  ]]></description>
   <change-notes><![CDATA[
     <dl>
+      <dt>1.16.0.0</dt>
+      <dd>Updated to use google-java-format 1.16.0.</dd>
+      <dd>Use the new IDE formatting APIs for a simplified plugin.</dd>
+      <dd>Optimize Imports now uses google-java-format.</dd>
       <dt>1.15.0.0</dt>
       <dd>Updated to use google-java-format 1.15.0.</dd>
       <dt>1.14.0.0</dt>
@@ -62,23 +72,23 @@
     </dl>
   ]]></change-notes>
 
-  <applicationListeners>
-    <listener
-      class="com.google.googlejavaformat.intellij.InitialConfigurationProjectManagerListener"
-      topic="com.intellij.openapi.project.ProjectManagerListener"/>
-    <listener class="com.google.googlejavaformat.intellij.GoogleJavaFormatInstaller"
-      topic="com.intellij.openapi.project.ProjectManagerListener"/>
-  </applicationListeners>
-
   <extensions defaultExtensionNs="com.intellij">
+    <formattingService
+      implementation="com.google.googlejavaformat.intellij.GoogleJavaFormatFormattingService"/>
+    <postStartupActivity implementation="com.google.googlejavaformat.intellij.InitialConfigurationStartupActivity"/>
     <projectConfigurable
       instance="com.google.googlejavaformat.intellij.GoogleJavaFormatConfigurable"
       id="google-java-format.settings"
       displayName="google-java-format Settings"/>
     <projectService
       serviceImplementation="com.google.googlejavaformat.intellij.GoogleJavaFormatSettings"/>
+    <projectService serviceImplementation="com.google.googlejavaformat.intellij.JreConfigurationChecker"/>
     <notificationGroup displayType="STICKY_BALLOON" id="Enable google-java-format"
+      isLogByDefault="false"/>
+    <notificationGroup displayType="STICKY_BALLOON" id="Configure JRE for google-java-format"
       isLogByDefault="true"/>
+    <notificationGroup displayType="BALLOON" id="google-java-format parsing error"
+      isLogByDefault="false"/>
   </extensions>
 
 </idea-plugin>

@@ -235,15 +235,12 @@
             <manifestEntries>
               <Add-Exports><!--
                 -->jdk.compiler/com.sun.tools.javac.api <!--
+                -->jdk.compiler/com.sun.tools.javac.code <!--
                 -->jdk.compiler/com.sun.tools.javac.file <!--
-                -->jdk.compiler/com.sun.tools.javac.main <!--
-                -->jdk.compiler/com.sun.tools.javac.model <!--
                 -->jdk.compiler/com.sun.tools.javac.parser <!--
-                -->jdk.compiler/com.sun.tools.javac.processing <!--
                 -->jdk.compiler/com.sun.tools.javac.tree <!--
                 -->jdk.compiler/com.sun.tools.javac.util<!--
               --></Add-Exports>
-              <Add-Opens>jdk.compiler/com.sun.tools.javac.code jdk.compiler/com.sun.tools.javac.comp</Add-Opens>
             </manifestEntries>
           </archive>
         </configuration>
