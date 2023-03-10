@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-plugins { id("org.jetbrains.intellij") version "1.13.1" }
+plugins { id("org.jetbrains.intellij") version "1.13.2" }
 
 apply(plugin = "org.jetbrains.intellij")
 
@@ -37,7 +37,7 @@ intellij {
 
 tasks {
   patchPluginXml {
-    version.set("${googleJavaFormatVersion}.0")
+    version.set("${googleJavaFormatVersion}.1")
     sinceBuild.set("213")
     untilBuild.set("")
   }
