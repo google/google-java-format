@@ -44,6 +44,11 @@ public class GoogleJavaFormatFormattingService extends AsyncDocumentFormattingSe
   @Override
   protected FormattingTask createFormattingTask(AsyncFormattingRequest request) {
     Project project = request.getContext().getProject();
+
+    if (!JreConfigurationChecker.checkJreConfiguration(project)) {
+      return null;
+    }
+
     Style style = GoogleJavaFormatSettings.getInstance(project).getStyle();
     Formatter formatter = createFormatter(style, request.canChangeWhitespaceOnly());
     return new GoogleJavaFormatFormattingTask(formatter, request);
@@ -75,8 +80,7 @@ public class GoogleJavaFormatFormattingService extends AsyncDocumentFormattingSe
   @Override
   public boolean canFormat(@NotNull PsiFile file) {
     return JavaFileType.INSTANCE.equals(file.getFileType())
-        && GoogleJavaFormatSettings.getInstance(file.getProject()).isEnabled()
-        && JreConfigurationChecker.checkJreConfiguration(file.getProject());
+        && GoogleJavaFormatSettings.getInstance(file.getProject()).isEnabled();
   }
 
   @Override

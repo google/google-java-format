@@ -35,6 +35,10 @@
   ]]></description>
   <change-notes><![CDATA[
     <dl>
+      <dt>1.16.0.1</dt>
+      <dd>When the plugin isn't configured correctly, show the error on every
+      format command. Previously it was only being shown at startup and going
+      unnoticed.
       <dt>1.16.0.0</dt>
       <dd>Updated to use google-java-format 1.16.0.</dd>
       <dd>Use the new IDE formatting APIs for a simplified plugin.</dd>
