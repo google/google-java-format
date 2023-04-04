@@ -18,7 +18,6 @@ package com.google.googlejavaformat.intellij;
 
 import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
@@ -39,7 +38,7 @@ class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFor
   }
 
   static GoogleJavaFormatSettings getInstance(Project project) {
-    return ServiceManager.getService(project, GoogleJavaFormatSettings.class);
+    return project.getService(GoogleJavaFormatSettings.class);
   }
 
   @Nullable
