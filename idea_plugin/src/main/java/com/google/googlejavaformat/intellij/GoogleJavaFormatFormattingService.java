@@ -74,7 +74,7 @@ public class GoogleJavaFormatFormattingService extends AsyncDocumentFormattingSe
 
   @Override
   public @NotNull Set<Feature> getFeatures() {
-    return Set.of(Feature.AD_HOC_FORMATTING, Feature.FORMAT_FRAGMENTS, Feature.OPTIMIZE_IMPORTS);
+    return Set.of(Feature.FORMAT_FRAGMENTS, Feature.OPTIMIZE_IMPORTS);
   }
 
   @Override
