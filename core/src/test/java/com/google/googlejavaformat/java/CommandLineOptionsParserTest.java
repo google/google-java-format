@@ -219,6 +219,22 @@ public class CommandLineOptionsParserTest {
   }
 
   @Test
+  public void paramsFileWithQuotesAndWhitespaces() throws IOException {
+    Path outer = testFolder.newFile("outer with whitespace").toPath();
+    Path exit = testFolder.newFile("exit with whitespace").toPath();
+    Path nested = testFolder.newFile("nested with whitespace").toPath();
+
+    String[] args = {"--dry-run", "@" + exit, "L +w", "@" + outer, "Q +w"};
+
+    Files.write(exit, "--set-exit-if-changed".getBytes(UTF_8));
+    Files.write(outer, ("\"'M' +w\"\n\"@" + nested.toAbsolutePath() + "\"\n'\"P\" +w'").getBytes(UTF_8));
+    Files.write(nested, "\"ℕ +w\"\n\n   \n\"@@O +w\"\n".getBytes(UTF_8));
+
+    CommandLineOptions options = CommandLineOptionsParser.parse(Arrays.asList(args));
+    assertThat(options.files()).containsExactly("L +w", "'M' +w", "ℕ +w", "@O +w", "\"P\" +w", "Q +w");
+  }
+
+  @Test
   public void assumeFilename() {
     assertThat(
             CommandLineOptionsParser.parse(Arrays.asList("--assume-filename", "Foo.java"))
