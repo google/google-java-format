@@ -45,9 +45,9 @@ final class CommandLineOptionsParser {
    * For simplicity, we do not handle escaped quotes.
    */
   private static final Pattern ARG_MATCHER = Pattern.compile(
-          "\"([^\"]*)\"" + // group 1: string in double quotes, with whitespace allowed
+          "\"([^\"]*)(?:\"|$)" + // group 1: string in double quotes (or until EOF), with whitespace allowed
           "|" + // OR
-          "'([^']*)'" + // group 2: string in single quotes, with whitespace allowed
+          "'([^']*)(?:'|$)" + // group 2: string in single quotes (or until EOF), with whitespace allowed
           "|" + // OR
           "([^\\s\"']+)"  // group 3: unquoted string, without whitespace and without any quotes
   );

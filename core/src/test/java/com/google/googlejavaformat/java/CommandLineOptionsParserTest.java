@@ -226,12 +226,12 @@ public class CommandLineOptionsParserTest {
 
     String[] args = {"--dry-run", "@" + exit, "L +w", "@" + outer, "Q +w"};
 
-    Files.write(exit, "--set-exit-if-changed".getBytes(UTF_8));
+    Files.write(exit, "--set-exit-if-changed 'K +w".getBytes(UTF_8));
     Files.write(outer, ("\"'M' +w\"\n\"@" + nested.toAbsolutePath() + "\"\n'\"P\" +w'").getBytes(UTF_8));
-    Files.write(nested, "\"ℕ +w\"\n\n   \n\"@@O +w\"\n".getBytes(UTF_8));
+    Files.write(nested, "\"ℕ +w\"\n\n   \n\"@@O +w".getBytes(UTF_8));
 
     CommandLineOptions options = CommandLineOptionsParser.parse(Arrays.asList(args));
-    assertThat(options.files()).containsExactly("L +w", "'M' +w", "ℕ +w", "@O +w", "\"P\" +w", "Q +w");
+    assertThat(options.files()).containsExactly("K +w", "L +w", "'M' +w", "ℕ +w", "@O +w", "\"P\" +w", "Q +w");
   }
 
   @Test
