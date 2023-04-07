@@ -17,6 +17,7 @@ package com.google.googlejavaformat.java;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
@@ -25,7 +26,9 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 
@@ -41,7 +44,7 @@ final class CommandLineOptionsParser {
   static CommandLineOptions parse(Iterable<String> options) {
     CommandLineOptions.Builder optionsBuilder = CommandLineOptions.builder();
     List<String> expandedOptions = new ArrayList<>();
-    expandParamsFiles(options, expandedOptions);
+    expandParamsFiles(options, expandedOptions, new ArrayDeque<>());
     Iterator<String> it = expandedOptions.iterator();
     while (it.hasNext()) {
       String option = it.next();
@@ -186,7 +189,7 @@ final class CommandLineOptionsParser {
    * Pre-processes an argument list, expanding arguments of the form {@code @filename} by reading
    * the content of the file and appending whitespace-delimited options to {@code arguments}.
    */
-  private static void expandParamsFiles(Iterable<String> args, List<String> expanded) {
+  private static void expandParamsFiles(Iterable<String> args, List<String> expanded, Deque<String> paramFilesStack) {
     for (String arg : args) {
       if (arg.isEmpty()) {
         continue;
@@ -196,13 +199,20 @@ final class CommandLineOptionsParser {
       } else if (arg.startsWith("@@")) {
         expanded.add(arg.substring(1));
       } else {
-        Path path = Paths.get(arg.substring(1));
+        String filename = arg.substring(1);
+        if (paramFilesStack.contains(filename)) {
+          throw new IllegalArgumentException("parameter file was included recursively: " + filename);
+        }
+        paramFilesStack.push(filename);
+        Path path = Paths.get(filename);
         try {
           String sequence = new String(Files.readAllBytes(path), UTF_8);
-          expandParamsFiles(ARG_SPLITTER.split(sequence), expanded);
+          expandParamsFiles(ARG_SPLITTER.split(sequence), expanded, paramFilesStack);
         } catch (IOException e) {
           throw new UncheckedIOException(path + ": could not read file: " + e.getMessage(), e);
         }
+        String finishedFilename = paramFilesStack.pop();
+        Preconditions.checkState(filename.equals(finishedFilename));
       }
     }
   }

@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
@@ -177,6 +178,44 @@ public class CommandLineOptionsParserTest {
 
     CommandLineOptions options = CommandLineOptionsParser.parse(Arrays.asList(args));
     assertThat(options.files()).containsExactly("L", "M", "ℕ", "@O", "P", "Q");
+  }
+
+  @Test
+  public void paramsFileWithNesting() throws IOException {
+    Path outer = testFolder.newFile("outer").toPath();
+    Path exit = testFolder.newFile("exit").toPath();
+    Path nested1 = testFolder.newFile("nested1").toPath();
+    Path nested2 = testFolder.newFile("nested2").toPath();
+    Path nested3 = testFolder.newFile("nested3").toPath();
+
+    String[] args = {"--dry-run", "@" + exit, "L", "@" + outer, "U"};
+
+    Files.write(exit, "--set-exit-if-changed".getBytes(UTF_8));
+    Files.write(outer, ("M\n@" + nested1.toAbsolutePath() + "\nT").getBytes(UTF_8));
+    Files.write(nested1, ("ℕ\n@" + nested2.toAbsolutePath() + "\nS").getBytes(UTF_8));
+    Files.write(nested2, ("O\n@" + nested3.toAbsolutePath() + "\nR").getBytes(UTF_8));
+    Files.write(nested3, "P\n\n   \n@@Q\n".getBytes(UTF_8));
+
+    CommandLineOptions options = CommandLineOptionsParser.parse(Arrays.asList(args));
+    assertThat(options.files()).containsExactly("L", "M", "ℕ", "O", "P", "@Q", "R", "S", "T", "U");
+  }
+
+  @Test
+  public void paramsFileWithRecursion() throws IOException {
+    Path outer = testFolder.newFile("outer").toPath();
+    Path exit = testFolder.newFile("exit").toPath();
+    Path nested1 = testFolder.newFile("nested1").toPath();
+    Path nested2 = testFolder.newFile("nested2").toPath();
+
+    String[] args = {"--dry-run", "@" + exit, "L", "@" + outer, "U"};
+
+    Files.write(exit, "--set-exit-if-changed".getBytes(UTF_8));
+    Files.write(outer, ("M\n@" + nested1.toAbsolutePath() + "\nT").getBytes(UTF_8));
+    Files.write(nested1, ("ℕ\n@" + nested2.toAbsolutePath() + "\nS").getBytes(UTF_8));
+    Files.write(nested2, ("O\n@" + nested1.toAbsolutePath() + "\nR").getBytes(UTF_8));
+
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> CommandLineOptionsParser.parse(Arrays.asList(args)));
+    assertThat(exception.getMessage().startsWith("parameter file was included recursively: ")).isTrue();
   }
 
   @Test
