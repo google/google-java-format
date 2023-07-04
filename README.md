@@ -60,6 +60,7 @@ Options...` and paste in these lines:
 --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
 --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
 --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+
 ```
 
 Once you've done that, restart the IDE.
