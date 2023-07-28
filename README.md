@@ -93,6 +93,9 @@ Implementation`.
 *   [Github Actions](https://github.com/features/actions)
     *   [googlejavaformat-action](https://github.com/axel-op/googlejavaformat-action):
         Automatically format your Java files when you push on github
+*   [Trunk Check](https://trunk.io/products/check)
+    *   [google-java-format plugin](https://github.com/trunk-io/plugins/tree/main/linters/google-java-format)
+    *   Install with `trunk check enable google-java-format`
 
 ### as a library
 
