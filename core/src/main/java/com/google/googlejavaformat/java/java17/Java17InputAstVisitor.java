@@ -249,8 +249,9 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
         builder.space();
         token("-");
         token(">");
-        builder.space();
         if (node.getBody().getKind() == Tree.Kind.BLOCK) {
+          builder.open(ZERO);
+          builder.space();
           // Explicit call with {@link CollapseEmptyOrNot.YES} to handle empty case blocks.
           visitBlock(
               (BlockTree) node.getBody(),
@@ -258,8 +259,11 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
               AllowLeadingBlankLine.NO,
               AllowTrailingBlankLine.NO);
         } else {
+          builder.open(plusTwo);
+          builder.breakOp(" ");
           scan(node.getBody(), null);
         }
+        builder.close();
         builder.guessToken(";");
         break;
       default:
