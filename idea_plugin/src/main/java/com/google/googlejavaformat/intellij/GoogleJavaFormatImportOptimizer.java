@@ -55,16 +55,24 @@ public class GoogleJavaFormatImportOptimizer implements ImportOptimizer {
 
     JavaFormatterOptions.Style style = GoogleJavaFormatSettings.getInstance(project).getStyle();
 
+    final String origText = document.getText();
     String text;
     try {
-      text =
-          ImportOrderer.reorderImports(
-              RemoveUnusedImports.removeUnusedImports(document.getText()), style);
+      text = ImportOrderer.reorderImports(RemoveUnusedImports.removeUnusedImports(origText), style);
     } catch (FormatterException e) {
       Notifications.displayParsingErrorNotification(project, file.getName());
       return Runnables.doNothing();
     }
 
-    return () -> document.setText(text);
+    return () -> {
+      if (documentManager.isDocumentBlockedByPsi(document)) {
+        documentManager.doPostponedOperationsAndUnblockDocument(document);
+        String newText = document.getText();
+        if (!newText.equals(origText)) {
+          return;
+        }
+      }
+      document.setText(text);
+    };
   }
 }
