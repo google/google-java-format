@@ -64,14 +64,26 @@ public class GoogleJavaFormatImportOptimizer implements ImportOptimizer {
       return Runnables.doNothing();
     }
 
+    /* pointless to change document text if it hasn't changed, plus this can interfere with
+    e.g. GoogleJavaFormattingService's output, i.e. it can overwrite the results from the main
+    formatter. */
+    if (text.equals(origText)) {
+      return Runnables.doNothing();
+    }
+
     return () -> {
       if (documentManager.isDocumentBlockedByPsi(document)) {
         documentManager.doPostponedOperationsAndUnblockDocument(document);
-        String newText = document.getText();
-        if (!newText.equals(origText)) {
-          return;
-        }
       }
+
+      /* similarly to above, don't overwrite new document text if it has changed - we use
+      getCharsSequence() as we should have `writeAction()` (which I think means effectively a
+      write-lock) and it saves calling getText(), which apparently is expensive. */
+      CharSequence newText = document.getCharsSequence();
+      if (CharSequence.compare(origText, newText) != 0) {
+        return;
+      }
+
       document.setText(text);
     };
   }
