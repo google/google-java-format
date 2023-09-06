@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-plugins { id("org.jetbrains.intellij") version "1.13.3" }
+plugins { id("org.jetbrains.intellij") version "1.15.0" }
 
 apply(plugin = "org.jetbrains.intellij")
 
@@ -22,7 +22,7 @@ apply(plugin = "java")
 
 repositories { mavenCentral() }
 
-val googleJavaFormatVersion = "1.16.0"
+val googleJavaFormatVersion = "1.17.0"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_11
@@ -37,7 +37,7 @@ intellij {
 
 tasks {
   patchPluginXml {
-    version.set("${googleJavaFormatVersion}.2")
+    version.set("${googleJavaFormatVersion}.0")
     sinceBuild.set("213")
     untilBuild.set("")
   }
@@ -49,12 +49,12 @@ tasks {
 
   withType<Test>().configureEach {
     jvmArgs(
-      "--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-      "--add-exports jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-      "--add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-      "--add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
-      "--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-      "--add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+      "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+      "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+      "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+      "--add-exports", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+      "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+      "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
     )
   }
 }
