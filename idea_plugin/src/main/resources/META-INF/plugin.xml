@@ -35,6 +35,9 @@
   ]]></description>
   <change-notes><![CDATA[
     <dl>
+      <dt>1.17.0.0</dt>
+      <dd>Updated to use google-java-format 1.17.0.</dd>
+      <dd>Fixed "Document is locked" errors (Thanks, <code>@facboy</code>!)</dd>
       <dt>1.16.0.2</dt>
       <dd>Disable AD_HOC_FORMATTING, which should stop the formatter from running so often when it wasn't specifically requested.
       <dt>1.16.0.1</dt>
