@@ -111,7 +111,7 @@ public final class JavaOutput extends Output {
        * there's a blank line here and it's a comment.
        */
       BlankLineWanted wanted = blankLines.getOrDefault(lastK, BlankLineWanted.NO);
-      if ((sawNewlines && isComment(text)) || wanted.wanted().orElse(sawNewlines)) {
+      if (isComment(text) ? sawNewlines : wanted.wanted().orElse(sawNewlines)) {
         ++newlinesPending;
       }
     }

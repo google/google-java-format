@@ -6,7 +6,6 @@ enum TrailingComment {
 
   /** a */
   Object a;
-
   /** b */
   Object b;
 }
