@@ -31,6 +31,7 @@ jobs:
       - name: Bump Version Number
         run: |
           mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.event.inputs.version }}"
+          mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.event.inputs.version }}" -pl eclipse_plugin
           mvn tycho-versions:update-eclipse-metadata -pl eclipse_plugin
           git ls-files | grep -E '(pom.xml|MANIFEST.MF)$' | xargs git add
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
