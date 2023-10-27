@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.collect.Iterables.getLast;
+import static java.lang.Math.min;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 
@@ -120,6 +121,10 @@ public final class StringWrapper {
       @Override
       public Void visitLiteral(LiteralTree literalTree, Void aVoid) {
         if (literalTree.getKind() != Kind.STRING_LITERAL) {
+          return null;
+        }
+        int pos = getStartPosition(literalTree);
+        if (input.substring(pos, min(input.length(), pos + 3)).equals("\"\"\"")) {
           return null;
         }
         Tree parent = getCurrentPath().getParentPath().getLeaf();
