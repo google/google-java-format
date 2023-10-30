@@ -930,7 +930,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   @Override
   public Void visitMemberReference(MemberReferenceTree node, Void unused) {
-    sync(node);
     builder.open(plusFour);
     scan(node.getQualifierExpression(), null);
     builder.breakOp();
