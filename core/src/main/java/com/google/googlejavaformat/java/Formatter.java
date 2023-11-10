@@ -151,7 +151,17 @@ public final class Formatter {
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
     JavaInputAstVisitor visitor;
-    if (Runtime.version().feature() >= 17) {
+    if (Runtime.version().feature() >= 21) {
+      try {
+        visitor =
+            Class.forName("com.google.googlejavaformat.java.java21.Java21InputAstVisitor")
+                .asSubclass(JavaInputAstVisitor.class)
+                .getConstructor(OpsBuilder.class, int.class)
+                .newInstance(builder, options.indentationMultiplier());
+      } catch (ReflectiveOperationException e) {
+        throw new LinkageError(e.getMessage(), e);
+      }
+    } else if (Runtime.version().feature() >= 17) {
       try {
         visitor =
             Class.forName("com.google.googlejavaformat.java.java17.Java17InputAstVisitor")
