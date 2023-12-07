@@ -151,16 +151,14 @@ public final class Formatter {
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
     JavaInputAstVisitor visitor;
-    if (Runtime.version().feature() >= 17) {
-      try {
-        visitor =
-            Class.forName("com.google.googlejavaformat.java.java17.Java17InputAstVisitor")
-                .asSubclass(JavaInputAstVisitor.class)
-                .getConstructor(OpsBuilder.class, int.class)
-                .newInstance(builder, options.indentationMultiplier());
-      } catch (ReflectiveOperationException e) {
-        throw new LinkageError(e.getMessage(), e);
-      }
+    if (Runtime.version().feature() >= 21) {
+      visitor =
+          createVisitor(
+              "com.google.googlejavaformat.java.java21.Java21InputAstVisitor", builder, options);
+    } else if (Runtime.version().feature() >= 17) {
+      visitor =
+          createVisitor(
+              "com.google.googlejavaformat.java.java17.Java17InputAstVisitor", builder, options);
     } else {
       visitor = new JavaInputAstVisitor(builder, options.indentationMultiplier());
     }
@@ -171,6 +169,18 @@ public final class Formatter {
     doc.computeBreaks(javaOutput.getCommentsHelper(), MAX_LINE_LENGTH, new Doc.State(+0, 0));
     doc.write(javaOutput);
     javaOutput.flush();
+  }
+
+  private static JavaInputAstVisitor createVisitor(
+      final String className, final OpsBuilder builder, final JavaFormatterOptions options) {
+    try {
+      return Class.forName(className)
+          .asSubclass(JavaInputAstVisitor.class)
+          .getConstructor(OpsBuilder.class, int.class)
+          .newInstance(builder, options.indentationMultiplier());
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
   }
 
   static boolean errorDiagnostic(Diagnostic<?> input) {

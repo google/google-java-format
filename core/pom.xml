@@ -226,7 +226,7 @@
     <profile>
       <id>jdk11</id>
       <activation>
-        <jdk>(,17)</jdk>
+        <jdk>[11,17)</jdk>
       </activation>
       <build>
         <plugins>
@@ -236,6 +236,7 @@
             <configuration>
               <excludes>
                 <exclude>**/Java17InputAstVisitor.java</exclude>
+                <exclude>**/Java21InputAstVisitor.java</exclude>
               </excludes>
             </configuration>
           </plugin>
@@ -243,6 +244,32 @@
             <artifactId>maven-javadoc-plugin</artifactId>
             <configuration>
               <excludePackageNames>com.google.googlejavaformat.java.java17</excludePackageNames>
+              <excludePackageNames>com.google.googlejavaformat.java.java21</excludePackageNames>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>jdk17</id>
+      <activation>
+        <jdk>[17,21)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <exclude>**/Java21InputAstVisitor.java</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <excludePackageNames>com.google.googlejavaformat.java.java21</excludePackageNames>
             </configuration>
           </plugin>
         </plugins>

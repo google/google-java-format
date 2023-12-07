@@ -1,0 +1,9 @@
+class SwitchGuardClause {
+  boolean test(Object x) {
+    return switch (x) {
+      case String s when s.length() < 5 -> true;
+      case Integer i -> false;
+      default -> true;
+    };
+  }
+}
