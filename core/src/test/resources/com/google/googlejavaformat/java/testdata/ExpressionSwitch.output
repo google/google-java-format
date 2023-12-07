@@ -50,4 +50,15 @@ class ExpressionSwitch {
       case CASE_A, CASE_B -> {}
     };
   }
+
+  String breakAfterArrows(int i) {
+    return switch (i) {
+      case CASE_A -> shortMethod("shortExpression");
+      case CASE_B ->
+        meeeeeeeeeeeeeeeeeeeeeeeeeeeeediumMethod("meeeeeeeeeeeeeeeeeeeeeeeeeeeeediumMethod");
+      case CASE_C ->
+        loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooMethod(
+            "looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongExpression");
+    };
+  }
 }
