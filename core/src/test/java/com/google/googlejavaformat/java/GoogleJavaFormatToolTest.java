@@ -16,39 +16,47 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ServiceLoader;
-import java.util.spi.ToolProvider;
+import javax.tools.Tool;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 /** Tests for {@link GoogleJavaFormatToolProvider}. */
 @RunWith(JUnit4.class)
-public class GoogleJavaFormatToolProviderTest {
+public class GoogleJavaFormatToolTest {
 
   @Test
   public void testUsageOutputAfterLoadingViaToolName() {
     String name = "google-java-format";
 
     assertThat(
-            ServiceLoader.load(ToolProvider.class).stream()
+            ServiceLoader.load(Tool.class).stream()
                 .map(ServiceLoader.Provider::get)
-                .map(ToolProvider::name))
+                .map(Tool::name))
         .contains(name);
 
-    ToolProvider format = ToolProvider.findFirst(name).get();
+    Tool format =
+        ServiceLoader.load(Tool.class).stream()
+            .filter(provider -> name.equals(provider.get().name()))
+            .findFirst()
+            .get()
+            .get();
 
-    StringWriter out = new StringWriter();
-    StringWriter err = new StringWriter();
+    InputStream in = new ByteArrayInputStream(new byte[0]);
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
 
-    int result = format.run(new PrintWriter(out, true), new PrintWriter(err, true), "--help");
+    int result = format.run(in, out, err, "--help");
 
     assertThat(result).isNotEqualTo(0);
 
-    String usage = err.toString();
+    String usage = new String(err.toByteArray(), UTF_8);
 
     // Check that doc links are included.
     assertThat(usage).containsMatch("http.*/google-java-format");

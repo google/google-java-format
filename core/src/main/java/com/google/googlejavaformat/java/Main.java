@@ -26,6 +26,7 @@ import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,20 +67,28 @@ public final class Main {
    *
    * @param args the command-line arguments
    */
-  public static void main(String[] args) {
-    PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out, UTF_8));
-    PrintWriter err = new PrintWriter(new OutputStreamWriter(System.err, UTF_8));
-    int result = main(out, err, args);
+  public static void main(String... args) {
+    int result = main(System.in, System.out, System.err, args);
     System.exit(result);
   }
 
   /**
-   * Package-private main entry point used this CLI program and the java.util.spi.ToolProvider
+   * Package-private main entry point used by the {@link javax.tools.Tool Tool} implementation in
+   * the same package as this Main class.
+   */
+  static int main(InputStream in, PrintStream out, PrintStream err, String... args) {
+    PrintWriter outWriter = new PrintWriter(new OutputStreamWriter(out, UTF_8));
+    PrintWriter errWriter = new PrintWriter(new OutputStreamWriter(err, UTF_8));
+    return main(in, outWriter, errWriter, args);
+  }
+
+  /**
+   * Package-private main entry point used by the {@link java.util.spi.ToolProvider ToolProvider}
    * implementation in the same package as this Main class.
    */
-  static int main(PrintWriter out, PrintWriter err, String... args) {
+  static int main(InputStream in, PrintWriter out, PrintWriter err, String... args) {
     try {
-      Main formatter = new Main(out, err, System.in);
+      Main formatter = new Main(out, err, in);
       return formatter.format(args);
     } catch (UsageException e) {
       err.print(e.getMessage());
