@@ -22,20 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.OpsBuilder;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.java.JavaInputAstVisitor;
-import com.sun.source.tree.AnnotationTree;
-import com.sun.source.tree.BindingPatternTree;
-import com.sun.source.tree.BlockTree;
-import com.sun.source.tree.CaseLabelTree;
-import com.sun.source.tree.CaseTree;
-import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.InstanceOfTree;
-import com.sun.source.tree.ModifiersTree;
-import com.sun.source.tree.ModuleTree;
-import com.sun.source.tree.SwitchExpressionTree;
-import com.sun.source.tree.Tree;
-import com.sun.source.tree.VariableTree;
-import com.sun.source.tree.YieldTree;
+import com.sun.source.tree.*;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
@@ -238,6 +225,15 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
       }
       builder.close();
     }
+
+    final ExpressionTree guard = getGuard(node);
+    if (guard != null) {
+      builder.space();
+      token("when");
+      builder.space();
+      scan(guard, null);
+    }
+
     switch (node.getCaseKind()) {
       case STATEMENT:
         token(":");
@@ -265,6 +261,10 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
       default:
         throw new AssertionError(node.getCaseKind());
     }
+    return null;
+  }
+
+  protected ExpressionTree getGuard(final CaseTree node) {
     return null;
   }
 }
