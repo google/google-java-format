@@ -83,6 +83,7 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
   }
 
   private void visitBindingPattern(ModifiersTree modifiers, Tree type, Name name) {
+    builder.open(plusFour);
     if (modifiers != null) {
       List<AnnotationTree> annotations =
           visitModifiers(modifiers, Direction.HORIZONTAL, Optional.empty());
@@ -90,7 +91,12 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
     }
     scan(type, null);
     builder.breakOp(" ");
-    visit(name);
+    if (name.isEmpty()) {
+      token("_");
+    } else {
+      visit(name);
+    }
+    builder.close();
   }
 
   @Override
@@ -222,6 +228,11 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
     List<? extends CaseLabelTree> labels = node.getLabels();
     boolean isDefault =
         labels.size() == 1 && getOnlyElement(labels).getKind().name().equals("DEFAULT_CASE_LABEL");
+    builder.open(
+        node.getCaseKind().equals(CaseTree.CaseKind.RULE)
+                && !node.getBody().getKind().equals(Tree.Kind.BLOCK)
+            ? plusFour
+            : ZERO);
     if (isDefault) {
       token("default", plusTwo);
     } else {
@@ -259,8 +270,8 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
         builder.space();
         token("-");
         token(">");
-        builder.space();
         if (node.getBody().getKind() == Tree.Kind.BLOCK) {
+          builder.space();
           // Explicit call with {@link CollapseEmptyOrNot.YES} to handle empty case blocks.
           visitBlock(
               (BlockTree) node.getBody(),
@@ -268,6 +279,7 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
               AllowLeadingBlankLine.NO,
               AllowTrailingBlankLine.NO);
         } else {
+          builder.breakOp(" ");
           scan(node.getBody(), null);
         }
         builder.guessToken(";");
@@ -275,6 +287,7 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
       default:
         throw new AssertionError(node.getCaseKind());
     }
+    builder.close();
     return null;
   }
 

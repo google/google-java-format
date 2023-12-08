@@ -52,7 +52,8 @@ public class FormatterIntegrationTest {
           .putAll(15, "I603")
           .putAll(16, "I588")
           .putAll(17, "I683", "I684", "I696")
-          .putAll(21, "SwitchGuardClause")
+          .putAll(
+              21, "SwitchGuardClause", "SwitchRecord", "SwitchDouble", "SwitchUnderscore", "I880")
           .build();
 
   @Parameters(name = "{index}: {0}")
@@ -94,7 +95,7 @@ public class FormatterIntegrationTest {
       String expectedOutput = outputs.get(fileName);
       Optional<Integer> version =
           VERSIONED_TESTS.inverse().get(fileName).stream().collect(toOptional());
-      if (version.isPresent() && Runtime.version().feature() < version.get()) {
+      if (Runtime.version().feature() < version.orElse(Integer.MAX_VALUE)) {
         continue;
       }
       testInputs.add(new Object[] {fileName, input, expectedOutput});
