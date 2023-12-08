@@ -23,6 +23,7 @@ import com.sun.source.tree.DefaultCaseLabelTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.PatternCaseLabelTree;
 import com.sun.source.tree.PatternTree;
+import javax.lang.model.element.Name;
 
 /**
  * Extends {@link Java17InputAstVisitor} with support for AST nodes that were added or modified in
@@ -75,5 +76,14 @@ public class Java21InputAstVisitor extends Java17InputAstVisitor {
     builder.close();
     token(")");
     return null;
+  }
+
+  @Override
+  protected void variableName(Name name) {
+    if (name.isEmpty()) {
+      token("_");
+    } else {
+      visit(name);
+    }
   }
 }

@@ -53,7 +53,13 @@ public class FormatterIntegrationTest {
           .putAll(16, "I588")
           .putAll(17, "I683", "I684", "I696")
           .putAll(
-              21, "SwitchGuardClause", "SwitchRecord", "SwitchDouble", "SwitchUnderscore", "I880")
+              21,
+              "SwitchGuardClause",
+              "SwitchRecord",
+              "SwitchDouble",
+              "SwitchUnderscore",
+              "I880",
+              "Unnamed")
           .build();
 
   @Parameters(name = "{index}: {0}")
