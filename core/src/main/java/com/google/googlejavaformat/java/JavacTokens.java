@@ -27,6 +27,7 @@ import com.sun.tools.javac.parser.Tokens.Token;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.parser.UnicodeReader;
 import com.sun.tools.javac.util.Context;
+import java.util.Comparator;
 import java.util.Set;
 
 /** A wrapper around javac's lexer. */
@@ -71,9 +72,7 @@ class JavacTokens {
     }
   }
 
-  /** Lex the input and return a list of {@link RawTok}s. */
-  public static ImmutableList<RawTok> getTokens(
-      String source, Context context, Set<TokenKind> stopTokens) {
+  private static ImmutableList<Token> readAllToken(String source, Context context) {
     if (source == null) {
       return ImmutableList.of();
     }
@@ -81,12 +80,32 @@ class JavacTokens {
     char[] buffer = (source + EOF_COMMENT).toCharArray();
     Scanner scanner =
         new AccessibleScanner(fac, new CommentSavingTokenizer(fac, buffer, buffer.length));
+    ImmutableList.Builder<Token> tokens = ImmutableList.builder();
+    do {
+      scanner.nextToken();
+      tokens.add(scanner.token());
+    } while (scanner.token().kind != TokenKind.EOF);
+    if (Runtime.version().feature() < 21) {
+      return tokens.build();
+    } else {
+      return ImmutableList.sortedCopyOf(Comparator.comparingInt(t -> t.pos), tokens.build());
+    }
+  }
+
+  /** Lex the input and return a list of {@link RawTok}s. */
+  public static ImmutableList<RawTok> getTokens(
+      String source, Context context, Set<TokenKind> stopTokens) {
+    if (source == null) {
+      return ImmutableList.of();
+    }
+    ImmutableList<Token> javacTokens = readAllToken(source, context);
+
+    var javacTokenIt = javacTokens.iterator();
     ImmutableList.Builder<RawTok> tokens = ImmutableList.builder();
     int end = source.length();
     int last = 0;
     do {
-      scanner.nextToken();
-      Token t = scanner.token();
+      Token t = javacTokenIt.next();
       if (t.comments != null) {
         for (Comment c : Lists.reverse(t.comments)) {
           if (last < c.getSourcePos(0)) {
@@ -104,6 +123,8 @@ class JavacTokens {
         break;
       }
       if (last < t.pos) {
+        /* If the current token is not immediately following the previous one,
+        treat the gap as a token */
         tokens.add(new RawTok(null, null, last, t.pos));
       }
       tokens.add(
@@ -113,7 +134,7 @@ class JavacTokens {
               t.pos,
               t.endPos));
       last = t.endPos;
-    } while (scanner.token().kind != TokenKind.EOF);
+    } while (javacTokenIt.hasNext());
     if (last < end) {
       tokens.add(new RawTok(null, null, last, end));
     }
