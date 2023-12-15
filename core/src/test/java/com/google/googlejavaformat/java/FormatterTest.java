@@ -492,4 +492,24 @@ public final class FormatterTest {
                 + "  }\n"
                 + "}\n");
   }
+
+  @Test
+  public void stringTemplateTests() throws Exception {
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    "public class Foo {\n"
+                        + "    String test(){\n"
+                        + "        var simple = STR.\"mytemplate1XXXX \\{exampleXXXX.foo()}yyy\";\n"
+                        + "        var nested = STR.\"template \\{example.  foo()+ STR.\"templateInner\\{  example}\"}xxx }\";\n"
+                        + "    }\n"
+                        + "}\n"))
+        .isEqualTo(
+            "public class Foo {\n"
+                + "  String test() {\n"
+                + "    var simple = STR.\"mytemplate1XXXX \\{exampleXXXX.foo()}yyy\";\n"
+                + "    var nested = STR.\"template \\{example.foo() + STR.\"templateInner\\{example}\"}xxx }\";\n"
+                + "  }\n"
+                + "}\n");
+  }
 }

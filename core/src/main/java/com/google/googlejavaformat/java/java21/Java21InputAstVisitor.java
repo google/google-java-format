@@ -23,6 +23,8 @@ import com.sun.source.tree.DefaultCaseLabelTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.PatternCaseLabelTree;
 import com.sun.source.tree.PatternTree;
+import com.sun.source.tree.StringTemplateTree;
+import java.util.Iterator;
 import javax.lang.model.element.Name;
 
 /**
@@ -85,5 +87,39 @@ public class Java21InputAstVisitor extends Java17InputAstVisitor {
     } else {
       visit(name);
     }
+  }
+
+  @Override
+  public Void visitStringTemplate(StringTemplateTree node, Void unused) {
+
+    scan(node.getProcessor(), null);
+
+    token(".");
+
+    Iterator<? extends ExpressionTree> exprIt = node.getExpressions().iterator();
+
+    Iterator<String> fragIt = node.getFragments().iterator();
+
+    var firstFrag = fragIt.next();
+
+    token("\"" + firstFrag);
+    while (fragIt.hasNext()) {
+      if (exprIt.hasNext()) {
+        ExpressionTree expr = exprIt.next();
+        token("\\");
+        token("{");
+        scan(expr, null);
+        token("}");
+      }
+
+      String frag = fragIt.next();
+      if (!fragIt.hasNext()) {
+        token(frag + "\"");
+      } else {
+        token(frag);
+      }
+    }
+
+    return null;
   }
 }

@@ -59,7 +59,8 @@ public class FormatterIntegrationTest {
               "SwitchDouble",
               "SwitchUnderscore",
               "I880",
-              "Unnamed")
+              "Unnamed",
+              "StringTemplate")
           .build();
 
   @Parameters(name = "{index}: {0}")
