@@ -23,6 +23,7 @@ import com.sun.source.tree.DefaultCaseLabelTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.PatternCaseLabelTree;
 import com.sun.source.tree.PatternTree;
+import com.sun.source.tree.StringTemplateTree;
 import javax.lang.model.element.Name;
 
 /**
@@ -60,6 +61,7 @@ public class Java21InputAstVisitor extends Java17InputAstVisitor {
 
   @Override
   public Void visitDeconstructionPattern(DeconstructionPatternTree node, Void unused) {
+    sync(node);
     scan(node.getDeconstructor(), null);
     builder.open(plusFour);
     token("(");
@@ -75,6 +77,16 @@ public class Java21InputAstVisitor extends Java17InputAstVisitor {
     }
     builder.close();
     token(")");
+    return null;
+  }
+
+  @SuppressWarnings("preview")
+  @Override
+  public Void visitStringTemplate(StringTemplateTree node, Void aVoid) {
+    sync(node);
+    scan(node.getProcessor(), null);
+    token(".");
+    token(builder.peekToken().get());
     return null;
   }
 

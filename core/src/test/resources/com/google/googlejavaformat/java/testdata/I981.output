@@ -1,0 +1,14 @@
+class Foo {
+  private static final int X = 42;
+  private static final String A = STR."\{X} = \{X}";
+  private static final String B = STR."";
+  private static final String C = STR."\{X}";
+  private static final String D = STR."\{X}\{X}";
+  private static final String E = STR."\{X}\{X}\{X}";
+  private static final String F = STR."     \{X}";
+  private static final String G = STR."\{X}    ";
+  private static final String H =
+      STR."\{X} one long incredibly unbroken sentence moving from "
+          + "topic to topic so that no-one had a chance to interrupt";
+  private static final String I = STR."\{X}  \uD83D\uDCA9  ";
+}

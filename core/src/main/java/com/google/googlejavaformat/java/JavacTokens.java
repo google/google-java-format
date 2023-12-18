@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Arrays.stream;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -27,6 +28,7 @@ import com.sun.tools.javac.parser.Tokens.Token;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.parser.UnicodeReader;
 import com.sun.tools.javac.util.Context;
+import java.util.Objects;
 import java.util.Set;
 
 /** A wrapper around javac's lexer. */
@@ -71,6 +73,16 @@ class JavacTokens {
     }
   }
 
+  private static final TokenKind STRINGFRAGMENT =
+      stream(TokenKind.values())
+          .filter(t -> t.name().contentEquals("STRINGFRAGMENT"))
+          .findFirst()
+          .orElse(null);
+
+  static boolean isStringFragment(TokenKind kind) {
+    return STRINGFRAGMENT != null && Objects.equals(kind, STRINGFRAGMENT);
+  }
+
   /** Lex the input and return a list of {@link RawTok}s. */
   public static ImmutableList<RawTok> getTokens(
       String source, Context context, Set<TokenKind> stopTokens) {
@@ -106,13 +118,39 @@ class JavacTokens {
       if (last < t.pos) {
         tokens.add(new RawTok(null, null, last, t.pos));
       }
-      tokens.add(
-          new RawTok(
-              t.kind == TokenKind.STRINGLITERAL ? "\"" + t.stringVal() + "\"" : null,
-              t.kind,
-              t.pos,
-              t.endPos));
-      last = t.endPos;
+      int pos = t.pos;
+      int endPos = t.endPos;
+      if (isStringFragment(t.kind)) {
+        // A string template is tokenized as a series of STRINGFRAGMENT tokens containing the string
+        // literal values, followed by the tokens for the template arguments. For the formatter, we
+        // want the stream of tokens to appear in order by their start position, and also to have
+        // all the content from the original source text (including leading and trailing ", and the
+        // \ escapes from template arguments). This logic processes the token stream from javac to
+        // meet those requirements.
+        while (isStringFragment(t.kind)) {
+          endPos = t.endPos;
+          scanner.nextToken();
+          t = scanner.token();
+        }
+        // Read tokens for the string template arguments, until we read the end of the string
+        // template. The last token in a string template is always a trailing string fragment. Use
+        // lookahead to defer reading the token after the template until the next iteration of the
+        // outer loop.
+        while (scanner.token(/* lookahead= */ 1).endPos < endPos) {
+          scanner.nextToken();
+          t = scanner.token();
+        }
+        tokens.add(new RawTok(source.substring(pos, endPos), t.kind, pos, endPos));
+        last = endPos;
+      } else {
+        tokens.add(
+            new RawTok(
+                t.kind == TokenKind.STRINGLITERAL ? "\"" + t.stringVal() + "\"" : null,
+                t.kind,
+                t.pos,
+                t.endPos));
+        last = t.endPos;
+      }
     } while (scanner.token().kind != TokenKind.EOF);
     if (last < end) {
       tokens.add(new RawTok(null, null, last, end));
