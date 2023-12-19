@@ -19,7 +19,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v2.5.0
         with:
-          java-version: 17
+          java-version: 21
           distribution: 'zulu'
           cache: 'maven'
           server-id: sonatype-nexus-staging
