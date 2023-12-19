@@ -51,7 +51,7 @@ jobs:
         with:
           access_token: ${{ github.token }}
       - name: 'Check out repository'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: 'Set up JDK ${{ matrix.java }} from jdk.java.net'
         if: ${{ matrix.java == 'EA' }}
         uses: oracle-actions/setup-java@v1
@@ -61,7 +61,7 @@ jobs:
           cache: 'maven'
       - name: 'Set up JDK ${{ matrix.java }}'
         if: ${{ matrix.java != 'EA' }}
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
@@ -80,9 +80,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'Check out repository'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: 'Set up JDK 17'
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           java-version: 17
           distribution: 'zulu'
