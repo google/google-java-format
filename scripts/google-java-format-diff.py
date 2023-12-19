@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 #
-#===- google-java-format-diff.py - google-java-format Diff Reformatter -----===#
+# ===- google-java-format-diff.py - google-java-format Diff Reformatter -----===#
 #
 #                     The LLVM Compiler Infrastructure
 #
 # This file is distributed under the University of Illinois Open Source
 # License. See LICENSE.TXT for details.
 #
-#===------------------------------------------------------------------------===#
+# ===------------------------------------------------------------------------===#
 
 """
 google-java-format Diff Reformatter
@@ -75,7 +75,7 @@ def main():
   lines_by_file = {}
 
   for line in sys.stdin:
-    match = re.search('^\+\+\+\ (.*?/){%s}(\S*)' % args.p, line)
+    match = re.search(r'^\+\+\+\ (.*?/){%s}(\S*)' % args.p, line)
     if match:
       filename = match.group(2)
     if filename == None:
@@ -88,7 +88,7 @@ def main():
       if not re.match('^%s$' % args.iregex, filename, re.IGNORECASE):
         continue
 
-    match = re.search('^@@.*\+(\d+)(,(\d+))?', line)
+    match = re.search(r'^@@.*\+(\d+)(,(\d+))?', line)
     if match:
       start_line = int(match.group(1))
       line_count = 1
