@@ -12,12 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    steps:         
+    steps:
       - name: Checkout
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v4
 
       - name: Set up JDK
-        uses: actions/setup-java@v2.5.0
+        uses: actions/setup-java@v4
         with:
           java-version: 21
           distribution: 'zulu'
@@ -27,7 +27,7 @@ jobs:
           server-password: CI_DEPLOY_PASSWORD
           gpg-private-key: ${{ secrets.GPG_SIGNING_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
-     
+
       - name: Bump Version Number
         run: |
           mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.event.inputs.version }}"
@@ -40,7 +40,7 @@ jobs:
           git tag "v${{ github.event.inputs.version }}"
           echo "TARGET_COMMITISH=$(git rev-parse HEAD)" >> $GITHUB_ENV
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/google/google-java-format.git
-          
+
       - name: Deploy to Sonatype staging
         env:
           CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
@@ -56,12 +56,12 @@ jobs:
       - name: Push tag
         run: |
           git push origin "v${{ github.event.inputs.version }}"
-          
+
       - name: Add Jars to Release Entry
         uses: softprops/action-gh-release@v0.1.14
         with:
           draft: true
-          name: ${{ github.event.input.version }} 
+          name: ${{ github.event.input.version }}
           tag_name: "v${{ github.event.inputs.version }}"
           target_commitish: ${{ env.TARGET_COMMITISH }}
           files: |
