@@ -82,11 +82,20 @@ public class Java21InputAstVisitor extends Java17InputAstVisitor {
 
   @SuppressWarnings("preview")
   @Override
-  public Void visitStringTemplate(StringTemplateTree node, Void aVoid) {
+  public Void visitStringTemplate(StringTemplateTree node, Void unused) {
     sync(node);
+    builder.open(plusFour);
     scan(node.getProcessor(), null);
     token(".");
     token(builder.peekToken().get());
+    for (int i = 0; i < node.getFragments().size() - 1; i++) {
+      token("{");
+      builder.breakOp();
+      scan(node.getExpressions().get(i), null);
+      token("}");
+      token(builder.peekToken().get());
+    }
+    builder.close();
     return null;
   }
 

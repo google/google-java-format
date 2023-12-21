@@ -28,6 +28,11 @@ import com.sun.tools.javac.parser.Tokens.Token;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.parser.UnicodeReader;
 import com.sun.tools.javac.util.Context;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -83,9 +88,8 @@ class JavacTokens {
     return STRINGFRAGMENT != null && Objects.equals(kind, STRINGFRAGMENT);
   }
 
-  /** Lex the input and return a list of {@link RawTok}s. */
-  public static ImmutableList<RawTok> getTokens(
-      String source, Context context, Set<TokenKind> stopTokens) {
+  private static ImmutableList<Token> readAllTokens(
+      String source, Context context, Set<Integer> nonTerminalStringFragments) {
     if (source == null) {
       return ImmutableList.of();
     }
@@ -93,12 +97,44 @@ class JavacTokens {
     char[] buffer = (source + EOF_COMMENT).toCharArray();
     Scanner scanner =
         new AccessibleScanner(fac, new CommentSavingTokenizer(fac, buffer, buffer.length));
+    List<Token> tokens = new ArrayList<>();
+    do {
+      scanner.nextToken();
+      tokens.add(scanner.token());
+    } while (scanner.token().kind != TokenKind.EOF);
+    for (int i = 0; i < tokens.size(); i++) {
+      if (isStringFragment(tokens.get(i).kind)) {
+        int start = i;
+        while (isStringFragment(tokens.get(i).kind)) {
+          i++;
+        }
+        for (int j = start; j < i - 1; j++) {
+          nonTerminalStringFragments.add(tokens.get(j).pos);
+        }
+      }
+    }
+    // A string template is tokenized as a series of STRINGFRAGMENT tokens containing the string
+    // literal values, followed by the tokens for the template arguments. For the formatter, we
+    // want the stream of tokens to appear in order by their start position.
+    if (Runtime.version().feature() >= 21) {
+      Collections.sort(tokens, Comparator.comparingInt(t -> t.pos));
+    }
+    return ImmutableList.copyOf(tokens);
+  }
+
+  /** Lex the input and return a list of {@link RawTok}s. */
+  public static ImmutableList<RawTok> getTokens(
+      String source, Context context, Set<TokenKind> stopTokens) {
+    if (source == null) {
+      return ImmutableList.of();
+    }
+    Set<Integer> nonTerminalStringFragments = new HashSet<>();
+    ImmutableList<Token> javacTokens = readAllTokens(source, context, nonTerminalStringFragments);
+
     ImmutableList.Builder<RawTok> tokens = ImmutableList.builder();
     int end = source.length();
     int last = 0;
-    do {
-      scanner.nextToken();
-      Token t = scanner.token();
+    for (Token t : javacTokens) {
       if (t.comments != null) {
         for (Comment c : Lists.reverse(t.comments)) {
           if (last < c.getSourcePos(0)) {
@@ -118,27 +154,12 @@ class JavacTokens {
       if (last < t.pos) {
         tokens.add(new RawTok(null, null, last, t.pos));
       }
-      int pos = t.pos;
-      int endPos = t.endPos;
       if (isStringFragment(t.kind)) {
-        // A string template is tokenized as a series of STRINGFRAGMENT tokens containing the string
-        // literal values, followed by the tokens for the template arguments. For the formatter, we
-        // want the stream of tokens to appear in order by their start position, and also to have
-        // all the content from the original source text (including leading and trailing ", and the
-        // \ escapes from template arguments). This logic processes the token stream from javac to
-        // meet those requirements.
-        while (isStringFragment(t.kind)) {
-          endPos = t.endPos;
-          scanner.nextToken();
-          t = scanner.token();
-        }
-        // Read tokens for the string template arguments, until we read the end of the string
-        // template. The last token in a string template is always a trailing string fragment. Use
-        // lookahead to defer reading the token after the template until the next iteration of the
-        // outer loop.
-        while (scanner.token(/* lookahead= */ 1).endPos < endPos) {
-          scanner.nextToken();
-          t = scanner.token();
+        int endPos = t.endPos;
+        int pos = t.pos;
+        if (nonTerminalStringFragments.contains(t.pos)) {
+          // Include the \ escape from \{...} in the preceding string fragment
+          endPos++;
         }
         tokens.add(new RawTok(source.substring(pos, endPos), t.kind, pos, endPos));
         last = endPos;
@@ -151,7 +172,7 @@ class JavacTokens {
                 t.endPos));
         last = t.endPos;
       }
-    } while (scanner.token().kind != TokenKind.EOF);
+    }
     if (last < end) {
       tokens.add(new RawTok(null, null, last, end));
     }

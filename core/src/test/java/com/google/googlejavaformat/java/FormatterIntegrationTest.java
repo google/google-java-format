@@ -60,7 +60,8 @@ public class FormatterIntegrationTest {
               "SwitchUnderscore",
               "I880",
               "Unnamed",
-              "I981")
+              "I981",
+              "StringTemplate")
           .build();
 
   @Parameters(name = "{index}: {0}")
