@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.OpsBuilder;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.java.JavaInputAstVisitor;
-import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.BindingPatternTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.CaseLabelTree;
@@ -84,18 +83,18 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
 
   private void visitBindingPattern(ModifiersTree modifiers, Tree type, Name name) {
     builder.open(plusFour);
-    if (modifiers != null) {
-      List<AnnotationTree> annotations =
-          visitModifiers(modifiers, Direction.HORIZONTAL, Optional.empty());
-      visitAnnotations(annotations, BreakOrNot.NO, BreakOrNot.YES);
-    }
-    scan(type, null);
-    builder.breakOp(" ");
-    if (name.isEmpty()) {
-      token("_");
-    } else {
-      visit(name);
-    }
+    declareOne(
+        DeclarationKind.PARAMETER,
+        Direction.HORIZONTAL,
+        Optional.of(modifiers),
+        type,
+        name,
+        /* op= */ "",
+        /* equals= */ "",
+        /* initializer= */ Optional.empty(),
+        /* trailing= */ Optional.empty(),
+        /* receiverExpression= */ Optional.empty(),
+        /* typeWithDims= */ Optional.empty());
     builder.close();
   }
 

@@ -1,0 +1,15 @@
+public sealed interface A {
+    record AA(Long a) implements A {}
+    record AAA(String b) implements A {}
+    static Long mySwitch(A a) {
+        switch (a) {
+            case AA(var aa) -> {
+                return aa;
+            }
+            case AAA(var b) -> {
+                return Long.parseLong(b);
+            }
+        }
+    }
+}
+

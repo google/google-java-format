@@ -3475,14 +3475,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   // General helper functions.
 
-  enum DeclarationKind {
+  /** Kind of declaration. */
+  protected enum DeclarationKind {
     NONE,
     FIELD,
     PARAMETER
   }
 
   /** Declare one variable or variable-like thing. */
-  int declareOne(
+  protected int declareOne(
       DeclarationKind kind,
       Direction annotationsDirection,
       Optional<ModifiersTree> modifiers,
