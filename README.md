@@ -78,6 +78,8 @@ Implementation`.
 
 ### Third-party integrations
 
+#### Build Tools
+
 *   Gradle plugins
     *   [spotless](https://github.com/diffplug/spotless/tree/main/plugin-gradle#google-java-format)
     *   [sherter/google-java-format-gradle-plugin](https://github.com/sherter/google-java-format-gradle-plugin)
@@ -93,6 +95,11 @@ Implementation`.
 *   [Github Actions](https://github.com/features/actions)
     *   [googlejavaformat-action](https://github.com/axel-op/googlejavaformat-action):
         Automatically format your Java files when you push on github
+
+#### IDEs
+
+*   Visual Studio Code
+    * [JoseVSeb/google-java-format-for-vs-code](https://github.com/JoseVSeb/google-java-format-for-vs-code)
 
 ### as a library
 
