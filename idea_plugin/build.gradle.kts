@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-plugins { id("org.jetbrains.intellij") version "1.15.0" }
+plugins { id("org.jetbrains.intellij") version "1.16.1" }
 
 apply(plugin = "org.jetbrains.intellij")
 
@@ -22,7 +22,7 @@ apply(plugin = "java")
 
 repositories { mavenCentral() }
 
-val googleJavaFormatVersion = "1.17.0"
+val googleJavaFormatVersion = "1.19.2"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_11
@@ -62,5 +62,5 @@ tasks {
 dependencies {
   implementation("com.google.googlejavaformat:google-java-format:${googleJavaFormatVersion}")
   testImplementation("junit:junit:4.13.2")
-  testImplementation("com.google.truth:truth:1.1.5")
+  testImplementation("com.google.truth:truth:1.2.0")
 }
