@@ -104,10 +104,9 @@ public class FormatterIntegrationTest {
       String expectedOutput = outputs.get(fileName);
       Optional<Integer> version =
           VERSIONED_TESTS.inverse().get(fileName).stream().collect(toOptional());
-      if (Runtime.version().feature() < version.orElse(Integer.MAX_VALUE)) {
-        continue;
+      if (Runtime.version().feature() >= version.orElse(Integer.MIN_VALUE)) {
+        testInputs.add(new Object[] {fileName, input, expectedOutput});
       }
-      testInputs.add(new Object[] {fileName, input, expectedOutput});
     }
     return testInputs;
   }
