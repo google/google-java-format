@@ -1407,6 +1407,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             annotations,
             Direction.VERTICAL,
             /* declarationAnnotationBreak= */ Optional.empty());
+    if (node.getTypeParameters().isEmpty() && node.getReturnType() != null) {
+      // If there are type parameters, we use a heuristic above to format annotations after the
+      // type parameter declarations as type-use annotations. If there are no type parameters,
+      // use the heuristics in visitModifiers for recognizing well known type-use annotations and
+      // formatting them as annotations on the return type.
+      returnTypeAnnotations = typeAnnotations;
+      typeAnnotations = ImmutableList.of();
+    }
 
     Tree baseReturnType = null;
     Deque<List<? extends AnnotationTree>> dims = null;
@@ -1436,10 +1444,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         }
         token("<");
         typeParametersRest(node.getTypeParameters(), plusFour);
-        if (!returnTypeAnnotations.isEmpty()) {
-          builder.breakToFill(" ");
-          visitAnnotations(returnTypeAnnotations, BreakOrNot.NO, BreakOrNot.NO);
-        }
         first = false;
       }
 
@@ -1456,8 +1460,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           builder.open(make(breakBeforeType, plusFour, ZERO));
           openedNameAndTypeScope = true;
         }
+        builder.open(ZERO);
+        if (!returnTypeAnnotations.isEmpty()) {
+          visitAnnotations(returnTypeAnnotations, BreakOrNot.NO, BreakOrNot.NO);
+          builder.breakOp(" ");
+        }
         scan(baseReturnType, null);
         maybeAddDims(dims);
+        builder.close();
       }
       if (!first) {
         builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO, Optional.of(breakBeforeName));
