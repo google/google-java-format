@@ -66,13 +66,13 @@ public class Java21InputAstVisitor extends Java17InputAstVisitor {
     builder.open(plusFour);
     token("(");
     builder.breakOp();
-    boolean first = true;
+    boolean afterFirstToken = false;
     for (PatternTree pattern : node.getNestedPatterns()) {
-      if (!first) {
+      if (afterFirstToken) {
         token(",");
         builder.breakOp(" ");
       }
-      first = false;
+      afterFirstToken = true;
       scan(pattern, null);
     }
     builder.close();

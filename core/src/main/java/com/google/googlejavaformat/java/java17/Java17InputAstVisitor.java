@@ -55,10 +55,10 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
   }
 
   @Override
-  protected void handleModule(boolean first, CompilationUnitTree node) {
+  protected void handleModule(boolean afterFirstToken, CompilationUnitTree node) {
     ModuleTree module = node.getModule();
     if (module != null) {
-      if (!first) {
+      if (afterFirstToken) {
         builder.blankLineWanted(BlankLineWanted.YES);
       }
       markForPartialFormat();
@@ -167,14 +167,14 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
         builder.open(node.getImplementsClause().size() > 1 ? plusFour : ZERO);
         token("implements");
         builder.space();
-        boolean first = true;
+        boolean afterFirstToken = false;
         for (Tree superInterfaceType : node.getImplementsClause()) {
-          if (!first) {
+          if (afterFirstToken) {
             token(",");
             builder.breakOp(" ");
           }
           scan(superInterfaceType, null);
-          first = false;
+          afterFirstToken = true;
         }
         builder.close();
       }
@@ -238,14 +238,14 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
       token("case", plusTwo);
       builder.open(labels.size() > 1 ? plusFour : ZERO);
       builder.space();
-      boolean first = true;
+      boolean afterFirstToken = false;
       for (Tree expression : labels) {
-        if (!first) {
+        if (afterFirstToken) {
           token(",");
           builder.breakOp(" ");
         }
         scan(expression, null);
-        first = false;
+        afterFirstToken = true;
       }
       builder.close();
     }
