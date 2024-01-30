@@ -15,9 +15,9 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.truth.Truth8;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -35,7 +35,7 @@ public class GoogleJavaFormatToolTest {
   public void testUsageOutputAfterLoadingViaToolName() {
     String name = "google-java-format";
 
-    assertThat(
+    Truth8.assertThat(
             ServiceLoader.load(Tool.class).stream()
                 .map(ServiceLoader.Provider::get)
                 .map(Tool::name))
