@@ -16,7 +16,6 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.common.truth.Truth8;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ServiceLoader;
@@ -33,7 +32,7 @@ public class GoogleJavaFormatToolProviderTest {
   public void testUsageOutputAfterLoadingViaToolName() {
     String name = "google-java-format";
 
-    Truth8.assertThat(
+    assertThat(
             ServiceLoader.load(ToolProvider.class).stream()
                 .map(ServiceLoader.Provider::get)
                 .map(ToolProvider::name))

@@ -17,7 +17,6 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Splitter;
-import com.google.common.truth.Truth8;
 import com.google.googlejavaformat.java.TypeNameClassifier.JavaCaseFormat;
 import java.util.Optional;
 import org.junit.Test;
@@ -52,26 +51,25 @@ public final class TypeNameClassifierTest {
 
   @Test
   public void typePrefixLength() {
-    Truth8.assertThat(getPrefix("fieldName")).isEmpty();
-    Truth8.assertThat(getPrefix("CONST")).isEmpty();
-    Truth8.assertThat(getPrefix("ClassName")).hasValue(0);
-    Truth8.assertThat(getPrefix("com.ClassName")).hasValue(1);
-    Truth8.assertThat(getPrefix("ClassName.foo")).hasValue(1);
-    Truth8.assertThat(getPrefix("com.ClassName.foo")).hasValue(2);
-    Truth8.assertThat(getPrefix("ClassName.foo.bar")).hasValue(1);
-    Truth8.assertThat(getPrefix("com.ClassName.foo.bar")).hasValue(2);
-    Truth8.assertThat(getPrefix("ClassName.CONST")).hasValue(1);
-    Truth8.assertThat(getPrefix("ClassName.varName")).hasValue(1);
-    Truth8.assertThat(getPrefix("ClassName.Inner.varName")).hasValue(2);
-    Truth8.assertThat(getPrefix("com.R.foo")).hasValue(2);
+    assertThat(getPrefix("fieldName")).isEmpty();
+    assertThat(getPrefix("CONST")).isEmpty();
+    assertThat(getPrefix("ClassName")).hasValue(0);
+    assertThat(getPrefix("com.ClassName")).hasValue(1);
+    assertThat(getPrefix("ClassName.foo")).hasValue(1);
+    assertThat(getPrefix("com.ClassName.foo")).hasValue(2);
+    assertThat(getPrefix("ClassName.foo.bar")).hasValue(1);
+    assertThat(getPrefix("com.ClassName.foo.bar")).hasValue(2);
+    assertThat(getPrefix("ClassName.CONST")).hasValue(1);
+    assertThat(getPrefix("ClassName.varName")).hasValue(1);
+    assertThat(getPrefix("ClassName.Inner.varName")).hasValue(2);
+    assertThat(getPrefix("com.R.foo")).hasValue(2);
   }
 
   @Test
   public void ambiguousClass() {
-    Truth8.assertThat(getPrefix("com.google.security.acl.proto2api.ACL.Entry.newBuilder"))
-        .hasValue(7);
+    assertThat(getPrefix("com.google.security.acl.proto2api.ACL.Entry.newBuilder")).hasValue(7);
     // A human would probably identify this as "class-shaped", but just looking
     // at the case we have to assume it could be something like `field1.field2.CONST`.
-    Truth8.assertThat(getPrefix("com.google.security.acl.proto2api.ACL.newBuilder")).isEmpty();
+    assertThat(getPrefix("com.google.security.acl.proto2api.ACL.newBuilder")).isEmpty();
   }
 }

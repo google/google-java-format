@@ -20,7 +20,6 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
-import com.google.common.truth.Truth8;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -181,11 +180,11 @@ public class CommandLineOptionsParserTest {
 
   @Test
   public void assumeFilename() {
-    Truth8.assertThat(
+    assertThat(
             CommandLineOptionsParser.parse(Arrays.asList("--assume-filename", "Foo.java"))
                 .assumeFilename())
         .hasValue("Foo.java");
-    Truth8.assertThat(CommandLineOptionsParser.parse(Arrays.asList("Foo.java")).assumeFilename())
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("Foo.java")).assumeFilename())
         .isEmpty();
   }
 
