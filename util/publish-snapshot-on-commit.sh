@@ -20,7 +20,7 @@ if [ "$TRAVIS_REPO_SLUG" == "google/google-java-format" ] && \
    [ "$TRAVIS_BRANCH" == "master" ]; then
   echo -e "Publishing maven snapshot...\n"
 
-  mvn clean source:jar deploy --settings="util/settings.xml" -DskipTests=true -Dinvoker.skip=true -Dmaven.javadoc.skip=true
+  ./mvnw clean source:jar deploy --settings="util/settings.xml" -DskipTests=true -Dinvoker.skip=true -Dmaven.javadoc.skip=true
 
-  echo -e "Published maven snapshot"
+  echo -e "Published Maven snapshot"
 fi

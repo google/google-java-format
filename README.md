@@ -151,7 +151,7 @@ Your starting point should be the instance methods of
 ## Building from source
 
 ```
-mvn install
+./mvnw install
 ```
 
 ## Contributing

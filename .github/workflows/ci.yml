@@ -68,10 +68,10 @@ jobs:
           cache: 'maven'
       - name: 'Install'
         shell: bash
-        run: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+        run: ./mvnw install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
       - name: 'Test'
         shell: bash
-        run: mvn test -B
+        run: ./mvnw test -B
 
   publish_snapshot:
     name: 'Publish snapshot'
@@ -94,4 +94,4 @@ jobs:
         env:
           CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
           CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
-        run: mvn -pl '!eclipse_plugin' source:jar deploy -B -DskipTests=true -Dinvoker.skip=true -Dmaven.javadoc.skip=true
+        run: ./mvn -pl '!eclipse_plugin' source:jar deploy -B -DskipTests=true -Dinvoker.skip=true -Dmaven.javadoc.skip=true
