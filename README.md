@@ -154,6 +154,9 @@ Your starting point should be the instance methods of
 ./mvnw install
 ```
 
+The _native_ binaries can be built with `./build-natives.sh` and will be
+available as `.cache/container-target/google-java-format` (requires Docker).
+
 ## Contributing
 
 Please see [the contributors guide](CONTRIBUTING.md) for details.
@@ -161,7 +164,7 @@ Please see [the contributors guide](CONTRIBUTING.md) for details.
 ## License
 
 ```text
-Copyright 2015 Google Inc.
+Copyright 2015-2024 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not
 use this file except in compliance with the License. You may obtain a copy of

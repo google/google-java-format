@@ -1,3 +1,17 @@
+# Copyright 2020-2024 The Google Java Format Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 name: Release google-java-format
 
 on:
@@ -53,11 +67,15 @@ jobs:
         run:
           ./mvnw --no-transfer-progress -pl 'eclipse_plugin' verify gpg:sign -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
 
+      - name: Build Native binaries with GraalVM in a Container
+        run:
+          ./build-natives.sh
+
       - name: Push tag
         run: |
           git push origin "v${{ github.event.inputs.version }}"
 
-      - name: Add Jars to Release Entry
+      - name: Add JARs to Release Entry
         uses: softprops/action-gh-release@v0.1.14
         with:
           draft: true
@@ -65,5 +83,5 @@ jobs:
           tag_name: "v${{ github.event.inputs.version }}"
           target_commitish: ${{ env.TARGET_COMMITISH }}
           files: |
-            core/target/google-java-format-*.jar
+            core/target/google-java-format*
             eclipse_plugin/target/google-java-format-eclipse-plugin-*.jar

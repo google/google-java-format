@@ -15,3 +15,4 @@ out/
 eclipse_plugin/lib/
 
 .mvn/wrapper/maven-wrapper.jar
+.cache

@@ -1,4 +1,4 @@
-# Copyright 2020 The Error Prone Authors.
+# Copyright 2020-2024 The Google Java Format Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -72,6 +72,11 @@ jobs:
       - name: 'Test'
         shell: bash
         run: ./mvnw test -B
+      - name: 'Native'
+        # MacOS Runners don't have Docker; see e.g.
+        # https://github.com/orgs/community/discussions/25777#discussioncomment-3249229
+        if: ${{ matrix.os != 'macos-latest' }}
+        run: ./build-natives.sh
 
   publish_snapshot:
     name: 'Publish snapshot'
