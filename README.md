@@ -7,7 +7,7 @@
 
 ## Using the formatter
 
-### from the command-line
+### From the command-line
 
 [Download the formatter](https://github.com/google/google-java-format/releases)
 and run it with:
@@ -78,6 +78,8 @@ Implementation`.
 
 ### Third-party integrations
 
+*   Visual Studio Code
+    *   [google-java-format-for-vs-code](https://marketplace.visualstudio.com/items?itemName=JoseVSeb.google-java-format-for-vs-code)
 *   Gradle plugins
     *   [spotless](https://github.com/diffplug/spotless/tree/main/plugin-gradle#google-java-format)
     *   [sherter/google-java-format-gradle-plugin](https://github.com/sherter/google-java-format-gradle-plugin)
