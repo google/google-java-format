@@ -1,1 +1,2 @@
-mvnw.cmd binary
+mvnw     text eol=lf
+mvnw.cmd text eol=crlf
