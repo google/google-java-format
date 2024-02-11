@@ -78,9 +78,11 @@ jobs:
           native-image-job-reports: "true"
           cache: "maven"
       - name: "Install"
+        if: ${{ matrix.java != 'GraalVM' }}
         shell: bash
         run: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
       - name: "Test"
+        if: ${{ matrix.java != 'GraalVM' }}
         shell: bash
         run: mvn test -B
       - name: "Native"
