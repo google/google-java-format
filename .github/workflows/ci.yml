@@ -97,7 +97,6 @@ jobs:
       - name: "Check out repository"
         uses: actions/checkout@v4
       - name: "Set up GraalVM ${{ matrix.java }}"
-        if: ${{ matrix.java == 'GraalVM' }}
         uses: graalvm/setup-graalvm@v1
         with:
           java-version: "21"
@@ -106,7 +105,6 @@ jobs:
           native-image-job-reports: "true"
           cache: "maven"
       - name: "Native"
-        if: ${{ matrix.java == 'GraalVM' }}
         run: mvn -Pnative -DskipTests package -pl core -am && util/test-native.sh
 
   publish_snapshot:
