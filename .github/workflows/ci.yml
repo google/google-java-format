@@ -46,6 +46,9 @@ jobs:
           - os: ubuntu-latest
             java: GraalVM
             experimental: false
+          - os: macos-latest
+            java: GraalVM
+            experimental: false
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
     steps:
