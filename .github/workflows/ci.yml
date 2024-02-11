@@ -23,13 +23,13 @@ on:
       - master
 
 jobs:
-  test:
+  test-OpenJDK:
     name: "JDK ${{ matrix.java }} on ${{ matrix.os }}"
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        java: [GraalVM, 21, 17, 11]
+        java: [21, 17, 11]
         experimental: [false]
         include:
           # Only test on MacOS and Windows with a single recent JDK to avoid a
@@ -43,9 +43,6 @@ jobs:
           - os: ubuntu-latest
             java: EA
             experimental: true
-          - os: ubuntu-latest
-            java: GraalVM
-            experimental: false
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
     steps:
@@ -83,6 +80,31 @@ jobs:
       - name: "Test"
         shell: bash
         run: mvn test -B
+
+  test-OpenJDK:
+    name: "GraalVM on ${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    steps:
+      - name: Cancel previous
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+      - name: "Check out repository"
+        uses: actions/checkout@v4
+      - name: "Set up GraalVM ${{ matrix.java }}"
+        if: ${{ matrix.java == 'GraalVM' }}
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: "21"
+          distribution: "graalvm-community"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: "true"
+          cache: "maven"
       - name: "Native"
         if: ${{ matrix.java == 'GraalVM' }}
         run: mvn -Pnative -DskipTests package -pl core -am && util/test-native.sh
