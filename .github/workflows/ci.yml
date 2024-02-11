@@ -81,14 +81,14 @@ jobs:
         shell: bash
         run: mvn test -B
 
-  test-OpenJDK:
+  test-GraalVM:
     name: "GraalVM on ${{ matrix.os }}"
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.experimental }}
+    continue-on-error: true
     steps:
       - name: Cancel previous
         uses: styfle/cancel-workflow-action@0.9.1
@@ -111,7 +111,7 @@ jobs:
 
   publish_snapshot:
     name: "Publish snapshot"
-    needs: test
+    needs: test-OpenJDK
     if: github.event_name == 'push' && github.repository == 'google/google-java-format' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
