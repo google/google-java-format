@@ -62,7 +62,8 @@ public class FormatterIntegrationTest {
               "Unnamed",
               "I981",
               "StringTemplate",
-              "I1020")
+              "I1020",
+              "I1037")
           .build();
 
   @Parameters(name = "{index}: {0}")

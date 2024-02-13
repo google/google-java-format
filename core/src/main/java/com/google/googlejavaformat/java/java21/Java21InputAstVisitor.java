@@ -24,6 +24,8 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.PatternCaseLabelTree;
 import com.sun.source.tree.PatternTree;
 import com.sun.source.tree.StringTemplateTree;
+import com.sun.source.tree.Tree;
+import com.sun.tools.javac.tree.JCTree;
 import javax.lang.model.element.Name;
 
 /**
@@ -106,5 +108,21 @@ public class Java21InputAstVisitor extends Java17InputAstVisitor {
     } else {
       visit(name);
     }
+  }
+
+  @Override
+  public Void scan(Tree tree, Void unused) {
+    // Pre-visit AST for preview features, since com.sun.source.tree.AnyPattern can't be
+    // accessed directly without --enable-preview.
+    if (tree instanceof JCTree.JCAnyPattern) {
+      visitJcAnyPattern((JCTree.JCAnyPattern) tree);
+      return null;
+    } else {
+      return super.scan(tree, unused);
+    }
+  }
+
+  private void visitJcAnyPattern(JCTree.JCAnyPattern unused) {
+    token("_");
   }
 }
