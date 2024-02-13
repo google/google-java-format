@@ -86,7 +86,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     continue-on-error: true
     steps:
@@ -104,8 +104,13 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: "true"
           cache: "maven"
-      - name: "Native"
-        run: mvn -Pnative -DskipTests package -pl core -am && util/test-native.sh
+      - name: "Native Build"
+        run: mvn -Pnative -DskipTests package -pl core -am
+      - name: "Native Test"
+        # Bash script for testing won't work on Windows
+        # TODO: Anyone reading this wants to write a *.bat or *.ps1 equivalent?
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: util/test-native.sh
 
   publish_snapshot:
     name: "Publish snapshot"
