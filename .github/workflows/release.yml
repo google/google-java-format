@@ -79,3 +79,31 @@ jobs:
           files: |
             core/target/google-java-format*
             eclipse_plugin/target/google-java-format-eclipse-plugin-*.jar
+
+  build-native-image:
+    name: "Build GraalVM native-image on ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+    needs: build-maven-jars
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: "Check out repository"
+        uses: actions/checkout@v4
+      - name: "Set up GraalVM"
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: "21"
+          distribution: "graalvm-community"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: "true"
+          cache: "maven"
+      - name: "Native"
+        run: mvn -Pnative -DskipTests package -pl core -am
+      - name: "Move outputs"
+        run: cp core/target/google-java-format google-java-format-${{ matrix.os == 'ubuntu-latest' && 'linux' || 'darwin' }}
+      - name: "Upload native-image"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "v${{ github.event.inputs.version }}" "google-java-format-${{ matrix.os == 'ubuntu-latest' && 'linux' || 'darwin' }}"
