@@ -86,7 +86,7 @@ jobs:
     needs: build-maven-jars
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: "Check out repository"
         uses: actions/checkout@v4
