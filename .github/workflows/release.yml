@@ -88,7 +88,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     env:
-      SUFFIX: ${{fromJson('{"ubuntu-latest":"linux-x86_64", "macos-latest":"darwin-arm64", "windows-latest":"windows_x86-64"}')[matrix.os]}}
+      SUFFIX: ${{fromJson('{"ubuntu-latest":"linux-x86-64", "macos-latest":"darwin-arm64", "windows-latest":"windows-x86-64"}')[matrix.os]}}
     steps:
       - name: "Check out repository"
         uses: actions/checkout@v4
@@ -103,9 +103,9 @@ jobs:
       - name: "Native"
         run: mvn -Pnative -DskipTests package -pl core -am
       - name: "Move outputs"
-        run: cp core/target/google-java-format google-java-format-${{ env.SUFFIX }}
+        run: cp core/target/google-java-format google-java-format_${{ env.SUFFIX }}
       - name: "Upload native-image"
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "v${{ github.event.inputs.version }}" "google-java-format-${{ env.SUFFIX }}"
+        run: gh release upload "v${{ github.event.inputs.version }}" "google-java-format_${{ env.SUFFIX }}"
