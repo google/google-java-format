@@ -77,7 +77,7 @@ jobs:
           tag_name: "v${{ github.event.inputs.version }}"
           target_commitish: ${{ env.TARGET_COMMITISH }}
           files: |
-            core/target/google-java-format*
+            core/target/google-java-format-*.jar
             eclipse_plugin/target/google-java-format-eclipse-plugin-*.jar
 
   build-native-image:
