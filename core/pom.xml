@@ -288,7 +288,7 @@
               <execution>
                 <id>build-native</id>
                 <goals>
-                  <goal>build</goal>
+                  <goal>compile-no-fork</goal>
                 </goals>
                 <phase>package</phase>
               </execution>
@@ -306,9 +306,19 @@
                 <param>${project.build.directory}/${project.artifactId}-${project.version}-all-deps.jar</param>
               </classpath>
               <buildArgs>
+                <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
                 <buildArg>-H:IncludeResourceBundles=com.sun.tools.javac.resources.compiler</buildArg>
+                <buildArg>-H:IncludeResourceBundles=com.sun.tools.javac.resources.javac</buildArg>
                 <buildArg>--no-fallback</buildArg>
                 <buildArg>--initialize-at-build-time=com.sun.tools.javac.file.Locations</buildArg>
+                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                <buildArg>-H:-UseContainerSupport</buildArg>
+                <buildArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</buildArg>
+                <buildArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</buildArg>
+                <buildArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</buildArg>
+                <buildArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</buildArg>
+                <buildArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</buildArg>
+                <buildArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</buildArg>
               </buildArgs>
             </configuration>
           </plugin>
