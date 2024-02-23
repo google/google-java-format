@@ -63,7 +63,8 @@ public class FormatterIntegrationTest {
               "I981",
               "StringTemplate",
               "I1020",
-              "I1037")
+              "I1037",
+              "TextBlockTemplates")
           .build();
 
   @Parameters(name = "{index}: {0}")

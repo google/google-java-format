@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkElementIndex;
 import static java.util.Arrays.stream;
 
 import com.google.common.collect.ImmutableList;
@@ -28,6 +29,7 @@ import com.sun.tools.javac.parser.Tokens.Token;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.parser.UnicodeReader;
 import com.sun.tools.javac.util.Context;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -35,9 +37,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A wrapper around javac's lexer. */
-class JavacTokens {
+final class JavacTokens {
 
   /** The lexer eats terminal comments, so feed it one we don't care about. */
   // TODO(b/33103797): fix javac and remove the work-around
@@ -51,6 +54,8 @@ class JavacTokens {
     private final int endPos;
 
     RawTok(String stringVal, TokenKind kind, int pos, int endPos) {
+      checkElementIndex(pos, endPos, "pos");
+      checkArgument(pos < endPos, "expected pos (%s) < endPos (%s)", pos, endPos);
       this.stringVal = stringVal;
       this.kind = kind;
       this.pos = pos;
@@ -136,13 +141,30 @@ class JavacTokens {
     int last = 0;
     for (Token t : javacTokens) {
       if (t.comments != null) {
+        // javac accumulates comments in reverse order
         for (Comment c : Lists.reverse(t.comments)) {
-          if (last < c.getSourcePos(0)) {
-            tokens.add(new RawTok(null, null, last, c.getSourcePos(0)));
+          int pos = c.getSourcePos(0);
+          int length;
+          if (pos == -1) {
+            // We've found a comment whose position hasn't been recorded. Deduce its position as the
+            // first `/` character after the end of the previous token.
+            //
+            // javac creates a new JavaTokenizer to process string template arguments, so
+            // CommentSavingTokenizer doesn't get a chance to preprocess those comments and save
+            // their text and positions.
+            //
+            // TODO: consider always using this approach once the minimum supported JDK is 16 and
+            // we can assume BasicComment#getRawCharacters is always available.
+            pos = source.indexOf('/', last);
+            length = CommentSavingTokenizer.commentLength(c);
+          } else {
+            length = c.getText().length();
           }
-          tokens.add(
-              new RawTok(null, null, c.getSourcePos(0), c.getSourcePos(0) + c.getText().length()));
-          last = c.getSourcePos(0) + c.getText().length();
+          if (last < pos) {
+            tokens.add(new RawTok(null, null, last, pos));
+          }
+          tokens.add(new RawTok(null, null, pos, pos + length));
+          last = pos + length;
         }
       }
       if (stopTokens.contains(t.kind)) {
@@ -181,6 +203,32 @@ class JavacTokens {
 
   /** A {@link JavaTokenizer} that saves comments. */
   static class CommentSavingTokenizer extends JavaTokenizer {
+
+    private static final Method GET_RAW_CHARACTERS_METHOD = getRawCharactersMethod();
+
+    private static @Nullable Method getRawCharactersMethod() {
+      try {
+        // This is a method in PositionTrackingReader, but that class is not public.
+        return BasicComment.class.getMethod("getRawCharacters");
+      } catch (NoSuchMethodException e) {
+        return null;
+      }
+    }
+
+    static int commentLength(Comment comment) {
+      if (comment instanceof BasicComment && GET_RAW_CHARACTERS_METHOD != null) {
+        // If we've seen a BasicComment instead of a CommentWithTextAndPosition, getText() will
+        // be null, so we deduce the length using getRawCharacters. See also the comment at the
+        // usage of this method in getTokens.
+        try {
+          return ((char[]) GET_RAW_CHARACTERS_METHOD.invoke(((BasicComment) comment))).length;
+        } catch (ReflectiveOperationException e) {
+          throw new LinkageError(e.getMessage(), e);
+        }
+      }
+      return comment.getText().length();
+    }
+
     CommentSavingTokenizer(ScannerFactory fac, char[] buffer, int length) {
       super(fac, buffer, length);
     }
@@ -288,4 +336,6 @@ class JavacTokens {
       super(fac, buffer, length);
     }
   }
+
+  private JavacTokens() {}
 }
