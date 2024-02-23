@@ -31,9 +31,9 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 class GoogleJavaFormatConfigurable extends BaseConfigurable implements SearchableConfigurable {
 

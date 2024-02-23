@@ -26,7 +26,7 @@ import javax.annotation.processing.Messager;
 import javax.tools.Diagnostic;
 import javax.tools.ForwardingJavaFileObject;
 import javax.tools.JavaFileObject;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A {@link JavaFileObject} decorator which {@linkplain Formatter formats} source code. */
 final class FormattingJavaFileObject extends ForwardingJavaFileObject<JavaFileObject> {

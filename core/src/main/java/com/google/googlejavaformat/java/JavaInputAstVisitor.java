@@ -158,7 +158,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.lang.model.element.Name;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An AST visitor that builds a stream of {@link Op}s to format from the given {@link
@@ -287,7 +287,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         ImmutableList.of(
             "org.jspecify.annotations.NonNull",
             "org.jspecify.annotations.Nullable",
-            "org.jspecify.nullness.Nullable",
+            "org.jspecify.annotations.Nullable",
             "org.checkerframework.checker.nullness.qual.NonNull",
             "org.checkerframework.checker.nullness.qual.Nullable")) {
       String simpleName = annotation.substring(annotation.lastIndexOf('.') + 1);

@@ -20,7 +20,7 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Encapsulates information about a file to be formatted, including which parts of the file to
