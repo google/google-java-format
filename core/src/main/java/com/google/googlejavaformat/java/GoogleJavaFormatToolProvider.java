@@ -29,10 +29,11 @@ public class GoogleJavaFormatToolProvider implements ToolProvider {
   @Override
   public int run(PrintWriter out, PrintWriter err, String... args) {
     try {
-      return Main.main(out, err, args);
+      return Main.main(System.in, out, err, args);
     } catch (RuntimeException e) {
       err.print(e.getMessage());
-      return -1; // pass non-zero value back indicating an error has happened
+      err.flush();
+      return 1; // pass non-zero value back indicating an error has happened
     }
   }
 }

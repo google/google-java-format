@@ -1,0 +1,14 @@
+abstract class RSLs {
+  abstract String f();
+
+  String a =
+      STR."""
+  lorem
+  foo\{
+          /** a method */
+          f( // line comment
+              /* TODO */
+              )}bar
+      ipsum
+  """;
+}

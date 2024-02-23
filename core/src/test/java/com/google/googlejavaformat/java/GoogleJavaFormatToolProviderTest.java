@@ -15,7 +15,6 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -46,7 +45,7 @@ public class GoogleJavaFormatToolProviderTest {
 
     int result = format.run(new PrintWriter(out, true), new PrintWriter(err, true), "--help");
 
-    assertThat(result).isEqualTo(0);
+    assertThat(result).isNotEqualTo(0);
 
     String usage = err.toString();
 

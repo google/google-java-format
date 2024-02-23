@@ -19,6 +19,8 @@ import static com.google.googlejavaformat.CommentsHelper.reformatParameterCommen
 import static java.lang.Math.max;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Range;
@@ -102,16 +104,13 @@ public abstract class Doc {
   private static final DiscreteDomain<Integer> INTEGERS = DiscreteDomain.integers();
 
   // Memoized width; Float.POSITIVE_INFINITY if contains forced breaks.
-  private boolean widthComputed = false;
-  private float width = 0.0F;
+  private final Supplier<Float> width = Suppliers.memoize(this::computeWidth);
 
   // Memoized flat; not defined (and never computed) if contains forced breaks.
-  private boolean flatComputed = false;
-  private String flat = "";
+  private final Supplier<String> flat = Suppliers.memoize(this::computeFlat);
 
   // Memoized Range.
-  private boolean rangeComputed = false;
-  private Range<Integer> range = EMPTY_RANGE;
+  private final Supplier<Range<Integer>> range = Suppliers.memoize(this::computeRange);
 
   /**
    * Return the width of a {@code Doc}, or {@code Float.POSITIVE_INFINITY} if it must be broken.
@@ -119,11 +118,7 @@ public abstract class Doc {
    * @return the width
    */
   final float getWidth() {
-    if (!widthComputed) {
-      width = computeWidth();
-      widthComputed = true;
-    }
-    return width;
+    return width.get();
   }
 
   /**
@@ -133,11 +128,7 @@ public abstract class Doc {
    * @return the flat-string value
    */
   final String getFlat() {
-    if (!flatComputed) {
-      flat = computeFlat();
-      flatComputed = true;
-    }
-    return flat;
+    return flat.get();
   }
 
   /**
@@ -146,11 +137,7 @@ public abstract class Doc {
    * @return the {@code Doc}'s {@link Range}
    */
   final Range<Integer> range() {
-    if (!rangeComputed) {
-      range = computeRange();
-      rangeComputed = true;
-    }
-    return range;
+    return range.get();
   }
 
   /**

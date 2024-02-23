@@ -14,65 +14,54 @@
 
 package com.google.googlejavaformat.java;
 
+import com.google.auto.value.AutoValue;
 import com.google.errorprone.annotations.Immutable;
 
 /**
  * Options for a google-java-format invocation.
  *
- * <p>Like gofmt, the google-java-format CLI exposes <em>no</em> configuration options (aside from {@code --aosp}).
+ * <p>Like gofmt, the google-java-format CLI exposes <em>no</em> configuration options (aside from
+ * {@code --aosp}).
  *
- * <p>The goal of google-java-format is to provide consistent formatting, and to free developers from arguments over
- * style choices. It is an explicit non-goal to support developers' individual preferences, and in fact it would work
- * directly against our primary goals.
+ * <p>The goal of google-java-format is to provide consistent formatting, and to free developers
+ * from arguments over style choices. It is an explicit non-goal to support developers' individual
+ * preferences, and in fact it would work directly against our primary goals.
  */
 @Immutable
-public class JavaFormatterOptions {
+@AutoValue
+public abstract class JavaFormatterOptions {
 
   public enum Style {
     /** The default Google Java Style configuration. */
     GOOGLE(1),
+
     /** The AOSP-compliant configuration. */
     AOSP(2);
 
     private final int indentationMultiplier;
 
-    Style(final int indentationMultiplier) {
+    Style(int indentationMultiplier) {
       this.indentationMultiplier = indentationMultiplier;
     }
 
     int indentationMultiplier() {
       return indentationMultiplier;
     }
-
-  }
-
-  private final Style style;
-  private final boolean formatJavadoc;
-  private final int maxLineWidth;
-
-  private JavaFormatterOptions(final Style style, final boolean formatJavadoc, final int maxLineWidth) {
-    this.style = style;
-    this.formatJavadoc = formatJavadoc;
-    this.maxLineWidth = maxLineWidth;
   }
 
   /** Returns the multiplier for the unit of indent. */
   public int indentationMultiplier() {
-    return style.indentationMultiplier();
+    return style().indentationMultiplier();
   }
 
-  public boolean formatJavadoc() {
-    return formatJavadoc;
-  }
+  public abstract boolean formatJavadoc();
 
-  public int getMaxLineLength() {
-    return maxLineWidth;
-  }
+  public abstract boolean reorderModifiers();
+
+  public abstract int maxLineWidth();
 
   /** Returns the code style. */
-  public Style style() {
-    return style;
-  }
+  public abstract Style style();
 
   /** Returns the default formatting options. */
   public static JavaFormatterOptions defaultOptions() {
@@ -81,33 +70,25 @@ public class JavaFormatterOptions {
 
   /** Returns a builder for {@link JavaFormatterOptions}. */
   public static Builder builder() {
-    return new Builder();
+    return new AutoValue_JavaFormatterOptions.Builder()
+        .style(Style.GOOGLE)
+        .formatJavadoc(true)
+        .reorderModifiers(true)
+        .maxLineWidth(100);
   }
 
   /** A builder for {@link JavaFormatterOptions}. */
-  public static class Builder {
-    private Style style = Style.GOOGLE;
-    private boolean formatJavadoc = true;
-    private int maxLineWidth = 100;
+  @AutoValue.Builder
+  public abstract static class Builder {
 
-    private Builder() {}
+    public abstract Builder style(Style style);
 
-    public Builder style(final Style style) {
-      this.style = style;
-      return this;
-    }
+    public abstract Builder formatJavadoc(boolean formatJavadoc);
 
-    public Builder formatJavadoc(final boolean formatJavadoc) {
-      this.formatJavadoc = formatJavadoc;
-      return this;
-    }
-    public Builder maxLineWidth(final int  maxLineWidth) {
-      this.maxLineWidth = maxLineWidth;
-      return this;
-    }
+    public abstract Builder reorderModifiers(boolean reorderModifiers);
 
-    public JavaFormatterOptions build() {
-      return new JavaFormatterOptions(style, formatJavadoc, maxLineWidth);
-    }
+    public abstract Builder maxLineWidth(int maxLineWidth);
+
+    public abstract JavaFormatterOptions build();
   }
 }

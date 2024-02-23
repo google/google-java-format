@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assume.assumeTrue;
 
 import com.google.common.base.Joiner;
 import org.junit.Test;
@@ -50,6 +51,97 @@ public class StringWrapperTest {
             "}");
 
     assertThat(StringWrapper.wrap(100, input, new Formatter())).isEqualTo(output);
+  }
+
+  @Test
+  public void textBlock() throws Exception {
+    assumeTrue(Runtime.version().feature() >= 15);
+    String input =
+        lines(
+            "package com.mypackage;",
+            "public class ReproBug {",
+            "  private String myString;",
+            "  private ReproBug() {",
+            "    String str =",
+            "        \"\"\"",
+            "{\"sourceEndpoint\":\"ri.something.1-1.object-internal.1\",\"targetEndpoint"
+                + "\":\"ri.something.1-1.object-internal.2\",\"typeId\":\"typeId\"}\"\"\";",
+            "    myString = str;",
+            "  }",
+            "}");
+    assertThat(StringWrapper.wrap(100, input, new Formatter())).isEqualTo(input);
+  }
+
+  // Test that whitespace handling on text block lines only removes spaces, not other control
+  // characters.
+  @Test
+  public void textBlockControlCharacter() throws Exception {
+    assumeTrue(Runtime.version().feature() >= 15);
+    // We want an actual control character in the Java source being formatted, not a unicode escape,
+    // i.e. the escape below doesn't need to be double-escaped.
+    String input =
+        lines(
+            "package p;",
+            "public class T {",
+            "  String s =",
+            "      \"\"\"",
+            "      \u0007lorem",
+            "      \u0007",
+            "      ipsum",
+            "      \"\"\";",
+            "}");
+    String actual = StringWrapper.wrap(100, input, new Formatter());
+    assertThat(actual).isEqualTo(input);
+  }
+
+  @Test
+  public void textBlockTrailingWhitespace() throws Exception {
+    assumeTrue(Runtime.version().feature() >= 15);
+    String input =
+        lines(
+            "public class T {",
+            "  String s =",
+            "      \"\"\"",
+            "      lorem   ",
+            "      ipsum",
+            "      \"\"\";",
+            "}");
+    String expected =
+        lines(
+            "public class T {",
+            "  String s =",
+            "      \"\"\"",
+            "      lorem",
+            "      ipsum",
+            "      \"\"\";",
+            "}");
+    String actual = StringWrapper.wrap(100, input, new Formatter());
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void textBlockSpaceTabMix() throws Exception {
+    assumeTrue(Runtime.version().feature() >= 15);
+    String input =
+        lines(
+            "public class T {",
+            "  String s =",
+            "      \"\"\"",
+            "      lorem",
+            "     \tipsum",
+            "      \"\"\";",
+            "}");
+    String expected =
+        lines(
+            "public class T {",
+            "  String s =",
+            "      \"\"\"",
+            "      lorem",
+            "      ipsum",
+            "      \"\"\";",
+            "}");
+    String actual = StringWrapper.wrap(100, input, new Formatter());
+    assertThat(actual).isEqualTo(expected);
   }
 
   private static String lines(String... line) {

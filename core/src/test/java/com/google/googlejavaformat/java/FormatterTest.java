@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
@@ -489,6 +490,29 @@ public final class FormatterTest {
                 + "  void f() {\n"
                 + "    int x = 0; // comment\n"
                 + "    return;\n"
+                + "  }\n"
+                + "}\n");
+  }
+
+  @Test
+  public void stringTemplateTests() throws Exception {
+    assumeTrue(Runtime.version().feature() >= 21);
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    "public class Foo {\n"
+                        + "    String test(){\n"
+                        + "        var simple = STR.\"mytemplate1XXXX \\{exampleXXXX.foo()}yyy\";\n"
+                        + "        var nested = STR.\"template \\{example.  foo()+"
+                        + " STR.\"templateInner\\{  example}\"}xxx }\";\n"
+                        + "    }\n"
+                        + "}\n"))
+        .isEqualTo(
+            "public class Foo {\n"
+                + "  String test() {\n"
+                + "    var simple = STR.\"mytemplate1XXXX \\{exampleXXXX.foo()}yyy\";\n"
+                + "    var nested = STR.\"template \\{example.foo() +"
+                + " STR.\"templateInner\\{example}\"}xxx }\";\n"
                 + "  }\n"
                 + "}\n");
   }

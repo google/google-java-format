@@ -22,13 +22,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.OpsBuilder;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.java.JavaInputAstVisitor;
-import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.BindingPatternTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.CaseLabelTree;
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.InstanceOfTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.ModuleTree;
@@ -55,10 +55,10 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
   }
 
   @Override
-  protected void handleModule(boolean first, CompilationUnitTree node) {
+  protected void handleModule(boolean afterFirstToken, CompilationUnitTree node) {
     ModuleTree module = node.getModule();
     if (module != null) {
-      if (!first) {
+      if (afterFirstToken) {
         builder.blankLineWanted(BlankLineWanted.YES);
       }
       markForPartialFormat();
@@ -82,14 +82,20 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
   }
 
   private void visitBindingPattern(ModifiersTree modifiers, Tree type, Name name) {
-    if (modifiers != null) {
-      List<AnnotationTree> annotations =
-          visitModifiers(modifiers, Direction.HORIZONTAL, Optional.empty());
-      visitAnnotations(annotations, BreakOrNot.NO, BreakOrNot.YES);
-    }
-    scan(type, null);
-    builder.breakOp(" ");
-    visit(name);
+    builder.open(plusFour);
+    declareOne(
+        DeclarationKind.PARAMETER,
+        Direction.HORIZONTAL,
+        Optional.of(modifiers),
+        type,
+        name,
+        /* op= */ "",
+        /* equals= */ "",
+        /* initializer= */ Optional.empty(),
+        /* trailing= */ Optional.empty(),
+        /* receiverExpression= */ Optional.empty(),
+        /* typeWithDims= */ Optional.empty());
+    builder.close();
   }
 
   @Override
@@ -161,14 +167,14 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
         builder.open(node.getImplementsClause().size() > 1 ? plusFour : ZERO);
         token("implements");
         builder.space();
-        boolean first = true;
+        boolean afterFirstToken = false;
         for (Tree superInterfaceType : node.getImplementsClause()) {
-          if (!first) {
+          if (afterFirstToken) {
             token(",");
             builder.breakOp(" ");
           }
           scan(superInterfaceType, null);
-          first = false;
+          afterFirstToken = true;
         }
         builder.close();
       }
@@ -221,23 +227,37 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
     List<? extends CaseLabelTree> labels = node.getLabels();
     boolean isDefault =
         labels.size() == 1 && getOnlyElement(labels).getKind().name().equals("DEFAULT_CASE_LABEL");
+    builder.open(
+        node.getCaseKind().equals(CaseTree.CaseKind.RULE)
+                && !node.getBody().getKind().equals(Tree.Kind.BLOCK)
+            ? plusFour
+            : ZERO);
     if (isDefault) {
       token("default", plusTwo);
     } else {
       token("case", plusTwo);
       builder.open(labels.size() > 1 ? plusFour : ZERO);
       builder.space();
-      boolean first = true;
+      boolean afterFirstToken = false;
       for (Tree expression : labels) {
-        if (!first) {
+        if (afterFirstToken) {
           token(",");
           builder.breakOp(" ");
         }
         scan(expression, null);
-        first = false;
+        afterFirstToken = true;
       }
       builder.close();
     }
+
+    final ExpressionTree guard = getGuard(node);
+    if (guard != null) {
+      builder.space();
+      token("when");
+      builder.space();
+      scan(guard, null);
+    }
+
     switch (node.getCaseKind()) {
       case STATEMENT:
         token(":");
@@ -249,8 +269,8 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
         builder.space();
         token("-");
         token(">");
-        builder.space();
         if (node.getBody().getKind() == Tree.Kind.BLOCK) {
+          builder.space();
           // Explicit call with {@link CollapseEmptyOrNot.YES} to handle empty case blocks.
           visitBlock(
               (BlockTree) node.getBody(),
@@ -258,6 +278,7 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
               AllowLeadingBlankLine.NO,
               AllowTrailingBlankLine.NO);
         } else {
+          builder.breakOp(" ");
           scan(node.getBody(), null);
         }
         builder.guessToken(";");
@@ -265,6 +286,11 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
       default:
         throw new AssertionError(node.getCaseKind());
     }
+    builder.close();
+    return null;
+  }
+
+  protected ExpressionTree getGuard(final CaseTree node) {
     return null;
   }
 }

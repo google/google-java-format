@@ -54,13 +54,12 @@ public class MainTest {
 
   private static final ImmutableList<String> ADD_EXPORTS =
       ImmutableList.of(
+          "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+          "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
           "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-          "--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
           "--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
           "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-          "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-          "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-          "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED");
+          "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED");
 
   @Test
   public void testUsageOutput() {
@@ -132,7 +131,7 @@ public class MainTest {
     process.waitFor();
     String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
     assertThat(err).contains("Usage: google-java-format");
-    assertThat(process.exitValue()).isEqualTo(0);
+    assertThat(process.exitValue()).isEqualTo(2);
   }
 
   // end to end javadoc formatting test
@@ -612,5 +611,28 @@ public class MainTest {
             in);
     assertThat(main.format("--skip-javadoc-formatting", "-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(joiner.join(input));
+  }
+
+  @Test
+  public void reorderModifiersOptionTest() throws Exception {
+    String[] input = {
+      "class Test {", //
+      "  static public void main(String... args) {}",
+      "}",
+      "",
+    };
+    String[] fixed = {
+      "class Test {", //
+      "  public static void main(String... args) {}",
+      "}",
+      "",
+    };
+    String source = joiner.join(input);
+    assertThat(new Formatter(JavaFormatterOptions.builder().build()).formatSource(source))
+        .isEqualTo(joiner.join(fixed));
+    assertThat(
+            new Formatter(JavaFormatterOptions.builder().reorderModifiers(false).build())
+                .formatSource(source))
+        .isEqualTo(source);
   }
 }

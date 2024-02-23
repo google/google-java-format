@@ -1,0 +1,5 @@
+class I959 {
+  public void test() {
+      new File(".").listFiles((final var dir, final var name) -> true);
+  }
+}

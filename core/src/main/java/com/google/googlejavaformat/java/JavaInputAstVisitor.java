@@ -158,7 +158,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.lang.model.element.Name;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An AST visitor that builds a stream of {@link Op}s to format from the given {@link
@@ -285,8 +285,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     ImmutableSetMultimap.Builder<String, String> result = ImmutableSetMultimap.builder();
     for (String annotation :
         ImmutableList.of(
+            "org.jspecify.annotations.NonNull",
             "org.jspecify.annotations.Nullable",
-            "org.jspecify.nullness.Nullable",
+            "org.jspecify.annotations.Nullable",
+            "org.checkerframework.checker.nullness.qual.NonNull",
             "org.checkerframework.checker.nullness.qual.Nullable")) {
       String simpleName = annotation.substring(annotation.lastIndexOf('.') + 1);
       result.put(simpleName, annotation);
@@ -366,16 +368,16 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   @Override
   public Void visitCompilationUnit(CompilationUnitTree node, Void unused) {
-    boolean first = true;
+    boolean afterFirstToken = false;
     if (node.getPackageName() != null) {
       markForPartialFormat();
       visitPackage(node.getPackageName(), node.getPackageAnnotations());
       builder.forcedBreak();
-      first = false;
+      afterFirstToken = true;
     }
     dropEmptyDeclarations();
     if (!node.getImports().isEmpty()) {
-      if (!first) {
+      if (afterFirstToken) {
         builder.blankLineWanted(BlankLineWanted.YES);
       }
       for (ImportTree importDeclaration : node.getImports()) {
@@ -384,7 +386,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         scan(importDeclaration, null);
         builder.forcedBreak();
       }
-      first = false;
+      afterFirstToken = true;
     }
     dropEmptyDeclarations();
     for (Tree type : node.getTypeDecls()) {
@@ -393,22 +395,22 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         // TODO(cushon): remove this if https://bugs.openjdk.java.net/browse/JDK-8027682 is fixed
         continue;
       }
-      if (!first) {
+      if (afterFirstToken) {
         builder.blankLineWanted(BlankLineWanted.YES);
       }
       markForPartialFormat();
       scan(type, null);
       builder.forcedBreak();
-      first = false;
+      afterFirstToken = true;
       dropEmptyDeclarations();
     }
-    handleModule(first, node);
+    handleModule(afterFirstToken, node);
     // set a partial format marker at EOF to make sure we can format the entire file
     markForPartialFormat();
     return null;
   }
 
-  protected void handleModule(boolean first, CompilationUnitTree node) {}
+  protected void handleModule(boolean afterFirstToken, CompilationUnitTree node) {}
 
   /** Skips over extra semi-colons at the top-level, or in a class member declaration lists. */
   protected void dropEmptyDeclarations() {
@@ -512,9 +514,9 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.open(plusTwo);
       token("{");
       builder.forcedBreak();
-      boolean first = true;
+      boolean afterFirstToken = false;
       for (Iterable<? extends ExpressionTree> row : Iterables.partition(expressions, cols)) {
-        if (!first) {
+        if (afterFirstToken) {
           builder.forcedBreak();
         }
         builder.open(row.iterator().next().getKind() == NEW_ARRAY || cols == 1 ? ZERO : plusFour);
@@ -529,7 +531,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         }
         builder.guessToken(",");
         builder.close();
-        first = false;
+        afterFirstToken = true;
       }
       builder.breakOp(minusTwo);
       builder.close();
@@ -560,15 +562,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       if (allowFilledElementsOnOwnLine) {
         builder.open(ZERO);
       }
-      boolean first = true;
+      boolean afterFirstToken = false;
       FillMode fillMode = shortItems ? FillMode.INDEPENDENT : FillMode.UNIFIED;
       for (ExpressionTree expression : expressions) {
-        if (!first) {
+        if (afterFirstToken) {
           token(",");
           builder.breakOp(fillMode, " ", ZERO);
         }
         scan(expression, null);
-        first = false;
+        afterFirstToken = true;
       }
       builder.guessToken(",");
       if (allowFilledElementsOnOwnLine) {
@@ -840,14 +842,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       token("implements");
       builder.breakOp(" ");
       builder.open(ZERO);
-      boolean first = true;
+      boolean afterFirstToken = false;
       for (Tree superInterfaceType : node.getImplementsClause()) {
-        if (!first) {
+        if (afterFirstToken) {
           token(",");
           builder.breakToFill(" ");
         }
         scan(superInterfaceType, null);
-        first = false;
+        afterFirstToken = true;
       }
       builder.close();
       builder.close();
@@ -891,16 +893,16 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.blankLineWanted(BlankLineWanted.NO);
       builder.forcedBreak();
       builder.open(ZERO);
-      boolean first = true;
+      boolean afterFirstToken = false;
       for (VariableTree enumConstant : enumConstants) {
-        if (!first) {
+        if (afterFirstToken) {
           token(",");
           builder.forcedBreak();
           builder.blankLineWanted(BlankLineWanted.PRESERVE);
         }
         markForPartialFormat();
         visitEnumConstantDeclaration(enumConstant);
-        first = false;
+        afterFirstToken = true;
       }
       if (builder.peekToken().orElse("").equals(",")) {
         token(",");
@@ -928,7 +930,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   @Override
   public Void visitMemberReference(MemberReferenceTree node, Void unused) {
-    sync(node);
     builder.open(plusFour);
     scan(node.getQualifierExpression(), null);
     builder.breakOp();
@@ -983,18 +984,19 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           Optional.ofNullable(fragment.getInitializer()),
           Optional.of(";"),
           /* receiverExpression= */ Optional.empty(),
-          Optional.ofNullable(variableFragmentDims(true, 0, fragment.getType())));
+          Optional.ofNullable(variableFragmentDims(false, 0, fragment.getType())));
 
     } else {
       declareMany(fragments, annotationDirection);
     }
   }
 
-  private static TypeWithDims variableFragmentDims(boolean first, int leadingDims, Tree type) {
+  private static TypeWithDims variableFragmentDims(
+      boolean afterFirstToken, int leadingDims, Tree type) {
     if (type == null) {
       return null;
     }
-    if (first) {
+    if (!afterFirstToken) {
       return DimensionHelpers.extractDims(type, SortedDims.YES);
     }
     TypeWithDims dims = DimensionHelpers.extractDims(type, SortedDims.NO);
@@ -1021,15 +1023,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         visitVariables(
             variableFragments(it, it.next()), DeclarationKind.NONE, Direction.HORIZONTAL);
       } else {
-        boolean first = true;
+        boolean afterFirstToken = false;
         builder.open(ZERO);
         for (StatementTree t : node.getInitializer()) {
-          if (!first) {
+          if (afterFirstToken) {
             token(",");
             builder.breakOp(" ");
           }
           scan(((ExpressionStatementTree) t).getExpression(), null);
-          first = false;
+          afterFirstToken = true;
         }
         token(";");
         builder.close();
@@ -1086,11 +1088,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       }
     }
     builder.open(ZERO);
-    boolean first = true;
+    boolean afterFirstToken = false;
     boolean followingBlock = false;
     int expressionsN = expressions.size();
     for (int i = 0; i < expressionsN; i++) {
-      if (!first) {
+      if (afterFirstToken) {
         if (followingBlock) {
           builder.space();
         } else {
@@ -1114,7 +1116,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           AllowLeadingBlankLine.YES,
           AllowTrailingBlankLine.valueOf(trailingClauses));
       followingBlock = statements.get(i).getKind() == BLOCK;
-      first = false;
+      afterFirstToken = true;
     }
     if (node.getElseStatement() != null) {
       if (followingBlock) {
@@ -1207,15 +1209,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public Void visitIntersectionType(IntersectionTypeTree node, Void unused) {
     sync(node);
     builder.open(plusFour);
-    boolean first = true;
+    boolean afterFirstToken = false;
     for (Tree type : node.getBounds()) {
-      if (!first) {
+      if (afterFirstToken) {
         builder.breakToFill(" ");
         token("&");
         builder.space();
       }
       scan(type, null);
-      first = false;
+      afterFirstToken = true;
     }
     builder.close();
     return null;
@@ -1242,14 +1244,17 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     if (parens) {
       token("(");
     }
-    boolean first = true;
+    boolean afterFirstToken = false;
     for (VariableTree parameter : node.getParameters()) {
-      if (!first) {
+      if (afterFirstToken) {
         token(",");
         builder.breakOp(" ");
       }
-      scan(parameter, null);
-      first = false;
+      visitVariables(
+          ImmutableList.of(parameter),
+          DeclarationKind.NONE,
+          fieldAnnotationDirection(parameter.getModifiers()));
+      afterFirstToken = true;
     }
     if (parens) {
       token(")");
@@ -1291,14 +1296,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.open(plusFour);
       token("(");
       builder.breakOp();
-      boolean first = true;
+      boolean afterFirstToken = false;
 
       // Format the member value pairs one-per-line if any of them are
       // initialized with arrays.
       boolean hasArrayInitializer =
           Iterables.any(node.getArguments(), JavaInputAstVisitor::isArrayValue);
       for (ExpressionTree argument : node.getArguments()) {
-        if (!first) {
+        if (afterFirstToken) {
           token(",");
           if (hasArrayInitializer) {
             builder.forcedBreak();
@@ -1311,7 +1316,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         } else {
           scan(argument, null);
         }
-        first = false;
+        afterFirstToken = true;
       }
       token(")");
       builder.close();
@@ -1403,6 +1408,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             annotations,
             Direction.VERTICAL,
             /* declarationAnnotationBreak= */ Optional.empty());
+    if (node.getTypeParameters().isEmpty() && node.getReturnType() != null) {
+      // If there are type parameters, we use a heuristic above to format annotations after the
+      // type parameter declarations as type-use annotations. If there are no type parameters,
+      // use the heuristics in visitModifiers for recognizing well known type-use annotations and
+      // formatting them as annotations on the return type.
+      returnTypeAnnotations = typeAnnotations;
+      typeAnnotations = ImmutableList.of();
+    }
 
     Tree baseReturnType = null;
     Deque<List<? extends AnnotationTree>> dims = null;
@@ -1421,44 +1434,46 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     BreakTag breakBeforeType = genSym();
     builder.open(ZERO);
     {
-      boolean first = true;
+      boolean afterFirstToken = false;
       if (!typeAnnotations.isEmpty()) {
         visitAnnotations(typeAnnotations, BreakOrNot.NO, BreakOrNot.NO);
-        first = false;
+        afterFirstToken = true;
       }
       if (!node.getTypeParameters().isEmpty()) {
-        if (!first) {
+        if (afterFirstToken) {
           builder.breakToFill(" ");
         }
         token("<");
         typeParametersRest(node.getTypeParameters(), plusFour);
-        if (!returnTypeAnnotations.isEmpty()) {
-          builder.breakToFill(" ");
-          visitAnnotations(returnTypeAnnotations, BreakOrNot.NO, BreakOrNot.NO);
-        }
-        first = false;
+        afterFirstToken = true;
       }
 
       boolean openedNameAndTypeScope = false;
       // constructor-like declarations that don't match the name of the enclosing class are
       // parsed as method declarations with a null return type
       if (baseReturnType != null) {
-        if (!first) {
+        if (afterFirstToken) {
           builder.breakOp(INDEPENDENT, " ", ZERO, Optional.of(breakBeforeType));
         } else {
-          first = false;
+          afterFirstToken = true;
         }
         if (!openedNameAndTypeScope) {
           builder.open(make(breakBeforeType, plusFour, ZERO));
           openedNameAndTypeScope = true;
         }
+        builder.open(ZERO);
+        if (!returnTypeAnnotations.isEmpty()) {
+          visitAnnotations(returnTypeAnnotations, BreakOrNot.NO, BreakOrNot.NO);
+          builder.breakOp(" ");
+        }
         scan(baseReturnType, null);
         maybeAddDims(dims);
+        builder.close();
       }
-      if (!first) {
+      if (afterFirstToken) {
         builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO, Optional.of(breakBeforeName));
       } else {
-        first = false;
+        afterFirstToken = true;
       }
       if (!openedNameAndTypeScope) {
         builder.open(ZERO);
@@ -1652,6 +1667,9 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public Void visitLiteral(LiteralTree node, Void unused) {
     sync(node);
     String sourceForNode = getSourceForNode(node, getCurrentPath());
+    if (sourceForNode.startsWith("\"\"\"")) {
+      builder.forcedBreak();
+    }
     if (isUnaryMinusLiteral(sourceForNode)) {
       token("-");
       sourceForNode = sourceForNode.substring(1).trim();
@@ -1698,14 +1716,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       token("<");
       builder.breakOp();
       builder.open(ZERO);
-      boolean first = true;
+      boolean afterFirstToken = false;
       for (Tree typeArgument : node.getTypeArguments()) {
-        if (!first) {
+        if (afterFirstToken) {
           token(",");
           builder.breakOp(" ");
         }
         scan(typeArgument, null);
-        first = false;
+        afterFirstToken = true;
       }
       builder.close();
       builder.close();
@@ -1891,13 +1909,13 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     tokenBreakTrailingComment("{", plusTwo);
     builder.blankLineWanted(BlankLineWanted.NO);
     builder.open(plusTwo);
-    boolean first = true;
+    boolean afterFirstToken = false;
     for (CaseTree caseTree : cases) {
-      if (!first) {
+      if (afterFirstToken) {
         builder.blankLineWanted(BlankLineWanted.PRESERVE);
       }
       scan(caseTree, null);
-      first = false;
+      afterFirstToken = true;
     }
     builder.close();
     builder.forcedBreak();
@@ -1940,9 +1958,9 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     if (!node.getResources().isEmpty()) {
       token("(");
       builder.open(node.getResources().size() > 1 ? plusFour : ZERO);
-      boolean first = true;
+      boolean afterFirstToken = false;
       for (Tree resource : node.getResources()) {
-        if (!first) {
+        if (afterFirstToken) {
           builder.forcedBreak();
         }
         if (resource instanceof VariableTree) {
@@ -1967,7 +1985,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           token(";");
           builder.space();
         }
-        first = false;
+        afterFirstToken = true;
       }
       if (builder.peekToken().equals(Optional.of(";"))) {
         token(";");
@@ -2056,15 +2074,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.open(plusFour);
       builder.breakOp(" ");
       builder.open(plusFour);
-      boolean first = true;
+      boolean afterFirstToken = false;
       for (Tree typeBound : node.getBounds()) {
-        if (!first) {
+        if (afterFirstToken) {
           builder.breakToFill(" ");
           token("&");
           builder.space();
         }
         scan(typeBound, null);
-        first = false;
+        afterFirstToken = true;
       }
       builder.close();
       builder.close();
@@ -2120,13 +2138,13 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       if (breakBefore.isYes()) {
         builder.breakToFill(" ");
       }
-      boolean first = true;
+      boolean afterFirstToken = false;
       for (AnnotationTree annotation : annotations) {
-        if (!first) {
+        if (afterFirstToken) {
           builder.breakToFill(" ");
         }
         scan(annotation, null);
-        first = false;
+        afterFirstToken = true;
       }
       if (breakAfter.isYes()) {
         builder.breakToFill(" ");
@@ -2206,17 +2224,17 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   }
 
   protected void visitStatements(List<? extends StatementTree> statements) {
-    boolean first = true;
+    boolean afterFirstToken = false;
     PeekingIterator<StatementTree> it = Iterators.peekingIterator(statements.iterator());
     dropEmptyDeclarations();
     while (it.hasNext()) {
       StatementTree tree = it.next();
       builder.forcedBreak();
-      if (!first) {
+      if (afterFirstToken) {
         builder.blankLineWanted(BlankLineWanted.PRESERVE);
       }
       markForPartialFormat();
-      first = false;
+      afterFirstToken = true;
       List<VariableTree> fragments = variableFragments(it, tree);
       if (!fragments.isEmpty()) {
         visitVariables(
@@ -2286,17 +2304,17 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     Deque<AnnotationOrModifier> declarationModifiers =
         new ArrayDeque<>(splitModifiers.declarationModifiers());
     builder.open(ZERO);
-    boolean first = true;
+    boolean afterFirstToken = false;
     boolean lastWasAnnotation = false;
     while (!declarationModifiers.isEmpty() && !declarationModifiers.peekFirst().isModifier()) {
-      if (!first) {
+      if (afterFirstToken) {
         builder.addAll(
             annotationsDirection.isVertical()
                 ? forceBreakList(declarationAnnotationBreak)
                 : breakList(declarationAnnotationBreak));
       }
       formatAnnotationOrModifier(declarationModifiers);
-      first = false;
+      afterFirstToken = true;
       lastWasAnnotation = true;
     }
     builder.close();
@@ -2313,13 +2331,13 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
 
     builder.open(ZERO);
-    first = true;
+    afterFirstToken = false;
     while (!declarationModifiers.isEmpty()) {
-      if (!first) {
+      if (afterFirstToken) {
         builder.addAll(breakFillList(Optional.empty()));
       }
       formatAnnotationOrModifier(declarationModifiers);
-      first = false;
+      afterFirstToken = true;
     }
     builder.close();
     builder.addAll(breakFillList(Optional.empty()));
@@ -2542,14 +2560,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         Direction.HORIZONTAL,
         /* declarationAnnotationBreak= */ Optional.empty());
     List<? extends Tree> union = type.getTypeAlternatives();
-    boolean first = true;
+    boolean afterFirstToken = false;
     for (int i = 0; i < union.size() - 1; i++) {
-      if (!first) {
+      if (afterFirstToken) {
         builder.breakOp(" ");
         token("|");
         builder.space();
       } else {
-        first = false;
+        afterFirstToken = true;
       }
       scan(union.get(i), null);
     }
@@ -2598,7 +2616,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       return;
     }
     builder.open(ZERO);
-    boolean first = true;
+    boolean afterFirstToken = false;
     if (receiver.isPresent()) {
       // TODO(user): Use builders.
       declareOne(
@@ -2613,11 +2631,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           !parameters.isEmpty() ? Optional.of(",") : Optional.empty(),
           Optional.of(receiver.get().getNameExpression()),
           /* typeWithDims= */ Optional.empty());
-      first = false;
+      afterFirstToken = true;
     }
     for (int i = 0; i < parameters.size(); i++) {
       VariableTree parameter = parameters.get(i);
-      if (!first) {
+      if (afterFirstToken) {
         builder.breakOp(" ");
       }
       visitToDeclare(
@@ -2627,7 +2645,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           /* initializer= */ Optional.empty(),
           "=",
           i < parameters.size() - 1 ? Optional.of(",") : /* a= */ Optional.empty());
-      first = false;
+      afterFirstToken = true;
     }
     builder.close();
   }
@@ -2636,14 +2654,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   private void visitThrowsClause(List<? extends ExpressionTree> thrownExceptionTypes) {
     token("throws");
     builder.breakToFill(" ");
-    boolean first = true;
+    boolean afterFirstToken = false;
     for (ExpressionTree thrownExceptionType : thrownExceptionTypes) {
-      if (!first) {
+      if (afterFirstToken) {
         token(",");
         builder.breakOp(" ");
       }
       scan(thrownExceptionType, null);
-      first = false;
+      afterFirstToken = true;
     }
   }
 
@@ -2707,14 +2725,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.space();
       token(separator);
       builder.forcedBreak();
-      boolean first = true;
+      boolean afterFirstToken = false;
       for (ExpressionTree item : items) {
-        if (!first) {
+        if (afterFirstToken) {
           token(",");
           builder.forcedBreak();
         }
         scan(item, null);
-        first = false;
+        afterFirstToken = true;
       }
       token(";");
       builder.close();
@@ -2777,13 +2795,13 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       stack.addFirst(((MemberSelectTree) node).getIdentifier());
     }
     stack.addFirst(((IdentifierTree) node).getName());
-    boolean first = true;
+    boolean afterFirstToken = false;
     for (Name name : stack) {
-      if (!first) {
+      if (afterFirstToken) {
         token(".");
       }
       token(name.toString());
-      first = false;
+      afterFirstToken = true;
     }
   }
 
@@ -2825,14 +2843,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.open(plusIndent);
     builder.breakOp();
     builder.open(ZERO);
-    boolean first = true;
+    boolean afterFirstToken = false;
     for (TypeParameterTree typeParameter : typeParameters) {
-      if (!first) {
+      if (afterFirstToken) {
         token(",");
         builder.breakOp(" ");
       }
       scan(typeParameter, null);
-      first = false;
+      afterFirstToken = true;
     }
     token(">");
     builder.close();
@@ -3224,14 +3242,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
     token("<");
     builder.open(plusIndent);
-    boolean first = true;
+    boolean afterFirstToken = false;
     for (Tree typeArgument : typeArguments) {
-      if (!first) {
+      if (afterFirstToken) {
         token(",");
         builder.breakToFill(" ");
       }
       scan(typeArgument, null);
-      first = false;
+      afterFirstToken = true;
     }
     builder.close();
     token(">");
@@ -3252,11 +3270,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       if (arguments.size() % 2 == 0 && argumentsAreTabular(arguments) == 2) {
         builder.forcedBreak();
         builder.open(ZERO);
-        boolean first = true;
+        boolean afterFirstToken = false;
         for (int i = 0; i < arguments.size() - 1; i += 2) {
           ExpressionTree argument0 = arguments.get(i);
           ExpressionTree argument1 = arguments.get(i + 1);
-          if (!first) {
+          if (afterFirstToken) {
             token(",");
             builder.forcedBreak();
           }
@@ -3266,7 +3284,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           builder.breakOp(" ");
           scan(argument1, null);
           builder.close();
-          first = false;
+          afterFirstToken = true;
         }
         builder.close();
       } else if (isFormatMethod(arguments)) {
@@ -3290,15 +3308,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   private void argList(List<? extends ExpressionTree> arguments) {
     builder.open(ZERO);
-    boolean first = true;
+    boolean afterFirstToken = false;
     FillMode fillMode = hasOnlyShortItems(arguments) ? FillMode.INDEPENDENT : FillMode.UNIFIED;
     for (ExpressionTree argument : arguments) {
-      if (!first) {
+      if (afterFirstToken) {
         token(",");
         builder.breakOp(fillMode, " ", ZERO);
       }
       scan(argument, null);
-      first = false;
+      afterFirstToken = true;
     }
     builder.close();
   }
@@ -3471,14 +3489,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   // General helper functions.
 
-  enum DeclarationKind {
+  /** Kind of declaration. */
+  protected enum DeclarationKind {
     NONE,
     FIELD,
     PARAMETER
   }
 
   /** Declare one variable or variable-like thing. */
-  int declareOne(
+  protected int declareOne(
       DeclarationKind kind,
       Direction annotationsDirection,
       Optional<ModifiersTree> modifiers,
@@ -3559,7 +3578,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           if (receiverExpression.isPresent()) {
             scan(receiverExpression.get(), null);
           } else {
-            visit(name);
+            variableName(name);
           }
           builder.op(op);
         }
@@ -3600,6 +3619,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
 
     return baseDims;
+  }
+
+  protected void variableName(Name name) {
+    visit(name);
   }
 
   private void maybeAddDims(Deque<List<? extends AnnotationTree>> annotations) {
@@ -3682,17 +3705,18 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     int baseDims = dims.size();
     maybeAddDims(dims);
     baseDims = baseDims - dims.size();
-    boolean first = true;
+    boolean afterFirstToken = false;
     for (VariableTree fragment : fragments) {
-      if (!first) {
+      if (afterFirstToken) {
         token(",");
       }
-      TypeWithDims fragmentDims = variableFragmentDims(first, baseDims, fragment.getType());
+      TypeWithDims fragmentDims =
+          variableFragmentDims(afterFirstToken, baseDims, fragment.getType());
       dims = new ArrayDeque<>(fragmentDims.dims);
       builder.breakOp(" ");
       builder.open(ZERO);
       maybeAddDims(dims);
-      visit(fragment.getName());
+      variableName(fragment.getName());
       maybeAddDims(dims);
       ExpressionTree initializer = fragment.getInitializer();
       if (initializer != null) {
@@ -3704,10 +3728,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         builder.close();
       }
       builder.close();
-      if (first) {
+      if (!afterFirstToken) {
         builder.close();
       }
-      first = false;
+      afterFirstToken = true;
     }
     builder.close();
     token(";");
@@ -3786,14 +3810,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.open(types.size() > 1 ? plusFour : ZERO);
     token(token);
     builder.space();
-    boolean first = true;
+    boolean afterFirstToken = false;
     for (Tree type : types) {
-      if (!first) {
+      if (afterFirstToken) {
         token(",");
         builder.breakOp(" ");
       }
       scan(type, null);
-      first = false;
+      afterFirstToken = true;
     }
     builder.close();
   }
