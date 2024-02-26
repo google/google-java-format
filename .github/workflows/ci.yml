@@ -65,15 +65,6 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: "zulu"
           cache: "maven"
-      - name: "Set up JDK ${{ matrix.java }}"
-        if: ${{ matrix.java == 'GraalVM' }}
-        uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: "21"
-          distribution: "graalvm-community"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          native-image-job-reports: "true"
-          cache: "maven"
       - name: "Install"
         shell: bash
         run: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
