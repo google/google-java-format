@@ -77,7 +77,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # Use "oldest" available ubuntu-* instead of -latest,
+        # see https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories;
+        # due to https://github.com/google/google-java-format/issues/1072.
+        os: [ubuntu-20.04, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     continue-on-error: true
     steps:
