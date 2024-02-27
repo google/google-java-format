@@ -22,7 +22,7 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 @State(
     name = "GoogleJavaFormatSettings",

@@ -33,7 +33,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 class GoogleJavaFormatConfigurable extends BaseConfigurable implements SearchableConfigurable {
 
