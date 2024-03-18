@@ -22,7 +22,7 @@ apply(plugin = "java")
 
 repositories { mavenCentral() }
 
-val googleJavaFormatVersion = "1.20.0"
+val googleJavaFormatVersion = "1.21.0"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_11
@@ -62,5 +62,5 @@ tasks {
 dependencies {
   implementation("com.google.googlejavaformat:google-java-format:${googleJavaFormatVersion}")
   testImplementation("junit:junit:4.13.2")
-  testImplementation("com.google.truth:truth:1.4.1")
+  testImplementation("com.google.truth:truth:1.4.2")
 }
