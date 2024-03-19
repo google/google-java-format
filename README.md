@@ -50,8 +50,8 @@ actions.
 #### IntelliJ JRE Config
 
 The google-java-format plugin uses some internal classes that aren't available
-without extra configuration. To use the plugin, go to `Help→Edit Custom VM
-Options...` and paste in these lines:
+without extra configuration. To use the plugin, go to `Help→Find Action` or `CTRL+Shift+A` (`⌘⇧A` on macOS) and search `Edit Custom VM
+Options...` then paste in these lines:
 
 ```
 --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
