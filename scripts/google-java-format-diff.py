@@ -33,7 +33,33 @@ import string
 import subprocess
 import io
 import sys
+from concurrent.futures import ThreadPoolExecutor,wait,FIRST_EXCEPTION
 from shutil import which
+
+def _apply_format(filename, lines, base_command, args):
+  """Apply format on filename."""
+  if args.i and args.verbose:
+    print('Formatting', filename)
+
+  command = base_command[:]
+  command.extend(lines)
+  command.append(filename)
+  p = subprocess.Popen(command, stdout=subprocess.PIPE,
+                       stderr=None, stdin=subprocess.PIPE)
+  stdout, _ = p.communicate()
+  if p.returncode != 0:
+    sys.exit(p.returncode)
+
+  if not args.i:
+    with open(filename) as f:
+      code = f.readlines()
+    formatted_code = io.StringIO(stdout.decode('utf-8')).readlines()
+    diff = difflib.unified_diff(code, formatted_code,
+                                filename, filename,
+                                '(before formatting)', '(after formatting)')
+    diff_string = ''.join(diff)
+    if len(diff_string) > 0:
+      sys.stdout.write(diff_string)
 
 def main():
   parser = argparse.ArgumentParser(description=
@@ -108,39 +134,29 @@ def main():
     binary = which('google-java-format') or '/usr/bin/google-java-format'
     base_command = [binary]
 
-  # Reformat files containing changes in place.
-  for filename, lines in lines_by_file.items():
-    if args.i and args.verbose:
-      print('Formatting', filename)
-    command = base_command[:]
-    if args.i:
-      command.append('-i')
-    if args.aosp:
-      command.append('--aosp')
-    if args.skip_sorting_imports:
-      command.append('--skip-sorting-imports')
-    if args.skip_removing_unused_imports:
-      command.append('--skip-removing-unused-imports')
-    if args.skip_javadoc_formatting:
-      command.append('--skip-javadoc-formatting')
-    command.extend(lines)
-    command.append(filename)
-    p = subprocess.Popen(command, stdout=subprocess.PIPE,
-                         stderr=None, stdin=subprocess.PIPE)
-    stdout, stderr = p.communicate()
-    if p.returncode != 0:
-      sys.exit(p.returncode);
+  if args.i:
+    base_command.append('-i')
+  if args.aosp:
+    base_command.append('--aosp')
+  if args.skip_sorting_imports:
+    base_command.append('--skip-sorting-imports')
+  if args.skip_removing_unused_imports:
+    base_command.append('--skip-removing-unused-imports')
+  if args.skip_javadoc_formatting:
+    base_command.append('--skip-javadoc-formatting')
 
-    if not args.i:
-      with open(filename) as f:
-        code = f.readlines()
-      formatted_code = io.StringIO(stdout.decode('utf-8')).readlines()
-      diff = difflib.unified_diff(code, formatted_code,
-                                  filename, filename,
-                                  '(before formatting)', '(after formatting)')
-      diff_string = ''.join(diff)
-      if len(diff_string) > 0:
-        sys.stdout.write(diff_string)
+  with ThreadPoolExecutor() as executor:
+    format_futures = []
+    for filename, lines in lines_by_file.items():
+      format_futures.append(
+          executor.submit(_apply_format, filename, lines, base_command, args)
+      )
+
+    done, _ = wait(format_futures, return_when=FIRST_EXCEPTION)
+    for future in done:
+      if exception := future.exception():
+        executor.shutdown(wait=True, cancel_futures=True)
+        sys.exit(exception.args[0])
 
 if __name__ == '__main__':
   main()
