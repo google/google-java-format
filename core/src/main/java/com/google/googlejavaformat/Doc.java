@@ -397,6 +397,10 @@ public abstract class Doc {
     private final Indent plusIndentCommentsBefore;
     private final Optional<Indent> breakAndIndentTrailingComment;
 
+    private Input.Tok tok() {
+      return token.getTok();
+    }
+
     private Token(
         Input.Token token,
         RealOrImaginary realOrImaginary,
@@ -465,7 +469,8 @@ public abstract class Doc {
 
     @Override
     int computeWidth() {
-      return token.getTok().length();
+      int idx = Newlines.firstBreak(tok().getOriginalText());
+      return (idx >= 0) ? MAX_LINE_WIDTH : tok().length();
     }
 
     @Override
@@ -480,8 +485,7 @@ public abstract class Doc {
 
     @Override
     public State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state) {
-      String text = token.getTok().getOriginalText();
-      return state.withColumn(state.column + text.length());
+      return state.withColumn(state.column + computeWidth());
     }
 
     @Override
