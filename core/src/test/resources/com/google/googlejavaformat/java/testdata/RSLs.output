@@ -51,4 +51,18 @@ ipsum
 lorem
 ipsum
 """;
+
+  {
+    f(
+        """
+        lorem
+        ipsum
+        """,
+        42);
+
+    """
+    hello %s
+    """
+        .formatted("world");
+  }
 }
