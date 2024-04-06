@@ -56,7 +56,7 @@ final class UsageException extends Exception {
     "  --set-exit-if-changed",
     "    Return exit code 1 if there are any formatting changes.",
     "  --lines, -lines, --line, -line",
-    "    Line range(s) to format, like 5:10 (1-based; default is all).",
+    "    Line range(s) to format, e.g. the first 5 lines are 1:5 (1-based; default is all).",
     "  --offset, -offset",
     "    Character offset to format (0-based; default is all).",
     "  --length, -length",

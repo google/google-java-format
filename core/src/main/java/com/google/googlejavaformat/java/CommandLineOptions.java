@@ -16,6 +16,8 @@ package com.google.googlejavaformat.java;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableRangeSet;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import java.util.Optional;
 
 /**
@@ -178,7 +180,7 @@ final class CommandLineOptions {
   static class Builder {
 
     private final ImmutableList.Builder<String> files = ImmutableList.builder();
-    private final ImmutableRangeSet.Builder<Integer> lines = ImmutableRangeSet.builder();
+    private final RangeSet<Integer> lines = TreeRangeSet.create();
     private final ImmutableList.Builder<Integer> offsets = ImmutableList.builder();
     private final ImmutableList.Builder<Integer> lengths = ImmutableList.builder();
     private boolean inPlace = false;
@@ -204,7 +206,7 @@ final class CommandLineOptions {
       return this;
     }
 
-    ImmutableRangeSet.Builder<Integer> linesBuilder() {
+    RangeSet<Integer> linesBuilder() {
       return lines;
     }
 
@@ -282,7 +284,7 @@ final class CommandLineOptions {
       return new CommandLineOptions(
           files.build(),
           inPlace,
-          lines.build(),
+          ImmutableRangeSet.copyOf(lines),
           offsets.build(),
           lengths.build(),
           aosp,

@@ -16,7 +16,6 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
@@ -151,15 +150,13 @@ public class CommandLineOptionsParserTest {
         .isTrue();
   }
 
-  // TODO(cushon): consider handling this in the parser and reporting a more detailed error
   @Test
-  public void illegalLines() {
-    try {
-      CommandLineOptionsParser.parse(Arrays.asList("-lines=1:1", "-lines=1:1"));
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e).hasMessageThat().contains("overlap");
-    }
+  public void mergedLines() {
+    assertThat(
+            CommandLineOptionsParser.parse(Arrays.asList("-lines=1:5", "-lines=2:8"))
+                .lines()
+                .asRanges())
+        .containsExactly(Range.closedOpen(0, 8));
   }
 
   @Test
