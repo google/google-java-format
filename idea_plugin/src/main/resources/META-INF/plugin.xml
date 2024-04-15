@@ -35,6 +35,10 @@
   ]]></description>
   <change-notes><![CDATA[
     <dl>
+      <dt>1.22.0.0</dt>
+      <dd>Updated to use google-java-format 1.22.0.</dd>
+      <dt>1.21.0.0</dt>
+      <dd>Updated to use google-java-format 1.21.0.</dd>
       <dt>1.20.0.0</dt>
       <dd>Updated to use google-java-format 1.20.0.</dd>
       <dt>1.19.2.0</dt>

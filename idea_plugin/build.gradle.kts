@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-plugins { id("org.jetbrains.intellij") version "1.17.2" }
+// https://github.com/JetBrains/intellij-platform-gradle-plugin/releases
+plugins { id("org.jetbrains.intellij") version "1.17.3" }
 
 apply(plugin = "org.jetbrains.intellij")
 
@@ -22,7 +23,8 @@ apply(plugin = "java")
 
 repositories { mavenCentral() }
 
-val googleJavaFormatVersion = "1.21.0"
+// https://github.com/google/google-java-format/releases
+val googleJavaFormatVersion = "1.22.0"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_11
@@ -61,6 +63,8 @@ tasks {
 
 dependencies {
   implementation("com.google.googlejavaformat:google-java-format:${googleJavaFormatVersion}")
+  // https://mvnrepository.com/artifact/junit/junit
   testImplementation("junit:junit:4.13.2")
+  // https://mvnrepository.com/artifact/com.google.truth/truth
   testImplementation("com.google.truth:truth:1.4.2")
 }
