@@ -64,7 +64,7 @@ public final class FormatterTest {
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("A.java");
-    Files.write(path, input.getBytes(UTF_8));
+    Files.writeString(path, input);
 
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
@@ -116,7 +116,7 @@ public final class FormatterTest {
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("Foo.java");
-    Files.write(path, input.getBytes(UTF_8));
+    Files.writeString(path, input);
 
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
@@ -133,7 +133,7 @@ public final class FormatterTest {
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("Foo.java");
-    Files.write(path, input.getBytes(UTF_8));
+    Files.writeString(path, input);
 
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
@@ -142,7 +142,25 @@ public final class FormatterTest {
     String[] args = {"--offset", "0", "--length", "9999", path.toString()};
     assertThat(main.format(args)).isEqualTo(1);
     assertThat(err.toString())
-        .contains("error: invalid length 9999, offset + length (9999) is outside the file");
+        .contains("error: invalid offset (0) or length (9999); offset + length (9999)");
+  }
+
+  @Test
+  public void testFormatOffsetOutOfRange() throws Exception {
+    String input = "class Foo{}\n";
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("Foo.java");
+    Files.writeString(path, input);
+
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    String[] args = {"--offset", "9998", "--length", "1", path.toString()};
+    assertThat(main.format(args)).isEqualTo(1);
+    assertThat(err.toString())
+        .contains("error: invalid offset (9998) or length (1); offset + length (9999)");
   }
 
   @Test
@@ -303,7 +321,7 @@ public final class FormatterTest {
     String inputResourceName = "com/google/googlejavaformat/java/testimports/A.input";
     String input = getResource(inputResourceName);
     String expectedOutput = getResource(outputResourceName);
-    Files.write(path, input.getBytes(UTF_8));
+    Files.writeString(path, input);
 
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();

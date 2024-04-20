@@ -14,11 +14,12 @@
 
 package com.google.googlejavaformat.java;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
-
+import com.google.common.collect.RangeSet;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -27,8 +28,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /** A parser for {@link CommandLineOptions}. */
 final class CommandLineOptionsParser {
@@ -163,8 +162,8 @@ final class CommandLineOptionsParser {
    * number. Line numbers are {@code 1}-based, but are converted to the {@code 0}-based numbering
    * used internally by google-java-format.
    */
-  private static void parseRangeSet(final ImmutableRangeSet.Builder<Integer> result, final String ranges) {
-    for (final String range : COMMA_SPLITTER.split(ranges)) {
+  private static void parseRangeSet(RangeSet<Integer> result, String ranges) {
+    for (String range : COMMA_SPLITTER.split(ranges)) {
       result.add(parseRange(range));
     }
   }

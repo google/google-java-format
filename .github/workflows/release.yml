@@ -1,0 +1,118 @@
+# Copyright 2020 The Google Java Format Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Release google-java-format
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "version number for this release."
+        required: true
+
+jobs:
+  build-maven-jars:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: "zulu"
+          cache: "maven"
+          server-id: sonatype-nexus-staging
+          server-username: CI_DEPLOY_USERNAME
+          server-password: CI_DEPLOY_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_SIGNING_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
+      - name: Bump Version Number
+        run: |
+          mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.event.inputs.version }}"
+          mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.event.inputs.version }}" -pl eclipse_plugin
+          mvn tycho-versions:update-eclipse-metadata -pl eclipse_plugin
+          git ls-files | grep -E '(pom.xml|MANIFEST.MF)$' | xargs git add
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}"
+          git commit -m "Release google-java-format ${{ github.event.inputs.version }}"
+          git tag "v${{ github.event.inputs.version }}"
+          echo "TARGET_COMMITISH=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/google/google-java-format.git
+
+      - name: Deploy to Sonatype staging
+        env:
+          CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
+          CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: mvn --no-transfer-progress -pl '!eclipse_plugin' -P sonatype-oss-release clean deploy -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
+
+      - name: Build Eclipse plugin
+        run: mvn --no-transfer-progress -pl 'eclipse_plugin' verify gpg:sign -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
+
+      - name: Push tag
+        run: |
+          git push origin "v${{ github.event.inputs.version }}"
+
+      - name: Add Artifacts to Release Entry
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          draft: true
+          name: ${{ github.event.input.version }}
+          tag_name: "v${{ github.event.inputs.version }}"
+          target_commitish: ${{ env.TARGET_COMMITISH }}
+          files: |
+            core/target/google-java-format-*.jar
+            eclipse_plugin/target/google-java-format-eclipse-plugin-*.jar
+
+  build-native-image:
+    name: "Build GraalVM native-image on ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+    needs: build-maven-jars
+    strategy:
+      matrix:
+        # Use "oldest" available ubuntu-* instead of -latest,
+        # see https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories;
+        # due to https://github.com/google/google-java-format/issues/1072.
+        os: [ubuntu-20.04, macos-latest, windows-latest]
+    env:
+        # NB: Must keep the keys in this inline JSON below in line with the os: above!
+      SUFFIX: ${{fromJson('{"ubuntu-20.04":"linux-x86-64", "macos-latest":"darwin-arm64", "windows-latest":"windows-x86-64"}')[matrix.os]}}
+      EXTENSION: ${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+    steps:
+      - name: "Check out repository"
+        uses: actions/checkout@v4
+      - name: "Set up GraalVM"
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: "21"
+          distribution: "graalvm-community"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: "true"
+          cache: "maven"
+      - name: Bump Version Number
+        run: mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.event.inputs.version }}"
+      - name: "Native"
+        run: mvn -Pnative -DskipTests package -pl core -am
+      - name: "Move outputs"
+        run: cp core/target/google-java-format${{ env.EXTENSION }} google-java-format_${{ env.SUFFIX }}${{ env.EXTENSION }}
+      - name: "Upload native-image"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "v${{ github.event.inputs.version }}" "google-java-format_${{ env.SUFFIX }}${{ env.EXTENSION }}"

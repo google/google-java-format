@@ -23,7 +23,7 @@
     <groupId>com.github.mrdolch.googlejavaformat</groupId>
     <artifactId>configurable-google-java-format-parent</artifactId>
     <packaging>pom</packaging>
-    <version>2024.21.0</version>
+    <version>2024.21.1</version>
 
   <modules>
     <module>core</module>
@@ -66,18 +66,6 @@
       <timezone>-8</timezone>
     </developer>
   </developers>
-
-  <scm>
-    <url>http://github.com/google/google-java-format/</url>
-    <connection>scm:git:git://github.com/google/google-java-format.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/google/google-java-format.git</developerConnection>
-    <tag>HEAD</tag>
-  </scm>
-
-  <issueManagement>
-    <system>GitHub Issues</system>
-    <url>http://github.com/google/google-java-format/issues</url>
-  </issueManagement>
 
   <prerequisites>
     <maven>3.0.3</maven>

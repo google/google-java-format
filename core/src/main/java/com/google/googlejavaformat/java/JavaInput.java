@@ -573,9 +573,11 @@ public final class JavaInput extends Input {
     if (characterRange.upperEndpoint() > text.length()) {
       throw new FormatterException(
           String.format(
-              "error: invalid length %d, offset + length (%d) is outside the file",
+              "error: invalid offset (%d) or length (%d); offset + length (%d) > file length (%d)",
+              characterRange.lowerEndpoint(),
               characterRange.upperEndpoint() - characterRange.lowerEndpoint(),
-              characterRange.upperEndpoint()));
+              characterRange.upperEndpoint(),
+              text.length()));
     }
     // empty range stands for "format the line under the cursor"
     Range<Integer> nonEmptyRange =
