@@ -23,7 +23,7 @@
     <groupId>com.github.mrdolch.googlejavaformat</groupId>
     <artifactId>configurable-google-java-format-parent</artifactId>
     <packaging>pom</packaging>
-    <version>2024.21.0</version>
+    <version>2024.21.1</version>
 
   <modules>
     <module>core</module>
