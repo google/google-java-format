@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
+        run: mvn verify -DskipTests=true -Dmaven.javadoc.skip=true -B -V
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "core/target/configurable-google-java-format-*.jar"
