@@ -38,20 +38,20 @@ final class CommandLineOptionsParser {
       Splitter.on(CharMatcher.breakingWhitespace()).omitEmptyStrings().trimResults();
 
   /** Parses {@link CommandLineOptions}. */
-  static CommandLineOptions parse(Iterable<String> options) {
-    CommandLineOptions.Builder optionsBuilder = CommandLineOptions.builder();
-    List<String> expandedOptions = new ArrayList<>();
+  static CommandLineOptions parse(final Iterable<String> options) {
+    final CommandLineOptions.Builder optionsBuilder = CommandLineOptions.builder();
+    final List<String> expandedOptions = new ArrayList<>();
     expandParamsFiles(options, expandedOptions);
-    Iterator<String> it = expandedOptions.iterator();
+    final Iterator<String> it = expandedOptions.iterator();
     while (it.hasNext()) {
-      String option = it.next();
+      final String option = it.next();
       if (!option.startsWith("-")) {
         optionsBuilder.filesBuilder().add(option).addAll(it);
         break;
       }
-      String flag;
-      String value;
-      int idx = option.indexOf('=');
+      final String flag;
+      final String value;
+      final int idx = option.indexOf('=');
       if (idx >= 0) {
         flag = option.substring(0, idx);
         value = option.substring(idx + 1);
@@ -85,6 +85,11 @@ final class CommandLineOptionsParser {
         case "-aosp":
         case "-a":
           optionsBuilder.aosp(true);
+          break;
+        case "--width":
+        case "-width":
+        case "-w":
+          optionsBuilder.width(parseInteger(it, flag, value));
           break;
         case "--version":
         case "-version":
@@ -132,16 +137,16 @@ final class CommandLineOptionsParser {
     return optionsBuilder.build();
   }
 
-  private static Integer parseInteger(Iterator<String> it, String flag, String value) {
+  private static Integer parseInteger(final Iterator<String> it, final String flag, final String value) {
     try {
       return Integer.valueOf(getValue(flag, it, value));
-    } catch (NumberFormatException e) {
+    } catch (final NumberFormatException e) {
       throw new IllegalArgumentException(
           String.format("invalid integer value for %s: %s", flag, value), e);
     }
   }
 
-  private static String getValue(String flag, Iterator<String> it, String value) {
+  private static String getValue(final String flag, final Iterator<String> it, final String value) {
     if (value != null) {
       return value;
     }
@@ -167,15 +172,15 @@ final class CommandLineOptionsParser {
    * Parse a range, as in "1:12" or "42". Line numbers provided are {@code 1}-based, but are
    * converted here to {@code 0}-based.
    */
-  private static Range<Integer> parseRange(String arg) {
-    List<String> args = COLON_SPLITTER.splitToList(arg);
+  private static Range<Integer> parseRange(final String arg) {
+    final List<String> args = COLON_SPLITTER.splitToList(arg);
     switch (args.size()) {
       case 1:
-        int line = Integer.parseInt(args.get(0)) - 1;
+        final int line = Integer.parseInt(args.get(0)) - 1;
         return Range.closedOpen(line, line + 1);
       case 2:
-        int line0 = Integer.parseInt(args.get(0)) - 1;
-        int line1 = Integer.parseInt(args.get(1)) - 1;
+        final int line0 = Integer.parseInt(args.get(0)) - 1;
+        final int line1 = Integer.parseInt(args.get(1)) - 1;
         return Range.closedOpen(line0, line1 + 1);
       default:
         throw new IllegalArgumentException(arg);
@@ -186,8 +191,8 @@ final class CommandLineOptionsParser {
    * Pre-processes an argument list, expanding arguments of the form {@code @filename} by reading
    * the content of the file and appending whitespace-delimited options to {@code arguments}.
    */
-  private static void expandParamsFiles(Iterable<String> args, List<String> expanded) {
-    for (String arg : args) {
+  private static void expandParamsFiles(final Iterable<String> args, final List<String> expanded) {
+    for (final String arg : args) {
       if (arg.isEmpty()) {
         continue;
       }
@@ -196,11 +201,11 @@ final class CommandLineOptionsParser {
       } else if (arg.startsWith("@@")) {
         expanded.add(arg.substring(1));
       } else {
-        Path path = Paths.get(arg.substring(1));
+        final Path path = Paths.get(arg.substring(1));
         try {
-          String sequence = new String(Files.readAllBytes(path), UTF_8);
+          final String sequence = new String(Files.readAllBytes(path), UTF_8);
           expandParamsFiles(ARG_SPLITTER.split(sequence), expanded);
-        } catch (IOException e) {
+        } catch (final IOException e) {
           throw new UncheckedIOException(path + ": could not read file: " + e.getMessage(), e);
         }
       }

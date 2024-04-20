@@ -14,17 +14,18 @@
 
 package com.google.googlejavaformat.java.javadoc;
 
+import com.google.common.collect.ImmutableList;
+import com.google.googlejavaformat.java.javadoc.JavadocLexer.LexException;
+
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static com.google.googlejavaformat.java.javadoc.JavadocLexer.lex;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.BR_TAG;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_OPEN_TAG;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.compile;
-
-import com.google.common.collect.ImmutableList;
-import com.google.googlejavaformat.java.javadoc.JavadocLexer.LexException;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Entry point for formatting Javadoc.
@@ -36,26 +37,25 @@ import java.util.regex.Pattern;
  */
 public final class JavadocFormatter {
 
-  static final int MAX_LINE_LENGTH = 100;
 
   /**
    * Formats the given Javadoc comment, which must start with ∕✱✱ and end with ✱∕. The output will
    * start and end with the same characters.
    */
-  public static String formatJavadoc(String input, int blockIndent) {
-    ImmutableList<Token> tokens;
+  public static String formatJavadoc(final String input, final int blockIndent, final int maxWidth) {
+    final ImmutableList<Token> tokens;
     try {
       tokens = lex(input);
-    } catch (LexException e) {
+    } catch (final LexException e) {
       return input;
     }
-    String result = render(tokens, blockIndent);
-    return makeSingleLineIfPossible(blockIndent, result);
+    final String result = render(tokens, blockIndent, maxWidth);
+    return makeSingleLineIfPossible(blockIndent, result, maxWidth);
   }
 
-  private static String render(List<Token> input, int blockIndent) {
-    JavadocWriter output = new JavadocWriter(blockIndent);
-    for (Token token : input) {
+  private static String render(final List<Token> input, final int blockIndent, final int maxWidth) {
+    final JavadocWriter output = new JavadocWriter(blockIndent, maxWidth);
+    for (final Token token : input) {
       switch (token.getType()) {
         case BEGIN_JAVADOC:
           output.writeBeginJavadoc();
@@ -143,15 +143,15 @@ public final class JavadocFormatter {
    * should include them as part of its own postprocessing? Or even the writer could make sense.
    */
 
-  private static Token standardizeBrToken(Token token) {
+  private static Token standardizeBrToken(final Token token) {
     return standardize(token, STANDARD_BR_TOKEN);
   }
 
-  private static Token standardizePToken(Token token) {
+  private static Token standardizePToken(final Token token) {
     return standardize(token, STANDARD_P_TOKEN);
   }
 
-  private static Token standardize(Token token, Token standardToken) {
+  private static Token standardize(final Token token, final Token standardToken) {
     return SIMPLE_TAG_PATTERN.matcher(token.getValue()).matches() ? standardToken : token;
   }
 
@@ -165,21 +165,21 @@ public final class JavadocFormatter {
    * Returns the given string or a one-line version of it (e.g., "∕✱✱ Tests for foos. ✱∕") if it
    * fits on one line.
    */
-  private static String makeSingleLineIfPossible(int blockIndent, String input) {
-    Matcher matcher = ONE_CONTENT_LINE_PATTERN.matcher(input);
+  private static String makeSingleLineIfPossible(final int blockIndent, final String input, final int maxWidth) {
+    final Matcher matcher = ONE_CONTENT_LINE_PATTERN.matcher(input);
     if (matcher.matches()) {
-      String line = matcher.group(1);
+      final String line = matcher.group(1);
       if (line.isEmpty()) {
         return "/** */";
-      } else if (oneLineJavadoc(line, blockIndent)) {
+      } else if (oneLineJavadoc(line, blockIndent, maxWidth)) {
         return "/** " + line + " */";
       }
     }
     return input;
   }
 
-  private static boolean oneLineJavadoc(String line, int blockIndent) {
-    int oneLinerContentLength = MAX_LINE_LENGTH - "/**  */".length() - blockIndent;
+  private static boolean oneLineJavadoc(final String line, final int blockIndent, final int maxWidth) {
+    final int oneLinerContentLength = maxWidth - "/**  */".length() - blockIndent;
     if (line.length() > oneLinerContentLength) {
       return false;
     }

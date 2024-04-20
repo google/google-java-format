@@ -14,23 +14,11 @@
 
 package com.google.googlejavaformat.java;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Range;
-import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeSet;
+import com.google.common.collect.*;
 import com.google.common.io.CharSink;
 import com.google.common.io.CharSource;
 import com.google.errorprone.annotations.Immutable;
-import com.google.googlejavaformat.Doc;
-import com.google.googlejavaformat.DocBuilder;
-import com.google.googlejavaformat.FormattingError;
-import com.google.googlejavaformat.Newlines;
-import com.google.googlejavaformat.Op;
-import com.google.googlejavaformat.OpsBuilder;
+import com.google.googlejavaformat.*;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
@@ -38,18 +26,16 @@ import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
+
+import javax.tools.*;
 import java.io.IOError;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
-import javax.tools.DiagnosticListener;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardLocation;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This is google-java-format, a new Java formatter that follows the Google Java Style Guide quite
@@ -86,8 +72,6 @@ import javax.tools.StandardLocation;
 @Immutable
 public final class Formatter {
 
-  public static final int MAX_LINE_LENGTH = 100;
-
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
 
   private final JavaFormatterOptions options;
@@ -101,6 +85,9 @@ public final class Formatter {
     this.options = options;
   }
 
+  public int getMaxLineLength() {
+    return this.options.maxLineWidth();
+  }
   /**
    * Construct a {@code Formatter} given a Java compilation unit. Parses the code; builds a {@link
    * JavaInput} and the corresponding {@link JavaOutput}.
@@ -165,8 +152,9 @@ public final class Formatter {
     visitor.scan(unit, null);
     builder.sync(javaInput.getText().length());
     builder.drain();
-    Doc doc = new DocBuilder().withOps(builder.build()).build();
-    doc.computeBreaks(javaOutput.getCommentsHelper(), MAX_LINE_LENGTH, new Doc.State(+0, 0));
+    final Doc doc = new DocBuilder().withOps(builder.build()).build();
+    doc.computeBreaks(
+        javaOutput.getCommentsHelper(), options.maxLineWidth(), new Doc.State(+0, 0));
     doc.write(javaOutput);
     javaOutput.flush();
   }

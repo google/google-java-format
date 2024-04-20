@@ -1,0 +1,19 @@
+name: Releases
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "core/target/google-java-format-*.jar"
+          bodyFile: "cgjf-release.md"

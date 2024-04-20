@@ -67,7 +67,7 @@ import org.jspecify.annotations.Nullable;
 public final class StringWrapper {
   /** Reflows long string literals in the given Java source code. */
   public static String wrap(String input, Formatter formatter) throws FormatterException {
-    return StringWrapper.wrap(Formatter.MAX_LINE_LENGTH, input, formatter);
+    return StringWrapper.wrap(formatter.getMaxLineLength(), input, formatter);
   }
 
   /**

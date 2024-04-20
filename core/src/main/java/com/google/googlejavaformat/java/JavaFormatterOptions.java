@@ -58,6 +58,8 @@ public abstract class JavaFormatterOptions {
 
   public abstract boolean reorderModifiers();
 
+  public abstract int maxLineWidth();
+
   /** Returns the code style. */
   public abstract Style style();
 
@@ -71,7 +73,8 @@ public abstract class JavaFormatterOptions {
     return new AutoValue_JavaFormatterOptions.Builder()
         .style(Style.GOOGLE)
         .formatJavadoc(true)
-        .reorderModifiers(true);
+        .reorderModifiers(true)
+        .maxLineWidth(100);
   }
 
   /** A builder for {@link JavaFormatterOptions}. */
@@ -83,6 +86,8 @@ public abstract class JavaFormatterOptions {
     public abstract Builder formatJavadoc(boolean formatJavadoc);
 
     public abstract Builder reorderModifiers(boolean reorderModifiers);
+
+    public abstract Builder maxLineWidth(int maxLineWidth);
 
     public abstract JavaFormatterOptions build();
   }

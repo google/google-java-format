@@ -40,6 +40,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /** The main class for the Java formatter CLI. */
 public final class Main {
@@ -121,6 +122,7 @@ public final class Main {
         JavaFormatterOptions.builder()
             .style(parameters.aosp() ? Style.AOSP : Style.GOOGLE)
             .formatJavadoc(parameters.formatJavadoc())
+            .maxLineWidth(parameters.width())
             .build();
 
     if (parameters.stdin()) {
