@@ -13,6 +13,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v3
+      - name: "Set up JDK 21 from Zulu"
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: "zulu"
       - name: Build with Maven
         run: mvn verify -DskipTests=true -Dmaven.javadoc.skip=true -B -V
       - uses: ncipollo/release-action@v1
