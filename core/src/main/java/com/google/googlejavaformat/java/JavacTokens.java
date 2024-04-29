@@ -15,8 +15,6 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkElementIndex;
-import static java.util.Arrays.stream;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -29,15 +27,7 @@ import com.sun.tools.javac.parser.Tokens.Token;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.parser.UnicodeReader;
 import com.sun.tools.javac.util.Context;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
-import org.jspecify.annotations.Nullable;
 
 /** A wrapper around javac's lexer. */
 final class JavacTokens {
@@ -54,8 +44,6 @@ final class JavacTokens {
     private final int endPos;
 
     RawTok(String stringVal, TokenKind kind, int pos, int endPos) {
-      checkElementIndex(pos, endPos, "pos");
-      checkArgument(pos < endPos, "expected pos (%s) < endPos (%s)", pos, endPos);
       this.stringVal = stringVal;
       this.kind = kind;
       this.pos = pos;
@@ -83,18 +71,9 @@ final class JavacTokens {
     }
   }
 
-  private static final TokenKind STRINGFRAGMENT =
-      stream(TokenKind.values())
-          .filter(t -> t.name().contentEquals("STRINGFRAGMENT"))
-          .findFirst()
-          .orElse(null);
-
-  static boolean isStringFragment(TokenKind kind) {
-    return STRINGFRAGMENT != null && Objects.equals(kind, STRINGFRAGMENT);
-  }
-
-  private static ImmutableList<Token> readAllTokens(
-      String source, Context context, Set<Integer> nonTerminalStringFragments) {
+  /** Lex the input and return a list of {@link RawTok}s. */
+  public static ImmutableList<RawTok> getTokens(
+      String source, Context context, Set<TokenKind> stopTokens) {
     if (source == null) {
       return ImmutableList.of();
     }
@@ -102,69 +81,20 @@ final class JavacTokens {
     char[] buffer = (source + EOF_COMMENT).toCharArray();
     Scanner scanner =
         new AccessibleScanner(fac, new CommentSavingTokenizer(fac, buffer, buffer.length));
-    List<Token> tokens = new ArrayList<>();
-    do {
-      scanner.nextToken();
-      tokens.add(scanner.token());
-    } while (scanner.token().kind != TokenKind.EOF);
-    for (int i = 0; i < tokens.size(); i++) {
-      if (isStringFragment(tokens.get(i).kind)) {
-        int start = i;
-        while (isStringFragment(tokens.get(i).kind)) {
-          i++;
-        }
-        for (int j = start; j < i - 1; j++) {
-          nonTerminalStringFragments.add(tokens.get(j).pos);
-        }
-      }
-    }
-    // A string template is tokenized as a series of STRINGFRAGMENT tokens containing the string
-    // literal values, followed by the tokens for the template arguments. For the formatter, we
-    // want the stream of tokens to appear in order by their start position.
-    if (Runtime.version().feature() >= 21) {
-      Collections.sort(tokens, Comparator.comparingInt(t -> t.pos));
-    }
-    return ImmutableList.copyOf(tokens);
-  }
-
-  /** Lex the input and return a list of {@link RawTok}s. */
-  public static ImmutableList<RawTok> getTokens(
-      String source, Context context, Set<TokenKind> stopTokens) {
-    if (source == null) {
-      return ImmutableList.of();
-    }
-    Set<Integer> nonTerminalStringFragments = new HashSet<>();
-    ImmutableList<Token> javacTokens = readAllTokens(source, context, nonTerminalStringFragments);
-
     ImmutableList.Builder<RawTok> tokens = ImmutableList.builder();
     int end = source.length();
     int last = 0;
-    for (Token t : javacTokens) {
+    do {
+      scanner.nextToken();
+      Token t = scanner.token();
       if (t.comments != null) {
-        // javac accumulates comments in reverse order
         for (Comment c : Lists.reverse(t.comments)) {
-          int pos = c.getSourcePos(0);
-          int length;
-          if (pos == -1) {
-            // We've found a comment whose position hasn't been recorded. Deduce its position as the
-            // first `/` character after the end of the previous token.
-            //
-            // javac creates a new JavaTokenizer to process string template arguments, so
-            // CommentSavingTokenizer doesn't get a chance to preprocess those comments and save
-            // their text and positions.
-            //
-            // TODO: consider always using this approach once the minimum supported JDK is 16 and
-            // we can assume BasicComment#getRawCharacters is always available.
-            pos = source.indexOf('/', last);
-            length = CommentSavingTokenizer.commentLength(c);
-          } else {
-            length = c.getText().length();
+          if (last < c.getSourcePos(0)) {
+            tokens.add(new RawTok(null, null, last, c.getSourcePos(0)));
           }
-          if (last < pos) {
-            tokens.add(new RawTok(null, null, last, pos));
-          }
-          tokens.add(new RawTok(null, null, pos, pos + length));
-          last = pos + length;
+          tokens.add(
+              new RawTok(null, null, c.getSourcePos(0), c.getSourcePos(0) + c.getText().length()));
+          last = c.getSourcePos(0) + c.getText().length();
         }
       }
       if (stopTokens.contains(t.kind)) {
@@ -176,25 +106,14 @@ final class JavacTokens {
       if (last < t.pos) {
         tokens.add(new RawTok(null, null, last, t.pos));
       }
-      if (isStringFragment(t.kind)) {
-        int endPos = t.endPos;
-        int pos = t.pos;
-        if (nonTerminalStringFragments.contains(t.pos)) {
-          // Include the \ escape from \{...} in the preceding string fragment
-          endPos++;
-        }
-        tokens.add(new RawTok(source.substring(pos, endPos), t.kind, pos, endPos));
-        last = endPos;
-      } else {
-        tokens.add(
-            new RawTok(
-                t.kind == TokenKind.STRINGLITERAL ? "\"" + t.stringVal() + "\"" : null,
-                t.kind,
-                t.pos,
-                t.endPos));
-        last = t.endPos;
-      }
-    }
+      tokens.add(
+          new RawTok(
+              t.kind == TokenKind.STRINGLITERAL ? "\"" + t.stringVal() + "\"" : null,
+              t.kind,
+              t.pos,
+              t.endPos));
+      last = t.endPos;
+    } while (scanner.token().kind != TokenKind.EOF);
     if (last < end) {
       tokens.add(new RawTok(null, null, last, end));
     }
@@ -203,32 +122,6 @@ final class JavacTokens {
 
   /** A {@link JavaTokenizer} that saves comments. */
   static class CommentSavingTokenizer extends JavaTokenizer {
-
-    private static final Method GET_RAW_CHARACTERS_METHOD = getRawCharactersMethod();
-
-    private static @Nullable Method getRawCharactersMethod() {
-      try {
-        // This is a method in PositionTrackingReader, but that class is not public.
-        return BasicComment.class.getMethod("getRawCharacters");
-      } catch (NoSuchMethodException e) {
-        return null;
-      }
-    }
-
-    static int commentLength(Comment comment) {
-      if (comment instanceof BasicComment && GET_RAW_CHARACTERS_METHOD != null) {
-        // If we've seen a BasicComment instead of a CommentWithTextAndPosition, getText() will
-        // be null, so we deduce the length using getRawCharacters. See also the comment at the
-        // usage of this method in getTokens.
-        try {
-          return ((char[]) GET_RAW_CHARACTERS_METHOD.invoke(((BasicComment) comment))).length;
-        } catch (ReflectiveOperationException e) {
-          throw new LinkageError(e.getMessage(), e);
-        }
-      }
-      return comment.getText().length();
-    }
-
     CommentSavingTokenizer(ScannerFactory fac, char[] buffer, int length) {
       super(fac, buffer, length);
     }

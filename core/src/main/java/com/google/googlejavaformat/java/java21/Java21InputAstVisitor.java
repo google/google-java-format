@@ -23,7 +23,6 @@ import com.sun.source.tree.DefaultCaseLabelTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.PatternCaseLabelTree;
 import com.sun.source.tree.PatternTree;
-import com.sun.source.tree.StringTemplateTree;
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.tree.JCTree;
 import javax.lang.model.element.Name;
@@ -63,7 +62,6 @@ public class Java21InputAstVisitor extends Java17InputAstVisitor {
 
   @Override
   public Void visitDeconstructionPattern(DeconstructionPatternTree node, Void unused) {
-    sync(node);
     scan(node.getDeconstructor(), null);
     builder.open(plusFour);
     token("(");
@@ -79,25 +77,6 @@ public class Java21InputAstVisitor extends Java17InputAstVisitor {
     }
     builder.close();
     token(")");
-    return null;
-  }
-
-  @SuppressWarnings("preview")
-  @Override
-  public Void visitStringTemplate(StringTemplateTree node, Void unused) {
-    sync(node);
-    builder.open(plusFour);
-    scan(node.getProcessor(), null);
-    token(".");
-    token(builder.peekToken().get());
-    for (int i = 0; i < node.getFragments().size() - 1; i++) {
-      token("{");
-      builder.breakOp();
-      scan(node.getExpressions().get(i), null);
-      token("}");
-      token(builder.peekToken().get());
-    }
-    builder.close();
     return null;
   }
 
@@ -118,7 +97,7 @@ public class Java21InputAstVisitor extends Java17InputAstVisitor {
       visitJcAnyPattern((JCTree.JCAnyPattern) tree);
       return null;
     } else {
-      return super.scan(tree, unused);
+      return super.scan(tree, null);
     }
   }
 
