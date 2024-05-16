@@ -387,14 +387,7 @@ public final class JavaInput extends Input {
       final boolean isNumbered; // Is this tok numbered? (tokens and comments)
       String extraNewline = null; // Extra newline at end?
       List<String> strings = new ArrayList<>();
-      if (tokText.startsWith("'")
-          || tokText.startsWith("\"")
-          || JavacTokens.isStringFragment(t.kind())) {
-        // Perform this check first, STRINGFRAGMENT tokens can start with arbitrary characters.
-        isToken = true;
-        isNumbered = true;
-        strings.add(originalTokText);
-      } else if (Character.isWhitespace(tokText0)) {
+      if (Character.isWhitespace(tokText0)) {
         isToken = false;
         isNumbered = false;
         Iterator<String> it = Newlines.lineIterator(originalTokText);
@@ -411,6 +404,10 @@ public final class JavaInput extends Input {
             strings.add(line);
           }
         }
+      } else if (tokText.startsWith("'") || tokText.startsWith("\"")) {
+        isToken = true;
+        isNumbered = true;
+        strings.add(originalTokText);
       } else if (tokText.startsWith("//") || tokText.startsWith("/*")) {
         // For compatibility with an earlier lexer, the newline after a // comment is its own tok.
         if (tokText.startsWith("//")

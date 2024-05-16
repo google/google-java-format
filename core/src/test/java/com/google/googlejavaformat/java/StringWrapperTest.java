@@ -119,6 +119,35 @@ public class StringWrapperTest {
     assertThat(actual).isEqualTo(expected);
   }
 
+  // It would be neat if the formatter could remove the trailing whitespace here, but in general
+  // it preserves unicode escapes from the original text.
+  @Test
+  public void textBlockTrailingWhitespaceUnicodeEscape() throws Exception {
+    assumeTrue(Runtime.version().feature() >= 15);
+    // We want a unicode escape in the Java source being formatted, so it needs to be escaped
+    // in the string literal in this test.
+    String input =
+        lines(
+            "public class T {",
+            "  String s =",
+            "      \"\"\"",
+            "      lorem\\u0020",
+            "      ipsum",
+            "      \"\"\";",
+            "}");
+    String expected =
+        lines(
+            "public class T {",
+            "  String s =",
+            "      \"\"\"",
+            "      lorem\\u0020",
+            "      ipsum",
+            "      \"\"\";",
+            "}");
+    String actual = StringWrapper.wrap(100, input, new Formatter());
+    assertThat(actual).isEqualTo(expected);
+  }
+
   @Test
   public void textBlockSpaceTabMix() throws Exception {
     assumeTrue(Runtime.version().feature() >= 15);
