@@ -83,6 +83,8 @@ Paste also these lines to the `eclipse.ini` file:
 --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
 ```
 
+Once you've done that, restart the IDE.
+
 The plugin adds a `google-java-format` formatter implementation that can be
 configured in `Window > Preferences > Java > Code Style > Formatter > Formatter
 Implementation`.
