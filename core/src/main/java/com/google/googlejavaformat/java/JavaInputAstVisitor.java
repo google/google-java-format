@@ -3744,6 +3744,12 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         tokenBreakTrailingComment("{", plusTwo);
         builder.blankLineWanted(BlankLineWanted.NO);
         builder.open(ZERO);
+        if (builder.peekToken().equals(Optional.of(";"))) {
+          builder.open(plusTwo);
+          dropEmptyDeclarations();
+          builder.close();
+          builder.forcedBreak();
+        }
         token("}", plusTwo);
         builder.close();
       }
