@@ -48,7 +48,16 @@ public class FormatterIntegrationTest {
 
   private static final ImmutableMultimap<Integer, String> VERSIONED_TESTS =
       ImmutableMultimap.<Integer, String>builder()
-          .putAll(14, "I477", "Records", "RSLs", "Var", "ExpressionSwitch", "I574", "I594")
+          .putAll(
+              14,
+              "I477",
+              "Records",
+              "RSLs",
+              "Var",
+              "ExpressionSwitch",
+              "I574",
+              "I594",
+              "SwitchComment")
           .putAll(15, "I603")
           .putAll(16, "I588", "Sealed")
           .putAll(17, "I683", "I684", "I696")
