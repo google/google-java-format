@@ -16,7 +16,7 @@ class T {
   void g(String v) {
     int x =
         switch (v) {
-            // this is a line comment about "zero"
+          // this is a line comment about "zero"
           case "zero":
             return 0;
           case "one":

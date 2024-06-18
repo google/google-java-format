@@ -19,7 +19,6 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
-import com.google.googlejavaformat.Indent;
 import com.google.googlejavaformat.OpsBuilder;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.java.JavaInputAstVisitor;
@@ -233,11 +232,10 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
                 && !node.getBody().getKind().equals(Tree.Kind.BLOCK)
             ? plusFour
             : ZERO);
-    Indent commentIndent = node.getCaseKind().equals(CaseTree.CaseKind.RULE) ? ZERO : plusTwo;
     if (isDefault) {
-      token("default", commentIndent);
+      token("default", ZERO);
     } else {
-      token("case", commentIndent);
+      token("case", ZERO);
       builder.open(labels.size() > 1 ? plusFour : ZERO);
       builder.space();
       boolean afterFirstToken = false;
