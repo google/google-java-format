@@ -97,7 +97,7 @@ class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFor
 
     private EnabledState enabled = EnabledState.UNKNOWN;
     public JavaFormatterOptions.Style style = JavaFormatterOptions.Style.GOOGLE;
-    boolean optimizeImports = true;
+    public boolean optimizeImports = true;
 
     // enabled used to be a boolean so we use bean property methods for backwards compatibility
     public void setEnabled(@Nullable String enabledStr) {
