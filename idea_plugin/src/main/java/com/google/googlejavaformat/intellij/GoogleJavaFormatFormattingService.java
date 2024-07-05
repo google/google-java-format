@@ -27,6 +27,7 @@ import com.intellij.formatting.service.AsyncDocumentFormattingService;
 import com.intellij.formatting.service.AsyncFormattingRequest;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.lang.ImportOptimizer;
+import com.intellij.lang.java.JavaImportOptimizer;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
@@ -40,6 +41,9 @@ public class GoogleJavaFormatFormattingService extends AsyncDocumentFormattingSe
 
   public static final ImmutableSet<ImportOptimizer> IMPORT_OPTIMIZERS =
       ImmutableSet.of(new GoogleJavaFormatImportOptimizer());
+
+  private static final ImmutableSet<ImportOptimizer> DEFAULT_OPTIMIZERS =
+      ImmutableSet.of(new JavaImportOptimizer());
 
   @Override
   protected FormattingTask createFormattingTask(AsyncFormattingRequest request) {
@@ -85,7 +89,11 @@ public class GoogleJavaFormatFormattingService extends AsyncDocumentFormattingSe
 
   @Override
   public @NotNull Set<ImportOptimizer> getImportOptimizers(@NotNull PsiFile file) {
-    return IMPORT_OPTIMIZERS;
+    if (GoogleJavaFormatSettings.getInstance(file.getProject()).shouldOptimizeImports()) {
+      return IMPORT_OPTIMIZERS;
+    } else {
+      return DEFAULT_OPTIMIZERS;
+    }
   }
 
   private static final class GoogleJavaFormatFormattingTask implements FormattingTask {
