@@ -49,6 +49,13 @@ A string containing the name or the full path of the executable."
   :type '(file :must-match t :match (lambda (widget file) (file-executable-p file)))
   :risky t)
 
+(defcustom google-java-format-arguments
+  '()
+  "Arguments to pass into google-java-format-executable"
+  :group 'google-java-format
+  :type '(repeat string)
+  :risky t)
+
 ;;;###autoload
 (defun google-java-format-region (start end)
   "Use google-java-format to format the code between START and END.
@@ -62,16 +69,17 @@ there is no region, then formats the current line."
         (temp-buffer (generate-new-buffer " *google-java-format-temp*"))
         (stderr-file (make-temp-file "google-java-format")))
     (unwind-protect
-        (let ((status (call-process-region
-                       ;; Note that emacs character positions are 1-indexed,
-                       ;; and google-java-format is 0-indexed, so we have to
-                       ;; subtract 1 from START to line it up correctly.
-                       (point-min) (point-max)
-                       google-java-format-executable
-                       nil (list temp-buffer stderr-file) t
-                       "--offset" (number-to-string (1- start))
-                       "--length" (number-to-string (- end start))
-                       "-"))
+        (let ((status (apply #'call-process-region
+                             ;; Note that emacs character positions are 1-indexed,
+                             ;; and google-java-format is 0-indexed, so we have to
+                             ;; subtract 1 from START to line it up correctly.
+                             (point-min) (point-max)
+                             google-java-format-executable
+                             nil (list temp-buffer stderr-file) t
+                             (append google-java-format-arguments
+                                     `("--offset" ,(number-to-string (1- start))
+                                       "--length" ,(number-to-string (- end start))
+                                       "-"))))
               (stderr
                (with-temp-buffer
                  (insert-file-contents stderr-file)
