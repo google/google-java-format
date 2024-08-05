@@ -1875,10 +1875,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     markForPartialFormat();
     builder.forcedBreak();
     if (node.getExpression() == null) {
-      token("default", plusTwo);
+      token("default", ZERO);
       token(":");
     } else {
-      token("case", plusTwo);
+      token("case", ZERO);
       builder.space();
       scan(node.getExpression(), null);
       token(":");
