@@ -3,3 +3,4 @@ build
 gradle
 gradlew
 gradlew.bat
+.intellijPlatform

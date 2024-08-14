@@ -1,3 +1,4 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 /*
  * Copyright 2017 Google Inc. All Rights Reserved.
  *
@@ -15,40 +16,42 @@
  */
 
 // https://github.com/JetBrains/intellij-platform-gradle-plugin/releases
-plugins { id("org.jetbrains.intellij") version "1.17.3" }
-
-apply(plugin = "org.jetbrains.intellij")
-
-apply(plugin = "java")
-
-repositories { mavenCentral() }
-
-// https://github.com/google/google-java-format/releases
-val googleJavaFormatVersion = "1.22.0"
-
-java {
-  sourceCompatibility = JavaVersion.VERSION_11
-  targetCompatibility = JavaVersion.VERSION_11
+plugins {
+  id("org.jetbrains.intellij.platform") version "2.0.1"
 }
 
-intellij {
-  pluginName.set("google-java-format")
-  plugins.set(listOf("java"))
-  version.set("2021.3")
+repositories {
+  mavenCentral()
+
+  intellijPlatform {
+    defaultRepositories()
+  }
+}
+
+// https://github.com/google/google-java-format/releases
+val googleJavaFormatVersion = "1.23.0"
+
+java {
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
+}
+
+intellijPlatform {
+  pluginConfiguration {
+    name = "google-java-format"
+    version = "${googleJavaFormatVersion}.0"
+    ideaVersion {
+      sinceBuild = "223"
+      untilBuild = ""
+    }
+  }
+
+  publishing {
+    token = System.getenv("ORG_GRADLE_PROJECT_intellijPlatform.publishing.token")
+  }
 }
 
 tasks {
-  patchPluginXml {
-    version.set("${googleJavaFormatVersion}.0")
-    sinceBuild.set("213")
-    untilBuild.set("")
-  }
-
-  publishPlugin {
-    val jetbrainsPluginRepoToken: String by project
-    token.set(jetbrainsPluginRepoToken)
-  }
-
   withType<Test>().configureEach {
     jvmArgs(
       "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
@@ -62,6 +65,12 @@ tasks {
 }
 
 dependencies {
+  intellijPlatform {
+    intellijIdeaCommunity("2022.3")
+    bundledPlugin("com.intellij.java")
+    instrumentationTools()
+    testFramework(TestFrameworkType.Plugin.Java)
+  }
   implementation("com.google.googlejavaformat:google-java-format:${googleJavaFormatVersion}")
   // https://mvnrepository.com/artifact/junit/junit
   testImplementation("junit:junit:4.13.2")
