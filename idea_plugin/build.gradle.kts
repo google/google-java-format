@@ -29,7 +29,7 @@ repositories {
 }
 
 // https://github.com/google/google-java-format/releases
-val googleJavaFormatVersion = "1.23.0"
+val googleJavaFormatVersion = "1.22.0"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_17
