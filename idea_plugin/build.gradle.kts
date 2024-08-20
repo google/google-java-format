@@ -49,6 +49,17 @@ tasks {
     token.set(jetbrainsPluginRepoToken)
   }
 
+  runIde.configure {
+    jvmArgs(
+      "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+      "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+      "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+      "--add-exports", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+      "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+      "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+    )
+  }
+
   withType<Test>().configureEach {
     jvmArgs(
       "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
