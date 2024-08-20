@@ -42,6 +42,8 @@ import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_CLOS
 import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_OPEN_TAG;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.PRE_CLOSE_TAG;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.PRE_OPEN_TAG;
+import static com.google.googlejavaformat.java.javadoc.Token.Type.SNIPPET_BEGIN;
+import static com.google.googlejavaformat.java.javadoc.Token.Type.SNIPPET_END;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.TABLE_CLOSE_TAG;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.TABLE_OPEN_TAG;
 import static com.google.googlejavaformat.java.javadoc.Token.Type.WHITESPACE;
@@ -97,6 +99,7 @@ final class JavadocLexer {
   private final NestingCounter preDepth = new NestingCounter();
   private final NestingCounter codeDepth = new NestingCounter();
   private final NestingCounter tableDepth = new NestingCounter();
+  private boolean outerInlineTagIsSnippet;
   private boolean somethingSinceNewline;
 
   private JavadocLexer(CharStream input) {
@@ -158,13 +161,26 @@ final class JavadocLexer {
     }
     somethingSinceNewline = true;
 
-    if (input.tryConsumeRegex(INLINE_TAG_OPEN_PATTERN)) {
+    if (input.tryConsumeRegex(SNIPPET_TAG_OPEN_PATTERN)) {
+      if (braceDepth.value() == 0) {
+        braceDepth.increment();
+        outerInlineTagIsSnippet = true;
+        return SNIPPET_BEGIN;
+      }
+      braceDepth.increment();
+      return LITERAL;
+    } else if (input.tryConsumeRegex(INLINE_TAG_OPEN_PATTERN)) {
       braceDepth.increment();
       return LITERAL;
     } else if (input.tryConsume("{")) {
       braceDepth.incrementIfPositive();
       return LITERAL;
     } else if (input.tryConsume("}")) {
+      if (outerInlineTagIsSnippet && braceDepth.value() == 1) {
+        braceDepth.decrementIfPositive();
+        outerInlineTagIsSnippet = false;
+        return SNIPPET_END;
+      }
       braceDepth.decrementIfPositive();
       return LITERAL;
     }
@@ -239,7 +255,10 @@ final class JavadocLexer {
   }
 
   private boolean preserveExistingFormatting() {
-    return preDepth.isPositive() || tableDepth.isPositive() || codeDepth.isPositive();
+    return preDepth.isPositive()
+        || tableDepth.isPositive()
+        || codeDepth.isPositive()
+        || outerInlineTagIsSnippet;
   }
 
   private void checkMatchingTags() throws LexException {
@@ -400,6 +419,7 @@ final class JavadocLexer {
    * <p>Also trim leading and trailing blank lines, and move the trailing `}` to its own line.
    */
   private static ImmutableList<Token> deindentPreCodeBlocks(List<Token> input) {
+    // TODO: b/323389829 - De-indent {@snippet ...} blocks, too.
     ImmutableList.Builder<Token> output = ImmutableList.builder();
     for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
       if (tokens.peek().getType() != PRE_OPEN_TAG) {
@@ -528,6 +548,7 @@ final class JavadocLexer {
   private static final Pattern BLOCKQUOTE_OPEN_PATTERN = openTagPattern("blockquote");
   private static final Pattern BLOCKQUOTE_CLOSE_PATTERN = closeTagPattern("blockquote");
   private static final Pattern BR_PATTERN = openTagPattern("br");
+  private static final Pattern SNIPPET_TAG_OPEN_PATTERN = compile("^[{]@snippet\\b");
   private static final Pattern INLINE_TAG_OPEN_PATTERN = compile("^[{]@\\w*");
   /*
    * We exclude < so that we don't swallow following HTML tags. This lets us fix up "foo<p>" (~400

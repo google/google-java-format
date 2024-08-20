@@ -907,6 +907,48 @@ public final class JavadocFormattingTest {
   }
 
   @Test
+  public void blankLinesAroundSnippetAndNoMangling() {
+    String[] input = {
+      "/**", //
+      " * hello world",
+      " * {@snippet :",
+      " * public class Foo {",
+      " *   private String s;",
+      " * }",
+      " * }",
+      " * hello again",
+      " */",
+      "class Test {}",
+    };
+    String[] expected = {
+      "/**", //
+      " * hello world",
+      " *",
+      " * {@snippet :",
+      " * public class Foo {",
+      " *   private String s;",
+      " * }",
+      " * }",
+      " *",
+      " * hello again",
+      " */",
+      "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void notASnippetUnlessOuterTag() {
+    String[] input = {
+      "/** I would like to tell you about the {@code {@snippet ...}} tag. */", "class Test {}",
+    };
+    String[] expected = {
+      "/** I would like to tell you about the {@code {@snippet ...}} tag. */", "class Test {}",
+    };
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void blankLineBeforeParams() {
     String[] input = {
       "/**", //

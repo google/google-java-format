@@ -66,6 +66,12 @@ public final class JavadocFormatter {
         case FOOTER_JAVADOC_TAG_START:
           output.writeFooterJavadocTagStart(token);
           break;
+        case SNIPPET_BEGIN:
+          output.writeSnippetBegin(token);
+          break;
+        case SNIPPET_END:
+          output.writeSnippetEnd(token);
+          break;
         case LIST_OPEN_TAG:
           output.writeListOpen(token);
           break;
