@@ -29,7 +29,7 @@ repositories {
 }
 
 // https://github.com/google/google-java-format/releases
-val googleJavaFormatVersion = "1.22.0"
+val googleJavaFormatVersion = "1.23.0"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_17
@@ -42,25 +42,36 @@ intellijPlatform {
     version = "${googleJavaFormatVersion}.0"
     ideaVersion {
       sinceBuild = "223"
-      untilBuild = ""
     }
   }
 
   publishing {
-    token = System.getenv("ORG_GRADLE_PROJECT_intellijPlatform.publishing.token")
+    val jetbrainsPluginRepoToken: String by project
+    token.set(jetbrainsPluginRepoToken)
+  }
+}
+
+var gjfRequiredJvmArgs =
+      listOf(
+        "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+        "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+        "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+        "--add-exports", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+        "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+        "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+      )
+
+tasks {
+  runIde {
+    jvmArgumentProviders += CommandLineArgumentProvider {
+      gjfRequiredJvmArgs
+    }
   }
 }
 
 tasks {
   withType<Test>().configureEach {
-    jvmArgs(
-      "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-      "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-      "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-      "--add-exports", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
-      "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-      "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-    )
+    jvmArgs(gjfRequiredJvmArgs)
   }
 }
 
@@ -75,5 +86,5 @@ dependencies {
   // https://mvnrepository.com/artifact/junit/junit
   testImplementation("junit:junit:4.13.2")
   // https://mvnrepository.com/artifact/com.google.truth/truth
-  testImplementation("com.google.truth:truth:1.4.2")
+  testImplementation("com.google.truth:truth:1.4.4")
 }

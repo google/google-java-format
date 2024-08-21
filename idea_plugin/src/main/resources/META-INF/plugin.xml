@@ -35,6 +35,10 @@
   ]]></description>
   <change-notes><![CDATA[
     <dl>
+      <dt>1.23.0.0</dt>
+      <dd>Updated to use google-java-format 1.23.0.</dd>
+      <dd>Fix crashes in IntelliJ 2024.2 (Thanks, <code>@nrayburn-tech</code>!)</dd>
+      <dd>Updated to the latest IntelliJ build system (Thanks, <code>@mmaeller</code>!)</dd>
       <dt>1.22.0.0</dt>
       <dd>Updated to use google-java-format 1.22.0.</dd>
       <dt>1.21.0.0</dt>
