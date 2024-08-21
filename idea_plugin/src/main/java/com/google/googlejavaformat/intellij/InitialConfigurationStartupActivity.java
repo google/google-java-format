@@ -27,8 +27,6 @@ import org.jetbrains.annotations.NotNull;
 final class InitialConfigurationStartupActivity implements StartupActivity.Background {
 
   private static final String NOTIFICATION_TITLE = "Enable google-java-format";
-  private static final NotificationGroup NOTIFICATION_GROUP =
-      NotificationGroupManager.getInstance().getNotificationGroup(NOTIFICATION_TITLE);
 
   @Override
   public void runActivity(@NotNull Project project) {
@@ -43,9 +41,11 @@ final class InitialConfigurationStartupActivity implements StartupActivity.Backg
   }
 
   private void displayNewUserNotification(Project project, GoogleJavaFormatSettings settings) {
+    NotificationGroupManager groupManager = NotificationGroupManager.getInstance();
+    NotificationGroup group = groupManager.getNotificationGroup(NOTIFICATION_TITLE);
     Notification notification =
         new Notification(
-            NOTIFICATION_GROUP.getDisplayId(),
+            group.getDisplayId(),
             NOTIFICATION_TITLE,
             "The google-java-format plugin is disabled by default. "
                 + "<a href=\"enable\">Enable for this project</a>.",
