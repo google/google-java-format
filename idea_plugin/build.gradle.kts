@@ -42,6 +42,7 @@ intellijPlatform {
     version = "${googleJavaFormatVersion}.0"
     ideaVersion {
       sinceBuild = "223"
+      untilBuild = provider { null }
     }
   }
 
