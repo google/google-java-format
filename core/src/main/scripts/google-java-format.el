@@ -2,8 +2,6 @@
 ;;
 ;; Copyright 2015 Google, Inc. All Rights Reserved.
 ;;
-;; Package-Requires: ((emacs "24"))
-;;
 ;; Licensed under the Apache License, Version 2.0 (the "License");
 ;; you may not use this file except in compliance with the License.
 ;; You may obtain a copy of the License at
@@ -17,6 +15,8 @@
 ;; limitations under the License.
 
 ;; Keywords: tools, Java
+;; Version: 0.1.0
+;; Package-Requires: ((emacs "24"))
 
 ;;; Commentary:
 
@@ -109,5 +109,4 @@ there is no region, then formats the current line."
 (defalias 'google-java-format 'google-java-format-region)
 
 (provide 'google-java-format)
-
 ;;; google-java-format.el ends here
