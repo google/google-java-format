@@ -72,6 +72,8 @@ public class FormatterIntegrationTest {
               "I981",
               "I1020",
               "I1037")
+          // TODO: https://github.com/google/google-java-format/issues/1153
+          // .putAll(23, "I1153")
           .build();
 
   @Parameters(name = "{index}: {0}")
