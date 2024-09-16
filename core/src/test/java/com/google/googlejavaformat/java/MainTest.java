@@ -635,4 +635,29 @@ public class MainTest {
                 .formatSource(source))
         .isEqualTo(source);
   }
+
+  @Test
+  public void badIdentifier() throws Exception {
+    Path path = testFolder.newFile("Test.java").toPath();
+    String[] input = {
+      "class Test {", //
+      "  void f(int package) {}",
+      "}",
+      "",
+    };
+    String source = joiner.join(input);
+    Files.writeString(path, source, UTF_8);
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    int errorCode = main.format(path.toAbsolutePath().toString());
+    assertWithMessage("Error Code").that(errorCode).isEqualTo(1);
+    String[] expected = {
+      path + ":2:14: error: <identifier> expected", //
+      "  void f(int package) {}",
+      "             ^",
+      "",
+    };
+    assertThat(err.toString()).isEqualTo(joiner.join(expected));
+  }
 }
