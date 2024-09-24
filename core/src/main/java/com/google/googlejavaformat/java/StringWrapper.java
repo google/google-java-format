@@ -197,12 +197,10 @@ public final class StringWrapper {
         ImmutableList<String> initialLines = text.lines().collect(toImmutableList());
         String stripped = stripIndent(initialLines.stream().skip(1).collect(joining(separator)));
         ImmutableList<String> lines = stripped.lines().collect(toImmutableList());
-        int deindent =
-            initialLines.get(1).stripTrailing().length() - lines.get(0).stripTrailing().length();
 
         int startColumn = lineMap.getColumnNumber(startPosition);
         String prefix =
-            (deindent == 0 || lines.stream().anyMatch(x -> x.length() + startColumn > columnLimit))
+            (lines.stream().anyMatch(x -> x.length() + startColumn > columnLimit))
                 ? ""
                 : " ".repeat(startColumn - 1);
 
