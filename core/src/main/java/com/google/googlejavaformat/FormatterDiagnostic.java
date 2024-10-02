@@ -49,7 +49,7 @@ public class FormatterDiagnostic {
   }
 
   /**
-   * Returns the 0-indexed column number on which the error occurred, or {@code -1} if the error
+   * Returns the 1-indexed column number on which the error occurred, or {@code -1} if the error
    * does not have a column.
    */
   public int column() {
@@ -61,14 +61,14 @@ public class FormatterDiagnostic {
     return message;
   }
 
+  @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     if (lineNumber >= 0) {
       sb.append(lineNumber).append(':');
     }
     if (column >= 0) {
-      // internal column numbers are 0-based, but diagnostics use 1-based indexing by convention
-      sb.append(column + 1).append(':');
+      sb.append(column).append(':');
     }
     if (lineNumber >= 0 || column >= 0) {
       sb.append(' ');

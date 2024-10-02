@@ -69,7 +69,7 @@ public final class FormatterException extends Exception {
       if (line != -1 && column != -1) {
         sb.append(CharMatcher.breakingWhitespace().trimTrailingFrom(lines.get(line - 1)))
             .append(System.lineSeparator());
-        sb.append(" ".repeat(column)).append('^').append(System.lineSeparator());
+        sb.append(" ".repeat(column - 1)).append('^').append(System.lineSeparator());
       }
     }
     return sb.toString();

@@ -307,7 +307,7 @@ public class MainTest {
               new PrintWriter(err, true),
               new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
       assertThat(main.format("-")).isEqualTo(1);
-      assertThat(err.toString()).contains("<stdin>:4:3: error: class, interface");
+      assertThat(err.toString()).contains("<stdin>:4:2: error: class, interface");
 
     } finally {
       Locale.setDefault(backupLocale);
@@ -508,7 +508,7 @@ public class MainTest {
             new PrintWriter(err, true),
             new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
     assertThat(main.format("--assume-filename=Foo.java", "-")).isEqualTo(1);
-    assertThat(err.toString()).contains("Foo.java:1:15: error: class, interface");
+    assertThat(err.toString()).contains("Foo.java:1:14: error: class, interface");
   }
 
   @Test
@@ -637,11 +637,13 @@ public class MainTest {
   }
 
   @Test
-  public void badIdentifier() throws Exception {
+  public void syntaxError() throws Exception {
     Path path = testFolder.newFile("Test.java").toPath();
     String[] input = {
       "class Test {", //
-      "  void f(int package) {}",
+      "  void f(int package) {",
+      "    int",
+      "  }",
       "}",
       "",
     };
@@ -653,9 +655,37 @@ public class MainTest {
     int errorCode = main.format(path.toAbsolutePath().toString());
     assertWithMessage("Error Code").that(errorCode).isEqualTo(1);
     String[] expected = {
-      path + ":2:14: error: <identifier> expected", //
-      "  void f(int package) {}",
-      "             ^",
+      path + ":2:13: error: <identifier> expected",
+      "  void f(int package) {",
+      "            ^",
+      path + ":3:5: error: not a statement",
+      "    int",
+      "    ^",
+      path + ":3:8: error: ';' expected",
+      "    int",
+      "       ^",
+      "",
+    };
+    assertThat(err.toString()).isEqualTo(joiner.join(expected));
+  }
+
+  @Test
+  public void syntaxErrorBeginning() throws Exception {
+    Path path = testFolder.newFile("Test.java").toPath();
+    String[] input = {
+      "error", //
+    };
+    String source = joiner.join(input);
+    Files.writeString(path, source, UTF_8);
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+    int errorCode = main.format(path.toAbsolutePath().toString());
+    assertWithMessage("Error Code").that(errorCode).isEqualTo(1);
+    String[] expected = {
+      path + ":1:1: error: reached end of file while parsing", //
+      "error",
+      "^",
       "",
     };
     assertThat(err.toString()).isEqualTo(joiner.join(expected));
