@@ -29,7 +29,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        java: [21, 17, 11]
+        java: [21, 17]
         experimental: [false]
         include:
           # Only test on MacOS and Windows with a single recent JDK to avoid a
@@ -114,10 +114,10 @@ jobs:
     steps:
       - name: "Check out repository"
         uses: actions/checkout@v4
-      - name: "Set up JDK 17"
+      - name: "Set up JDK 21"
         uses: actions/setup-java@v4
         with:
-          java-version: 17
+          java-version: 21
           distribution: "zulu"
           cache: "maven"
           server-id: sonatype-nexus-snapshots
