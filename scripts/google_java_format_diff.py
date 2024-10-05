@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# ===- google-java-format-diff.py - google-java-format Diff Reformatter -----===#
+# ===- google_java_format_diff.py - google-java-format Diff Reformatter -----===#
 #
 #                     The LLVM Compiler Infrastructure
 #
@@ -17,12 +17,12 @@ This script reads input from a unified diff and reformats all the changed
 lines. This is useful to reformat all the lines touched by a specific patch.
 Example usage for git/svn users:
 
-  git diff -U0 HEAD^ | google-java-format-diff.py -p1 -i
-  svn diff --diff-cmd=diff -x-U0 | google-java-format-diff.py -i
+  git diff -U0 HEAD^ | google_java_format_diff.py -p1 -i
+  svn diff --diff-cmd=diff -x-U0 | google_java_format_diff.py -i
 
 For perforce users:
 
-  P4DIFF="git --no-pager diff --no-index" p4 diff | ./google-java-format-diff.py -i -p7
+  P4DIFF="git --no-pager diff --no-index" p4 diff | ./google_java_format_diff.py -i -p7
 
 """
 
