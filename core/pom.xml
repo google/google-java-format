@@ -93,7 +93,7 @@
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <source>11</source>
+          <source>17</source>
           <encoding>UTF-8</encoding>
           <docencoding>UTF-8</docencoding>
           <charset>UTF-8</charset>
@@ -215,41 +215,14 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>11</source>
-          <target>11</target>
+          <source>17</source>
+          <target>17</target>
         </configuration>
       </plugin>
     </plugins>
   </build>
 
   <profiles>
-    <profile>
-      <id>jdk11</id>
-      <activation>
-        <jdk>[11,17)</jdk>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-              <excludes>
-                <exclude>**/Java17InputAstVisitor.java</exclude>
-                <exclude>**/Java21InputAstVisitor.java</exclude>
-              </excludes>
-            </configuration>
-          </plugin>
-          <plugin>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <configuration>
-              <excludePackageNames>com.google.googlejavaformat.java.java17</excludePackageNames>
-              <excludePackageNames>com.google.googlejavaformat.java.java21</excludePackageNames>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>jdk17</id>
       <activation>
