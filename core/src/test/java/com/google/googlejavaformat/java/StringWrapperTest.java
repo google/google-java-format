@@ -65,7 +65,8 @@ public class StringWrapperTest {
             "    String str =",
             "        \"\"\"",
             "{\"sourceEndpoint\":\"ri.something.1-1.object-internal.1\",\"targetEndpoint"
-                + "\":\"ri.something.1-1.object-internal.2\",\"typeId\":\"typeId\"}\"\"\";",
+                + "\":\"ri.something.1-1.object-internal.2\",\"typeId\":\"typeId\"}\\",
+            "\"\"\";",
             "    myString = str;",
             "  }",
             "}");

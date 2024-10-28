@@ -23,7 +23,8 @@ class RSLs {
       """;
   String f =
       """
-      ipsum""";
+      ipsum\
+      """;
   String g =
       """
       lorem\

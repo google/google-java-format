@@ -65,6 +65,9 @@ import org.jspecify.annotations.Nullable;
 
 /** Wraps string literals that exceed the column limit. */
 public final class StringWrapper {
+
+  public static final String TEXT_BLOCK_DELIMITER = "\"\"\"";
+
   /** Reflows long string literals in the given Java source code. */
   public static String wrap(String input, Formatter formatter) throws FormatterException {
     return StringWrapper.wrap(Formatter.MAX_LINE_LENGTH, input, formatter);
@@ -162,7 +165,7 @@ public final class StringWrapper {
           return null;
         }
         int pos = getStartPosition(literalTree);
-        if (input.substring(pos, min(input.length(), pos + 3)).equals("\"\"\"")) {
+        if (input.substring(pos, min(input.length(), pos + 3)).equals(TEXT_BLOCK_DELIMITER)) {
           textBlocks.add(literalTree);
           return null;
         }
@@ -206,7 +209,7 @@ public final class StringWrapper {
                 ? ""
                 : " ".repeat(startColumn - 1);
 
-        StringBuilder output = new StringBuilder("\"\"\"");
+        StringBuilder output = new StringBuilder(TEXT_BLOCK_DELIMITER);
         for (int i = 0; i < lines.size(); i++) {
           String line = lines.get(i);
           String trimmed = line.stripLeading().stripTrailing();
@@ -215,11 +218,16 @@ public final class StringWrapper {
             // Don't add incidental leading whitespace to empty lines
             output.append(prefix);
           }
-          if (i == lines.size() - 1 && trimmed.equals("\"\"\"")) {
-            // If the trailing line is just """, indenting is more than the prefix of incidental
+          if (i == lines.size() - 1) {
+            String withoutDelimiter =
+                trimmed.substring(0, trimmed.length() - TEXT_BLOCK_DELIMITER.length());
+            if (!withoutDelimiter.isEmpty()) {
+              output.append(withoutDelimiter).append('\\').append(separator).append(prefix);
+            }
+            // If the trailing line is just """, indenting it more than the prefix of incidental
             // whitespace has no effect, and results in a javac text-blocks warning that 'trailing
             // white space will be removed'.
-            output.append("\"\"\"");
+            output.append(TEXT_BLOCK_DELIMITER);
           } else {
             output.append(line);
           }
@@ -482,7 +490,7 @@ public final class StringWrapper {
     Iterator<String> it = Newlines.lineIterator(input);
     while (it.hasNext()) {
       String line = it.next();
-      if (line.length() > columnLimit || line.contains("\"\"\"")) {
+      if (line.length() > columnLimit || line.contains(TEXT_BLOCK_DELIMITER)) {
         return true;
       }
     }
