@@ -49,9 +49,9 @@ ipsum
 """;
   String k =
       """
-lorem
-ipsum
-""";
+      lorem
+      ipsum
+      """;
 
   {
     f(
