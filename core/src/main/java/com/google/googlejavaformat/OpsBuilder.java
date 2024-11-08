@@ -534,7 +534,7 @@ public final class OpsBuilder {
               space = tokBefore.isSlashStarComment();
               newlines = 0;
               lastWasComment = true;
-              if (tokBefore.isJavadocComment()) {
+              if (tokBefore.isJavadocComment() || token.getTok().isTextBlock()) {
                 tokOps.put(j, Doc.Break.makeForced());
               }
               allowBlankAfterLastComment =

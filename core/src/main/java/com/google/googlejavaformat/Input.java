@@ -71,6 +71,11 @@ public abstract class Input extends InputOutput {
 
     /** Is the {@code Tok} a comment? */
     boolean isComment();
+
+    /** Is the {@code Tok} a text block? */
+    default boolean isTextBlock() {
+      return false;
+    }
   }
 
   /** A {@code Token} is a language-level token. */

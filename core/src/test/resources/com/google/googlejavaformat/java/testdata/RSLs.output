@@ -66,10 +66,12 @@ ipsum
     """
         .formatted("world");
     f(
-        /* foo= */ """
+        /* foo= */
+        """
         foo
         """,
-        /* bar= */ """
+        /* bar= */
+        """
         bar
         """);
   }
