@@ -70,6 +70,7 @@ import com.google.googlejavaformat.Doc.FillMode;
 import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Indent;
 import com.google.googlejavaformat.Input;
+import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpenOp;
 import com.google.googlejavaformat.OpsBuilder;
@@ -1667,6 +1668,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public Void visitLiteral(LiteralTree node, Void unused) {
     sync(node);
     String sourceForNode = getSourceForNode(node, getCurrentPath());
+    if (sourceForNode.endsWith("\"\"\"")
+        && (Newlines.hasNewlineAt(sourceForNode, sourceForNode.length() - 4) != -1)) {
+      // If the closing delimiter of a text block starts at the margin, outdent the opening
+      // delimiter as well by adding a break with negative indentation. Outdenting for text blocks
+      // with wide contents is also handled by StringWrapper, but this means the behaviour for
+      // the opening delimiter is consistent if string wrapping is disabled, and also effectively
+      // preserves user choice about which text blocks stay de-indented.
+      builder.breakOp(Indent.Const.make(Integer.MIN_VALUE / indentMultiplier, indentMultiplier));
+    }
     if (isUnaryMinusLiteral(sourceForNode)) {
       token("-");
       sourceForNode = sourceForNode.substring(1).trim();

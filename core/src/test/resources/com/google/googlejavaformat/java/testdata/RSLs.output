@@ -42,13 +42,13 @@ class RSLs {
       ipsum
       """;
   String j =
-      """
+"""
 lorem
 one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt
 ipsum
 """;
   String k =
-      """
+"""
 lorem
 ipsum
 """;
@@ -65,5 +65,12 @@ ipsum
     hello %s
     """
         .formatted("world");
+    f(
+        /* foo= */ """
+        foo
+        """,
+        /* bar= */ """
+        bar
+        """);
   }
 }

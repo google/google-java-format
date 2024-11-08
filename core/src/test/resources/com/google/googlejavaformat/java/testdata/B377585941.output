@@ -2,7 +2,7 @@ class T {
   {
     f(
         /* foo */ """
-                  hello
-                  """);
+        hello
+        """);
   }
 }

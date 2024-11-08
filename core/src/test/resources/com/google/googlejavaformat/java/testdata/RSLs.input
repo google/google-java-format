@@ -50,5 +50,12 @@ ipsum
     hello %s
     """
         .formatted("world");
+            f(
+    /* foo= */ """
+        foo
+        """,
+        /* bar= */ """
+        bar
+        """);
   }
 }
