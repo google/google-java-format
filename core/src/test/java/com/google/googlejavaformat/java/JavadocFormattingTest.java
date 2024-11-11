@@ -1084,7 +1084,7 @@ public final class JavadocFormattingTest {
   @Test
   public void xhtmlParagraphTag() {
     String[] input = {
-      "class Test {",
+      "class Test {", //
       "  /**",
       "   * hello<p/>world",
       "   */",
@@ -1093,7 +1093,7 @@ public final class JavadocFormattingTest {
       "}",
     };
     String[] expected = {
-      "class Test {",
+      "class Test {", //
       "  /**",
       "   * hello",
       "   *",

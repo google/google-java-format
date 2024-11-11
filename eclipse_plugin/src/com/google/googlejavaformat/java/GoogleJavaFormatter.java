@@ -106,7 +106,9 @@ public class GoogleJavaFormatter extends CodeFormatter {
     return ranges;
   }
 
-  /** @return {@code true} if input and output texts are equal, else {@code false}. */
+  /**
+   * @return {@code true} if input and output texts are equal, else {@code false}.
+   */
   private boolean idempotent(String source, IRegion[] regions, List<Replacement> replacements) {
     // This implementation only checks for single replacement.
     if (replacements.size() == 1) {

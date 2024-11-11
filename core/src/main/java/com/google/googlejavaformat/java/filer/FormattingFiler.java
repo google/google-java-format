@@ -37,7 +37,9 @@ public final class FormattingFiler implements Filer {
   private final Formatter formatter = new Formatter();
   private final Messager messager;
 
-  /** @param delegate filer to decorate */
+  /**
+   * @param delegate filer to decorate
+   */
   public FormattingFiler(Filer delegate) {
     this(delegate, null);
   }

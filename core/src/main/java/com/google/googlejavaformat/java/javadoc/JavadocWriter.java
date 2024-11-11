@@ -40,6 +40,7 @@ import com.google.googlejavaformat.java.javadoc.Token.Type;
 final class JavadocWriter {
   private final int blockIndent;
   private final StringBuilder output = new StringBuilder();
+
   /**
    * Whether we are inside an {@code <li>} element, excluding the case in which the {@code <li>}
    * contains a {@code <ul>} or {@code <ol>} that we are also inside -- unless of course we're

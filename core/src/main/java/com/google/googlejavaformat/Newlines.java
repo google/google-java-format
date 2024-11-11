@@ -135,7 +135,7 @@ public class Newlines {
             if (idx + 1 < input.length() && input.charAt(idx + 1) == '\n') {
               idx++;
             }
-            // falls through
+          // falls through
           case '\n':
             idx++;
             curr = idx;
