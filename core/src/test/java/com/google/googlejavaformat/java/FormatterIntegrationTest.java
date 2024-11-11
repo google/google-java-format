@@ -145,6 +145,19 @@ public class FormatterIntegrationTest {
   }
 
   @Test
+  public void idempotent() {
+    try {
+      Formatter formatter = new Formatter();
+      String formatted = formatter.formatSource(input);
+      formatted = StringWrapper.wrap(formatted, formatter);
+      String reformatted = formatter.formatSource(formatted);
+      assertEquals("bad output for " + name, formatted, reformatted);
+    } catch (FormatterException e) {
+      fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
+    }
+  }
+
+  @Test
   public void idempotentLF() {
     try {
       String mangled = expected.replace(separator, "\n");
