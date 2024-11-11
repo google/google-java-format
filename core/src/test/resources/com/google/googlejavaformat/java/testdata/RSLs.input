@@ -57,5 +57,32 @@ ipsum
         /* bar= */ """
         bar
         """);
+    """
+    hello
+    """.codePoints().forEach(System.err::println);
+    String s =
+        """
+        foo
+        """
+            + """
+            bar
+            """;
+    String t =
+        """
+foo
+"""
+            + """
+bar
+""";
+    String u =
+        stringVariableOne
+        +
+            """
+            ...
+            """ + stringVariableTwo
+                +
+                    """
+                    ...
+                    """;
   }
 }
