@@ -1,0 +1,15 @@
+class T {
+  String a =
+      """
+               # No implicit input file, because they can only be created outside a symbolic macro,
+      """;
+
+  String b =
+      """
+                # No implicit input file, because they can only be created outside a symbolic macro,
+      """;
+  String c =
+"""
+           # No implicit input file, because they can only be created outside a symbolic macro,
+""";
+}

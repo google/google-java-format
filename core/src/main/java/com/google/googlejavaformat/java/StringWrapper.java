@@ -205,7 +205,8 @@ public final class StringWrapper {
             initialLines.get(1).stripTrailing().length() - lines.get(0).stripTrailing().length();
 
         String prefix =
-            (deindent == 0 || lines.stream().anyMatch(x -> x.length() + startColumn > columnLimit))
+            (deindent == 0
+                    || lines.stream().anyMatch(x -> x.length() + startColumn - 1 > columnLimit))
                 ? ""
                 : " ".repeat(startColumn - 1);
 
