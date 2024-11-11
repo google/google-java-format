@@ -167,11 +167,6 @@ public final class JavaInput extends Input {
     }
 
     @Override
-    public boolean isTextBlock() {
-      return originalText.startsWith("\"\"\"");
-    }
-
-    @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
           .add("index", index)

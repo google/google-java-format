@@ -63,7 +63,7 @@ public class StringWrapperTest {
             "  private String myString;",
             "  private ReproBug() {",
             "    String str =",
-            "\"\"\"",
+            "        \"\"\"",
             "{\"sourceEndpoint\":\"ri.something.1-1.object-internal.1\",\"targetEndpoint"
                 + "\":\"ri.something.1-1.object-internal.2\",\"typeId\":\"typeId\"}\\",
             "\"\"\";",

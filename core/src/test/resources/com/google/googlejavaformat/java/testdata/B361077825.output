@@ -9,7 +9,7 @@ class T {
                 # No implicit input file, because they can only be created outside a symbolic macro,
       """;
   String c =
-"""
+      """
            # No implicit input file, because they can only be created outside a symbolic macro,
 """;
 }
