@@ -82,7 +82,6 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
   }
 
   private void visitBindingPattern(ModifiersTree modifiers, Tree type, Name name) {
-    builder.open(plusFour);
     declareOne(
         DeclarationKind.PARAMETER,
         Direction.HORIZONTAL,
@@ -95,7 +94,6 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
         /* trailing= */ Optional.empty(),
         /* receiverExpression= */ Optional.empty(),
         /* typeWithDims= */ Optional.empty());
-    builder.close();
   }
 
   @Override
@@ -227,16 +225,12 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
     List<? extends CaseLabelTree> labels = node.getLabels();
     boolean isDefault =
         labels.size() == 1 && getOnlyElement(labels).getKind().name().equals("DEFAULT_CASE_LABEL");
-    builder.open(
-        node.getCaseKind().equals(CaseTree.CaseKind.RULE)
-                && !node.getBody().getKind().equals(Tree.Kind.BLOCK)
-            ? plusFour
-            : ZERO);
+    builder.open(node.getCaseKind().equals(CaseTree.CaseKind.RULE) ? plusFour : ZERO);
     if (isDefault) {
       token("default", ZERO);
     } else {
       token("case", ZERO);
-      builder.open(labels.size() > 1 ? plusFour : ZERO);
+      builder.open(ZERO);
       builder.space();
       boolean afterFirstToken = false;
       for (Tree expression : labels) {
@@ -252,7 +246,7 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
 
     final ExpressionTree guard = getGuard(node);
     if (guard != null) {
-      builder.space();
+      builder.breakToFill(" ");
       token("when");
       builder.space();
       scan(guard, null);
@@ -264,12 +258,14 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
         builder.open(plusTwo);
         visitStatements(node.getStatements());
         builder.close();
+        builder.close();
         break;
       case RULE:
         builder.space();
         token("-");
         token(">");
         if (node.getBody().getKind() == Tree.Kind.BLOCK) {
+          builder.close();
           builder.space();
           // Explicit call with {@link CollapseEmptyOrNot.YES} to handle empty case blocks.
           visitBlock(
@@ -280,13 +276,13 @@ public class Java17InputAstVisitor extends JavaInputAstVisitor {
         } else {
           builder.breakOp(" ");
           scan(node.getBody(), null);
+          builder.close();
         }
         builder.guessToken(";");
         break;
       default:
         throw new AssertionError(node.getCaseKind());
     }
-    builder.close();
     return null;
   }
 

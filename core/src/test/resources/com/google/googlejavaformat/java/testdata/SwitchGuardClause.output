@@ -9,47 +9,63 @@ class SwitchGuardClause {
 
   {
     switch (o) {
-      case TypeWithVeryVeryVeryVeryLongName variableWithVeryLongName when variableWithVeryLongName
-          .methodWithVeryVeryVeryVeryLongNameReturnThis()
-          .methodWithVeryVeryVeryVeryLongNameReturnBoolean() -> {
+      case TypeWithVeryVeryVeryVeryLongName variableWithVeryLongName
+          when variableWithVeryLongName
+              .methodWithVeryVeryVeryVeryLongNameReturnThis()
+              .methodWithVeryVeryVeryVeryLongNameReturnBoolean() -> {
+        System.err.println();
+      }
+      default -> {}
+    }
+    switch (o) {
+      case TypeWithVeryVeryVeryVeryLongName variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+          when variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+              .methodWithVeryVeryVeryVeryLongNameReturnThis()
+              .methodWithVeryVeryVeryVeryLongNameReturnBoolean() -> {
         System.err.println();
       }
       default -> {}
     }
     switch (o) {
       case TypeWithVeryVeryVeryVeryLongName
-              variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName when variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
-          .methodWithVeryVeryVeryVeryLongNameReturnThis()
-          .methodWithVeryVeryVeryVeryLongNameReturnBoolean() -> {
+              variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+          when variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+              .methodWithVeryVeryVeryVeryLongNameReturnThis()
+              .methodWithVeryVeryVeryVeryLongNameReturnBoolean() -> {
         System.err.println();
       }
       default -> {}
     }
     switch (o) {
-      case TypeWithVeryVeryVeryVeryLongName
-              variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName when variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
-          .methodWithVeryVeryVeryVeryLongNameReturnThis()
-          .methodWithVeryVeryVeryVeryLongNameReturnBoolean() -> {
+      case SwitchRecord(
+              int one,
+              int two,
+              int three,
+              int four,
+              int five,
+              int six,
+              int seven,
+              int eight,
+              int variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName)
+          when variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+              .methodWithVeryVeryVeryVeryLongNameReturnThis()
+              .methodWithVeryVeryVeryVeryLongNameReturnBoolean() -> {
         System.err.println();
       }
       default -> {}
     }
     switch (o) {
-      case TypeWithVeryVeryVeryVeryLongName
-                  variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName,
-          TypeWithVeryVeryVeryVeryLongName
-                  variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName when variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
-          .methodWithVeryVeryVeryVeryLongNameReturnThis()
-          .methodWithVeryVeryVeryVeryLongNameReturnBoolean() -> {
-        System.err.println();
-      }
-      default -> {}
-    }
-    switch (o) {
-      case TypeWithVeryVeryVeryVeryLongName
-                      variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName,
-              TypeWithVeryVeryVeryVeryLongName
-                      variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName when variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+      case SwitchRecord(
+              int one,
+              int two,
+              int three,
+              int four,
+              int five,
+              int six,
+              int seven,
+              int eight,
+              int variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName)
+          when variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
               .methodWithVeryVeryVeryVeryLongNameReturnThis()
               .methodWithVeryVeryVeryVeryLongNameReturnBoolean() ->
           System.err.println();
