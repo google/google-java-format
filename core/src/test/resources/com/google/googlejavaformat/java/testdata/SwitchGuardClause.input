@@ -6,4 +6,52 @@ class SwitchGuardClause {
       default -> true;
     };
   }
+
+  {
+    switch (o) {
+      case TypeWithVeryVeryVeryVeryLongName variableWithVeryLongName when variableWithVeryLongName
+          .methodWithVeryVeryVeryVeryLongNameReturnThis()
+          .methodWithVeryVeryVeryVeryLongNameReturnBoolean() -> {
+        System.err.println();
+      }
+      default -> {}
+    }
+    switch (o) {
+      case TypeWithVeryVeryVeryVeryLongName
+              variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName when variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+          .methodWithVeryVeryVeryVeryLongNameReturnThis()
+          .methodWithVeryVeryVeryVeryLongNameReturnBoolean() -> {
+        System.err.println();
+      }
+      default -> {}
+    }
+    switch (o) {
+      case TypeWithVeryVeryVeryVeryLongName variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+          when variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+              .methodWithVeryVeryVeryVeryLongNameReturnThis()
+              .methodWithVeryVeryVeryVeryLongNameReturnBoolean() -> {
+        System.err.println();
+      }
+      default -> {}
+    }
+    switch (o) {
+          case TypeWithVeryVeryVeryVeryLongName variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName,
+          TypeWithVeryVeryVeryVeryLongName variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+              when variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+                  .methodWithVeryVeryVeryVeryLongNameReturnThis()
+                  .methodWithVeryVeryVeryVeryLongNameReturnBoolean() -> {
+            System.err.println();
+          }
+          default -> {}
+        }
+    switch (o) {
+      case TypeWithVeryVeryVeryVeryLongName variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName,
+      TypeWithVeryVeryVeryVeryLongName variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+          when variableWithVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName
+              .methodWithVeryVeryVeryVeryLongNameReturnThis()
+              .methodWithVeryVeryVeryVeryLongNameReturnBoolean() ->
+          System.err.println();
+      default -> {}
+    }
+  }
 }
