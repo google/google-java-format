@@ -155,10 +155,6 @@ public final class Formatter {
       visitor =
           createVisitor(
               "com.google.googlejavaformat.java.java21.Java21InputAstVisitor", builder, options);
-    } else if (Runtime.version().feature() >= 17) {
-      visitor =
-          createVisitor(
-              "com.google.googlejavaformat.java.java17.Java17InputAstVisitor", builder, options);
     } else {
       visitor = new JavaInputAstVisitor(builder, options.indentationMultiplier());
     }
