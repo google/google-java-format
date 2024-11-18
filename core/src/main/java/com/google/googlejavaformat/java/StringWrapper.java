@@ -207,7 +207,8 @@ public final class StringWrapper {
         String stripped = stripIndent(initialLines.stream().skip(1).collect(joining(separator)));
         ImmutableList<String> lines = stripped.lines().collect(toImmutableList());
         int deindent =
-            initialLines.get(1).stripTrailing().length() - lines.get(0).stripTrailing().length();
+            getLast(initialLines).stripTrailing().length()
+                - getLast(lines).stripTrailing().length();
 
         String prefix =
             (deindent == 0

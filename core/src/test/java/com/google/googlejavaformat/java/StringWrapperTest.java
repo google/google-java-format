@@ -174,6 +174,33 @@ public class StringWrapperTest {
     assertThat(actual).isEqualTo(expected);
   }
 
+  @Test
+  public void leadingBlankLine() throws Exception {
+    assumeTrue(Runtime.version().feature() >= 15);
+    String input =
+        lines(
+            "public class T {",
+            "  String s =",
+            "      \"\"\"",
+            "",
+            "      lorem",
+            "      ipsum",
+            "      \"\"\";",
+            "}");
+    String expected =
+        lines(
+            "public class T {",
+            "  String s =",
+            "      \"\"\"",
+            "",
+            "      lorem",
+            "      ipsum",
+            "      \"\"\";",
+            "}");
+    String actual = StringWrapper.wrap(100, input, new Formatter());
+    assertThat(actual).isEqualTo(expected);
+  }
+
   private static String lines(String... line) {
     return Joiner.on('\n').join(line) + '\n';
   }
