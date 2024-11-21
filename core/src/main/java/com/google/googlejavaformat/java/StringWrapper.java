@@ -219,7 +219,7 @@ public final class StringWrapper {
         StringBuilder output = new StringBuilder(initialLines.get(0).stripLeading());
         for (int i = 0; i < lines.size(); i++) {
           String line = lines.get(i);
-          String trimmed = line.stripLeading().stripTrailing();
+          String trimmed = line.stripTrailing();
           output.append(separator);
           if (!trimmed.isEmpty()) {
             // Don't add incidental leading whitespace to empty lines
@@ -228,7 +228,7 @@ public final class StringWrapper {
           if (i == lines.size() - 1) {
             String withoutDelimiter =
                 trimmed.substring(0, trimmed.length() - TEXT_BLOCK_DELIMITER.length());
-            if (!withoutDelimiter.isEmpty()) {
+            if (!withoutDelimiter.stripLeading().isEmpty()) {
               output.append(withoutDelimiter).append('\\').append(separator).append(prefix);
             }
             // If the trailing line is just """, indenting it more than the prefix of incidental

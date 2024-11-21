@@ -57,7 +57,8 @@ public class FormatterIntegrationTest {
               "ExpressionSwitch",
               "I574",
               "I594",
-              "SwitchComment")
+              "SwitchComment",
+              "B380299722")
           .putAll(15, "I603")
           .putAll(16, "I588", "Sealed")
           .putAll(17, "I683", "I684", "I696")
