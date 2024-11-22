@@ -1,4 +1,3 @@
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 /*
  * Copyright 2017 Google Inc. All Rights Reserved.
  *
@@ -15,6 +14,8 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
  * limitations under the License.
  */
 
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 // https://github.com/JetBrains/intellij-platform-gradle-plugin/releases
 plugins {
   id("org.jetbrains.intellij.platform") version "2.1.0"
@@ -29,7 +30,7 @@ repositories {
 }
 
 // https://github.com/google/google-java-format/releases
-val googleJavaFormatVersion = "1.24.0"
+val googleJavaFormatVersion = "1.25.0"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_17
