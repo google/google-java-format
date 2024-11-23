@@ -42,28 +42,69 @@ public final class JavaCommentsHelper implements CommentsHelper {
     if (!tok.isComment()) {
       return tok.getOriginalText();
     }
+
+    String text = formatJavadocIfNeeded(tok, column0);
+    List<String> lines = parseCommentLines(tok, text);
+
+    return formatComment(tok, lines, column0);
+  }
+
+  /**
+   * Format javadoc comment if needed
+   */
+  private String formatJavadocIfNeeded(Tok tok, int column0) {
     String text = tok.getOriginalText();
     if (tok.isJavadocComment() && options.formatJavadoc()) {
-      text = JavadocFormatter.formatJavadoc(text, column0);
+      return JavadocFormatter.formatJavadoc(text, column0);
     }
+    return text;
+  }
+
+  /**
+   * Parse comment into lines with appropriate trimming
+   */
+  private List<String> parseCommentLines(Tok tok, String text) {
     List<String> lines = new ArrayList<>();
     Iterator<String> it = Newlines.lineIterator(text);
+
     while (it.hasNext()) {
+      String line = it.next();
       if (tok.isSlashSlashComment()) {
-        lines.add(CharMatcher.whitespace().trimFrom(it.next()));
+        lines.add(CharMatcher.whitespace().trimFrom(line));
       } else {
-        lines.add(CharMatcher.whitespace().trimTrailingFrom(it.next()));
+        lines.add(CharMatcher.whitespace().trimTrailingFrom(line));
       }
     }
+    return lines;
+  }
+
+  /**
+   * Format the comment based on its type
+   */
+  private String formatComment(Tok tok, List<String> lines, int column0) {
     if (tok.isSlashSlashComment()) {
       return indentLineComments(lines, column0);
     }
+
+    return getFormattedBlockComment(tok, lines, column0);
+  }
+
+  /**
+   * Get formatted block comment, either as parameter comment or regular block comment
+   */
+  private String getFormattedBlockComment(Tok tok, List<String> lines, int column0) {
     return CommentsHelper.reformatParameterComment(tok)
-        .orElseGet(
-            () ->
-                javadocShaped(lines)
-                    ? indentJavadoc(lines, column0)
-                    : preserveIndentation(lines, column0));
+            .orElseGet(() -> formatBlockComment(lines, column0));
+  }
+
+  /**
+   * Format block comment based on whether it is javadoc-shaped or not
+   */
+  private String formatBlockComment(List<String> lines, int column0) {
+    if (javadocShaped(lines)) {
+      return indentJavadoc(lines, column0);
+    }
+    return preserveIndentation(lines, column0);
   }
 
   // For non-javadoc-shaped block comments, shift the entire block to the correct
