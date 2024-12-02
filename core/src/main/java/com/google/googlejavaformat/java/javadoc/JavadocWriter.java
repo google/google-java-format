@@ -38,6 +38,7 @@ final class JavadocWriter {
   private final int maxWidth;
 
   private final StringBuilder output = new StringBuilder();
+
   /**
    * Whether we are inside an {@code <li>} element, excluding the case in which the {@code <li>}
    * contains a {@code <ul>} or {@code <ol>} that we are also inside -- unless of course we're
@@ -70,7 +71,7 @@ final class JavadocWriter {
     requestWhitespace(WHITESPACE);
   }
 
-  void requestMoeBeginStripComment(final Token token) {
+  void requestMoeBeginStripComment(Token token) {
     // We queue this up so that we can put it after any requested whitespace.
     requestedMoeBeginStripComment = checkNotNull(token);
   }
@@ -90,7 +91,7 @@ final class JavadocWriter {
     output.append("*/");
   }
 
-  void writeFooterJavadocTagStart(final Token token) {
+  void writeFooterJavadocTagStart(Token token) {
     // Close any unclosed lists (e.g., <li> without <ul>).
     // TODO(cpovirk): Actually generate </ul>, etc.?
     /*
@@ -122,7 +123,39 @@ final class JavadocWriter {
     continuingFooterTag = true;
   }
 
-  void writeListOpen(final Token token) {
+  void writeSnippetBegin(Token token) {
+    requestBlankLine();
+    writeToken(token);
+    /*
+     * We don't request a newline here because we should have at least a colon following on this
+     * line, and we may have attributes after that.
+     *
+     * (If we find it convenient, we could instead consume the entire rest of the line as part of
+     * the same token as `{@snippet` itself. But we already would never split the rest of the line
+     * across lines (because we preserve whitespace), so that might not accomplish anything. Plus,
+     * we'd probably want to be careful not to swallow an expectedly early closing `}`.)
+     */
+  }
+
+  void writeSnippetEnd(Token token) {
+    /*
+     * We don't request a newline here because we have preserved all newlines that existed in the
+     * input. TODO: b/323389829 - Improve upon that. Specifically:
+     *
+     * - If there is not yet a newline, we should add one.
+     *
+     * - If there are multiple newlines, we should probably collapse them.
+     *
+     * - If the closing brace isn't indented as we'd want (as in the link below, in which the whole
+     *   @apiNote isn't indented), we should indent it.
+     *
+     * https://github.com/openjdk/jdk/blob/1ebf2cf639300728ffc024784f5dc1704317b0b3/src/java.base/share/classes/java/util/Collections.java#L5993-L6006
+     */
+    writeToken(token);
+    requestBlankLine();
+  }
+
+  void writeListOpen(Token token) {
     requestBlankLine();
 
     writeToken(token);
@@ -133,7 +166,7 @@ final class JavadocWriter {
     requestNewline();
   }
 
-  void writeListClose(final Token token) {
+  void writeListClose(Token token) {
     requestNewline();
 
     continuingListItemCount.decrementIfPositive();
@@ -144,7 +177,7 @@ final class JavadocWriter {
     requestBlankLine();
   }
 
-  void writeListItemOpen(final Token token) {
+  void writeListItemOpen(Token token) {
     requestNewline();
 
     if (continuingListItemOfInnermostList) {
@@ -156,19 +189,19 @@ final class JavadocWriter {
     continuingListItemCount.increment();
   }
 
-  void writeHeaderOpen(final Token token) {
+  void writeHeaderOpen(Token token) {
     requestBlankLine();
 
     writeToken(token);
   }
 
-  void writeHeaderClose(final Token token) {
+  void writeHeaderClose(Token token) {
     writeToken(token);
 
     requestBlankLine();
   }
 
-  void writeParagraphOpen(final Token token) {
+  void writeParagraphOpen(Token token) {
     if (!wroteAnythingSignificant) {
       /*
        * The user included an initial <p> tag. Ignore it, and don't request a blank line before the
@@ -182,7 +215,7 @@ final class JavadocWriter {
     writeToken(token);
   }
 
-  void writeBlockquoteOpenOrClose(final Token token) {
+  void writeBlockquoteOpenOrClose(Token token) {
     requestBlankLine();
 
     writeToken(token);
@@ -190,39 +223,39 @@ final class JavadocWriter {
     requestBlankLine();
   }
 
-  void writePreOpen(final Token token) {
+  void writePreOpen(Token token) {
     requestBlankLine();
 
     writeToken(token);
   }
 
-  void writePreClose(final Token token) {
+  void writePreClose(Token token) {
     writeToken(token);
 
     requestBlankLine();
   }
 
-  void writeCodeOpen(final Token token) {
+  void writeCodeOpen(Token token) {
     writeToken(token);
   }
 
-  void writeCodeClose(final Token token) {
+  void writeCodeClose(Token token) {
     writeToken(token);
   }
 
-  void writeTableOpen(final Token token) {
+  void writeTableOpen(Token token) {
     requestBlankLine();
 
     writeToken(token);
   }
 
-  void writeTableClose(final Token token) {
+  void writeTableClose(Token token) {
     writeToken(token);
 
     requestBlankLine();
   }
 
-  void writeMoeEndStripComment(final Token token) {
+  void writeMoeEndStripComment(Token token) {
     writeLineBreakNoAutoIndent();
     appendSpaces(indentForMoeEndStripComment);
 
@@ -232,7 +265,7 @@ final class JavadocWriter {
     requestNewline();
   }
 
-  void writeHtmlComment(final Token token) {
+  void writeHtmlComment(Token token) {
     requestNewline();
 
     writeToken(token);
@@ -240,7 +273,7 @@ final class JavadocWriter {
     requestNewline();
   }
 
-  void writeBr(final Token token) {
+  void writeBr(Token token) {
     writeToken(token);
 
     requestNewline();
@@ -250,7 +283,7 @@ final class JavadocWriter {
     writeNewline(NO_AUTO_INDENT);
   }
 
-  void writeLiteral(final Token token) {
+  void writeLiteral(Token token) {
     writeToken(token);
   }
 
@@ -267,7 +300,7 @@ final class JavadocWriter {
     requestWhitespace(NEWLINE);
   }
 
-  private void requestWhitespace(final RequestedWhitespace requestedWhitespace) {
+  private void requestWhitespace(RequestedWhitespace requestedWhitespace) {
     this.requestedWhitespace = max(requestedWhitespace, this.requestedWhitespace);
   }
 
@@ -285,7 +318,7 @@ final class JavadocWriter {
     ;
   }
 
-  private void writeToken(final Token token) {
+  private void writeToken(Token token) {
     if (requestedMoeBeginStripComment != null) {
       requestNewline();
     }
@@ -309,7 +342,7 @@ final class JavadocWriter {
       writeNewline();
       requestedWhitespace = NONE;
     }
-    final boolean needWhitespace = (requestedWhitespace == WHITESPACE);
+    boolean needWhitespace = (requestedWhitespace == WHITESPACE);
 
     /*
      * Write a newline if necessary to respect the line limit. (But if we're at the beginning of the
@@ -365,7 +398,7 @@ final class JavadocWriter {
     writeNewline(AUTO_INDENT);
   }
 
-  private void writeNewline(final AutoIndent autoIndent) {
+  private void writeNewline(AutoIndent autoIndent) {
     output.append("\n");
     appendSpaces(blockIndent + 1);
     output.append("*");
@@ -392,7 +425,7 @@ final class JavadocWriter {
   }
 
   // If this is a hotspot, keep a String of many spaces around, and call append(string, start, end).
-  private void appendSpaces(final int count) {
+  private void appendSpaces(int count) {
     output.append(" ".repeat(count));
   }
 

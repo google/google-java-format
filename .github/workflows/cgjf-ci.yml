@@ -1,5 +1,4 @@
 # Copyright 2020 The Google Java Format Authors
-# changed by MrDolch
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,7 +29,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        java: [21, 17, 11]
+        java: [21, 17]
         experimental: [false]
         include:
           # Only test on MacOS and Windows with a single recent JDK to avoid a

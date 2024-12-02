@@ -48,9 +48,19 @@ public class FormatterIntegrationTest {
 
   private static final ImmutableMultimap<Integer, String> VERSIONED_TESTS =
       ImmutableMultimap.<Integer, String>builder()
-          .putAll(14, "I477", "Records", "RSLs", "Var", "ExpressionSwitch", "I574", "I594")
+          .putAll(
+              14,
+              "I477",
+              "Records",
+              "RSLs",
+              "Var",
+              "ExpressionSwitch",
+              "I574",
+              "I594",
+              "SwitchComment",
+              "B380299722")
           .putAll(15, "I603")
-          .putAll(16, "I588")
+          .putAll(16, "I588", "Sealed")
           .putAll(17, "I683", "I684", "I696")
           .putAll(
               21,
@@ -130,6 +140,19 @@ public class FormatterIntegrationTest {
       String output = formatter.formatSource(input);
       output = StringWrapper.wrap(output, formatter);
       assertEquals("bad output for " + name, expected, output);
+    } catch (FormatterException e) {
+      fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
+    }
+  }
+
+  @Test
+  public void idempotent() {
+    try {
+      Formatter formatter = new Formatter();
+      String formatted = formatter.formatSource(input);
+      formatted = StringWrapper.wrap(formatted, formatter);
+      String reformatted = formatter.formatSource(formatted);
+      assertEquals("bad output for " + name, formatted, reformatted);
     } catch (FormatterException e) {
       fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
     }

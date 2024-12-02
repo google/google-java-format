@@ -65,7 +65,8 @@ public class StringWrapperTest {
             "    String str =",
             "        \"\"\"",
             "{\"sourceEndpoint\":\"ri.something.1-1.object-internal.1\",\"targetEndpoint"
-                + "\":\"ri.something.1-1.object-internal.2\",\"typeId\":\"typeId\"}\"\"\";",
+                + "\":\"ri.something.1-1.object-internal.2\",\"typeId\":\"typeId\"}\\",
+            "\"\"\";",
             "    myString = str;",
             "  }",
             "}");
@@ -165,6 +166,33 @@ public class StringWrapperTest {
             "public class T {",
             "  String s =",
             "      \"\"\"",
+            "      lorem",
+            "      ipsum",
+            "      \"\"\";",
+            "}");
+    String actual = StringWrapper.wrap(100, input, new Formatter());
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void leadingBlankLine() throws Exception {
+    assumeTrue(Runtime.version().feature() >= 15);
+    String input =
+        lines(
+            "public class T {",
+            "  String s =",
+            "      \"\"\"",
+            "",
+            "      lorem",
+            "      ipsum",
+            "      \"\"\";",
+            "}");
+    String expected =
+        lines(
+            "public class T {",
+            "  String s =",
+            "      \"\"\"",
+            "",
             "      lorem",
             "      ipsum",
             "      \"\"\";",

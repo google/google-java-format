@@ -45,7 +45,6 @@ import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Position;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -61,10 +60,12 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardLocation;
-import org.jspecify.annotations.Nullable;
 
 /** Wraps string literals that exceed the column limit. */
 public final class StringWrapper {
+
+  public static final String TEXT_BLOCK_DELIMITER = "\"\"\"";
+
   /** Reflows long string literals in the given Java source code. */
   public static String wrap(String input, Formatter formatter) throws FormatterException {
     return StringWrapper.wrap(formatter.getMaxLineLength(), input, formatter);
@@ -162,7 +163,7 @@ public final class StringWrapper {
           return null;
         }
         int pos = getStartPosition(literalTree);
-        if (input.substring(pos, min(input.length(), pos + 3)).equals("\"\"\"")) {
+        if (input.substring(pos, min(input.length(), pos + 3)).equals(TEXT_BLOCK_DELIMITER)) {
           textBlocks.add(literalTree);
           return null;
         }
@@ -190,36 +191,48 @@ public final class StringWrapper {
         int startPosition = getStartPosition(tree);
         int endPosition = getEndPosition(unit, tree);
         String text = input.substring(startPosition, endPosition);
+        int lineStartPosition = lineMap.getStartPosition(lineMap.getLineNumber(startPosition));
+        int startColumn =
+            CharMatcher.whitespace()
+                    .negate()
+                    .indexIn(input.substring(lineStartPosition, endPosition))
+                + 1;
 
         // Find the source code of the text block with incidental whitespace removed.
         // The first line of the text block is always """, and it does not affect incidental
         // whitespace.
         ImmutableList<String> initialLines = text.lines().collect(toImmutableList());
-        String stripped = stripIndent(initialLines.stream().skip(1).collect(joining(separator)));
+        String stripped = initialLines.stream().skip(1).collect(joining(separator)).stripIndent();
         ImmutableList<String> lines = stripped.lines().collect(toImmutableList());
         int deindent =
-            initialLines.get(1).stripTrailing().length() - lines.get(0).stripTrailing().length();
+            getLast(initialLines).stripTrailing().length()
+                - getLast(lines).stripTrailing().length();
 
-        int startColumn = lineMap.getColumnNumber(startPosition);
         String prefix =
-            (deindent == 0 || lines.stream().anyMatch(x -> x.length() + startColumn > columnLimit))
+            (deindent == 0
+                    || lines.stream().anyMatch(x -> x.length() + startColumn - 1 > columnLimit))
                 ? ""
                 : " ".repeat(startColumn - 1);
 
-        StringBuilder output = new StringBuilder("\"\"\"");
+        StringBuilder output = new StringBuilder(initialLines.get(0).stripLeading());
         for (int i = 0; i < lines.size(); i++) {
           String line = lines.get(i);
-          String trimmed = line.stripLeading().stripTrailing();
+          String trimmed = line.stripTrailing();
           output.append(separator);
           if (!trimmed.isEmpty()) {
             // Don't add incidental leading whitespace to empty lines
             output.append(prefix);
           }
-          if (i == lines.size() - 1 && trimmed.equals("\"\"\"")) {
-            // If the trailing line is just """, indenting is more than the prefix of incidental
+          if (i == lines.size() - 1) {
+            String withoutDelimiter =
+                trimmed.substring(0, trimmed.length() - TEXT_BLOCK_DELIMITER.length());
+            if (!withoutDelimiter.stripLeading().isEmpty()) {
+              output.append(withoutDelimiter).append('\\').append(separator).append(prefix);
+            }
+            // If the trailing line is just """, indenting it more than the prefix of incidental
             // whitespace has no effect, and results in a javac text-blocks warning that 'trailing
             // white space will be removed'.
-            output.append("\"\"\"");
+            output.append(TEXT_BLOCK_DELIMITER);
           } else {
             output.append(line);
           }
@@ -262,30 +275,6 @@ public final class StringWrapper {
             Range.closedOpen(getStartPosition(flat.get(0)), getEndPosition(unit, getLast(flat))),
             reflow(separator, columnLimit, startColumn, trailing, components, first.get()));
       }
-    }
-  }
-
-  private static final Method STRIP_INDENT = getStripIndent();
-
-  private static @Nullable Method getStripIndent() {
-    if (Runtime.version().feature() < 15) {
-      return null;
-    }
-    try {
-      return String.class.getMethod("stripIndent");
-    } catch (NoSuchMethodException e) {
-      throw new LinkageError(e.getMessage(), e);
-    }
-  }
-
-  private static String stripIndent(String input) {
-    if (STRIP_INDENT == null) {
-      return input;
-    }
-    try {
-      return (String) STRIP_INDENT.invoke(input);
-    } catch (ReflectiveOperationException e) {
-      throw new LinkageError(e.getMessage(), e);
     }
   }
 
@@ -482,7 +471,7 @@ public final class StringWrapper {
     Iterator<String> it = Newlines.lineIterator(input);
     while (it.hasNext()) {
       String line = it.next();
-      if (line.length() > columnLimit || line.contains("\"\"\"")) {
+      if (line.length() > columnLimit || line.contains(TEXT_BLOCK_DELIMITER)) {
         return true;
       }
     }

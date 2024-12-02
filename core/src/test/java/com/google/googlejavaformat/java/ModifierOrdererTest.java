@@ -17,6 +17,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Range;
@@ -102,5 +103,12 @@ public class ModifierOrdererTest {
                 new JavaInput(input), Arrays.asList(Range.closedOpen(start, end)))
             .getText();
     assertThat(output).contains("public\n  static int a;");
+  }
+
+  @Test
+  public void sealedClass() throws FormatterException {
+    assume().that(Runtime.version().feature()).isAtLeast(16);
+    assertThat(ModifierOrderer.reorderModifiers("non-sealed sealed public").getText())
+        .isEqualTo("public sealed non-sealed");
   }
 }

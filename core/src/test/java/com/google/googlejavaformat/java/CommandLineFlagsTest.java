@@ -21,9 +21,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/**
- * Tests for command-line flags.
- */
+/** Tests for command-line flags. */
 @RunWith(JUnit4.class)
 public class CommandLineFlagsTest {
 

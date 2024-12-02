@@ -1,0 +1,17 @@
+class T {
+  int test(String v) {
+    switch (v) {
+      // this is a line comment about "zero"
+      case "zero":
+        return 0;
+      case "one":
+        // this is a line comment about "one"
+        return 1;
+      // this is a line comment about "two"
+      case "two":
+        return 2;
+      default:
+        return -1;
+    }
+  }
+}

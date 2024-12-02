@@ -41,6 +41,10 @@ final class Token {
     END_JAVADOC,
     /** The {@code @foo} that begins a block Javadoc tag like {@code @throws}. */
     FOOTER_JAVADOC_TAG_START,
+    /** The opening {@code ｛@snippet} of a code snippet. */
+    SNIPPET_BEGIN,
+    /** The closing {@code ｝} of a code snippet. */
+    SNIPPET_END,
     LIST_OPEN_TAG,
     LIST_CLOSE_TAG,
     LIST_ITEM_OPEN_TAG,

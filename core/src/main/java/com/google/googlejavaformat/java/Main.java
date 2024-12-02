@@ -20,7 +20,6 @@ import static java.util.Comparator.comparing;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import java.io.IOError;
 import java.io.IOException;
@@ -177,9 +176,7 @@ public final class Main {
     for (FormatFileCallable.Result result : results) {
       Path path = result.path();
       if (result.exception() != null) {
-        for (FormatterDiagnostic diagnostic : result.exception().diagnostics()) {
-          errWriter.println(path + ":" + diagnostic);
-        }
+        errWriter.print(result.exception().formatDiagnostics(path.toString(), result.input()));
         allOk = false;
         continue;
       }
@@ -226,9 +223,7 @@ public final class Main {
     FormatFileCallable.Result result =
         new FormatFileCallable(parameters, null, input, options).call();
     if (result.exception() != null) {
-      for (FormatterDiagnostic diagnostic : result.exception().diagnostics()) {
-        errWriter.println(stdinFilename + ":" + diagnostic);
-      }
+      errWriter.print(result.exception().formatDiagnostics(stdinFilename, input));
       ok = false;
     } else {
       String output = result.output();
