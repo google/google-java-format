@@ -15,7 +15,7 @@
 package com.google.googlejavaformat.java.java21;
 
 import com.google.googlejavaformat.OpsBuilder;
-import com.google.googlejavaformat.java.java17.Java17InputAstVisitor;
+import com.google.googlejavaformat.java.JavaInputAstVisitor;
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.ConstantCaseLabelTree;
 import com.sun.source.tree.DeconstructionPatternTree;
@@ -28,10 +28,10 @@ import com.sun.tools.javac.tree.JCTree;
 import javax.lang.model.element.Name;
 
 /**
- * Extends {@link Java17InputAstVisitor} with support for AST nodes that were added or modified in
+ * Extends {@link JavaInputAstVisitor} with support for AST nodes that were added or modified in
  * Java 21.
  */
-public class Java21InputAstVisitor extends Java17InputAstVisitor {
+public class Java21InputAstVisitor extends JavaInputAstVisitor {
 
   public Java21InputAstVisitor(OpsBuilder builder, int indentMultiplier) {
     super(builder, indentMultiplier);

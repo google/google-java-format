@@ -49,7 +49,11 @@ public final class JavaCommentsHelper implements CommentsHelper {
     final List<String> lines = new ArrayList<>();
     final Iterator<String> it = Newlines.lineIterator(text);
     while (it.hasNext()) {
-      lines.add(CharMatcher.whitespace().trimTrailingFrom(it.next()));
+      if (tok.isSlashSlashComment()) {
+        lines.add(CharMatcher.whitespace().trimFrom(it.next()));
+      } else {
+        lines.add(CharMatcher.whitespace().trimTrailingFrom(it.next()));
+      }
     }
     if (tok.isSlashSlashComment()) {
       return indentLineComments(lines, column0);
@@ -181,4 +185,3 @@ public final class JavaCommentsHelper implements CommentsHelper {
     return true;
   }
 }
-

@@ -38,7 +38,7 @@ import java.util.Optional;
  */
 public final class OpsBuilder {
 
-  /** @return the actual size of the AST node at position, including comments. */
+  /** Returns the actual size of the AST node at position, including comments. */
   public int actualSize(int position, int length) {
     Token startToken = input.getPositionTokenMap().get(position);
     int start = startToken.getTok().getPosition();
@@ -57,7 +57,7 @@ public final class OpsBuilder {
     return end - start;
   }
 
-  /** @return the start column of the token at {@code position}, including leading comments. */
+  /** Returns the start column of the token at {@code position}, including leading comments. */
   public Integer actualStartColumn(int position) {
     Token startToken = input.getPositionTokenMap().get(position);
     int start = startToken.getTok().getPosition();
@@ -316,7 +316,7 @@ public final class OpsBuilder {
         token,
         Doc.Token.RealOrImaginary.IMAGINARY,
         ZERO,
-        /* breakAndIndentTrailingComment=  */ Optional.empty());
+        /* breakAndIndentTrailingComment= */ Optional.empty());
   }
 
   public final void token(
@@ -359,7 +359,7 @@ public final class OpsBuilder {
           op.substring(i, i + 1),
           Doc.Token.RealOrImaginary.REAL,
           ZERO,
-          /* breakAndIndentTrailingComment=  */ Optional.empty());
+          /* breakAndIndentTrailingComment= */ Optional.empty());
     }
   }
 
@@ -427,7 +427,7 @@ public final class OpsBuilder {
    * @param plusIndent extra indent if taken
    */
   public final void breakOp(Doc.FillMode fillMode, String flat, Indent plusIndent) {
-    breakOp(fillMode, flat, plusIndent, /* optionalTag=  */ Optional.empty());
+    breakOp(fillMode, flat, plusIndent, /* optionalTag= */ Optional.empty());
   }
 
   /**

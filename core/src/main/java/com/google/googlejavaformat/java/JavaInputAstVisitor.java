@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.googlejavaformat.Doc.FillMode.INDEPENDENT;
@@ -84,8 +85,10 @@ import com.sun.source.tree.ArrayTypeTree;
 import com.sun.source.tree.AssertTree;
 import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.BinaryTree;
+import com.sun.source.tree.BindingPatternTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.BreakTree;
+import com.sun.source.tree.CaseLabelTree;
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.CatchTree;
 import com.sun.source.tree.ClassTree;
@@ -125,6 +128,7 @@ import com.sun.source.tree.ProvidesTree;
 import com.sun.source.tree.RequiresTree;
 import com.sun.source.tree.ReturnTree;
 import com.sun.source.tree.StatementTree;
+import com.sun.source.tree.SwitchExpressionTree;
 import com.sun.source.tree.SwitchTree;
 import com.sun.source.tree.SynchronizedTree;
 import com.sun.source.tree.ThrowTree;
@@ -138,11 +142,13 @@ import com.sun.source.tree.UsesTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.tree.WildcardTree;
+import com.sun.source.tree.YieldTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
+import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -410,7 +416,17 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return null;
   }
 
-  protected void handleModule(boolean afterFirstToken, CompilationUnitTree node) {}
+  protected void handleModule(boolean afterFirstToken, CompilationUnitTree node) {
+    ModuleTree module = node.getModule();
+    if (module != null) {
+      if (afterFirstToken) {
+        builder.blankLineWanted(YES);
+      }
+      markForPartialFormat();
+      visitModule(module, null);
+      builder.forcedBreak();
+    }
+  }
 
   /** Skips over extra semi-colons at the top-level, or in a class member declaration lists. */
   protected void dropEmptyDeclarations() {
@@ -435,6 +451,9 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         break;
       case ENUM:
         visitEnumDeclaration(tree);
+        break;
+      case RECORD:
+        visitRecordDeclaration(tree);
         break;
       default:
         throw new AssertionError(tree.getKind());
@@ -928,6 +947,69 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return false;
   }
 
+  public void visitRecordDeclaration(ClassTree node) {
+    sync(node);
+    typeDeclarationModifiers(node.getModifiers());
+    Verify.verify(node.getExtendsClause() == null);
+    boolean hasSuperInterfaceTypes = !node.getImplementsClause().isEmpty();
+    token("record");
+    builder.space();
+    visit(node.getSimpleName());
+    if (!node.getTypeParameters().isEmpty()) {
+      token("<");
+    }
+    builder.open(plusFour);
+    {
+      if (!node.getTypeParameters().isEmpty()) {
+        typeParametersRest(node.getTypeParameters(), hasSuperInterfaceTypes ? plusFour : ZERO);
+      }
+      ImmutableList<JCTree.JCVariableDecl> parameters = JavaInputAstVisitor.recordVariables(node);
+      token("(");
+      if (!parameters.isEmpty()) {
+        // Break before args.
+        builder.breakToFill("");
+      }
+      // record headers can't declare receiver parameters
+      visitFormals(/* receiver= */ Optional.empty(), parameters);
+      token(")");
+      if (hasSuperInterfaceTypes) {
+        builder.breakToFill(" ");
+        builder.open(node.getImplementsClause().size() > 1 ? plusFour : ZERO);
+        token("implements");
+        builder.space();
+        boolean afterFirstToken = false;
+        for (Tree superInterfaceType : node.getImplementsClause()) {
+          if (afterFirstToken) {
+            token(",");
+            builder.breakOp(" ");
+          }
+          scan(superInterfaceType, null);
+          afterFirstToken = true;
+        }
+        builder.close();
+      }
+    }
+    builder.close();
+    if (node.getMembers() == null) {
+      token(";");
+    } else {
+      ImmutableList<Tree> members =
+          node.getMembers().stream()
+              .filter(t -> (TreeInfo.flags((JCTree) t) & Flags.GENERATED_MEMBER) == 0)
+              .collect(toImmutableList());
+      addBodyDeclarations(members, BracesOrNot.YES, FirstDeclarationsOrNot.YES);
+    }
+    dropEmptyDeclarations();
+  }
+
+  private static ImmutableList<JCTree.JCVariableDecl> recordVariables(ClassTree node) {
+    return node.getMembers().stream()
+        .filter(JCTree.JCVariableDecl.class::isInstance)
+        .map(JCTree.JCVariableDecl.class::cast)
+        .filter(m -> (m.mods.flags & RECORD) == RECORD)
+        .collect(toImmutableList());
+  }
+
   @Override
   public Void visitMemberReference(MemberReferenceTree node, Void unused) {
     builder.open(plusFour);
@@ -1199,7 +1281,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.open(ZERO);
     token("instanceof");
     builder.breakOp(" ");
-    scan(node.getType(), null);
+    if (node.getPattern() != null) {
+      scan(node.getPattern(), null);
+    } else {
+      scan(node.getType(), null);
+    }
     builder.close();
     builder.close();
     return null;
@@ -1874,18 +1960,69 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     sync(node);
     markForPartialFormat();
     builder.forcedBreak();
-    if (node.getExpression() == null) {
-      token("default", plusTwo);
-      token(":");
+    List<? extends CaseLabelTree> labels = node.getLabels();
+    boolean isDefault =
+        labels.size() == 1 && getOnlyElement(labels).getKind().name().equals("DEFAULT_CASE_LABEL");
+    builder.open(node.getCaseKind().equals(CaseTree.CaseKind.RULE) ? plusFour : ZERO);
+    if (isDefault) {
+      token("default", ZERO);
     } else {
-      token("case", plusTwo);
+      token("case", ZERO);
+      builder.open(ZERO);
       builder.space();
-      scan(node.getExpression(), null);
-      token(":");
+      boolean afterFirstToken = false;
+      for (Tree expression : labels) {
+        if (afterFirstToken) {
+          token(",");
+          builder.breakOp(" ");
+        }
+        scan(expression, null);
+        afterFirstToken = true;
+      }
+      builder.close();
     }
-    builder.open(plusTwo);
-    visitStatements(node.getStatements());
-    builder.close();
+
+    final ExpressionTree guard = getGuard(node);
+    if (guard != null) {
+      builder.breakToFill(" ");
+      token("when");
+      builder.space();
+      scan(guard, null);
+    }
+
+    switch (node.getCaseKind()) {
+      case STATEMENT:
+        token(":");
+        builder.open(plusTwo);
+        visitStatements(node.getStatements());
+        builder.close();
+        builder.close();
+        break;
+      case RULE:
+        builder.space();
+        token("-");
+        token(">");
+        if (node.getBody().getKind() == BLOCK) {
+          builder.close();
+          builder.space();
+          // Explicit call with {@link CollapseEmptyOrNot.YES} to handle empty case blocks.
+          visitBlock(
+              (BlockTree) node.getBody(),
+              CollapseEmptyOrNot.YES,
+              AllowLeadingBlankLine.NO,
+              AllowTrailingBlankLine.NO);
+        } else {
+          builder.breakOp(" ");
+          scan(node.getBody(), null);
+          builder.close();
+        }
+        builder.guessToken(";");
+        break;
+    }
+    return null;
+  }
+
+  protected ExpressionTree getGuard(final CaseTree node) {
     return null;
   }
 
@@ -2022,7 +2159,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public void visitClassDeclaration(ClassTree node) {
     sync(node);
     typeDeclarationModifiers(node.getModifiers());
-    List<? extends Tree> permitsTypes = getPermitsClause(node);
+    List<? extends Tree> permitsTypes = node.getPermitsClause();
     boolean hasSuperclassType = node.getExtendsClause() != null;
     boolean hasSuperInterfaceTypes = !node.getImplementsClause().isEmpty();
     boolean hasPermitsTypes = !permitsTypes.isEmpty();
@@ -3744,6 +3881,12 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         tokenBreakTrailingComment("{", plusTwo);
         builder.blankLineWanted(BlankLineWanted.NO);
         builder.open(ZERO);
+        if (builder.peekToken().equals(Optional.of(";"))) {
+          builder.open(plusTwo);
+          dropEmptyDeclarations();
+          builder.close();
+          builder.forcedBreak();
+        }
         token("}", plusTwo);
         builder.close();
       }
@@ -3792,11 +3935,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         builder.close();
       }
     }
-  }
-
-  /** Gets the permits clause for the given node. This is only available in Java 15 and later. */
-  protected List<? extends Tree> getPermitsClause(ClassTree node) {
-    return ImmutableList.of();
   }
 
   private void classDeclarationTypeList(String token, List<? extends Tree> types) {
@@ -3959,5 +4097,41 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   @Override
   public final String toString() {
     return MoreObjects.toStringHelper(this).add("builder", builder).toString();
+  }
+
+  @Override
+  public Void visitBindingPattern(BindingPatternTree node, Void unused) {
+    sync(node);
+    VariableTree variableTree = node.getVariable();
+    declareOne(
+        DeclarationKind.PARAMETER,
+        Direction.HORIZONTAL,
+        Optional.of(variableTree.getModifiers()),
+        variableTree.getType(),
+        variableTree.getName(),
+        /* op= */ "",
+        /* equals= */ "",
+        /* initializer= */ Optional.empty(),
+        /* trailing= */ Optional.empty(),
+        /* receiverExpression= */ Optional.empty(),
+        /* typeWithDims= */ Optional.empty());
+    return null;
+  }
+
+  @Override
+  public Void visitYield(YieldTree node, Void aVoid) {
+    sync(node);
+    token("yield");
+    builder.space();
+    scan(node.getValue(), null);
+    token(";");
+    return null;
+  }
+
+  @Override
+  public Void visitSwitchExpression(SwitchExpressionTree node, Void aVoid) {
+    sync(node);
+    visitSwitch(node.getExpression(), node.getCases());
+    return null;
   }
 }

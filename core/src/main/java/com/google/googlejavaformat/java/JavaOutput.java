@@ -140,7 +140,7 @@ public final class JavaOutput extends Output {
             if (i + 1 < text.length() && text.charAt(i + 1) == '\n') {
               i++;
             }
-            // falls through
+          // falls through
           case '\n':
             spacesPending = new StringBuilder();
             ++newlinesPending;
