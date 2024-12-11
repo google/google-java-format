@@ -225,7 +225,9 @@ public final class StringWrapper {
           }
           if (i == lines.size() - 1) {
             String withoutDelimiter =
-                trimmed.substring(0, trimmed.length() - TEXT_BLOCK_DELIMITER.length());
+                trimmed
+                    .substring(0, trimmed.length() - TEXT_BLOCK_DELIMITER.length())
+                    .stripTrailing();
             if (!withoutDelimiter.stripLeading().isEmpty()) {
               output.append(withoutDelimiter).append('\\').append(separator).append(prefix);
             }
