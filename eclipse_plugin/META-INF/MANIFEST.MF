@@ -5,7 +5,7 @@ Bundle-SymbolicName: google-java-format-eclipse-plugin;singleton:=true
 Bundle-Vendor: Google
 Bundle-Version: 1.13.0
 Bundle-RequiredExecutionEnvironment: JavaSE-11
-Require-Bundle: org.eclipse.jdt.core;bundle-version="3.10.0",
+Require-Bundle: org.eclipse.jdt.core,
  org.eclipse.jface,
  org.eclipse.text,
  org.eclipse.ui,
