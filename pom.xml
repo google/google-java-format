@@ -80,7 +80,7 @@
     <errorprone.version>2.36.0</errorprone.version>
     <auto-value.version>1.11.0</auto-value.version>
     <auto-service.version>1.1.1</auto-service.version>
-    <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
   </properties>
 
