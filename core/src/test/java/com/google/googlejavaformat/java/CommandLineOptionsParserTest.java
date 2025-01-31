@@ -22,7 +22,9 @@ import com.google.common.collect.Range;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -79,6 +81,23 @@ public class CommandLineOptionsParserTest {
   @Test
   public void help() {
     assertThat(CommandLineOptionsParser.parse(Arrays.asList("-help")).help()).isTrue();
+  }
+
+  @Test
+  public void help_fromEnvironment() {
+    Map<String, String> environement =
+        Map.of(
+            "JAVA_FORMAT_HELP",
+            "TRUE",
+            "JAVA_FORMAT_V",
+            "FALSE",
+            "OTHER_SETTING",
+            "TRUE",
+            "JAVA_FORMAT_WIDTH",
+            "100");
+    ArrayList<String> expandedOptions = new ArrayList<>();
+    CommandLineOptionsParser.expandEnvironmentParams(environement, expandedOptions);
+    assertThat(expandedOptions).containsExactly("-help", "-width", "100");
   }
 
   @Test

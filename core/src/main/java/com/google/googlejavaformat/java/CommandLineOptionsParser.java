@@ -28,6 +28,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /** A parser for {@link CommandLineOptions}. */
 final class CommandLineOptionsParser {
@@ -42,6 +43,7 @@ final class CommandLineOptionsParser {
     final CommandLineOptions.Builder optionsBuilder = CommandLineOptions.builder();
     final List<String> expandedOptions = new ArrayList<>();
     expandParamsFiles(options, expandedOptions);
+    expandEnvironmentParams(System.getenv(), expandedOptions);
     final Iterator<String> it = expandedOptions.iterator();
     while (it.hasNext()) {
       final String option = it.next();
@@ -137,7 +139,7 @@ final class CommandLineOptionsParser {
     return optionsBuilder.build();
   }
 
-  private static Integer parseInteger(final Iterator<String> it, final String flag, final String value) {
+  private static Integer parseInteger(Iterator<String> it, String flag, String value) {
     try {
       return Integer.valueOf(getValue(flag, it, value));
     } catch (final NumberFormatException e) {
@@ -210,5 +212,22 @@ final class CommandLineOptionsParser {
         }
       }
     }
+  }
+
+  static void expandEnvironmentParams(
+      Map<String, String> environment, List<String> expandedOptions) {
+    String prefix = "JAVA_FORMAT_";
+    environment.forEach(
+        (key, value) -> {
+          if (key.startsWith(prefix)) {
+            if (!"FALSE".equalsIgnoreCase(value)) {
+              expandedOptions.add(
+                  "-" + key.substring(prefix.length()).toLowerCase().replace('_', '-'));
+              if (!"TRUE".equalsIgnoreCase(value)) {
+                expandedOptions.add(value);
+              }
+            }
+          }
+        });
   }
 }

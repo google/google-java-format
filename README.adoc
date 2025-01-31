@@ -1,0 +1,27 @@
+= Configurable Google Java Format
+
+This project is a fork of `google-java-format`, an automatic code formatter for Java.
+
+== Changes from the Original
+
+- Removed all plugins – this fork contains only the core formatter.
+- Added the `--width` option to specify a custom page width.
+- Supports setting options via environment variables.
+
+== Usage
+
+```sh
+java -jar configurable-google-java-format.jar --width=120 File.java
+```
+
+Alternatively, options can be passed as environment variables:
+
+```sh
+export JAVA_FORMAT_WIDTH=120
+java -jar configurable-google-java-format.jar File.java
+```
+
+== License
+
+This project is based on `google-java-format` and follows the same licensing terms.
+
