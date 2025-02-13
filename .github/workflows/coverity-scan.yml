@@ -1,0 +1,43 @@
+name: Coverity Scan
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  coverity_scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt-get install build-essential cmake -y
+
+      - name: Download Coverity Build Tool
+        run: |
+          wget -q https://scan.coverity.com/download/linux64 \
+            --post-data "token=${{ secrets.COVERITY_SCAN_TOKEN }}&project=MrDolch/configurable-google-java-format" \
+            -O coverity_tool.tgz
+          tar xzf coverity_tool.tgz
+          mv cov-analysis* coverity
+
+      - name: Run Coverity Analysis
+        run: |
+          export PATH="$(pwd)/coverity/bin:$PATH"
+          cov-build --dir cov-int mvn clean install
+
+      - name: Upload results to Coverity
+        run: |
+          tar czf cov-int.tgz cov-int
+          curl --form token=${{ secrets.COVERITY_SCAN_TOKEN }} \
+               --form email=${{ secrets.COVERITY_SCAN_EMAIL }} \
+               --form file=@cov-int.tgz \
+               --form version="$(git rev-parse --short HEAD)" \
+               --form description="Coverity Scan for latest commit" \
+               https://scan.coverity.com/builds
