@@ -3,10 +3,10 @@ name: Coverity Scan
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   coverity_scan:
