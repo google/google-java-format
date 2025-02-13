@@ -1,5 +1,8 @@
 = Configurable Google Java Format
 
+link:https://scan.coverity.com/projects/mrdolch-configurable-google-java-format[image:https://scan.coverity.com/projects/31341/badge.svg[Coverity Scan Build Status]]
+
+
 This project is a fork of `google-java-format`, an automatic code formatter for Java.
 
 == Changes from the Original
