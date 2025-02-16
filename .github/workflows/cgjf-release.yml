@@ -26,7 +26,7 @@ jobs:
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "core/target/configurable-google-java-format-*.jar"
+          artifacts: "core/target/configurable-google-java-format-*.*"
           bodyFile: "cgjf-release.md"
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
