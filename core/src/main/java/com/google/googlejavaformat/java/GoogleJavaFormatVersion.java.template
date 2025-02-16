@@ -19,4 +19,8 @@ class GoogleJavaFormatVersion {
   static String version() {
     return "%VERSION%";
   }
+
+  static String versionString() {
+    return "google-java-format: Version " + version();
+  }
 }

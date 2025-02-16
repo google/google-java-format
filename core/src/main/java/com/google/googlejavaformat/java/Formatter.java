@@ -72,8 +72,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Immutable
 public final class Formatter {
 
-  static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
-
   private final JavaFormatterOptions options;
 
   /** A new Formatter instance with default options. */

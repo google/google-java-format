@@ -163,7 +163,7 @@ public final class JavaOutput extends Output {
             if (!range.isEmpty()) {
               if (!rangesSet) {
                 while (ranges.size() <= mutableLines.size()) {
-                  ranges.add(Formatter.EMPTY_RANGE);
+                  ranges.add(EMPTY_RANGE);
                 }
                 ranges.set(mutableLines.size(), union(ranges.get(mutableLines.size()), range));
                 rangesSet = true;
@@ -191,7 +191,7 @@ public final class JavaOutput extends Output {
     int jN = mutableLines.size();
     Range<Integer> eofRange = Range.closedOpen(kN, kN + 1);
     while (ranges.size() < jN) {
-      ranges.add(Formatter.EMPTY_RANGE);
+      ranges.add(EMPTY_RANGE);
     }
     ranges.add(eofRange);
     setLines(ImmutableList.copyOf(mutableLines));

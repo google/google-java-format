@@ -46,9 +46,6 @@ public final class Main {
   private static final int MAX_THREADS = 20;
   private static final String STDIN_FILENAME = "<stdin>";
 
-  static String versionString() {
-    return "google-java-format: Version " + GoogleJavaFormatVersion.version();
-  }
 
   private final PrintWriter outWriter;
   private final PrintWriter errWriter;
@@ -110,7 +107,7 @@ public final class Main {
   public int format(String... args) throws UsageException {
     CommandLineOptions parameters = processArgs(args);
     if (parameters.version()) {
-      errWriter.println(versionString());
+      errWriter.println(GoogleJavaFormatVersion.versionString());
       return 0;
     }
     if (parameters.help()) {
