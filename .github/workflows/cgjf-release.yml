@@ -6,31 +6,27 @@ on:
       - '*'
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up JDK 21 from Zulu
+      - name: "Set up JDK 21 from Zulu"
         uses: actions/setup-java@v4
         with:
           java-version: 21
           distribution: "zulu"
 
       - name: Build with Maven
-        run: mvn clean package -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+        run: mvn verify -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 
-      - name: Create Release on GitHub
-        uses: ncipollo/release-action@v1
+      - uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.ref_name }}
-          artifacts: |
-            core/target/configurable-google-java-format-maven-plugin-*.jar
-            core/target/configurable-google-java-format-maven-plugin-*.pom
+          artifacts: "core/target/configurable-google-java-format-*.jar"
           bodyFile: "cgjf-release.md"
           token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
