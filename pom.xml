@@ -21,12 +21,12 @@
   <groupId>io.github.mrdolch.formatter</groupId>
   <artifactId>configurable-java-format-parent</artifactId>
   <packaging>pom</packaging>
-  <version>2025.21.5-SNAPSHOT</version>
+  <version>2025.21.5</version>
   <name>Java Format Parent</name>
 
   <scm>
     <connection>scm:git:https://github.com/mrdolch/configurable-java-format.git</connection>
-    <tag>2025.21.4</tag>
+    <tag>2025.21.5</tag>
   </scm>
 
   <modules>
