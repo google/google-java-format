@@ -15,19 +15,18 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>io.github.mrdolch.formatter</groupId>
   <artifactId>configurable-java-format-parent</artifactId>
   <packaging>pom</packaging>
-  <version>2025.21.4-SNAPSHOT</version>
+  <version>2025.21.4</version>
   <name>Java Format Parent</name>
 
   <scm>
     <connection>scm:git:https://github.com/mrdolch/configurable-java-format.git</connection>
+    <tag>2025.21.4</tag>
   </scm>
 
   <modules>
