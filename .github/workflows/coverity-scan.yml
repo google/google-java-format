@@ -22,7 +22,7 @@ jobs:
       - name: Download Coverity Build Tool
         run: |
           wget -q https://scan.coverity.com/download/linux64 \
-            --post-data "token=${{ secrets.COVERITY_SCAN_TOKEN }}&project=MrDolch/configurable-google-java-format" \
+            --post-data "token=${{ secrets.COVERITY_SCAN_TOKEN }}&project=MrDolch/configurable-java-format" \
             -O coverity_tool.tgz
           tar xzf coverity_tool.tgz
           mv cov-analysis* coverity

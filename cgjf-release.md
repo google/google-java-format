@@ -1,3 +1,3 @@
-# configurable google java format
+# configurable java format
 
 automatic release

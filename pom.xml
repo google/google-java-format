@@ -20,16 +20,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.mrdolch.googlejavaformat</groupId>
-    <artifactId>configurable-google-java-format-parent</artifactId>
+    <groupId>com.github.mrdolch.formatter</groupId>
+    <artifactId>configurable-java-format-parent</artifactId>
     <packaging>pom</packaging>
     <version>2025.21.3</version>
+    <name>Java Format Parent</name>
 
   <modules>
     <module>core</module>
   </modules>
 
-  <name>Google Java Format Parent</name>
 
   <description>
     A Java source code formatter that follows Google Java Style.

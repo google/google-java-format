@@ -1,9 +1,8 @@
-= Configurable Google Java Format
+= Configurable Java Format
 
-link:https://scan.coverity.com/projects/mrdolch-configurable-google-java-format[image:https://scan.coverity.com/projects/31341/badge.svg[Coverity Scan Build Status]]
+link:https://scan.coverity.com/projects/mrdolch-configurable-java-format[image:https://scan.coverity.com/projects/31341/badge.svg[Coverity Scan Build Status]]
 
-
-This project is a fork of `google-java-format`, an automatic code formatter for Java.
+This is a fork of `google-java-format` with extended configurability. This project is not affiliated with Google.
 
 == Changes from the Original
 
@@ -13,16 +12,25 @@ This project is a fork of `google-java-format`, an automatic code formatter for 
 
 == Usage
 
-```sh
-java -jar configurable-google-java-format.jar --width=120 File.java
-```
+[source,sh]
+----
+# Help
+java -jar configurable-java-format.jar --help
+
+# Format
+java -jar configurable-java-format.jar --width=120 File.java
+
+# Format in place
+java -jar configurable-java-format.jar --width=120 -i File.java
+----
 
 Alternatively, options can be passed as environment variables:
 
-```sh
+[source,sh]
+----
 export JAVA_FORMAT_WIDTH=120
-java -jar configurable-google-java-format.jar File.java
-```
+java -jar configurable-java-format.jar File.java
+----
 
 == IntelliJ Plugin
 
