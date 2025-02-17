@@ -1,4 +1,4 @@
-name: Release
+name: Release on Maven Central
 on:
   workflow_dispatch:
 jobs:
