@@ -25,8 +25,9 @@
   <name>Java Format Parent</name>
 
   <scm>
+    <url>https://github.com/mrdolch/configurable-java-format</url>
     <connection>scm:git:https://github.com/mrdolch/configurable-java-format.git</connection>
-    <tag>2025.21.5</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <modules>
