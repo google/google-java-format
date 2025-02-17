@@ -27,10 +27,7 @@
   <name>Java Format Parent</name>
 
   <scm>
-    <url>https://github.com/mrdolch/configurable-java-format</url>
     <connection>scm:git:https://github.com/mrdolch/configurable-java-format.git</connection>
-    <developerConnection>scm:git:git@github.com:mrdolch/configurable-java-format.git</developerConnection>
-    <tag>HEAD</tag>
   </scm>
 
   <modules>
