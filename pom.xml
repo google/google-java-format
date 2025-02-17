@@ -20,11 +20,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.mrdolch.formatter</groupId>
-    <artifactId>configurable-java-format-parent</artifactId>
-    <packaging>pom</packaging>
-    <version>2025.21.3</version>
-    <name>Java Format Parent</name>
+  <groupId>io.github.mrdolch.formatter</groupId>
+  <artifactId>configurable-java-format-parent</artifactId>
+  <packaging>pom</packaging>
+  <version>2025.21.3</version>
+  <name>Java Format Parent</name>
+
+  <scm>
+    <url>https://github.com/mrdolch/configurable-java-format</url>
+    <connection>scm:git:https://github.com/mrdolch/configurable-java-format.git</connection>
+    <developerConnection>scm:git:git@github.com:mrdolch/configurable-java-format.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
 
   <modules>
     <module>core</module>
@@ -241,7 +248,7 @@
           <execution>
             <id>attach-sources</id>
             <goals>
-              <goal>jar</goal>
+              <goal>jar-no-fork</goal>
             </goals>
           </execution>
         </executions>
@@ -292,30 +299,15 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>${maven-source-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>${maven-javadoc-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>attach-javadocs</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.5.0</version>
+            <extensions>true</extensions>
+            <configuration>
+              <autoPublish>false</autoPublish>
+              <deploymentName>${project.artifactId}:${project.version}</deploymentName>
+              <waitUntil>validated</waitUntil>
+            </configuration>
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
