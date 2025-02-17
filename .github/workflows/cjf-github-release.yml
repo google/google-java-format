@@ -1,4 +1,4 @@
-name: Releases
+name: Release on GitHub
 
 on:
   push:
@@ -27,6 +27,6 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "core/target/configurable-java-format-*.*"
-          bodyFile: "cgjf-release.md"
+          bodyFile: "cjf-release.md"
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
