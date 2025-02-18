@@ -1,6 +1,6 @@
 = Configurable Java Format
 
-link:https://scan.coverity.com/projects/mrdolch-configurable-java-format[image:https://scan.coverity.com/projects/31383/badge.svg[Coverity Scan Build Status]]
+link:https://scan.coverity.com/projects/configurable-java-format[image:https://scan.coverity.com/projects/31383/badge.svg[Coverity Scan Build Status]]
 
 This is a fork of `google-java-format` with extended configurability. This project is not affiliated with Google.
 
