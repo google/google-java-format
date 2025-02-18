@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.github.mrdolch.formatter</groupId>
         <artifactId>configurable-java-format-parent</artifactId>
-        <version>2025.21.11-SNAPSHOT</version>
+        <version>2025.21.12-SNAPSHOT</version>
     </parent>
 
     <artifactId>configurable-java-format</artifactId>
