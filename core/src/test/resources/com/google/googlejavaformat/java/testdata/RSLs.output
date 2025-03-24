@@ -43,14 +43,20 @@ class RSLs {
       """;
   String j =
       """
+      lorem
+      one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt
+      ipsum
+      """;
+  String k =
+"""
 lorem
-one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt
 ipsum
 """;
-  String k =
-      """
-lorem
-ipsum
+  String l =
+"""
+      foo
+bar
+      baz\
 """;
 
   {
@@ -85,10 +91,11 @@ ipsum
             bar
             """;
     String t =
-        """
+"""
 foo
 """
-            + """
+            +
+"""
 bar
 """;
     String u =

@@ -188,15 +188,10 @@ public final class StringWrapper {
     private void indentTextBlocks(
         TreeRangeMap<Integer, String> replacements, List<Tree> textBlocks) {
       for (Tree tree : textBlocks) {
-        int startPosition = getStartPosition(tree);
+        int startPosition = lineMap.getStartPosition(lineMap.getLineNumber(getStartPosition(tree)));
         int endPosition = getEndPosition(unit, tree);
         String text = input.substring(startPosition, endPosition);
-        int lineStartPosition = lineMap.getStartPosition(lineMap.getLineNumber(startPosition));
-        int startColumn =
-            CharMatcher.whitespace()
-                    .negate()
-                    .indexIn(input.substring(lineStartPosition, endPosition))
-                + 1;
+        int leadingWhitespace = CharMatcher.whitespace().negate().indexIn(text);
 
         // Find the source code of the text block with incidental whitespace removed.
         // The first line of the text block is always """, and it does not affect incidental
@@ -204,17 +199,13 @@ public final class StringWrapper {
         ImmutableList<String> initialLines = text.lines().collect(toImmutableList());
         String stripped = initialLines.stream().skip(1).collect(joining(separator)).stripIndent();
         ImmutableList<String> lines = stripped.lines().collect(toImmutableList());
-        int deindent =
+        boolean deindent =
             getLast(initialLines).stripTrailing().length()
-                - getLast(lines).stripTrailing().length();
+                == getLast(lines).stripTrailing().length();
 
-        String prefix =
-            (deindent == 0
-                    || lines.stream().anyMatch(x -> x.length() + startColumn - 1 > columnLimit))
-                ? ""
-                : " ".repeat(startColumn - 1);
+        String prefix = deindent ? "" : " ".repeat(leadingWhitespace);
 
-        StringBuilder output = new StringBuilder(initialLines.get(0).stripLeading());
+        StringBuilder output = new StringBuilder(prefix).append(initialLines.get(0).stripLeading());
         for (int i = 0; i < lines.size(); i++) {
           String line = lines.get(i);
           String trimmed = line.stripTrailing();
