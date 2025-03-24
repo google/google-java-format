@@ -1,5 +1,9 @@
 # google-java-format
 
+[![Maven Central](https://img.shields.io/maven-central/v/com.google.googlejavaformat/google-java-format)](https://central.sonatype.com/search?q=com.google.googlejavaformat)
+[![JetBrains Plugin](https://img.shields.io/jetbrains/plugin/v/8527-google-java-format)](https://plugins.jetbrains.com/plugin/8527-google-java-format)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 `google-java-format` is a program that reformats Java source code to comply with
 [Google Java Style][].
 
