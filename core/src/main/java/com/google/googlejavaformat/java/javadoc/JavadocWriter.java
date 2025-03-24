@@ -236,6 +236,10 @@ final class JavadocWriter {
     requestBlankLine();
   }
 
+  void writeCodeOpenWithBreakBeforeIfAtEndOfLine(Token token) {
+    writeToken(token, true);
+  }
+
   void writeCodeOpen(Token token) {
     writeToken(token);
   }
@@ -320,6 +324,10 @@ final class JavadocWriter {
   }
 
   private void writeToken(Token token) {
+    writeToken(token, false);
+  }
+
+  private void writeToken(Token token, boolean breakBeforeIfAtEndOfLine) {
     if (requestedMoeBeginStripComment != null) {
       requestNewline();
     }
@@ -350,7 +358,9 @@ final class JavadocWriter {
      * line, a newline won't help. Or it might help but only by separating "<p>veryverylongword,"
      * which goes against our style.)
      */
-    if (!atStartOfLine && token.length() + (needWhitespace ? 1 : 0) > remainingOnLine) {
+    if (!atStartOfLine
+        && token.length() + (needWhitespace ? 1 : 0) + (breakBeforeIfAtEndOfLine ? 1 : 0)
+            > remainingOnLine) {
       writeNewline();
     }
     if (!atStartOfLine && needWhitespace) {
