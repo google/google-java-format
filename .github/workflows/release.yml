@@ -83,6 +83,8 @@ jobs:
   build-native-image:
     name: "Build GraalVM native-image on ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     needs: build-maven-jars
     strategy:
       matrix:
