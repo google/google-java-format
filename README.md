@@ -16,6 +16,11 @@ and run it with:
 java -jar /path/to/google-java-format-${GJF_VERSION?}-all-deps.jar <options> [files...]
 ```
 
+Note that it uses the `jdk.compiler` module to parse the Java source code. The
+`java` binary version used must therefore be from a JDK (not JRE) with a version
+equal to or newer than the Java language version of the files being formatted.
+An alternative is to use the available GraalVM based native binaries instead.
+
 The formatter can act on whole files, on limited lines (`--lines`), on specific
 offsets (`--offset`), passing through to standard-out (default) or altered
 in-place (`--replace`).
