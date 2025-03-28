@@ -19,6 +19,7 @@ java -jar /path/to/google-java-format-${GJF_VERSION?}-all-deps.jar <options> [fi
 Note that it uses the `jdk.compiler` module to parse the Java source code. The
 `java` binary version used must therefore be from a JDK (not JRE) with a version
 equal to or newer than the Java language version of the files being formatted.
+The minimum Java version can be found in `core/pom.xml` (currently Java 17).
 An alternative is to use the available GraalVM based native binaries instead.
 
 The formatter can act on whole files, on limited lines (`--lines`), on specific
