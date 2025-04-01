@@ -80,6 +80,7 @@ import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output.BreakTag;
 import com.google.googlejavaformat.java.DimensionHelpers.SortedDims;
 import com.google.googlejavaformat.java.DimensionHelpers.TypeWithDims;
+import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import com.sun.source.tree.AnnotatedTypeTree;
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.ArrayAccessTree;
@@ -308,6 +309,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   protected static final Indent.Const ZERO = Indent.Const.ZERO;
   protected final int indentMultiplier;
+  protected final Style style;
   protected final Indent.Const minusTwo;
   protected final Indent.Const minusFour;
   protected final Indent.Const plusTwo;
@@ -341,9 +343,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    *
    * @param builder the {@link OpsBuilder}
    */
-  public JavaInputAstVisitor(OpsBuilder builder, int indentMultiplier) {
+  public JavaInputAstVisitor(OpsBuilder builder, int indentMultiplier, Style style) {
     this.builder = builder;
     this.indentMultiplier = indentMultiplier;
+    this.style = style;
     minusTwo = Indent.Const.make(-2, indentMultiplier);
     minusFour = Indent.Const.make(-4, indentMultiplier);
     plusTwo = Indent.Const.make(+2, indentMultiplier);
@@ -355,6 +358,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   private boolean inExpression() {
     return inExpression.peekLast();
+  }
+
+  private boolean useAospStyle() {
+    return style.equals(Style.AOSP);
   }
 
   @Override
