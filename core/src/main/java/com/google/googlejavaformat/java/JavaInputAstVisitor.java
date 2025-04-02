@@ -4056,15 +4056,16 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   /**
    * Should a field with a set of modifiers be declared with horizontal annotations? This is
-   * currently true if all annotations are parameterless annotations.
+   * currently true if all annotations are parameterless annotations and we are not using 
+   * AOSP style.
    */
-  private static Direction fieldAnnotationDirection(ModifiersTree modifiers) {
+  private Direction fieldAnnotationDirection(ModifiersTree modifiers) {
     for (AnnotationTree annotation : modifiers.getAnnotations()) {
       if (!annotation.getArguments().isEmpty()) {
         return Direction.VERTICAL;
       }
     }
-    return Direction.HORIZONTAL;
+    return useAospStyle() ? Direction.VERTICAL : Direction.HORIZONTAL;
   }
 
   /**
