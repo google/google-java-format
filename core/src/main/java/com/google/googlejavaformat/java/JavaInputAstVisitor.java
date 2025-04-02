@@ -3989,7 +3989,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       return;
     }
     builder.breakToFill(" ");
-    builder.open(types.size() > 1 ? plusFour : ZERO);
+    if (useAospStyle()) {
+      builder.open(ZERO);
+    } else {
+      builder.open(types.size() > 1 ? plusFour : ZERO);
+    }
     token(token);
     builder.space();
     boolean afterFirstToken = false;
