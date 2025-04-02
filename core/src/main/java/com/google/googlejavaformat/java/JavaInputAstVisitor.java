@@ -525,7 +525,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.close();
     }
     if (node.getInitializers() != null) {
-      if (node.getType() != null) {
+      if (!useAospStyle() && node.getType() != null) {
         builder.space();
       }
       visitArrayInitializer(node.getInitializers());
