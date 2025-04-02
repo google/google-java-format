@@ -3930,7 +3930,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       if (braces.isYes()) {
         builder.space();
         tokenBreakTrailingComment("{", plusTwo);
-        builder.blankLineWanted(BlankLineWanted.NO);
+        if (useAospStyle()) {
+          builder.forcedBreak();
+        } else {
+          builder.blankLineWanted(BlankLineWanted.NO);
+        }
         builder.open(ZERO);
         if (builder.peekToken().equals(Optional.of(";"))) {
           builder.open(plusTwo);
