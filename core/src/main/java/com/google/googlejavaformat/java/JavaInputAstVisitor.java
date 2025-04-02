@@ -1671,7 +1671,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   private void methodBody(MethodTree node) {
     if (node.getBody().getStatements().isEmpty()) {
-      builder.blankLineWanted(BlankLineWanted.NO);
+      if (useAospStyle()) {
+        builder.forcedBreak();
+      } else {
+        builder.blankLineWanted(BlankLineWanted.NO);
+      }
     } else {
       builder.open(plusTwo);
       builder.forcedBreak();
