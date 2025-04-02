@@ -3263,7 +3263,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     // Are there method invocations or field accesses after the prefix?
     boolean trailingDereferences = !prefixes.isEmpty() && getLast(prefixes) < items.size() - 1;
 
-    builder.open(plusFour);
+    builder.open(useAospStyle() && inBinaryExpression ? ZERO : plusFour);
     for (int times = 0; times < prefixes.size(); times++) {
       builder.open(ZERO);
     }
