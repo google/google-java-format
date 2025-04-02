@@ -305,6 +305,9 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return result.build();
   }
 
+  // Used to ensure correct indentation of subexpressions in aosp style
+  private boolean inBinaryExpression = false;
+
   protected final OpsBuilder builder;
 
   protected static final Indent.Const ZERO = Indent.Const.ZERO;
@@ -1268,7 +1271,20 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     List<String> operators = new ArrayList<>();
     walkInfix(precedence(node), node, operands, operators);
     FillMode fillMode = hasOnlyShortItems(operands) ? INDEPENDENT : UNIFIED;
-    builder.open(plusFour);
+
+    // Do not double indent subexpressions of a binary operator in aosp style
+    boolean isParentExpression = !this.inBinaryExpression;
+    if (useAospStyle()) {
+      if (isParentExpression) {
+        builder.open(operators.get(0).equals("+") ? plusTwo : plusFour);
+      } else {
+        builder.open(ZERO);
+      }
+      this.inBinaryExpression = true;
+    } else {
+      builder.open(plusFour);
+    }
+
     scan(operands.get(0), null);
     int operatorsN = operators.size();
     for (int i = 0; i < operatorsN; i++) {
@@ -1277,6 +1293,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.space();
       scan(operands.get(i + 1), null);
     }
+    	
+    if (isParentExpression) {
+      this.inBinaryExpression = false;
+    }
+
     builder.close();
     return null;
   }
