@@ -307,6 +307,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   // Used to ensure correct indentation of subexpressions in aosp style
   private boolean inBinaryExpression = false;
+  private int dotExpressionLevel = 0;
 
   protected final OpsBuilder builder;
 
@@ -741,7 +742,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       visitAnnotations(annotations, BreakOrNot.NO, BreakOrNot.YES);
     }
     scan(node.getIdentifier(), null);
-    addArguments(node.getArguments(), plusFour);
+    if (useAospStyle()) {
+      addArguments(node.getArguments(), this.dotExpressionLevel > 0 ? ZERO : plusFour);
+    } else {
+      addArguments(node.getArguments(), plusFour);
+    }
     builder.close();
     if (node.getClassBody() != null) {
       addBodyDeclarations(
@@ -3094,6 +3099,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         token(".");
       } else {
         builder.open(plusFour);
+        this.dotExpressionLevel++;
         scan(getArrayBase(node), null);
         builder.breakOp();
         needDot = true;
@@ -3101,6 +3107,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       formatArrayIndices(getArrayIndices(node));
       if (stack.isEmpty()) {
         builder.close();
+        this.dotExpressionLevel--;
         return;
       }
     }
@@ -3171,6 +3178,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
     if (node != null) {
       builder.close();
+      this.dotExpressionLevel--;
     }
   }
 
