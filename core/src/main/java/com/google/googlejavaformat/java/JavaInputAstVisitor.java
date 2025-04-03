@@ -590,7 +590,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       boolean allowFilledElementsOnOwnLine = shortItems || !inMemberValuePair;
 
       builder.open(initializerIndent);
-      tokenBreakTrailingComment("{", initializerUnindent);
+      tokenBreakTrailingComment("{", initializerIndent);
       boolean hasTrailingComma = hasTrailingToken(builder.getInput(), expressions, ",");
       builder.breakOp(hasTrailingComma ? FillMode.FORCED : FillMode.UNIFIED, "", ZERO);
       if (allowFilledElementsOnOwnLine) {
