@@ -53,7 +53,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.DiagnosticListener;
@@ -316,19 +315,21 @@ public final class StringWrapper {
   }
 
   static int hasEscapedWhitespaceAt(String input, int idx) {
-    return Stream.of("\\t")
-        .mapToInt(x -> input.startsWith(x, idx) ? x.length() : -1)
-        .filter(x -> x != -1)
-        .findFirst()
-        .orElse(-1);
+    if (input.startsWith("\\t", idx)) {
+      return 2;
+    }
+    return -1;
   }
 
   static int hasEscapedNewlineAt(String input, int idx) {
-    return Stream.of("\\r\\n", "\\r", "\\n")
-        .mapToInt(x -> input.startsWith(x, idx) ? x.length() : -1)
-        .filter(x -> x != -1)
-        .findFirst()
-        .orElse(-1);
+    int offset = 0;
+    if (input.startsWith("\\r", idx)) {
+      offset += 2;
+    }
+    if (input.startsWith("\\n", idx)) {
+      offset += 2;
+    }
+    return offset > 0 ? offset : -1;
   }
 
   /**
@@ -360,7 +361,7 @@ public final class StringWrapper {
       List<String> line = new ArrayList<>();
       // If we know this is going to be the last line, then remove a bit of width to account for the
       // trailing characters.
-      if (input.stream().mapToInt(String::length).sum() <= width) {
+      if (totalLengthLessThanOrEqual(input, width)) {
         // This isn’t quite optimal, but arguably good enough. See b/179561701
         width -= trailing;
       }
@@ -389,6 +390,17 @@ public final class StringWrapper {
                 "\"" + separator + Strings.repeat(" ", startColumn + (first0 ? 4 : -2)) + "+ \"",
                 "\"",
                 "\""));
+  }
+
+  private static boolean totalLengthLessThanOrEqual(Iterable<String> input, int length) {
+    int total = 0;
+    for (String s : input) {
+      total += s.length();
+      if (total > length) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
