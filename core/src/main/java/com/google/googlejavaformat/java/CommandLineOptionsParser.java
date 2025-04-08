@@ -18,8 +18,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -43,6 +45,9 @@ final class CommandLineOptionsParser {
     List<String> expandedOptions = new ArrayList<>();
     expandParamsFiles(options, expandedOptions);
     Iterator<String> it = expandedOptions.iterator();
+    // Accumulate the ranges in a mutable builder to merge overlapping ranges,
+    // which ImmutableRangeSet doesn't support.
+    RangeSet<Integer> linesBuilder = TreeRangeSet.create();
     while (it.hasNext()) {
       String option = it.next();
       if (!option.startsWith("-")) {
@@ -71,7 +76,7 @@ final class CommandLineOptionsParser {
         case "-lines":
         case "--line":
         case "-line":
-          parseRangeSet(optionsBuilder.linesBuilder(), getValue(flag, it, value));
+          parseRangeSet(linesBuilder, getValue(flag, it, value));
           break;
         case "--offset":
         case "-offset":
@@ -129,6 +134,7 @@ final class CommandLineOptionsParser {
           throw new IllegalArgumentException("unexpected flag: " + flag);
       }
     }
+    optionsBuilder.lines(ImmutableRangeSet.copyOf(linesBuilder));
     return optionsBuilder.build();
   }
 
