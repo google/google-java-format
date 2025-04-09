@@ -57,7 +57,8 @@ record CommandLineOptions(
     boolean setExitIfChanged,
     Optional<String> assumeFilename,
     boolean reflowLongStrings,
-    boolean formatJavadoc) {
+    boolean formatJavadoc,
+    Optional<String> profile) {
 
   /** Returns true if partial formatting was selected. */
   boolean isSelection() {
@@ -128,6 +129,8 @@ record CommandLineOptions(
     Builder reflowLongStrings(boolean reflowLongStrings);
 
     Builder formatJavadoc(boolean formatJavadoc);
+
+    Builder profile(String profile);
 
     CommandLineOptions build();
   }

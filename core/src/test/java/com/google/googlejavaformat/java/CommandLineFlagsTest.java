@@ -107,7 +107,12 @@ public class CommandLineFlagsTest {
   public void noFilesToFormatRequiresEitherHelpOrVersion() throws UsageException {
     Main.processArgs("-version");
 
-    Main.processArgs("-help");
+    try {
+      Main.processArgs("-help");
+      fail();
+    } catch (UsageException e) {
+      // expected
+    }
 
     try {
       Main.processArgs();
