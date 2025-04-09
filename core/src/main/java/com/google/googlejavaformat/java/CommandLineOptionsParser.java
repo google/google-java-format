@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat.java;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
@@ -25,6 +26,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -62,66 +64,71 @@ final class CommandLineOptionsParser {
         flag = option;
         value = null;
       }
-      flag = flag.startsWith("--") ? flag.substring(1) : flag;
       // NOTE: update usage information in UsageException when new flags are added
       switch (flag) {
         case "-i":
         case "-r":
         case "-replace":
+        case "--replace":
           optionsBuilder.inPlace(true);
           break;
+        case "--lines":
         case "-lines":
+        case "--line":
         case "-line":
           parseRangeSet(linesBuilder, getValue(flag, it, value));
           break;
+        case "--offset":
         case "-offset":
           optionsBuilder.addOffset(parseInteger(it, flag, value));
           break;
+        case "--length":
         case "-length":
           optionsBuilder.addLength(parseInteger(it, flag, value));
           break;
+        case "--aosp":
         case "-aosp":
         case "-a":
           optionsBuilder.aosp(true);
           break;
+        case "--version":
         case "-version":
         case "-v":
           optionsBuilder.version(true);
           break;
+        case "--help":
         case "-help":
         case "-h":
           optionsBuilder.help(true);
           break;
-        case "-fix-imports-only":
+        case "--fix-imports-only":
           optionsBuilder.fixImportsOnly(true);
           break;
-        case "-skip-sorting-imports":
+        case "--skip-sorting-imports":
           optionsBuilder.sortImports(false);
           break;
-        case "-skip-removing-unused-imports":
+        case "--skip-removing-unused-imports":
           optionsBuilder.removeUnusedImports(false);
           break;
-        case "-skip-reflowing-long-strings":
+        case "--skip-reflowing-long-strings":
           optionsBuilder.reflowLongStrings(false);
           break;
-        case "-skip-javadoc-formatting":
+        case "--skip-javadoc-formatting":
           optionsBuilder.formatJavadoc(false);
           break;
         case "-":
           optionsBuilder.stdin(true);
           break;
         case "-n":
-        case "-dry-run":
+        case "--dry-run":
           optionsBuilder.dryRun(true);
           break;
-        case "-set-exit-if-changed":
+        case "--set-exit-if-changed":
           optionsBuilder.setExitIfChanged(true);
           break;
         case "-assume-filename":
+        case "--assume-filename":
           optionsBuilder.assumeFilename(getValue(flag, it, value));
-          break;
-        case "-profile":
-          optionsBuilder.profile(getValue(flag, it, value));
           break;
         default:
           throw new IllegalArgumentException("unexpected flag: " + flag);
@@ -195,9 +202,9 @@ final class CommandLineOptionsParser {
       } else if (arg.startsWith("@@")) {
         expanded.add(arg.substring(1));
       } else {
-        Path path = Path.of(arg.substring(1));
+        Path path = Paths.get(arg.substring(1));
         try {
-          String sequence = Files.readString(path);
+          String sequence = new String(Files.readAllBytes(path), UTF_8);
           expandParamsFiles(ARG_SPLITTER.split(sequence), expanded);
         } catch (IOException e) {
           throw new UncheckedIOException(path + ": could not read file: " + e.getMessage(), e);
@@ -205,6 +212,4 @@ final class CommandLineOptionsParser {
       }
     }
   }
-
-  private CommandLineOptionsParser() {}
 }

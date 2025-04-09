@@ -108,14 +108,14 @@ public final class Main {
    */
   public int format(String... args) throws UsageException {
     CommandLineOptions parameters = processArgs(args);
-    return format(parameters);
-  }
-
-  int format(CommandLineOptions parameters) {
     if (parameters.version()) {
       errWriter.println(versionString());
       return 0;
     }
+    if (parameters.help()) {
+      throw new UsageException();
+    }
+
     JavaFormatterOptions options =
         JavaFormatterOptions.builder()
             .style(parameters.aosp() ? Style.AOSP : Style.GOOGLE)
@@ -277,9 +277,6 @@ public final class Main {
     }
     if (parameters.dryRun() && parameters.inPlace()) {
       throw new UsageException("cannot use --dry-run and --in-place at the same time");
-    }
-    if (parameters.help()) {
-      throw new UsageException();
     }
     return parameters;
   }
