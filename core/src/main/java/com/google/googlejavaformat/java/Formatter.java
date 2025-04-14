@@ -28,6 +28,7 @@ import com.google.errorprone.annotations.Immutable;
 import com.google.googlejavaformat.Doc;
 import com.google.googlejavaformat.DocBuilder;
 import com.google.googlejavaformat.FormattingError;
+import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
@@ -156,7 +157,7 @@ public final class Formatter {
           createVisitor(
               "com.google.googlejavaformat.java.java21.Java21InputAstVisitor", builder, options);
     } else {
-      visitor = new JavaInputAstVisitor(builder, options.indentationMultiplier());
+      visitor = new JavaInputAstVisitor(builder, options.indentationMultiplier(), options.style());
     }
     visitor.scan(unit, null);
     builder.sync(javaInput.getText().length());
@@ -172,8 +173,8 @@ public final class Formatter {
     try {
       return Class.forName(className)
           .asSubclass(JavaInputAstVisitor.class)
-          .getConstructor(OpsBuilder.class, int.class)
-          .newInstance(builder, options.indentationMultiplier());
+          .getConstructor(OpsBuilder.class, int.class, Style.class)
+          .newInstance(builder, options.indentationMultiplier(), options.style());
     } catch (ReflectiveOperationException e) {
       throw new LinkageError(e.getMessage(), e);
     }
