@@ -42,6 +42,7 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 import com.sun.tools.javac.util.Options;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
@@ -365,7 +366,7 @@ public final class JavaInput extends Input {
             return text;
           }
         });
-    DeferredDiagnosticHandler diagnostics = new DeferredDiagnosticHandler(log);
+    DeferredDiagnosticHandler diagnostics = deferredDiagnosticHandler(log);
     ImmutableList<RawTok> rawToks = JavacTokens.getTokens(text, context, stopTokens);
     Collection<JCDiagnostic> ds;
     try {
@@ -480,6 +481,29 @@ public final class JavaInput extends Input {
     }
     toks.add(new Tok(kN, "", "", charI, columnI, true, null)); // EOF tok.
     return ImmutableList.copyOf(toks);
+  }
+
+  private static final Constructor<DeferredDiagnosticHandler>
+      DEFERRED_DIAGNOSTIC_HANDLER_CONSTRUCTOR = getDeferredDiagnosticHandlerConstructor();
+
+  // Depending on the JDK version, we might have a static class whose constructor has an explicit
+  // Log parameter, or an inner class whose constructor has an *implicit* Log parameter. They are
+  // different at the source level, but look the same to reflection.
+
+  private static Constructor<DeferredDiagnosticHandler> getDeferredDiagnosticHandlerConstructor() {
+    try {
+      return DeferredDiagnosticHandler.class.getConstructor(Log.class);
+    } catch (NoSuchMethodException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
+  }
+
+  private static DeferredDiagnosticHandler deferredDiagnosticHandler(Log log) {
+    try {
+      return DEFERRED_DIAGNOSTIC_HANDLER_CONSTRUCTOR.newInstance(log);
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
   }
 
   private static final Method GET_DIAGNOSTICS = getGetDiagnostics();
