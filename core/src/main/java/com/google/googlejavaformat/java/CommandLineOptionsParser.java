@@ -174,17 +174,27 @@ final class CommandLineOptionsParser {
    * converted here to {@code 0}-based.
    */
   private static Range<Integer> parseRange(String arg) {
+    final int SINGLE_LINE = 1;
+    final int RANGE_LINE = 2;
+    final int BASE_OFFSET = 1;
+
     List<String> args = COLON_SPLITTER.splitToList(arg);
+
     switch (args.size()) {
-      case 1:
-        int line = Integer.parseInt(args.get(0)) - 1;
+      case SINGLE_LINE:
+        // Handle single line case (e.g., "42")
+        int line = Integer.parseInt(args.get(0)) - BASE_OFFSET;
         return Range.closedOpen(line, line + 1);
-      case 2:
-        int line0 = Integer.parseInt(args.get(0)) - 1;
-        int line1 = Integer.parseInt(args.get(1)) - 1;
-        return Range.closedOpen(line0, line1 + 1);
+
+      case RANGE_LINE:
+        // Handle line range case (e.g., "1:12")
+        int startLine = Integer.parseInt(args.get(0)) - BASE_OFFSET;
+        int endLine = Integer.parseInt(args.get(1)) - BASE_OFFSET;
+        return Range.closedOpen(startLine, endLine + 1);
+
       default:
-        throw new IllegalArgumentException(arg);
+        throw new IllegalArgumentException("Invalid range format: " + arg
+                + ". Expected format: 'lineNumber' or 'startLine:endLine'");
     }
   }
 
