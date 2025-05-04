@@ -42,6 +42,7 @@ import static com.sun.source.tree.Tree.Kind.NEW_CLASS;
 import static com.sun.source.tree.Tree.Kind.STRING_LITERAL;
 import static com.sun.source.tree.Tree.Kind.UNION_TYPE;
 import static com.sun.source.tree.Tree.Kind.VARIABLE;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import com.google.auto.value.AutoOneOf;
@@ -71,6 +72,7 @@ import com.google.googlejavaformat.Doc.FillMode;
 import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Indent;
 import com.google.googlejavaformat.Input;
+import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpenOp;
 import com.google.googlejavaformat.OpsBuilder;
@@ -1753,6 +1755,23 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public Void visitLiteral(LiteralTree node, Void unused) {
     sync(node);
     String sourceForNode = getSourceForNode(node, getCurrentPath());
+    if (sourceForNode.startsWith("\"\"\"")) {
+      String separator = Newlines.guessLineSeparator(sourceForNode);
+      ImmutableList<String> initialLines = sourceForNode.lines().collect(toImmutableList());
+      String stripped = initialLines.stream().skip(1).collect(joining(separator)).stripIndent();
+      // Use the last line of the text block to determine if it is deindented to column 0, by
+      // comparing the length of the line in the input source with the length after processing
+      // the text block contents with stripIndent().
+      boolean deindent =
+          getLast(initialLines).stripTrailing().length()
+              == Streams.findLast(stripped.lines()).orElseThrow().stripTrailing().length();
+      if (deindent) {
+        Indent indent = Indent.Const.make(Integer.MIN_VALUE / indentMultiplier, indentMultiplier);
+        builder.breakOp(indent);
+      }
+      token(sourceForNode);
+      return null;
+    }
     if (isUnaryMinusLiteral(sourceForNode)) {
       token("-");
       sourceForNode = sourceForNode.substring(1).trim();

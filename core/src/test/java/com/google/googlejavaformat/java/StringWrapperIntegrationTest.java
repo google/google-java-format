@@ -365,6 +365,71 @@ public class StringWrapperIntegrationTest {
           "}"
         },
       },
+      {
+        {
+          "class T {", //
+          "  String s = \"\\r\\rone\\rlong\\rincredibly\\runbroken\\rsentence\\rmoving\\rfrom\\r"
+              + " topic\\rto\\r topic\\rso\\rthat\\rno-one\\rhad\\ra\\rchance\\rto\\rinterrupt\";",
+          "}"
+        },
+        {
+          "class T {",
+          "  String s =",
+          "      \"\\r\\r\"",
+          "          + \"one\\r\"",
+          "          + \"long\\r\"",
+          "          + \"incredibly\\r\"",
+          "          + \"unbroken\\r\"",
+          "          + \"sentence\\r\"",
+          "          + \"moving\\r\"",
+          "          + \"from\\r\"",
+          "          + \" topic\\r\"",
+          "          + \"to\\r\"",
+          "          + \" topic\\r\"",
+          "          + \"so\\r\"",
+          "          + \"that\\r\"",
+          "          + \"no-one\\r\"",
+          "          + \"had\\r\"",
+          "          + \"a\\r\"",
+          "          + \"chance\\r\"",
+          "          + \"to\\r\"",
+          "          + \"interrupt\";",
+          "}",
+        },
+      },
+      {
+        {
+          "class T {", //
+          "  String s = \"\\r\\n\\r\\none\\r\\nlong\\r\\nincredibly\\r\\nunbroken\\r\\nsentence"
+              + "\\r\\nmoving\\r\\nfrom\\r\\n topic\\r\\nto\\r\\n topic\\r\\nso\\r\\nthat\\r\\n"
+              + "no-one\\r\\nhad\\r\\na\\r\\nchance\\r\\nto\\r\\ninterrupt\";",
+          "}"
+        },
+        {
+          "class T {",
+          "  String s =",
+          "      \"\\r\\n\\r\\n\"",
+          "          + \"one\\r\\n\"",
+          "          + \"long\\r\\n\"",
+          "          + \"incredibly\\r\\n\"",
+          "          + \"unbroken\\r\\n\"",
+          "          + \"sentence\\r\\n\"",
+          "          + \"moving\\r\\n\"",
+          "          + \"from\\r\\n\"",
+          "          + \" topic\\r\\n\"",
+          "          + \"to\\r\\n\"",
+          "          + \" topic\\r\\n\"",
+          "          + \"so\\r\\n\"",
+          "          + \"that\\r\\n\"",
+          "          + \"no-one\\r\\n\"",
+          "          + \"had\\r\\n\"",
+          "          + \"a\\r\\n\"",
+          "          + \"chance\\r\\n\"",
+          "          + \"to\\r\\n\"",
+          "          + \"interrupt\";",
+          "}",
+        },
+      },
     };
     return Arrays.stream(inputsAndOutputs)
         .map(
