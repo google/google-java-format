@@ -296,70 +296,104 @@ public class ImportOrderer {
   private ImportsAndIndex scanImports(int i) throws FormatterException {
     int afterLastImport = i;
     ImmutableSortedSet.Builder<Import> imports = ImmutableSortedSet.orderedBy(importComparator);
-    // JavaInput.buildToks appends a zero-width EOF token after all tokens. It won't match any
-    // of our tests here and protects us from running off the end of the toks list. Since it is
-    // zero-width it doesn't matter if we include it in our string concatenation at the end.
+
     while (i < toks.size() && tokenAt(i).equals("import")) {
-      i++;
-      if (isSpaceToken(i)) {
-        i++;
-      }
-      boolean isStatic = tokenAt(i).equals("static");
-      if (isStatic) {
-        i++;
-        if (isSpaceToken(i)) {
-          i++;
-        }
-      }
-      if (!isIdentifierToken(i)) {
-        throw new FormatterException("Unexpected token after import: " + tokenAt(i));
-      }
-      StringAndIndex imported = scanImported(i);
-      String importedName = imported.string;
-      i = imported.index;
-      if (isSpaceToken(i)) {
-        i++;
-      }
-      if (!tokenAt(i).equals(";")) {
-        throw new FormatterException("Expected ; after import");
-      }
-      while (tokenAt(i).equals(";")) {
-        // Extra semicolons are not allowed by the JLS but are accepted by javac.
-        i++;
-      }
-      StringBuilder trailing = new StringBuilder();
-      if (isSpaceToken(i)) {
-        trailing.append(tokenAt(i));
-        i++;
-      }
-      if (isNewlineToken(i)) {
-        trailing.append(tokenAt(i));
-        i++;
-      }
-      // Gather (if any) all single line comments and accompanied line terminators following this
-      // import
-      while (isSlashSlashCommentToken(i)) {
-        trailing.append(tokenAt(i));
-        i++;
-        if (isNewlineToken(i)) {
-          trailing.append(tokenAt(i));
-          i++;
-        }
-      }
-      while (tokenAt(i).equals(";")) {
-        // Extra semicolons are not allowed by the JLS but are accepted by javac.
-        i++;
-      }
-      imports.add(new Import(importedName, trailing.toString(), isStatic));
-      // Remember the position just after the import we just saw, before skipping blank lines.
-      // If the next thing after the blank lines is not another import then we don't want to
-      // include those blank lines in the text to be replaced.
+      ImportAndIndex result = scanSingleImport(i);
+      imports.add(result.importStatement);
+      i = result.index;
       afterLastImport = i;
+
+      // Skip any whitespace but preserve comment positions
       while (isNewlineToken(i) || isSpaceToken(i)) {
         i++;
       }
     }
+
     return new ImportsAndIndex(imports.build(), afterLastImport);
+  }
+
+  private static class ImportAndIndex {
+    final Import importStatement;
+    final int index;
+
+    ImportAndIndex(Import importStatement, int index) {
+      this.importStatement = importStatement;
+      this.index = index;
+    }
+  }
+
+  private ImportAndIndex scanSingleImport(int i) throws FormatterException {
+    // Skip 'import' and following space
+    i++;
+    if (isSpaceToken(i)) {
+      i++;
+    }
+
+    // Handle static keyword
+    boolean isStatic = tokenAt(i).equals("static");
+    if (isStatic) {
+      i++;
+      if (isSpaceToken(i)) {
+        i++;
+      }
+    }
+
+    if (!isIdentifierToken(i)) {
+      throw new FormatterException("Unexpected token after import: " + tokenAt(i));
+    }
+
+    StringAndIndex imported = scanImported(i);
+    String importedName = imported.string;
+    i = imported.index;
+
+    // Handle semicolon and spaces
+    if (isSpaceToken(i)) {
+      i++;
+    }
+    if (!tokenAt(i).equals(";")) {
+      throw new FormatterException("Expected ; after import");
+    }
+
+    // Collect all trailing content (including comments)
+    StringBuilder trailing = new StringBuilder();
+    i = collectTrailingContent(i, trailing);
+
+    Import importStatement = new Import(importedName, trailing.toString(), isStatic);
+    return new ImportAndIndex(importStatement, i);
+  }
+
+  private int collectTrailingContent(int i, StringBuilder trailing) {
+    // Collect all semicolons
+    while (tokenAt(i).equals(";")) {
+      i++;
+    }
+
+    // Collect whitespace and newline
+    if (isSpaceToken(i)) {
+      trailing.append(tokenAt(i));
+      i++;
+    }
+    if (isNewlineToken(i)) {
+      trailing.append(tokenAt(i));
+      i++;
+    }
+
+    // Collect comments and their newlines
+    while (isSlashSlashCommentToken(i)) {
+      trailing.append(tokenAt(i));
+      i++;
+      if (isNewlineToken(i)) {
+        trailing.append(tokenAt(i));
+        i++;
+      }
+    }
+
+    // Collect any remaining semicolons
+    while (tokenAt(i).equals(";")) {
+      i++;
+    }
+
+    return i;
   }
 
   // Produces the sorted output based on the imports we have scanned.
