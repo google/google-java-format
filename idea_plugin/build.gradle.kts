@@ -18,7 +18,7 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 // https://github.com/JetBrains/intellij-platform-gradle-plugin/releases
 plugins {
-  id("org.jetbrains.intellij.platform") version "2.4.0"
+  id("org.jetbrains.intellij.platform") version "2.5.0"
 }
 
 repositories {
@@ -30,7 +30,7 @@ repositories {
 }
 
 // https://github.com/google/google-java-format/releases
-val googleJavaFormatVersion = "1.26.0"
+val googleJavaFormatVersion = "1.27.0"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_17
@@ -81,7 +81,6 @@ dependencies {
   intellijPlatform {
     intellijIdeaCommunity("2022.3")
     bundledPlugin("com.intellij.java")
-    instrumentationTools()
     testFramework(TestFrameworkType.Plugin.Java)
   }
   implementation("com.google.googlejavaformat:google-java-format:${googleJavaFormatVersion}")
