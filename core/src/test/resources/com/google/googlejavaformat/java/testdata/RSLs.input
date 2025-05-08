@@ -40,6 +40,11 @@ class RSLs {
 lorem
 ipsum
 """;
+  String l =
+      """
+      foo
+bar
+      baz""";
   {
     f("""
     lorem

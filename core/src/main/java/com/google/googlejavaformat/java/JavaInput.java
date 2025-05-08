@@ -37,10 +37,13 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 import com.sun.tools.javac.util.Options;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,6 +56,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
+import org.jspecify.annotations.Nullable;
 
 /** {@code JavaInput} extends {@link Input} to represent a Java input document. */
 public final class JavaInput extends Input {
@@ -362,9 +366,17 @@ public final class JavaInput extends Input {
             return text;
           }
         });
-    DeferredDiagnosticHandler diagnostics = new DeferredDiagnosticHandler(log);
+    DeferredDiagnosticHandler diagnostics = deferredDiagnosticHandler(log);
     ImmutableList<RawTok> rawToks = JavacTokens.getTokens(text, context, stopTokens);
-    if (diagnostics.getDiagnostics().stream().anyMatch(d -> d.getKind() == Diagnostic.Kind.ERROR)) {
+    Collection<JCDiagnostic> ds;
+    try {
+      @SuppressWarnings("unchecked")
+      var extraLocalForSuppression = (Collection<JCDiagnostic>) GET_DIAGNOSTICS.invoke(diagnostics);
+      ds = extraLocalForSuppression;
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
+    if (ds.stream().anyMatch(d -> d.getKind() == Diagnostic.Kind.ERROR)) {
       return ImmutableList.of(new Tok(0, "", "", 0, 0, true, null)); // EOF
     }
     int kN = 0;
@@ -469,6 +481,39 @@ public final class JavaInput extends Input {
     }
     toks.add(new Tok(kN, "", "", charI, columnI, true, null)); // EOF tok.
     return ImmutableList.copyOf(toks);
+  }
+
+  private static final Constructor<DeferredDiagnosticHandler>
+      DEFERRED_DIAGNOSTIC_HANDLER_CONSTRUCTOR = getDeferredDiagnosticHandlerConstructor();
+
+  // Depending on the JDK version, we might have a static class whose constructor has an explicit
+  // Log parameter, or an inner class whose constructor has an *implicit* Log parameter. They are
+  // different at the source level, but look the same to reflection.
+
+  private static Constructor<DeferredDiagnosticHandler> getDeferredDiagnosticHandlerConstructor() {
+    try {
+      return DeferredDiagnosticHandler.class.getConstructor(Log.class);
+    } catch (NoSuchMethodException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
+  }
+
+  private static DeferredDiagnosticHandler deferredDiagnosticHandler(Log log) {
+    try {
+      return DEFERRED_DIAGNOSTIC_HANDLER_CONSTRUCTOR.newInstance(log);
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
+  }
+
+  private static final Method GET_DIAGNOSTICS = getGetDiagnostics();
+
+  private static @Nullable Method getGetDiagnostics() {
+    try {
+      return DeferredDiagnosticHandler.class.getMethod("getDiagnostics");
+    } catch (NoSuchMethodException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
   }
 
   private static int updateColumn(int columnI, String originalTokText) {
