@@ -70,7 +70,7 @@ jobs:
           git push origin "v${{ github.event.inputs.version }}"
 
       - name: Add Artifacts to Release Entry
-        uses: softprops/action-gh-release@v2.3.0
+        uses: softprops/action-gh-release@v2.3.2
         with:
           draft: true
           name: ${{ github.event.input.version }}
