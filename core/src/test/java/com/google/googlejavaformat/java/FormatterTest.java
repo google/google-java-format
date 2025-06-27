@@ -510,4 +510,137 @@ public final class FormatterTest {
                 + "  }\n"
                 + "}\n");
   }
+
+//  @Test
+//  @Disabled
+//  public void removesRedundantPublicInterfaceModifiers() throws FormatterException {
+//    String input = """
+//        interface Test {
+//          public static final int CONST = 1;
+//          public abstract void method();
+//        }
+//        """;
+//    String expected = """
+//        interface Test {
+//          int CONST = 1;
+//          void method();
+//        }
+//        """;
+//    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+//  }
+
+  @Test
+  public void preservesFinalParameters() throws FormatterException {
+    String input = """
+        class Test {
+          void method(final String param1, @Nullable final String param2) {}
+        }
+        """;
+    String expected = """
+        class Test {
+          void method(final String param1, @Nullable final String param2) {}
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+//  @Test
+//  @Disabled
+//  public void reordersModifiers() throws FormatterException {
+//    String input = """
+//        class Test {
+//          public final static String VALUE = "test";
+//          protected final abstract void doSomething();
+//        }
+//        """;
+//    String expected = """
+//        class Test {
+//          public static final String VALUE = "test";
+//
+//          protected abstract void doSomething();
+//        }
+//        """;
+//    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+//  }
+
+//  @Test
+//  @Disabled
+//  public void handlesNestedClasses() throws FormatterException {
+//    String input = """
+//        class Outer {
+//          public static interface Inner {
+//            public static final int VAL = 1;
+//          }
+//        }
+//        """;
+//    String expected = """
+//        class Outer {
+//          interface Inner {
+//            int VAL = 1;
+//          }
+//        }
+//        """;
+//    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+//  }
+
+  @Test
+  public void preservesMeaningfulModifiers() throws FormatterException {
+    String input = """
+        class Test {
+          private int field;
+          protected abstract void method();
+          public static final class Inner {}
+        }
+        """;
+    String expected = """
+        class Test {
+          private int field;
+
+          protected abstract void method();
+
+          public static final class Inner {}
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+//  @Test
+//  @Disabled
+//  public void handlesRecords() throws FormatterException {
+//    String input = """
+//        public record TestRecord(
+//          public final String name,
+//          public static final int MAX = 100
+//        ) {
+//          public static void doSomething() {}
+//        }
+//        """;
+//    String expected = """
+//        public record TestRecord(
+//          String name,
+//          int MAX = 100
+//        ) {
+//          static void doSomething() {}
+//        }
+//        """;
+//    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+//  }
+
+//  @Test
+//  @Disabled
+//  public void handlesSealedClasses() throws FormatterException {
+//    String input = """
+//        public sealed abstract class Shape
+//          permits public final class Circle, public non-sealed class Rectangle {
+//          public abstract double area();
+//        }
+//        """;
+//    String expected = """
+//        public sealed abstract class Shape
+//          permits Circle, Rectangle {
+//          public abstract double area();
+//        }
+//        """;
+//    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+//  }
 }
