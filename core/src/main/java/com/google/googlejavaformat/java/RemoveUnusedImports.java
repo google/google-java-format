@@ -273,6 +273,8 @@ public class RemoveUnusedImports {
       Set<String> usedNames,
       Multimap<String, Range<Integer>> usedInJavadoc) {
     RangeMap<Integer, String> replacements = TreeRangeMap.create();
+    int size = unit.getImports().size();
+    JCTree lastImport = size > 0 ? unit.getImports().get(size - 1) : null;
     for (JCTree importTree : unit.getImports()) {
       String simpleName = getSimpleName(importTree);
       if (!isUnused(unit, usedNames, usedInJavadoc, importTree, simpleName)) {
@@ -285,6 +287,12 @@ public class RemoveUnusedImports {
       if (endPosition + sep.length() < contents.length()
           && contents.subSequence(endPosition, endPosition + sep.length()).toString().equals(sep)) {
         endPosition += sep.length();
+      }
+      if (size == 1 || importTree != lastImport) {
+        while (endPosition + sep.length() <= contents.length()
+                && contents.regionMatches(endPosition, sep, 0, sep.length())) {
+          endPosition += sep.length();
+        }
       }
       replacements.put(Range.closedOpen(importTree.getStartPosition(), endPosition), "");
     }
@@ -306,10 +314,13 @@ public class RemoveUnusedImports {
     if (qualifier.equals("java.lang")) {
       return true;
     }
+    if(usedNames.contains(simpleName)){
+      return false;
+    }
     if (unit.getPackageName() != null && unit.getPackageName().toString().equals(qualifier)) {
       return true;
     }
-    if (qualifiedIdentifier.getIdentifier().contentEquals("*")) {
+    if (qualifiedIdentifier.getIdentifier().contentEquals("*") && !((JCImport) importTree).isStatic()) {
       return false;
     }
 
