@@ -212,18 +212,28 @@ public class RemoveUnusedImports {
       }
     }
   }
-
   public static String removeUnusedImports(final String contents) throws FormatterException {
     Context context = new Context();
     JCCompilationUnit unit = parse(context, contents);
-    if (unit == null) {
-      // error handling is done during formatting
-      return contents;
-    }
     UnusedImportScanner scanner = new UnusedImportScanner(JavacTrees.instance(context));
     scanner.scan(unit, null);
-    return applyReplacements(
+    String s = applyReplacements(
             contents, buildReplacements(contents, unit, scanner.usedNames, scanner.usedInJavadoc));
+
+    // Normalize newlines while preserving important blank lines
+    String sep = Newlines.guessLineSeparator(contents);
+
+    // Ensure exactly one blank line after package declaration
+    s = s.replaceAll("(?m)^package .+" + sep + "\\s+" + sep, "package $1" + sep + sep);
+
+    // Ensure exactly one blank line between last import and class declaration
+    s = s.replaceAll("(?m)import .+" + sep + "\\s+" + sep + "(?=class|interface|enum|record)",
+            "import $1" + sep + sep);
+
+    // Remove multiple blank lines elsewhere in imports section
+    s = s.replaceAll("(?m)^import .+" + sep + "\\s+" + sep + "(?=import)", "import $1" + sep);
+
+    return s;
   }
 
   private static JCCompilationUnit parse(Context context, String javaInput)
@@ -233,8 +243,7 @@ public class RemoveUnusedImports {
     Options.instance(context).put("--enable-preview", "true");
     Options.instance(context).put("allowStringFolding", "false");
     JCCompilationUnit unit;
-    JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
-    try {
+    try (JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8)){
       fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, ImmutableList.of());
     } catch (IOException e) {
       // impossible
@@ -284,11 +293,21 @@ public class RemoveUnusedImports {
       int endPosition = importTree.getEndPosition(unit.endPositions);
       endPosition = max(CharMatcher.isNot(' ').indexIn(contents, endPosition), endPosition);
       String sep = Newlines.guessLineSeparator(contents);
+
+      // Check if there's an empty line after this import
+      boolean hasEmptyLineAfter = false;
+      if (endPosition + sep.length() * 2 <= contents.length()) {
+        String nextTwoLines = contents.substring(endPosition, endPosition + sep.length() * 2);
+        hasEmptyLineAfter = nextTwoLines.equals(sep + sep);
+      }
+
       if (endPosition + sep.length() < contents.length()
               && contents.subSequence(endPosition, endPosition + sep.length()).toString().equals(sep)) {
         endPosition += sep.length();
       }
-      if (size == 1 || importTree != lastImport) {
+
+      // If this isn't the last import and there's an empty line after, preserve it
+      if ((size == 1 || importTree != lastImport) && !hasEmptyLineAfter) {
         while (endPosition + sep.length() <= contents.length()
                 && contents.regionMatches(endPosition, sep, 0, sep.length())) {
           endPosition += sep.length();
@@ -298,7 +317,6 @@ public class RemoveUnusedImports {
     }
     return replacements;
   }
-
   private static String getSimpleName(JCTree importTree) {
     return getQualifiedIdentifier(importTree).getIdentifier().toString();
   }

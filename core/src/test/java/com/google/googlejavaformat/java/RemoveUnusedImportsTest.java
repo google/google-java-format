@@ -275,29 +275,29 @@ public class RemoveUnusedImportsTest {
                 """
             }
         },
-//        { FIXME
-//            {
-//                """
-//                package p;
-//                import java.lang.Foo;
-//                import java.lang2.Foo;
-//                import java.lang.Foo.Bar;
-//                import p.Baz;
-//                import p.Baz.Bork;
-//                public class Test implements java.lang.Foo, Bar, Baz, Bork {}
-//                """
-//            },
-//            {
-//                """
-//                package p;
-//                import java.lang.Foo;
-//                import java.lang.Foo.Bar;
-//                import p.Baz;
-//                import p.Baz.Bork;
-//                public class Test implements java.lang.Foo, Bar, Baz, Bork {}
-//                """
-//            }
-//        },
+        {
+            {
+                """
+                package p;
+                import java.lang.Foo;
+                import java.lang2.Foo;
+                import java.lang.Foo.Bar;
+                import p.Baz;
+                import p.Baz.Bork;
+                public class Test implements java.lang.Foo, Bar, Baz, Bork {}
+                """
+            },
+            {
+                """
+                package p;
+                import java.lang.Foo;
+                import java.lang.Foo.Bar;
+                import p.Baz;
+                import p.Baz.Bork;
+                public class Test implements Foo, Bar, Baz, Bork {}
+                """
+            }
+        },
         {
             {
                 """
@@ -544,6 +544,7 @@ public class RemoveUnusedImportsTest {
             },
             {
                 """
+
                 // This is a comment mentioning ArrayList
                 class Test {}
                 """
