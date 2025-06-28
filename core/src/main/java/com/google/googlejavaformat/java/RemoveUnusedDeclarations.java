@@ -16,9 +16,6 @@
 
 package com.google.googlejavaformat.java;
 
-import static java.lang.Math.max;
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
@@ -53,6 +50,13 @@ import com.sun.tools.javac.tree.JCTree.JCImport;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
+
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
+import javax.tools.StandardLocation;
 import java.io.IOError;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -61,18 +65,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
-import javax.tools.DiagnosticListener;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardLocation;
+
+import static java.lang.Math.max;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Removes unused imports from a source file. Imports that are only used in javadoc are also
  * removed, and the references in javadoc are replaced with fully qualified names.
  */
-public class RemoveUnusedImports {
+public class RemoveUnusedDeclarations {
 
   // Visits an AST, recording all simple names that could refer to imported
   // types and also any javadoc references that could refer to imported
@@ -173,9 +174,9 @@ public class RemoveUnusedImports {
       public Void visitReference(ReferenceTree referenceTree, Void unused) {
         DCReference reference = (DCReference) referenceTree;
         long basePos =
-                reference
-                        .pos((DCTree.DCDocComment) getCurrentPath().getDocComment())
-                        .getStartPosition();
+            reference
+                .pos((DCTree.DCDocComment) getCurrentPath().getDocComment())
+                .getStartPosition();
         // the position of trees inside the reference node aren't stored, but the qualifier's
         // start position is the beginning of the reference node
         if (reference.qualifierExpression != null) {
@@ -203,10 +204,10 @@ public class RemoveUnusedImports {
         @Override
         public Void visitIdentifier(IdentifierTree node, Void aVoid) {
           usedInJavadoc.put(
-                  node.getName().toString(),
-                  basePos != -1
-                          ? Range.closedOpen((int) basePos, (int) basePos + node.getName().length())
-                          : null);
+              node.getName().toString(),
+              basePos != -1
+                  ? Range.closedOpen((int) basePos, (int) basePos + node.getName().length())
+                  : null);
           return super.visitIdentifier(node, aVoid);
         }
       }
@@ -223,11 +224,11 @@ public class RemoveUnusedImports {
     UnusedImportScanner scanner = new UnusedImportScanner(JavacTrees.instance(context));
     scanner.scan(unit, null);
     return applyReplacements(
-            contents, buildReplacements(contents, unit, scanner.usedNames, scanner.usedInJavadoc));
+        contents, buildReplacements(contents, unit, scanner.usedNames, scanner.usedInJavadoc));
   }
 
   private static JCCompilationUnit parse(Context context, String javaInput)
-          throws FormatterException {
+      throws FormatterException {
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
     context.put(DiagnosticListener.class, diagnostics);
     Options.instance(context).put("--enable-preview", "true");
@@ -241,24 +242,24 @@ public class RemoveUnusedImports {
       throw new IOError(e);
     }
     SimpleJavaFileObject source =
-            new SimpleJavaFileObject(URI.create("source"), JavaFileObject.Kind.SOURCE) {
-              @Override
-              public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                return javaInput;
-              }
-            };
+        new SimpleJavaFileObject(URI.create("source"), JavaFileObject.Kind.SOURCE) {
+          @Override
+          public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+            return javaInput;
+          }
+        };
     Log.instance(context).useSource(source);
     ParserFactory parserFactory = ParserFactory.instance(context);
     JavacParser parser =
-            parserFactory.newParser(
-                    javaInput,
-                    /* keepDocComments= */ true,
-                    /* keepEndPos= */ true,
-                    /* keepLineMap= */ true);
+        parserFactory.newParser(
+            javaInput,
+            /* keepDocComments= */ true,
+            /* keepEndPos= */ true,
+            /* keepLineMap= */ true);
     unit = parser.parseCompilationUnit();
     unit.sourcefile = source;
     Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
-            Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
+        Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
     if (!Iterables.isEmpty(errorDiagnostics)) {
       // error handling is done during formatting
       throw FormatterException.fromJavacDiagnostics(errorDiagnostics);
@@ -268,13 +269,11 @@ public class RemoveUnusedImports {
 
   /** Construct replacements to fix unused imports. */
   private static RangeMap<Integer, String> buildReplacements(
-          String contents,
-          JCCompilationUnit unit,
-          Set<String> usedNames,
-          Multimap<String, Range<Integer>> usedInJavadoc) {
+      String contents,
+      JCCompilationUnit unit,
+      Set<String> usedNames,
+      Multimap<String, Range<Integer>> usedInJavadoc) {
     RangeMap<Integer, String> replacements = TreeRangeMap.create();
-    int size = unit.getImports().size();
-    JCTree lastImport = size > 0 ? unit.getImports().get(size - 1) : null;
     for (JCTree importTree : unit.getImports()) {
       String simpleName = getSimpleName(importTree);
       if (!isUnused(unit, usedNames, usedInJavadoc, importTree, simpleName)) {
@@ -285,14 +284,8 @@ public class RemoveUnusedImports {
       endPosition = max(CharMatcher.isNot(' ').indexIn(contents, endPosition), endPosition);
       String sep = Newlines.guessLineSeparator(contents);
       if (endPosition + sep.length() < contents.length()
-              && contents.subSequence(endPosition, endPosition + sep.length()).toString().equals(sep)) {
+          && contents.subSequence(endPosition, endPosition + sep.length()).toString().equals(sep)) {
         endPosition += sep.length();
-      }
-      if (size == 1 || importTree != lastImport) {
-        while (endPosition + sep.length() <= contents.length()
-                && contents.regionMatches(endPosition, sep, 0, sep.length())) {
-          endPosition += sep.length();
-        }
       }
       replacements.put(Range.closedOpen(importTree.getStartPosition(), endPosition), "");
     }
@@ -304,23 +297,20 @@ public class RemoveUnusedImports {
   }
 
   private static boolean isUnused(
-          JCCompilationUnit unit,
-          Set<String> usedNames,
-          Multimap<String, Range<Integer>> usedInJavadoc,
-          JCTree importTree,
-          String simpleName) {
+      JCCompilationUnit unit,
+      Set<String> usedNames,
+      Multimap<String, Range<Integer>> usedInJavadoc,
+      JCTree importTree,
+      String simpleName) {
     JCFieldAccess qualifiedIdentifier = getQualifiedIdentifier(importTree);
     String qualifier = qualifiedIdentifier.getExpression().toString();
     if (qualifier.equals("java.lang")) {
       return true;
     }
-    if(usedNames.contains(simpleName)){
-      return false;
-    }
     if (unit.getPackageName() != null && unit.getPackageName().toString().equals(qualifier)) {
       return true;
     }
-    if (qualifiedIdentifier.getIdentifier().contentEquals("*") && !((JCImport) importTree).isStatic()) {
+    if (qualifiedIdentifier.getIdentifier().contentEquals("*")) {
       return false;
     }
 
