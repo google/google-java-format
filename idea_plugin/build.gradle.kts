@@ -18,7 +18,7 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 // https://github.com/JetBrains/intellij-platform-gradle-plugin/releases
 plugins {
-  id("org.jetbrains.intellij.platform") version "2.5.0"
+  id("org.jetbrains.intellij.platform") version "2.6.0"
 }
 
 repositories {
@@ -30,7 +30,7 @@ repositories {
 }
 
 // https://github.com/google/google-java-format/releases
-val googleJavaFormatVersion = "1.27.0"
+val googleJavaFormatVersion = "1.28.0"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_17
