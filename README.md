@@ -1,4 +1,4 @@
-# google-java-format
+# google-java-format ![Maven Central](https://img.shields.io/maven-central/v/com.google.googlejavaformat/google-java-format)
 
 `google-java-format` is a program that reformats Java source code to comply with
 [Google Java Style][].
