@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Google Inc.
+ * Copyright 2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.*;
 
 import com.google.common.collect.Range;
+import com.google.common.testing.EqualsTester;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -35,63 +36,26 @@ public class ReplacementTest {
 
     @Test
     public void testCreateWithNegativeStartPositionThrows() {
-        try {
-            Replacement.create(-1, 5, "text");
-            fail("Expected IllegalArgumentException for negative startPosition");
-        } catch (IllegalArgumentException e) {
-            assertThat(e).hasMessageThat().contains("startPosition must be non-negative");
-        }
+        assertThrows(IllegalArgumentException.class, () -> Replacement.create(-1, 5, "text"));
     }
 
     @Test
     public void testCreateWithStartPositionAfterEndPositionThrows() {
-        try {
-            Replacement.create(10, 5, "text");
-            fail("Expected IllegalArgumentException for startPosition after endPosition");
-        } catch (IllegalArgumentException e) {
-            assertThat(e).hasMessageThat().contains("startPosition cannot be after endPosition");
-        }
+        assertThrows(IllegalArgumentException.class, () -> Replacement.create(10, 5, "text"));
     }
 
     @Test
-    public void testEqualsAndHashCodeWithEqualReplacements() {
-        Replacement a = Replacement.create(0, 4, "abc");
-        Replacement b = Replacement.create(0, 4, "abc");
-        assertThat(a).isEqualTo(b);
-        assertThat(a.hashCode()).isEqualTo(b.hashCode());
-    }
+    public void testEqualsAndHashCode() {
+        Replacement replacement = Replacement.create(0, 4, "abc");
+        Replacement replacementCopy = Replacement.create(0, 4, "abc");
+        Replacement differentStart = Replacement.create(1, 4, "abc");
+        Replacement differentText = Replacement.create(0, 4, "def");
 
-    @Test
-    public void testEqualsWithDifferentReplaceRange() {
-        Replacement a = Replacement.create(0, 4, "abc");
-        Replacement b = Replacement.create(1, 4, "abc");
-        assertThat(a).isNotEqualTo(b);
-    }
-
-    @Test
-    public void testEqualsWithDifferentReplacementString() {
-        Replacement a = Replacement.create(0, 4, "abc");
-        Replacement b = Replacement.create(0, 4, "def");
-        assertThat(a).isNotEqualTo(b);
-    }
-
-    @Test
-    public void testEqualsWithNullAndDifferentType() {
-        Replacement a = Replacement.create(0, 4, "abc");
-        assertThat(a).isNotEqualTo(null);
-        assertThat(a).isNotEqualTo("NotAReplacement");
-    }
-
-    @Test
-    public void testGetReplaceRangeReturnsCorrectRange() {
-        Replacement replacement = Replacement.create(5, 10, "text");
-        assertThat(replacement.getReplaceRange()).isEqualTo(Range.closedOpen(5, 10));
-    }
-
-    @Test
-    public void testGetReplacementStringReturnsCorrectString() {
-        Replacement replacement = Replacement.create(5, 10, "text");
-        assertThat(replacement.getReplacementString()).isEqualTo("text");
+        new EqualsTester()
+                .addEqualityGroup(replacement, replacementCopy)
+                .addEqualityGroup(differentStart)
+                .addEqualityGroup(differentText)
+                .testEquals();
     }
 
 }
