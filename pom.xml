@@ -184,7 +184,56 @@
           <artifactId>maven-bundle-plugin</artifactId>
           <version>5.1.4</version>
         </plugin>
+        <plugin>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>2.44.5</version>
+          <configuration>
+            <formats>
+              <format>
+                <excludes>
+                  <exclude>**/testdata/**</exclude>
+                  <exclude>**gradlew**</exclude>
+                  <exclude>**mvnw**</exclude>
+                </excludes>
+                <includes>
+                  <include>.gitignore</include>
+                </includes>
+                <trimTrailingWhitespace/>
+              </format>
+            </formats>
+            <java>
+              <excludes>
+                <exclude>**/src/main/java/net/sourceforge/pmd/lang/java/types/package-info.java</exclude>
+                <exclude>**/testdata/**</exclude>
+                <exclude>**/unnecessaryimport/package1/U.java</exclude>
+              </excludes>
+              <googleJavaFormat/>
+              <removeUnusedImports/>
+              <licenseHeader>
+                <file>${maven.multiModuleProjectDirectory}/.spotless/licence.header</file>
+              </licenseHeader>
+            </java>
+          </configuration>
+          <executions>
+            <execution>
+              <id>spotless-apply</id>
+              <phase>process-sources</phase>
+              <goals>
+                <goal>apply</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>spotless-check</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
+
     </pluginManagement>
 
     <plugins>
@@ -295,6 +344,10 @@
             --add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED
           </argLine>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
