@@ -173,9 +173,9 @@ public class RemoveUnusedImports {
       public Void visitReference(ReferenceTree referenceTree, Void unused) {
         DCReference reference = (DCReference) referenceTree;
         long basePos =
-            reference
-                .pos((DCTree.DCDocComment) getCurrentPath().getDocComment())
-                .getStartPosition();
+                reference
+                        .pos((DCTree.DCDocComment) getCurrentPath().getDocComment())
+                        .getStartPosition();
         // the position of trees inside the reference node aren't stored, but the qualifier's
         // start position is the beginning of the reference node
         if (reference.qualifierExpression != null) {
@@ -203,62 +203,71 @@ public class RemoveUnusedImports {
         @Override
         public Void visitIdentifier(IdentifierTree node, Void aVoid) {
           usedInJavadoc.put(
-              node.getName().toString(),
-              basePos != -1
-                  ? Range.closedOpen((int) basePos, (int) basePos + node.getName().length())
-                  : null);
+                  node.getName().toString(),
+                  basePos != -1
+                          ? Range.closedOpen((int) basePos, (int) basePos + node.getName().length())
+                          : null);
           return super.visitIdentifier(node, aVoid);
         }
       }
     }
   }
-
   public static String removeUnusedImports(final String contents) throws FormatterException {
     Context context = new Context();
     JCCompilationUnit unit = parse(context, contents);
-    if (unit == null) {
-      // error handling is done during formatting
-      return contents;
-    }
     UnusedImportScanner scanner = new UnusedImportScanner(JavacTrees.instance(context));
     scanner.scan(unit, null);
-    return applyReplacements(
-        contents, buildReplacements(contents, unit, scanner.usedNames, scanner.usedInJavadoc));
+    String s = applyReplacements(
+            contents, buildReplacements(contents, unit, scanner.usedNames, scanner.usedInJavadoc));
+
+    // Normalize newlines while preserving important blank lines
+    String sep = Newlines.guessLineSeparator(contents);
+
+    // Ensure exactly one blank line after package declaration
+    s = s.replaceAll("(?m)^package .+" + sep + "\\s+" + sep, "package $1" + sep + sep);
+
+    // Ensure exactly one blank line between last import and class declaration
+    s = s.replaceAll("(?m)import .+" + sep + "\\s+" + sep + "(?=class|interface|enum|record)",
+            "import $1" + sep + sep);
+
+    // Remove multiple blank lines elsewhere in imports section
+    s = s.replaceAll("(?m)^import .+" + sep + "\\s+" + sep + "(?=import)", "import $1" + sep);
+
+    return s;
   }
 
   private static JCCompilationUnit parse(Context context, String javaInput)
-      throws FormatterException {
+          throws FormatterException {
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
     context.put(DiagnosticListener.class, diagnostics);
     Options.instance(context).put("--enable-preview", "true");
     Options.instance(context).put("allowStringFolding", "false");
     JCCompilationUnit unit;
-    JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
-    try {
+    try (JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8)){
       fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, ImmutableList.of());
     } catch (IOException e) {
       // impossible
       throw new IOError(e);
     }
     SimpleJavaFileObject source =
-        new SimpleJavaFileObject(URI.create("source"), JavaFileObject.Kind.SOURCE) {
-          @Override
-          public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-            return javaInput;
-          }
-        };
+            new SimpleJavaFileObject(URI.create("source"), JavaFileObject.Kind.SOURCE) {
+              @Override
+              public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+                return javaInput;
+              }
+            };
     Log.instance(context).useSource(source);
     ParserFactory parserFactory = ParserFactory.instance(context);
     JavacParser parser =
-        parserFactory.newParser(
-            javaInput,
-            /* keepDocComments= */ true,
-            /* keepEndPos= */ true,
-            /* keepLineMap= */ true);
+            parserFactory.newParser(
+                    javaInput,
+                    /* keepDocComments= */ true,
+                    /* keepEndPos= */ true,
+                    /* keepLineMap= */ true);
     unit = parser.parseCompilationUnit();
     unit.sourcefile = source;
     Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
-        Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
+            Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
     if (!Iterables.isEmpty(errorDiagnostics)) {
       // error handling is done during formatting
       throw FormatterException.fromJavacDiagnostics(errorDiagnostics);
@@ -268,11 +277,13 @@ public class RemoveUnusedImports {
 
   /** Construct replacements to fix unused imports. */
   private static RangeMap<Integer, String> buildReplacements(
-      String contents,
-      JCCompilationUnit unit,
-      Set<String> usedNames,
-      Multimap<String, Range<Integer>> usedInJavadoc) {
+          String contents,
+          JCCompilationUnit unit,
+          Set<String> usedNames,
+          Multimap<String, Range<Integer>> usedInJavadoc) {
     RangeMap<Integer, String> replacements = TreeRangeMap.create();
+    int size = unit.getImports().size();
+    JCTree lastImport = size > 0 ? unit.getImports().get(size - 1) : null;
     for (JCTree importTree : unit.getImports()) {
       String simpleName = getSimpleName(importTree);
       if (!isUnused(unit, usedNames, usedInJavadoc, importTree, simpleName)) {
@@ -282,34 +293,52 @@ public class RemoveUnusedImports {
       int endPosition = importTree.getEndPosition(unit.endPositions);
       endPosition = max(CharMatcher.isNot(' ').indexIn(contents, endPosition), endPosition);
       String sep = Newlines.guessLineSeparator(contents);
+
+      // Check if there's an empty line after this import
+      boolean hasEmptyLineAfter = false;
+      if (endPosition + sep.length() * 2 <= contents.length()) {
+        String nextTwoLines = contents.substring(endPosition, endPosition + sep.length() * 2);
+        hasEmptyLineAfter = nextTwoLines.equals(sep + sep);
+      }
+
       if (endPosition + sep.length() < contents.length()
-          && contents.subSequence(endPosition, endPosition + sep.length()).toString().equals(sep)) {
+              && contents.subSequence(endPosition, endPosition + sep.length()).toString().equals(sep)) {
         endPosition += sep.length();
+      }
+
+      // If this isn't the last import and there's an empty line after, preserve it
+      if ((size == 1 || importTree != lastImport) && !hasEmptyLineAfter) {
+        while (endPosition + sep.length() <= contents.length()
+                && contents.regionMatches(endPosition, sep, 0, sep.length())) {
+          endPosition += sep.length();
+        }
       }
       replacements.put(Range.closedOpen(importTree.getStartPosition(), endPosition), "");
     }
     return replacements;
   }
-
   private static String getSimpleName(JCTree importTree) {
     return getQualifiedIdentifier(importTree).getIdentifier().toString();
   }
 
   private static boolean isUnused(
-      JCCompilationUnit unit,
-      Set<String> usedNames,
-      Multimap<String, Range<Integer>> usedInJavadoc,
-      JCTree importTree,
-      String simpleName) {
+          JCCompilationUnit unit,
+          Set<String> usedNames,
+          Multimap<String, Range<Integer>> usedInJavadoc,
+          JCTree importTree,
+          String simpleName) {
     JCFieldAccess qualifiedIdentifier = getQualifiedIdentifier(importTree);
     String qualifier = qualifiedIdentifier.getExpression().toString();
     if (qualifier.equals("java.lang")) {
       return true;
     }
+    if(usedNames.contains(simpleName)){
+      return false;
+    }
     if (unit.getPackageName() != null && unit.getPackageName().toString().equals(qualifier)) {
       return true;
     }
-    if (qualifiedIdentifier.getIdentifier().contentEquals("*")) {
+    if (qualifiedIdentifier.getIdentifier().contentEquals("*") && !((JCImport) importTree).isStatic()) {
       return false;
     }
 
