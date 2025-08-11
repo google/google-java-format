@@ -51,7 +51,7 @@ jobs:
         with:
           access_token: ${{ github.token }}
       - name: "Check out repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: "Set up JDK ${{ matrix.java }} from jdk.java.net"
         if: ${{ matrix.java == 'EA' }}
         uses: oracle-actions/setup-java@v1
