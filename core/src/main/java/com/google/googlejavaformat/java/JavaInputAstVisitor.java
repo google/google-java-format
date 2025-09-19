@@ -80,6 +80,7 @@ import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output.BreakTag;
 import com.google.googlejavaformat.java.DimensionHelpers.SortedDims;
 import com.google.googlejavaformat.java.DimensionHelpers.TypeWithDims;
+import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import com.sun.source.tree.AnnotatedTypeTree;
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.ArrayAccessTree;
@@ -304,10 +305,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return result.build();
   }
 
+  // Used to ensure correct indentation of subexpressions in aosp style
+  private boolean inBinaryExpression = false;
+  private int dotExpressionLevel = 0;
+
   protected final OpsBuilder builder;
 
   protected static final Indent.Const ZERO = Indent.Const.ZERO;
   protected final int indentMultiplier;
+  protected final Style style;
   protected final Indent.Const minusTwo;
   protected final Indent.Const minusFour;
   protected final Indent.Const plusTwo;
@@ -341,9 +347,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    *
    * @param builder the {@link OpsBuilder}
    */
-  public JavaInputAstVisitor(OpsBuilder builder, int indentMultiplier) {
+  public JavaInputAstVisitor(OpsBuilder builder, int indentMultiplier, Style style) {
     this.builder = builder;
     this.indentMultiplier = indentMultiplier;
+    this.style = style;
     minusTwo = Indent.Const.make(-2, indentMultiplier);
     minusFour = Indent.Const.make(-4, indentMultiplier);
     plusTwo = Indent.Const.make(+2, indentMultiplier);
@@ -355,6 +362,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   private boolean inExpression() {
     return inExpression.peekLast();
+  }
+
+  private boolean useAospStyle() {
+    return style.equals(Style.AOSP);
   }
 
   @Override
@@ -515,7 +526,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.close();
     }
     if (node.getInitializers() != null) {
-      if (node.getType() != null) {
+      if (!useAospStyle() && node.getType() != null) {
         builder.space();
       }
       visitArrayInitializer(node.getInitializers());
@@ -525,6 +536,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   public boolean visitArrayInitializer(List<? extends ExpressionTree> expressions) {
     int cols;
+    final Indent.Const initializerIndent = useAospStyle() ? plusFour : plusTwo;
+    final Indent.Const initializerUnindent = useAospStyle() ? minusFour : minusTwo;
     if (expressions.isEmpty()) {
       tokenBreakTrailingComment("{", plusTwo);
       if (builder.peekToken().equals(Optional.of(","))) {
@@ -532,7 +545,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       }
       token("}", plusTwo);
     } else if ((cols = argumentsAreTabular(expressions)) != -1) {
-      builder.open(plusTwo);
+      builder.open(initializerIndent);
       token("{");
       builder.forcedBreak();
       boolean afterFirstToken = false;
@@ -554,9 +567,9 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         builder.close();
         afterFirstToken = true;
       }
-      builder.breakOp(minusTwo);
+      builder.breakOp(initializerUnindent);
       builder.close();
-      token("}", plusTwo);
+      token("}", initializerIndent);
     } else {
       // Special-case the formatting of array initializers inside annotations
       // to more eagerly use a one-per-line layout.
@@ -576,8 +589,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       boolean shortItems = hasOnlyShortItems(expressions);
       boolean allowFilledElementsOnOwnLine = shortItems || !inMemberValuePair;
 
-      builder.open(plusTwo);
-      tokenBreakTrailingComment("{", plusTwo);
+      builder.open(initializerIndent);
+      tokenBreakTrailingComment("{", initializerIndent);
       boolean hasTrailingComma = hasTrailingToken(builder.getInput(), expressions, ",");
       builder.breakOp(hasTrailingComma ? FillMode.FORCED : FillMode.UNIFIED, "", ZERO);
       if (allowFilledElementsOnOwnLine) {
@@ -597,9 +610,9 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       if (allowFilledElementsOnOwnLine) {
         builder.close();
       }
-      builder.breakOp(minusTwo);
+      builder.breakOp(initializerUnindent);
       builder.close();
-      token("}", plusTwo);
+      token("}", initializerIndent);
     }
     return false;
   }
@@ -731,7 +744,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       visitAnnotations(annotations, BreakOrNot.NO, BreakOrNot.YES);
     }
     scan(node.getIdentifier(), null);
-    addArguments(node.getArguments(), plusFour);
+    if (useAospStyle()) {
+      addArguments(node.getArguments(), this.dotExpressionLevel > 0 ? ZERO : plusFour);
+    } else {
+      addArguments(node.getArguments(), plusFour);
+    }
     builder.close();
     if (node.getClassBody() != null) {
       addBodyDeclarations(
@@ -777,7 +794,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token("do");
     visitStatement(
         node.getStatement(),
-        CollapseEmptyOrNot.YES,
+        useAospStyle() ? CollapseEmptyOrNot.NO : CollapseEmptyOrNot.YES,
         AllowLeadingBlankLine.YES,
         AllowTrailingBlankLine.YES);
     if (node.getStatement().getKind() == BLOCK) {
@@ -1261,7 +1278,20 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     List<String> operators = new ArrayList<>();
     walkInfix(precedence(node), node, operands, operators);
     FillMode fillMode = hasOnlyShortItems(operands) ? INDEPENDENT : UNIFIED;
-    builder.open(plusFour);
+
+    // Do not double indent subexpressions of a binary operator in aosp style
+    boolean isParentExpression = !this.inBinaryExpression;
+    if (useAospStyle()) {
+      if (isParentExpression) {
+        builder.open(operators.get(0).equals("+") ? plusTwo : plusFour);
+      } else {
+        builder.open(ZERO);
+      }
+      this.inBinaryExpression = true;
+    } else {
+      builder.open(plusFour);
+    }
+
     scan(operands.get(0), null);
     int operatorsN = operators.size();
     for (int i = 0; i < operatorsN; i++) {
@@ -1270,6 +1300,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.space();
       scan(operands.get(i + 1), null);
     }
+    	
+    if (isParentExpression) {
+      this.inBinaryExpression = false;
+    }
+
     builder.close();
     return null;
   }
@@ -1643,7 +1678,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   private void methodBody(MethodTree node) {
     if (node.getBody().getStatements().isEmpty()) {
-      builder.blankLineWanted(BlankLineWanted.NO);
+      if (useAospStyle()) {
+        builder.forcedBreak();
+      } else {
+        builder.blankLineWanted(BlankLineWanted.NO);
+      }
     } else {
       builder.open(plusTwo);
       builder.forcedBreak();
@@ -3062,6 +3101,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         token(".");
       } else {
         builder.open(plusFour);
+        this.dotExpressionLevel++;
         scan(getArrayBase(node), null);
         builder.breakOp();
         needDot = true;
@@ -3069,6 +3109,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       formatArrayIndices(getArrayIndices(node));
       if (stack.isEmpty()) {
         builder.close();
+        this.dotExpressionLevel--;
         return;
       }
     }
@@ -3139,6 +3180,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
     if (node != null) {
       builder.close();
+      this.dotExpressionLevel--;
     }
   }
 
@@ -3235,7 +3277,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     // Are there method invocations or field accesses after the prefix?
     boolean trailingDereferences = !prefixes.isEmpty() && getLast(prefixes) < items.size() - 1;
 
-    builder.open(plusFour);
+    builder.open(useAospStyle() && inBinaryExpression ? ZERO : plusFour);
     for (int times = 0; times < prefixes.size(); times++) {
       builder.open(ZERO);
     }
@@ -3898,7 +3940,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       if (braces.isYes()) {
         builder.space();
         tokenBreakTrailingComment("{", plusTwo);
-        builder.blankLineWanted(BlankLineWanted.NO);
+        if (useAospStyle()) {
+          builder.forcedBreak();
+        } else {
+          builder.blankLineWanted(BlankLineWanted.NO);
+        }
         builder.open(ZERO);
         if (builder.peekToken().equals(Optional.of(";"))) {
           builder.open(plusTwo);
@@ -3961,7 +4007,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       return;
     }
     builder.breakToFill(" ");
-    builder.open(types.size() > 1 ? plusFour : ZERO);
+    if (useAospStyle()) {
+      builder.open(ZERO);
+    } else {
+      builder.open(types.size() > 1 ? plusFour : ZERO);
+    }
     token(token);
     builder.space();
     boolean afterFirstToken = false;
@@ -4049,15 +4099,16 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   /**
    * Should a field with a set of modifiers be declared with horizontal annotations? This is
-   * currently true if all annotations are parameterless annotations.
+   * currently true if all annotations are parameterless annotations and we are not using 
+   * AOSP style.
    */
-  private static Direction fieldAnnotationDirection(ModifiersTree modifiers) {
+  private Direction fieldAnnotationDirection(ModifiersTree modifiers) {
     for (AnnotationTree annotation : modifiers.getAnnotations()) {
       if (!annotation.getArguments().isEmpty()) {
         return Direction.VERTICAL;
       }
     }
-    return Direction.HORIZONTAL;
+    return useAospStyle() ? Direction.VERTICAL : Direction.HORIZONTAL;
   }
 
   /**
