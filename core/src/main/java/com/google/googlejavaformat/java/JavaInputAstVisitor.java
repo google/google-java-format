@@ -97,7 +97,10 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ConditionalExpressionTree;
+import com.sun.source.tree.ConstantCaseLabelTree;
 import com.sun.source.tree.ContinueTree;
+import com.sun.source.tree.DeconstructionPatternTree;
+import com.sun.source.tree.DefaultCaseLabelTree;
 import com.sun.source.tree.DirectiveTree;
 import com.sun.source.tree.DoWhileLoopTree;
 import com.sun.source.tree.EmptyStatementTree;
@@ -125,6 +128,8 @@ import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.OpensTree;
 import com.sun.source.tree.ParameterizedTypeTree;
 import com.sun.source.tree.ParenthesizedTree;
+import com.sun.source.tree.PatternCaseLabelTree;
+import com.sun.source.tree.PatternTree;
 import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.ProvidesTree;
 import com.sun.source.tree.RequiresTree;
@@ -359,6 +364,12 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   @Override
   public Void scan(Tree tree, Void unused) {
+    // Pre-visit AST for preview features, since com.sun.source.tree.AnyPattern can't be
+    // accessed directly without --enable-preview.
+    if (tree instanceof JCTree.JCAnyPattern) {
+      visitJcAnyPattern((JCTree.JCAnyPattern) tree);
+      return null;
+    }
     inExpression.addLast(tree instanceof ExpressionTree || inExpression.peekLast());
     int previous = builder.depth();
     try {
@@ -2001,7 +2012,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.close();
     }
 
-    final ExpressionTree guard = getGuard(node);
+    final ExpressionTree guard = node.getGuard();
     if (guard != null) {
       builder.breakToFill(" ");
       token("when");
@@ -2038,10 +2049,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         builder.guessToken(";");
         break;
     }
-    return null;
-  }
-
-  protected ExpressionTree getGuard(final CaseTree node) {
     return null;
   }
 
@@ -3775,7 +3782,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   }
 
   protected void variableName(Name name) {
-    visit(name);
+    if (name.isEmpty()) {
+      token("_");
+    } else {
+      visit(name);
+    }
   }
 
   private void maybeAddDims(Deque<List<? extends AnnotationTree>> annotations) {
@@ -4152,5 +4163,47 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     sync(node);
     visitSwitch(node.getExpression(), node.getCases());
     return null;
+  }
+
+  @Override
+  public Void visitDefaultCaseLabel(DefaultCaseLabelTree node, Void unused) {
+    token("default");
+    return null;
+  }
+
+  @Override
+  public Void visitPatternCaseLabel(PatternCaseLabelTree node, Void unused) {
+    scan(node.getPattern(), null);
+    return null;
+  }
+
+  @Override
+  public Void visitConstantCaseLabel(ConstantCaseLabelTree node, Void aVoid) {
+    scan(node.getConstantExpression(), null);
+    return null;
+  }
+
+  @Override
+  public Void visitDeconstructionPattern(DeconstructionPatternTree node, Void unused) {
+    scan(node.getDeconstructor(), null);
+    builder.open(plusFour);
+    token("(");
+    builder.breakOp();
+    boolean afterFirstToken = false;
+    for (PatternTree pattern : node.getNestedPatterns()) {
+      if (afterFirstToken) {
+        token(",");
+        builder.breakOp(" ");
+      }
+      afterFirstToken = true;
+      scan(pattern, null);
+    }
+    builder.close();
+    token(")");
+    return null;
+  }
+
+  private void visitJcAnyPattern(JCTree.JCAnyPattern unused) {
+    token("_");
   }
 }
