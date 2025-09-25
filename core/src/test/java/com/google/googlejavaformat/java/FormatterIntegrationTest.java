@@ -81,13 +81,9 @@ public class FormatterIntegrationTest {
           contents = CharStreams.toString(new InputStreamReader(stream, UTF_8));
         }
         switch (extension) {
-          case "input":
-            inputs.put(baseName, contents);
-            break;
-          case "output":
-            outputs.put(baseName, contents);
-            break;
-          default: // fall out
+          case "input" -> inputs.put(baseName, contents);
+          case "output" -> outputs.put(baseName, contents);
+          default -> {}
         }
       }
     }

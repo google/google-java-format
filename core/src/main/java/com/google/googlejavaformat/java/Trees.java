@@ -99,13 +99,10 @@ class Trees {
   static ClassTree getEnclosingTypeDeclaration(TreePath path) {
     for (; path != null; path = path.getParentPath()) {
       switch (path.getLeaf().getKind()) {
-        case CLASS:
-        case ENUM:
-        case INTERFACE:
-        case ANNOTATED_TYPE:
+        case CLASS, ENUM, INTERFACE, ANNOTATED_TYPE -> {
           return (ClassTree) path.getLeaf();
-        default:
-          break;
+        }
+        default -> {}
       }
     }
     throw new AssertionError();

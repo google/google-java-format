@@ -164,15 +164,9 @@ public final class Formatter {
     if (input.getKind() != Diagnostic.Kind.ERROR) {
       return false;
     }
-    switch (input.getCode()) {
-      case "compiler.err.invalid.meth.decl.ret.type.req":
-        // accept constructor-like method declarations that don't match the name of their
-        // enclosing class
-        return false;
-      default:
-        break;
-    }
-    return true;
+    // accept constructor-like method declarations that don't match the name of their
+    // enclosing class
+    return !input.getCode().equals("compiler.err.invalid.meth.decl.ret.type.req");
   }
 
   /**
