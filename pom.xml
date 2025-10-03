@@ -23,7 +23,7 @@
   <groupId>com.google.googlejavaformat</groupId>
   <artifactId>google-java-format-parent</artifactId>
   <packaging>pom</packaging>
-  <version>HEAD-SNAPSHOT</version>
+  <version>1.29.0</version>
 
   <modules>
     <module>core</module>
