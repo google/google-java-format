@@ -17,24 +17,20 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 // https://github.com/JetBrains/intellij-platform-gradle-plugin/releases
-plugins {
-  id("org.jetbrains.intellij.platform") version "2.6.0"
-}
+plugins { id("org.jetbrains.intellij.platform") version "2.9.0" }
 
 repositories {
   mavenCentral()
 
-  intellijPlatform {
-    defaultRepositories()
-  }
+  intellijPlatform { defaultRepositories() }
 }
 
 // https://github.com/google/google-java-format/releases
-val googleJavaFormatVersion = "1.28.0"
+val googleJavaFormatVersion = "1.29.0"
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
+  sourceCompatibility = JavaVersion.VERSION_21
+  targetCompatibility = JavaVersion.VERSION_21
 }
 
 intellijPlatform {
@@ -42,7 +38,7 @@ intellijPlatform {
     name = "google-java-format"
     version = "${googleJavaFormatVersion}.0"
     ideaVersion {
-      sinceBuild = "223"
+      sinceBuild = "243"
       untilBuild = provider { null }
     }
   }
@@ -54,32 +50,28 @@ intellijPlatform {
 }
 
 var gjfRequiredJvmArgs =
-      listOf(
-        "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-        "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-        "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-        "--add-exports", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
-        "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-        "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-      )
+  listOf(
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+  )
 
-tasks {
-  runIde {
-    jvmArgumentProviders += CommandLineArgumentProvider {
-      gjfRequiredJvmArgs
-    }
-  }
-}
+tasks { runIde { jvmArgumentProviders += CommandLineArgumentProvider { gjfRequiredJvmArgs } } }
 
-tasks {
-  withType<Test>().configureEach {
-    jvmArgs(gjfRequiredJvmArgs)
-  }
-}
+tasks { withType<Test>().configureEach { jvmArgs(gjfRequiredJvmArgs) } }
 
 dependencies {
   intellijPlatform {
-    intellijIdeaCommunity("2022.3")
+    intellijIdeaCommunity("2024.3")
     bundledPlugin("com.intellij.java")
     testFramework(TestFrameworkType.Plugin.Java)
   }
@@ -87,5 +79,5 @@ dependencies {
   // https://mvnrepository.com/artifact/junit/junit
   testImplementation("junit:junit:4.13.2")
   // https://mvnrepository.com/artifact/com.google.truth/truth
-  testImplementation("com.google.truth:truth:1.4.4")
+  testImplementation("com.google.truth:truth:1.4.5")
 }
