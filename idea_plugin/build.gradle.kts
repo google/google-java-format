@@ -17,7 +17,10 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 // https://github.com/JetBrains/intellij-platform-gradle-plugin/releases
-plugins { id("org.jetbrains.intellij.platform") version "2.9.0" }
+plugins {
+  id("org.jetbrains.intellij.platform") version "2.9.0"
+  kotlin("jvm") version "2.2.0"
+}
 
 repositories {
   mavenCentral()
@@ -27,16 +30,19 @@ repositories {
 
 // https://github.com/google/google-java-format/releases
 val googleJavaFormatVersion = "1.29.0"
+val pluginPatchVersion = "1"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_21
   targetCompatibility = JavaVersion.VERSION_21
 }
 
+kotlin { jvmToolchain(21) }
+
 intellijPlatform {
   pluginConfiguration {
     name = "google-java-format"
-    version = "${googleJavaFormatVersion}.0"
+    version = "${googleJavaFormatVersion}.${pluginPatchVersion}"
     ideaVersion {
       sinceBuild = "243"
       untilBuild = provider { null }
@@ -80,4 +86,5 @@ dependencies {
   testImplementation("junit:junit:4.13.2")
   // https://mvnrepository.com/artifact/com.google.truth/truth
   testImplementation("com.google.truth:truth:1.4.5")
+  implementation(kotlin("stdlib-jdk8"))
 }

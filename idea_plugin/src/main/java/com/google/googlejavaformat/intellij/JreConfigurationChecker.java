@@ -17,12 +17,15 @@
 package com.google.googlejavaformat.intellij;
 
 import com.google.common.base.Suppliers;
-import com.intellij.ide.ui.IdeUiService;
+import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationAction;
 import com.intellij.notification.NotificationType;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
 
 class JreConfigurationChecker {
 
@@ -89,15 +92,17 @@ class JreConfigurationChecker {
         new Notification(
             "Configure JRE for google-java-format",
             "Configure the JRE for google-java-format",
-            "The google-java-format plugin needs additional configuration before it can be used. "
-                + "<a href=\"instructions\">Follow the instructions here</a>.",
+            "The google-java-format plugin needs additional configuration before it can be used.",
             NotificationType.INFORMATION);
-    notification.setListener(
-        (n, e) -> {
-          IdeUiService.getInstance()
-              .browse(
-                  "https://github.com/google/google-java-format/blob/master/README.md#intellij-jre-config");
-          n.expire();
+    notification.addAction(
+        new NotificationAction("Follow the instructions here") {
+          @Override
+          public void actionPerformed(
+              @NotNull AnActionEvent anActionEvent, @NotNull Notification notification) {
+            BrowserUtil.browse(
+                "https://github.com/google/google-java-format/blob/master/README.md#intellij-jre-config");
+            notification.expire();
+          }
         });
     notification.notify(project);
   }
