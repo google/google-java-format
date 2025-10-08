@@ -157,6 +157,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
+import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1220,6 +1221,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     sync(node);
     token("import");
     builder.space();
+    if (isModuleImport(node)) {
+      token("module");
+      builder.space();
+    }
     if (node.isStatic()) {
       token("static");
       builder.space();
@@ -1229,6 +1234,27 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     // TODO(cushon): remove this if https://bugs.openjdk.java.net/browse/JDK-8027682 is fixed
     dropEmptyDeclarations();
     return null;
+  }
+
+  private static final @Nullable Method IS_MODULE_METHOD = getIsModuleMethod();
+
+  private static @Nullable Method getIsModuleMethod() {
+    try {
+      return ImportTree.class.getMethod("isModule");
+    } catch (NoSuchMethodException ignored) {
+      return null;
+    }
+  }
+
+  private static boolean isModuleImport(ImportTree importTree) {
+    if (IS_MODULE_METHOD == null) {
+      return false;
+    }
+    try {
+      return (boolean) IS_MODULE_METHOD.invoke(importTree);
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
   }
 
   private void checkForTypeAnnotation(ImportTree node) {

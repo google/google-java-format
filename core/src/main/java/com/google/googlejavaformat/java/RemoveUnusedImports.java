@@ -16,6 +16,7 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.max;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -67,6 +68,7 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardLocation;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Removes unused imports from a source file. Imports that are only used in javadoc are also
@@ -274,6 +276,9 @@ public class RemoveUnusedImports {
       Multimap<String, Range<Integer>> usedInJavadoc) {
     RangeMap<Integer, String> replacements = TreeRangeMap.create();
     for (JCTree importTree : unit.getImports()) {
+      if (isModuleImport(importTree)) {
+        continue;
+      }
       String simpleName = getSimpleName(importTree);
       if (!isUnused(unit, usedNames, usedInJavadoc, importTree, simpleName)) {
         continue;
@@ -322,10 +327,42 @@ public class RemoveUnusedImports {
     return true;
   }
 
+  private static final Method GET_QUALIFIED_IDENTIFIER_METHOD = getQualifiedIdentifierMethod();
+
+  private static @Nullable Method getQualifiedIdentifierMethod() {
+    try {
+      return JCImport.class.getMethod("getQualifiedIdentifier");
+    } catch (NoSuchMethodException e) {
+      return null;
+    }
+  }
+
   private static JCFieldAccess getQualifiedIdentifier(JCTree importTree) {
+    checkArgument(!isModuleImport(importTree));
     // Use reflection because the return type is JCTree in some versions and JCFieldAccess in others
     try {
-      return (JCFieldAccess) JCImport.class.getMethod("getQualifiedIdentifier").invoke(importTree);
+      return (JCFieldAccess) GET_QUALIFIED_IDENTIFIER_METHOD.invoke(importTree);
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
+  }
+
+  private static final @Nullable Method IS_MODULE_METHOD = getIsModuleMethod();
+
+  private static @Nullable Method getIsModuleMethod() {
+    try {
+      return ImportTree.class.getMethod("isModule");
+    } catch (NoSuchMethodException ignored) {
+      return null;
+    }
+  }
+
+  private static boolean isModuleImport(JCTree importTree) {
+    if (IS_MODULE_METHOD == null) {
+      return false;
+    }
+    try {
+      return (boolean) IS_MODULE_METHOD.invoke(importTree);
     } catch (ReflectiveOperationException e) {
       throw new LinkageError(e.getMessage(), e);
     }

@@ -59,6 +59,7 @@ public class FormatterIntegrationTest {
               "I981",
               "I1020",
               "I1037")
+          .putAll(25, "ModuleImport")
           .build();
 
   @Parameters(name = "{index}: {0}")
