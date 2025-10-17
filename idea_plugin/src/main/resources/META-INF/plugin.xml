@@ -35,6 +35,8 @@
   ]]></description>
   <change-notes><![CDATA[
     <dl>
+      <dt>1.30.0.0</dt>
+      <dd>Updated to use google-java-format 1.30.0.</dd>
       <dt>1.29.0.1</dt>
       <dd>Remove uses of deprecated IntelliJ plugin APIs.</dd>
       <dt>1.29.0.0</dt>
