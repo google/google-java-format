@@ -35,6 +35,8 @@
   ]]></description>
   <change-notes><![CDATA[
     <dl>
+      <dt>1.30.0.1</dt>
+      <dd>Add support for 2024.2 IDE versions, which were mistakenly excluded.</dd>
       <dt>1.30.0.0</dt>
       <dd>Updated to use google-java-format 1.30.0.</dd>
       <dt>1.29.0.1</dt>

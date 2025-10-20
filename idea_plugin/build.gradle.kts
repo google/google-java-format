@@ -34,7 +34,7 @@ repositories {
 
 // https://github.com/google/google-java-format/releases
 val googleJavaFormatVersion = "1.30.0"
-val pluginPatchVersion = "0"
+val pluginPatchVersion = "1"
 
 java {
   toolchain {
@@ -51,7 +51,7 @@ intellijPlatform {
     name = "google-java-format"
     version = "${googleJavaFormatVersion}.${pluginPatchVersion}"
     ideaVersion {
-      sinceBuild = "243"
+      sinceBuild = "242"
       untilBuild = provider { null }
     }
   }
