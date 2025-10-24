@@ -88,9 +88,33 @@ Drop it into the Eclipse
 [drop-ins folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fmisc%2Fp2_dropins_format.html)
 to activate the plugin.
 
-The plugin adds a `google-java-format` formatter implementation that can be
-configured in `Window > Preferences > Java > Code Style > Formatter > Formatter
-Implementation`.
+The plugin adds two formatter implementations:
+
+*   `google-java-format`: using 2 spaces indent
+*   `aosp-java-format`: using 4 spaces indent
+
+These that can be selected in "Window" > "Preferences" > "Java" > "Code Style" >
+"Formatter" > "Formatter Implementation".
+
+#### Eclipse JRE Config
+
+The plugin uses some internal classes that aren't available without extra
+configuration. To use the plugin, you will need to edit the
+[`eclipse.ini`](https://wiki.eclipse.org/Eclipse.ini) file.
+
+Open the `eclipse.ini` file in any editor and paste in these lines towards the
+end (but anywhere after `-vmargs` will do):
+
+```
+--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+```
+
+Once you've done that, restart the IDE.
 
 ### Third-party integrations
 
