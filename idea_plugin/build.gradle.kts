@@ -18,7 +18,7 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 // https://github.com/JetBrains/intellij-platform-gradle-plugin/releases
 plugins {
-  id("org.jetbrains.intellij.platform") version "2.9.0"
+  id("org.jetbrains.intellij.platform") version "2.10.2"
   // See https://plugins.jetbrains.com/docs/intellij/using-kotlin.html#bundled-stdlib-versions
   // This version of Kotlin will crash if your Gradle daemon is running under Java 25 (even if that
   // isn't the JDK you're using to compile). So make sure to update JAVA_HOME and then
@@ -33,8 +33,8 @@ repositories {
 }
 
 // https://github.com/google/google-java-format/releases
-val googleJavaFormatVersion = "1.30.0"
-val pluginPatchVersion = "1"
+val googleJavaFormatVersion = "1.31.0"
+val pluginPatchVersion = "0"
 
 java {
   toolchain {
