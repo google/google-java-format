@@ -14,6 +14,10 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.googlejavaformat.java.ImportOrderer.reorderImports;
+import static com.google.googlejavaformat.java.RemoveUnusedDeclarations.removeUnusedDeclarations;
+import static com.google.googlejavaformat.java.RemoveUnusedImports.removeUnusedImports;
+import static com.google.googlejavaformat.java.StringWrapper.wrap;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
@@ -207,11 +211,12 @@ public final class Formatter {
    *     Google Java Style Guide - 3.3.3 Import ordering and spacing</a>
    */
   public String formatSourceAndFixImports(String input) throws FormatterException {
-    input = ImportOrderer.reorderImports(input, options.style());
-    input = RemoveUnusedImports.removeUnusedImports(input);
-    String formatted = formatSource(input);
-    formatted = StringWrapper.wrap(formatted, this);
-    return formatted;
+    return wrap(
+            formatSource(
+              removeUnusedDeclarations(
+              removeUnusedImports(
+              reorderImports(input, options.style())))),
+            this);
   }
 
   /**
