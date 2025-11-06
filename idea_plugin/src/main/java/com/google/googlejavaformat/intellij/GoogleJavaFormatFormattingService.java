@@ -23,6 +23,7 @@ import com.google.googlejavaformat.java.Formatter;
 import com.google.googlejavaformat.java.FormatterException;
 import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
+import com.google.googlejavaformat.java.StringWrapper;
 import com.intellij.formatting.service.AsyncDocumentFormattingService;
 import com.intellij.formatting.service.AsyncFormattingRequest;
 import com.intellij.ide.highlighter.JavaFileType;
@@ -101,6 +102,7 @@ public class GoogleJavaFormatFormattingService extends AsyncDocumentFormattingSe
     public void run() {
       try {
         String formattedText = formatter.formatSource(request.getDocumentText(), toRanges(request));
+        formattedText = StringWrapper.wrap(formattedText, formatter);
         request.onTextReady(formattedText);
       } catch (FormatterException e) {
         request.onError(
