@@ -23,6 +23,7 @@ import com.google.googlejavaformat.intellij.GoogleJavaFormatSettings.State;
 import com.google.googlejavaformat.java.Formatter;
 import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
+import com.google.googlejavaformat.java.StringWrapper;
 import com.intellij.formatting.service.AsyncFormattingRequest;
 import com.intellij.formatting.service.FormattingService;
 import com.intellij.formatting.service.FormattingServiceUtil;
@@ -210,6 +211,25 @@ public class GoogleJavaFormatFormattingServiceTest {
                 file.findElementAt(offset), /* canChangeWhitespaceOnly= */ false));
 
     assertThat(file.getText()).containsMatch("/\\*\\* hello \\*/");
+    assertThat(delegatingFormatter.wasInvoked()).isTrue();
+  }
+
+  @Test
+  public void stringWrapper() throws Exception {
+    settings.setStyle(Style.GOOGLE);
+    PsiFile file =
+        createPsiFile(
+            "com/foo/FormatTest.java",
+            "class T {",
+            "  String s = \"foo \" + \"Some Very Long Text, foo bar foo bar foo bar foo bar foo bar"
+                + " foo bar foo bar foo bar foo bar\";",
+            "}");
+    String origText = file.getText();
+    CodeStyleManager manager = CodeStyleManager.getInstance(file.getProject());
+    WriteCommandAction.runWriteCommandAction(
+        file.getProject(), () -> manager.reformatText(file, 0, file.getTextLength()));
+
+    assertThat(file.getText()).isEqualTo(StringWrapper.wrap(origText, new Formatter()) + "\n");
     assertThat(delegatingFormatter.wasInvoked()).isTrue();
   }
 
