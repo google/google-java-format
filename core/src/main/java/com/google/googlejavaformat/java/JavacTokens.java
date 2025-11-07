@@ -32,23 +32,47 @@ import java.util.Set;
 
 /** A wrapper around javac's lexer. */
 final class JavacTokens {
-
   /** The lexer eats terminal comments, so feed it one we don't care about. */
   // TODO(b/33103797): fix javac and remove the work-around
   private static final CharSequence EOF_COMMENT = "\n//EOF";
+
+  /** Represents a position in the source code with validation capabilities */
+  static final class TokenPosition {
+    private final int pos;
+    private final int endPos;
+
+    TokenPosition(int pos, int endPos) {
+      this.pos = pos;
+      this.endPos = endPos;
+    }
+
+    int getPos() {
+      return pos;
+    }
+
+    int getEndPos() {
+      return endPos;
+    }
+
+    void validateIndex(int index) {
+      checkArgument(
+              0 <= index && index < (endPos - pos),
+              "Expected %s in the range [0, %s)",
+              index,
+              endPos - pos);
+    }
+  }
 
   /** An unprocessed input token, including whitespace and comments. */
   static class RawTok {
     private final String stringVal;
     private final TokenKind kind;
-    private final int pos;
-    private final int endPos;
+    private final TokenPosition position;
 
     RawTok(String stringVal, TokenKind kind, int pos, int endPos) {
       this.stringVal = stringVal;
       this.kind = kind;
-      this.pos = pos;
-      this.endPos = endPos;
+      this.position = new TokenPosition(pos, endPos);
     }
 
     /** The token kind, or {@code null} for whitespace and comments. */
@@ -58,12 +82,12 @@ final class JavacTokens {
 
     /** The start position. */
     public int pos() {
-      return pos;
+      return position.getPos();
     }
 
     /** The end position. */
     public int endPos() {
-      return endPos;
+      return position.getEndPos();
     }
 
     /** The escaped string value of a literal, or {@code null} for other tokens. */
@@ -74,7 +98,7 @@ final class JavacTokens {
 
   /** Lex the input and return a list of {@link RawTok}s. */
   public static ImmutableList<RawTok> getTokens(
-      String source, Context context, Set<TokenKind> stopTokens) {
+          String source, Context context, Set<TokenKind> stopTokens) {
     if (source == null) {
       return ImmutableList.of();
     }
@@ -94,7 +118,7 @@ final class JavacTokens {
             tokens.add(new RawTok(null, null, last, c.getSourcePos(0)));
           }
           tokens.add(
-              new RawTok(null, null, c.getSourcePos(0), c.getSourcePos(0) + c.getText().length()));
+                  new RawTok(null, null, c.getSourcePos(0), c.getSourcePos(0) + c.getText().length()));
           last = c.getSourcePos(0) + c.getText().length();
         }
       }
@@ -108,11 +132,11 @@ final class JavacTokens {
         tokens.add(new RawTok(null, null, last, t.pos));
       }
       tokens.add(
-          new RawTok(
-              t.kind == TokenKind.STRINGLITERAL ? "\"" + t.stringVal() + "\"" : null,
-              t.kind,
-              t.pos,
-              t.endPos));
+              new RawTok(
+                      t.kind == TokenKind.STRINGLITERAL ? "\"" + t.stringVal() + "\"" : null,
+                      t.kind,
+                      t.pos,
+                      t.endPos));
       last = t.endPos;
     } while (scanner.token().kind != TokenKind.EOF);
     if (last < end) {
@@ -122,7 +146,7 @@ final class JavacTokens {
   }
 
   private static ImmutableList<CommentWithTextAndPosition> getComments(
-      Token token, Map<Comment, CommentWithTextAndPosition> comments) {
+          Token token, Map<Comment, CommentWithTextAndPosition> comments) {
     if (token.comments == null) {
       return ImmutableList.of();
     }
@@ -132,7 +156,6 @@ final class JavacTokens {
 
   /** A {@link JavaTokenizer} that saves comments. */
   static class CommentSavingTokenizer extends JavaTokenizer {
-
     private final Map<Comment, CommentWithTextAndPosition> comments = new HashMap<>();
 
     CommentSavingTokenizer(ScannerFactory fac, char[] buffer, int length) {
@@ -148,7 +171,7 @@ final class JavacTokens {
       char[] buf = getRawCharactersReflectively(pos, endPos);
       Comment comment = super.processComment(pos, endPos, style);
       CommentWithTextAndPosition commentWithTextAndPosition =
-          new CommentWithTextAndPosition(pos, endPos, new String(buf));
+              new CommentWithTextAndPosition(pos, endPos, new String(buf));
       comments.put(comment, commentWithTextAndPosition);
       return comment;
     }
@@ -162,10 +185,10 @@ final class JavacTokens {
       }
       try {
         return (char[])
-            instance
-                .getClass()
-                .getMethod("getRawCharacters", int.class, int.class)
-                .invoke(instance, beginIndex, endIndex);
+                instance
+                        .getClass()
+                        .getMethod("getRawCharacters", int.class, int.class)
+                        .invoke(instance, beginIndex, endIndex);
       } catch (ReflectiveOperationException e) {
         throw new LinkageError(e.getMessage(), e);
       }
@@ -174,30 +197,17 @@ final class JavacTokens {
 
   /** A {@link Comment} that saves its text and start position. */
   static class CommentWithTextAndPosition {
-
-    private final int pos;
-    private final int endPos;
+    private final TokenPosition position;
     private final String text;
 
     public CommentWithTextAndPosition(int pos, int endPos, String text) {
-      this.pos = pos;
-      this.endPos = endPos;
+      this.position = new TokenPosition(pos, endPos);
       this.text = text;
     }
 
-    /**
-     * Returns the source position of the character at index {@code index} in the comment text.
-     *
-     * <p>The handling of javadoc comments in javac has more logic to skip over leading whitespace
-     * and '*' characters when indexing into doc comments, but we don't need any of that.
-     */
     public int getSourcePos(int index) {
-      checkArgument(
-          0 <= index && index < (endPos - pos),
-          "Expected %s in the range [0, %s)",
-          index,
-          endPos - pos);
-      return pos + index;
+      position.validateIndex(index);
+      return position.getPos() + index;
     }
 
     public String getText() {
