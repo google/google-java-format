@@ -20,6 +20,7 @@ import com.google.googlejavaformat.java.Formatter;
 import java.io.IOException;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
@@ -38,8 +39,25 @@ public final class FormattingFiler implements Filer {
   private final Messager messager;
 
   /**
-   * @param delegate filer to decorate
+   * Create a new {@link FormattingFiler}.
+   *
+   * @param processingEnv the processing environment
    */
+  public static Filer create(ProcessingEnvironment processingEnv) {
+    Filer delegate = processingEnv.getFiler();
+    if (processingEnv.getOptions().containsKey("experimental_turbine_hjar")) {
+      return delegate;
+    }
+    return new FormattingFiler(delegate, processingEnv.getMessager());
+  }
+
+  /**
+   * Create a new {@link FormattingFiler}.
+   *
+   * @param delegate filer to decorate
+   * @deprecated prefer {@link #create(ProcessingEnvironment)}
+   */
+  @Deprecated
   public FormattingFiler(Filer delegate) {
     this(delegate, null);
   }
@@ -50,7 +68,9 @@ public final class FormattingFiler implements Filer {
    *
    * @param delegate filer to decorate
    * @param messager to log warnings to
+   * @deprecated prefer {@link #create(ProcessingEnvironment)}
    */
+  @Deprecated
   public FormattingFiler(Filer delegate, @Nullable Messager messager) {
     this.delegate = checkNotNull(delegate);
     this.messager = messager;
