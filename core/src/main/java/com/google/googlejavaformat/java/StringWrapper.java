@@ -16,6 +16,8 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getLast;
+import static com.google.googlejavaformat.java.Trees.getEndPosition;
+import static com.google.googlejavaformat.java.Trees.getStartPosition;
 import static java.lang.Math.min;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
@@ -171,7 +173,7 @@ public final class StringWrapper {
             && ((MemberSelectTree) parent).getExpression().equals(literalTree)) {
           return null;
         }
-        int endPosition = getEndPosition(unit, literalTree);
+        int endPosition = getEndPosition(literalTree, unit);
         int lineEnd = endPosition;
         while (Newlines.hasNewlineAt(input, lineEnd) == -1) {
           lineEnd++;
@@ -188,7 +190,7 @@ public final class StringWrapper {
         TreeRangeMap<Integer, String> replacements, List<Tree> textBlocks) {
       for (Tree tree : textBlocks) {
         int startPosition = lineMap.getStartPosition(lineMap.getLineNumber(getStartPosition(tree)));
-        int endPosition = getEndPosition(unit, tree);
+        int endPosition = getEndPosition(tree, unit);
         String text = input.substring(startPosition, endPosition);
         int leadingWhitespace = CharMatcher.whitespace().negate().indexIn(text);
 
@@ -254,7 +256,7 @@ public final class StringWrapper {
 
         // Handling leaving trailing non-string tokens at the end of the literal,
         // e.g. the trailing `);` in `foo("...");`.
-        int end = getEndPosition(unit, getLast(flat));
+        int end = getEndPosition(getLast(flat), unit);
         int lineEnd = end;
         while (Newlines.hasNewlineAt(input, lineEnd) == -1) {
           lineEnd++;
@@ -264,7 +266,7 @@ public final class StringWrapper {
         // Get the original source text of the string literals, excluding `"` and `+`.
         ImmutableList<String> components = stringComponents(input, unit, flat);
         replacements.put(
-            Range.closedOpen(getStartPosition(flat.get(0)), getEndPosition(unit, getLast(flat))),
+            Range.closedOpen(getStartPosition(flat.get(0)), getEndPosition(getLast(flat), unit)),
             reflow(separator, columnLimit, startColumn, trailing, components, first.get()));
       }
     }
@@ -280,7 +282,7 @@ public final class StringWrapper {
     StringBuilder piece = new StringBuilder();
     for (Tree tree : flat) {
       // adjust for leading and trailing double quotes
-      String text = input.substring(getStartPosition(tree) + 1, getEndPosition(unit, tree) - 1);
+      String text = input.substring(getStartPosition(tree) + 1, getEndPosition(tree, unit) - 1);
       int start = 0;
       for (int idx = 0; idx < text.length(); idx++) {
         if (CharMatcher.whitespace().matches(text.charAt(idx))) {
@@ -453,19 +455,11 @@ public final class StringWrapper {
   private static boolean noComments(
       String input, JCTree.JCCompilationUnit unit, Tree one, Tree two) {
     return STRING_CONCAT_DELIMITER.matchesAllOf(
-        input.subSequence(getEndPosition(unit, one), getStartPosition(two)));
+        input.subSequence(getEndPosition(one, unit), getStartPosition(two)));
   }
 
   public static final CharMatcher STRING_CONCAT_DELIMITER =
       CharMatcher.whitespace().or(CharMatcher.anyOf("\"+"));
-
-  private static int getEndPosition(JCTree.JCCompilationUnit unit, Tree tree) {
-    return ((JCTree) tree).getEndPosition(unit.endPositions);
-  }
-
-  private static int getStartPosition(Tree tree) {
-    return ((JCTree) tree).getStartPosition();
-  }
 
   /**
    * Returns true if any lines in the given Java source exceed the column limit, or contain a {@code

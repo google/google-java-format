@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
@@ -24,6 +25,7 @@ import com.sun.source.tree.ParenthesizedTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.Pretty;
 import com.sun.tools.javac.tree.TreeInfo;
 import java.io.IOError;
@@ -44,8 +46,12 @@ class Trees {
 
   /** Returns the source end position of the node. */
   static int getEndPosition(Tree expression, TreePath path) {
-    return ((JCTree) expression)
-        .getEndPosition(((JCTree.JCCompilationUnit) path.getCompilationUnit()).endPositions);
+    return getEndPosition(expression, path.getCompilationUnit());
+  }
+
+  /** Returns the source end position of the node. */
+  public static int getEndPosition(Tree tree, CompilationUnitTree unit) {
+    return ((JCTree) tree).getEndPosition(((JCCompilationUnit) unit).endPositions);
   }
 
   /** Returns the source text for the node. */

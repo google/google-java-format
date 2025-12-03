@@ -17,6 +17,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.googlejavaformat.java.Trees.getEndPosition;
 import static java.lang.Math.max;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -284,7 +285,7 @@ public class RemoveUnusedImports {
         continue;
       }
       // delete the import
-      int endPosition = importTree.getEndPosition(unit.endPositions);
+      int endPosition = getEndPosition(importTree, unit);
       endPosition = max(CharMatcher.isNot(' ').indexIn(contents, endPosition), endPosition);
       String sep = Newlines.guessLineSeparator(contents);
       if (endPosition + sep.length() < contents.length()
