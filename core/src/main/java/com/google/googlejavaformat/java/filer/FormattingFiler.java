@@ -58,7 +58,8 @@ public final class FormattingFiler implements Filer {
    * @deprecated prefer {@link #create(ProcessingEnvironment)}
    */
   @Deprecated
-  public FormattingFiler(Filer delegate) {
+  public
+  FormattingFiler(Filer delegate) {
     this(delegate, null);
   }
 
@@ -71,7 +72,8 @@ public final class FormattingFiler implements Filer {
    * @deprecated prefer {@link #create(ProcessingEnvironment)}
    */
   @Deprecated
-  public FormattingFiler(Filer delegate, @Nullable Messager messager) {
+  public
+  FormattingFiler(Filer delegate, @Nullable Messager messager) {
     this.delegate = checkNotNull(delegate);
     this.messager = messager;
   }
