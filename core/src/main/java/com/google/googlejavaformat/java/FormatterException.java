@@ -14,12 +14,12 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Locale.ENGLISH;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.googlejavaformat.FormatterDiagnostic;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -49,9 +49,11 @@ public final class FormatterException extends Exception {
   }
 
   public static FormatterException fromJavacDiagnostics(
-      Iterable<Diagnostic<? extends JavaFileObject>> diagnostics) {
+      List<Diagnostic<? extends JavaFileObject>> diagnostics) {
     return new FormatterException(
-        Iterables.transform(diagnostics, FormatterException::toFormatterDiagnostic));
+        diagnostics.stream()
+            .map(FormatterException::toFormatterDiagnostic)
+            .collect(toImmutableList()));
   }
 
   private static FormatterDiagnostic toFormatterDiagnostic(Diagnostic<?> input) {

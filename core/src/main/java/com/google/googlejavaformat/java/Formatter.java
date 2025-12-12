@@ -14,10 +14,8 @@
 
 package com.google.googlejavaformat.java;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
@@ -31,25 +29,14 @@ import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpsBuilder;
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.parser.JavacParser;
-import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Options;
-import java.io.IOError;
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
-import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardLocation;
 
 /**
  * This is google-java-format, a new Java formatter that follows the Google Java Style Guide quite
@@ -112,40 +99,13 @@ public final class Formatter {
   static void format(final JavaInput javaInput, JavaOutput javaOutput, JavaFormatterOptions options)
       throws FormatterException {
     Context context = new Context();
-    DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-    context.put(DiagnosticListener.class, diagnostics);
-    Options.instance(context).put("allowStringFolding", "false");
-    Options.instance(context).put("--enable-preview", "true");
-    JCCompilationUnit unit;
-    JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
-    try {
-      fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, ImmutableList.of());
-    } catch (IOException e) {
-      // impossible
-      throw new IOError(e);
-    }
-    SimpleJavaFileObject source =
-        new SimpleJavaFileObject(URI.create("source"), JavaFileObject.Kind.SOURCE) {
-          @Override
-          public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-            return javaInput.getText();
-          }
-        };
-    Log.instance(context).useSource(source);
-    ParserFactory parserFactory = ParserFactory.instance(context);
-    JavacParser parser =
-        parserFactory.newParser(
-            javaInput.getText(),
-            /* keepDocComments= */ true,
-            /* keepEndPos= */ true,
-            /* keepLineMap= */ true);
-    unit = parser.parseCompilationUnit();
-    unit.sourcefile = source;
+    List<Diagnostic<? extends JavaFileObject>> errorDiagnostics = new ArrayList<>();
+    JCCompilationUnit unit =
+        Trees.parse(
+            context, errorDiagnostics, /* allowStringFolding= */ false, javaInput.getText());
 
     javaInput.setCompilationUnit(unit);
-    Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
-        Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
-    if (!Iterables.isEmpty(errorDiagnostics)) {
+    if (!errorDiagnostics.isEmpty()) {
       throw FormatterException.fromJavacDiagnostics(errorDiagnostics);
     }
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);

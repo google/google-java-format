@@ -19,14 +19,12 @@ import static com.google.common.collect.Iterables.getLast;
 import static com.google.googlejavaformat.java.Trees.getEndPosition;
 import static com.google.googlejavaformat.java.Trees.getStartPosition;
 import static java.lang.Math.min;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.google.common.collect.TreeRangeMap;
 import com.google.googlejavaformat.Newlines;
@@ -37,17 +35,9 @@ import com.sun.source.tree.Tree;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.parser.JavacParser;
-import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Position;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.URI;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -56,11 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
-import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardLocation;
 
 /** Wraps string literals that exceed the column limit. */
 public final class StringWrapper {
@@ -480,34 +466,11 @@ public final class StringWrapper {
   /** Parses the given Java source. */
   private static JCTree.JCCompilationUnit parse(String source, boolean allowStringFolding)
       throws FormatterException {
-    DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+    List<Diagnostic<? extends JavaFileObject>> errorDiagnostics = new ArrayList<>();
     Context context = new Context();
-    context.put(DiagnosticListener.class, diagnostics);
-    Options.instance(context).put("--enable-preview", "true");
-    Options.instance(context).put("allowStringFolding", Boolean.toString(allowStringFolding));
-    JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
-    try {
-      fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, ImmutableList.of());
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-    SimpleJavaFileObject sjfo =
-        new SimpleJavaFileObject(URI.create("source"), JavaFileObject.Kind.SOURCE) {
-          @Override
-          public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
-          }
-        };
-    Log.instance(context).useSource(sjfo);
-    ParserFactory parserFactory = ParserFactory.instance(context);
-    JavacParser parser =
-        parserFactory.newParser(
-            source, /* keepDocComments= */ true, /* keepEndPos= */ true, /* keepLineMap= */ true);
-    JCTree.JCCompilationUnit unit = parser.parseCompilationUnit();
-    unit.sourcefile = sjfo;
-    Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
-        Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
-    if (!Iterables.isEmpty(errorDiagnostics)) {
+    JCTree.JCCompilationUnit unit =
+        Trees.parse(context, errorDiagnostics, allowStringFolding, source);
+    if (!errorDiagnostics.isEmpty()) {
       // error handling is done during formatting
       throw FormatterException.fromJavacDiagnostics(errorDiagnostics);
     }

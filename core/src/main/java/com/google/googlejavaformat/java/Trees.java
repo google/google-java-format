@@ -14,6 +14,11 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.googlejavaformat.java.Trees.getEndPosition;
+import static com.google.googlejavaformat.java.Trees.getStartPosition;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import com.google.common.collect.ImmutableList;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.CompoundAssignmentTree;
@@ -24,13 +29,26 @@ import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.ParenthesizedTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.parser.JavacParser;
+import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.Pretty;
 import com.sun.tools.javac.tree.TreeInfo;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Options;
 import java.io.IOError;
 import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 import javax.lang.model.element.Name;
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
+import javax.tools.StandardLocation;
 
 /** Utilities for working with {@link Tree}s. */
 class Trees {
@@ -117,5 +135,55 @@ class Trees {
   /** Skips a single parenthesized tree. */
   static ExpressionTree skipParen(ExpressionTree node) {
     return ((ParenthesizedTree) node).getExpression();
+  }
+
+  static JCCompilationUnit parse(
+      Context context,
+      List<Diagnostic<? extends JavaFileObject>> errorDiagnostics,
+      boolean allowStringFolding,
+      String javaInput) {
+    DiagnosticListener<JavaFileObject> diagnostics =
+        diagnostic -> {
+          if (errorDiagnostic(diagnostic)) {
+            errorDiagnostics.add(diagnostic);
+          }
+        };
+    context.put(DiagnosticListener.class, diagnostics);
+    Options.instance(context).put("--enable-preview", "true");
+    Options.instance(context).put("allowStringFolding", Boolean.toString(allowStringFolding));
+    JavacFileManager fileManager = new JavacFileManager(context, /* register= */ true, UTF_8);
+    try {
+      fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, ImmutableList.of());
+    } catch (IOException e) {
+      // impossible
+      throw new IOError(e);
+    }
+    SimpleJavaFileObject source =
+        new SimpleJavaFileObject(URI.create("source"), JavaFileObject.Kind.SOURCE) {
+          @Override
+          public String getCharContent(boolean ignoreEncodingErrors) {
+            return javaInput;
+          }
+        };
+    Log.instance(context).useSource(source);
+    ParserFactory parserFactory = ParserFactory.instance(context);
+    JavacParser parser =
+        parserFactory.newParser(
+            javaInput,
+            /* keepDocComments= */ true,
+            /* keepEndPos= */ true,
+            /* keepLineMap= */ true);
+    JCCompilationUnit unit = parser.parseCompilationUnit();
+    unit.sourcefile = source;
+    return unit;
+  }
+
+  private static boolean errorDiagnostic(Diagnostic<?> input) {
+    if (input.getKind() != Diagnostic.Kind.ERROR) {
+      return false;
+    }
+    // accept constructor-like method declarations that don't match the name of their
+    // enclosing class
+    return !input.getCode().equals("compiler.err.invalid.meth.decl.ret.type.req");
   }
 }
