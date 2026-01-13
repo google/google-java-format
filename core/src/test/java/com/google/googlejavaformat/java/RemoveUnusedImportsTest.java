@@ -17,7 +17,6 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.googlejavaformat.java.RemoveUnusedImports.removeUnusedImports;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import java.util.Collection;
 import org.junit.Test;
@@ -255,14 +254,29 @@ public class RemoveUnusedImportsTest {
           "interface Test { private static void foo() {} }",
         },
       },
+      {
+        {
+          "import module java.base;", //
+          "import java.lang.Foo;",
+          "interface Test { private static void foo() {} }",
+        },
+        {
+          "import module java.base;", //
+          "interface Test { private static void foo() {} }",
+        },
+      },
     };
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[][] inputAndOutput : inputsOutputs) {
       assertThat(inputAndOutput).hasLength(2);
-      String[] input = inputAndOutput[0];
-      String[] output = inputAndOutput[1];
+      String input = String.join("\n", inputAndOutput[0]) + "\n";
+      String output = String.join("\n", inputAndOutput[1]) + "\n";
+      if (input.contains("import module") && Runtime.version().feature() < 25) {
+        // TODO: cushon - remove this once the minimum supported JDK updates past 25
+        continue;
+      }
       String[] parameters = {
-        Joiner.on('\n').join(input) + '\n', Joiner.on('\n').join(output) + '\n',
+        input, output,
       };
       builder.add(parameters);
     }

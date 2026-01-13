@@ -24,5 +24,10 @@
          id="com.google.googlejavaformat.java.GoogleJavaFormatter"
          name="google-java-format">
    </javaFormatter>
+   <javaFormatter
+         class="com.google.googlejavaformat.java.AospJavaFormatter"
+         id="com.google.googlejavaformat.java.AospJavaFormatter"
+         name="aosp-java-format">
+   </javaFormatter>
    </extension>
 </plugin>

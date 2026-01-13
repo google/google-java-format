@@ -820,6 +820,23 @@ public class ImportOrdererTest {
             "",
             "public class Blim {}",
           },
+        },
+        {
+          {
+            "import module java.base;", //
+            "import static java.lang.Math.min;",
+            "import java.util.List;",
+            "class Test {}",
+          },
+          {
+            "import static java.lang.Math.min;", //
+            "",
+            "import module java.base;",
+            "",
+            "import java.util.List;",
+            "",
+            "class Test {}",
+          },
         }
       };
       ImmutableList.Builder<Object[]> builder = ImmutableList.builder();

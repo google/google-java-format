@@ -18,31 +18,40 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 // https://github.com/JetBrains/intellij-platform-gradle-plugin/releases
 plugins {
-  id("org.jetbrains.intellij.platform") version "2.2.0"
+  id("org.jetbrains.intellij.platform") version "2.10.2"
+  // See https://plugins.jetbrains.com/docs/intellij/using-kotlin.html#bundled-stdlib-versions
+  // This version of Kotlin will crash if your Gradle daemon is running under Java 25 (even if that
+  // isn't the JDK you're using to compile). So make sure to update JAVA_HOME and then
+  // `./gradlew --stop`
+  kotlin("jvm") version "2.0.21"
 }
 
 repositories {
   mavenCentral()
 
-  intellijPlatform {
-    defaultRepositories()
-  }
+  intellijPlatform { defaultRepositories() }
 }
 
 // https://github.com/google/google-java-format/releases
-val googleJavaFormatVersion = "1.25.2"
+val googleJavaFormatVersion = "1.31.0"
+val pluginPatchVersion = "0"
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
+  sourceCompatibility = JavaVersion.VERSION_21
+  targetCompatibility = JavaVersion.VERSION_21
 }
+
+kotlin { jvmToolchain(21) }
 
 intellijPlatform {
   pluginConfiguration {
     name = "google-java-format"
-    version = "${googleJavaFormatVersion}.0"
+    version = "${googleJavaFormatVersion}.${pluginPatchVersion}"
     ideaVersion {
-      sinceBuild = "223"
+      sinceBuild = "242"
       untilBuild = provider { null }
     }
   }
@@ -54,39 +63,35 @@ intellijPlatform {
 }
 
 var gjfRequiredJvmArgs =
-      listOf(
-        "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-        "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-        "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-        "--add-exports", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
-        "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-        "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-      )
+  listOf(
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+  )
 
-tasks {
-  runIde {
-    jvmArgumentProviders += CommandLineArgumentProvider {
-      gjfRequiredJvmArgs
-    }
-  }
-}
+tasks { runIde { jvmArgumentProviders += CommandLineArgumentProvider { gjfRequiredJvmArgs } } }
 
-tasks {
-  withType<Test>().configureEach {
-    jvmArgs(gjfRequiredJvmArgs)
-  }
-}
+tasks { withType<Test>().configureEach { jvmArgs(gjfRequiredJvmArgs) } }
 
 dependencies {
   intellijPlatform {
-    intellijIdeaCommunity("2022.3")
+    intellijIdeaCommunity("2024.3")
     bundledPlugin("com.intellij.java")
-    instrumentationTools()
     testFramework(TestFrameworkType.Plugin.Java)
   }
   implementation("com.google.googlejavaformat:google-java-format:${googleJavaFormatVersion}")
   // https://mvnrepository.com/artifact/junit/junit
   testImplementation("junit:junit:4.13.2")
   // https://mvnrepository.com/artifact/com.google.truth/truth
-  testImplementation("com.google.truth:truth:1.4.4")
+  testImplementation("com.google.truth:truth:1.4.5")
+  implementation(kotlin("stdlib-jdk8"))
 }

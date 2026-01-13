@@ -36,7 +36,7 @@ jobs:
           java-version: 21
           distribution: "zulu"
           cache: "maven"
-          server-id: sonatype-nexus-staging
+          server-id: central
           server-username: CI_DEPLOY_USERNAME
           server-password: CI_DEPLOY_PASSWORD
           gpg-private-key: ${{ secrets.GPG_SIGNING_KEY }}
@@ -83,16 +83,18 @@ jobs:
   build-native-image:
     name: "Build GraalVM native-image on ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     needs: build-maven-jars
     strategy:
       matrix:
         # Use "oldest" available ubuntu-* instead of -latest,
         # see https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories;
         # due to https://github.com/google/google-java-format/issues/1072.
-        os: [ubuntu-20.04, ubuntu-22.04-arm, macos-latest, windows-latest]
+        os: [ubuntu-22.04, ubuntu-22.04-arm, macos-latest, windows-latest]
     env:
         # NB: Must keep the keys in this inline JSON below in line with the os: above!
-      SUFFIX: ${{fromJson('{"ubuntu-20.04":"linux-x86-64", "ubuntu-22.04-arm":"linux-arm64", "macos-latest":"darwin-arm64", "windows-latest":"windows-x86-64"}')[matrix.os]}}
+      SUFFIX: ${{fromJson('{"ubuntu-22.04":"linux-x86-64", "ubuntu-22.04-arm":"linux-arm64", "macos-latest":"darwin-arm64", "windows-latest":"windows-x86-64"}')[matrix.os]}}
       EXTENSION: ${{ matrix.os == 'windows-latest' && '.exe' || '' }}
     steps:
       - name: "Check out repository"
@@ -100,7 +102,7 @@ jobs:
       - name: "Set up GraalVM"
         uses: graalvm/setup-graalvm@v1
         with:
-          java-version: "21"
+          java-version: "25"
           distribution: "graalvm-community"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: "true"
