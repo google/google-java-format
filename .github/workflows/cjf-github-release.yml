@@ -15,10 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: "Set up JDK 21 from Zulu"
+      - name: "Set up JDK 25 from Zulu"
         uses: actions/setup-java@v4
         with:
-          java-version: 21
+          java-version: 25
           distribution: "zulu"
 
       - name: Build with Maven
