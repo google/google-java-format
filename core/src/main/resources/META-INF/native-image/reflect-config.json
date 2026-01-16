@@ -2,14 +2,5 @@
   {
     "name": "com.sun.tools.javac.parser.UnicodeReader",
     "allDeclaredMethods": true
-  },
-  {
-    "name": "com.google.googlejavaformat.java.java21.Java21InputAstVisitor",
-    "methods": [
-      {
-        "name": "<init>",
-        "parameterTypes": ["com.google.googlejavaformat.OpsBuilder", "int"]
-      }
-    ]
   }
 ]

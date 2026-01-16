@@ -14,28 +14,28 @@
 
 package com.google.googlejavaformat.java;
 
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.CharSink;
 import com.google.common.io.CharSource;
 import com.google.errorprone.annotations.Immutable;
-import com.google.googlejavaformat.*;
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.parser.JavacParser;
-import com.sun.tools.javac.parser.ParserFactory;
+import com.google.googlejavaformat.Doc;
+import com.google.googlejavaformat.DocBuilder;
+import com.google.googlejavaformat.FormattingError;
+import com.google.googlejavaformat.Newlines;
+import com.google.googlejavaformat.Op;
+import com.google.googlejavaformat.OpsBuilder;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Options;
-
-import javax.tools.*;
-import java.io.IOError;
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
 
 /**
  * This is google-java-format, a new Java formatter that follows the Google Java Style Guide quite
@@ -97,52 +97,18 @@ public final class Formatter {
   static void format(final JavaInput javaInput, JavaOutput javaOutput, JavaFormatterOptions options)
       throws FormatterException {
     Context context = new Context();
-    DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-    context.put(DiagnosticListener.class, diagnostics);
-    Options.instance(context).put("allowStringFolding", "false");
-    Options.instance(context).put("--enable-preview", "true");
-    JCCompilationUnit unit;
-    JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
-    try {
-      fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, ImmutableList.of());
-    } catch (IOException e) {
-      // impossible
-      throw new IOError(e);
-    }
-    SimpleJavaFileObject source =
-        new SimpleJavaFileObject(URI.create("source"), JavaFileObject.Kind.SOURCE) {
-          @Override
-          public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-            return javaInput.getText();
-          }
-        };
-    Log.instance(context).useSource(source);
-    ParserFactory parserFactory = ParserFactory.instance(context);
-    JavacParser parser =
-        parserFactory.newParser(
-            javaInput.getText(),
-            /* keepDocComments= */ true,
-            /* keepEndPos= */ true,
-            /* keepLineMap= */ true);
-    unit = parser.parseCompilationUnit();
-    unit.sourcefile = source;
+    List<Diagnostic<? extends JavaFileObject>> errorDiagnostics = new ArrayList<>();
+    JCCompilationUnit unit =
+        Trees.parse(
+            context, errorDiagnostics, /* allowStringFolding= */ false, javaInput.getText());
 
     javaInput.setCompilationUnit(unit);
-    Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
-        Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
-    if (!Iterables.isEmpty(errorDiagnostics)) {
+    if (!errorDiagnostics.isEmpty()) {
       throw FormatterException.fromJavacDiagnostics(errorDiagnostics);
     }
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
-    JavaInputAstVisitor visitor;
-    if (Runtime.version().feature() >= 21) {
-      visitor =
-          createVisitor(
-              "com.google.googlejavaformat.java.java21.Java21InputAstVisitor", builder, options);
-    } else {
-      visitor = new JavaInputAstVisitor(builder, options.indentationMultiplier());
-    }
+    JavaInputAstVisitor visitor = new JavaInputAstVisitor(builder, options.indentationMultiplier());
     visitor.scan(unit, null);
     builder.sync(javaInput.getText().length());
     builder.drain();
@@ -153,31 +119,13 @@ public final class Formatter {
     javaOutput.flush();
   }
 
-  private static JavaInputAstVisitor createVisitor(
-      final String className, final OpsBuilder builder, final JavaFormatterOptions options) {
-    try {
-      return Class.forName(className)
-          .asSubclass(JavaInputAstVisitor.class)
-          .getConstructor(OpsBuilder.class, int.class)
-          .newInstance(builder, options.indentationMultiplier());
-    } catch (ReflectiveOperationException e) {
-      throw new LinkageError(e.getMessage(), e);
-    }
-  }
-
   static boolean errorDiagnostic(Diagnostic<?> input) {
     if (input.getKind() != Diagnostic.Kind.ERROR) {
       return false;
     }
-    switch (input.getCode()) {
-      case "compiler.err.invalid.meth.decl.ret.type.req":
-        // accept constructor-like method declarations that don't match the name of their
-        // enclosing class
-        return false;
-      default:
-        break;
-    }
-    return true;
+    // accept constructor-like method declarations that don't match the name of their
+    // enclosing class
+    return !input.getCode().equals("compiler.err.invalid.meth.decl.ret.type.req");
   }
 
   /**

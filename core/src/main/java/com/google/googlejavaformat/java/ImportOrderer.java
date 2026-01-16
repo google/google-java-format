@@ -123,18 +123,24 @@ public class ImportOrderer {
   /**
    * A {@link Comparator} that orders {@link Import}s by Google Style, defined at
    * https://google.github.io/styleguide/javaguide.html#s3.3.3-import-ordering-and-spacing.
+   *
+   * <p>Module imports are not allowed by Google Style, so we make an arbitrary choice about where
+   * to include them if they are present.
    */
   private static final Comparator<Import> GOOGLE_IMPORT_COMPARATOR =
-      Comparator.comparing(Import::isStatic, trueFirst()).thenComparing(Import::imported);
+      Comparator.comparing(Import::importType).thenComparing(Import::imported);
 
   /**
    * A {@link Comparator} that orders {@link Import}s by AOSP Style, defined at
    * https://source.android.com/setup/contribute/code-style#order-import-statements and implemented
    * in IntelliJ at
    * https://android.googlesource.com/platform/development/+/master/ide/intellij/codestyles/AndroidStyle.xml.
+   *
+   * <p>Module imports are not mentioned by Android Style, so we make an arbitrary choice about
+   * where to include them if they are present.
    */
   private static final Comparator<Import> AOSP_IMPORT_COMPARATOR =
-      Comparator.comparing(Import::isStatic, trueFirst())
+      Comparator.comparing(Import::importType)
           .thenComparing(Import::isAndroid, trueFirst())
           .thenComparing(Import::isThirdParty, trueFirst())
           .thenComparing(Import::isJava, trueFirst())
@@ -145,7 +151,7 @@ public class ImportOrderer {
    * Import}s based on Google style.
    */
   private static boolean shouldInsertBlankLineGoogle(final Import prev, final Import curr) {
-    return prev.isStatic() && !curr.isStatic();
+    return !prev.importType().equals(curr.importType());
   }
 
   /**
@@ -153,7 +159,7 @@ public class ImportOrderer {
    * Import}s based on AOSP style.
    */
   private static boolean shouldInsertBlankLineAosp(final Import prev, final Import curr) {
-    if (prev.isStatic() && !curr.isStatic()) {
+    if (!prev.importType().equals(curr.importType())) {
       return true;
     }
     // insert blank line between "com.android" from "com.anythingelse"
@@ -187,16 +193,22 @@ public class ImportOrderer {
     }
   }
 
+  enum ImportType {
+    STATIC,
+    MODULE,
+    NORMAL
+  }
+
   /** An import statement. */
   class Import {
     private final String imported;
-    private final boolean isStatic;
     private final String trailing;
+    private final ImportType importType;
 
-    Import(final String imported, final String trailing, final boolean isStatic) {
+    Import(final String imported, final String trailing, final ImportType importType) {
       this.imported = imported;
       this.trailing = trailing;
-      this.isStatic = isStatic;
+      this.importType = importType;
     }
 
     /** The name being imported, for example {@code java.util.List}. */
@@ -204,9 +216,9 @@ public class ImportOrderer {
       return imported;
     }
 
-    /** True if this is {@code import static}. */
-    boolean isStatic() {
-      return isStatic;
+    /** Returns the {@link ImportType}. */
+    ImportType importType() {
+      return importType;
     }
 
     /** The top-level package of the import. */
@@ -222,13 +234,10 @@ public class ImportOrderer {
 
     /** True if this is a Java import per AOSP style. */
     boolean isJava() {
-      switch (topLevel()) {
-        case "java":
-        case "javax":
-          return true;
-        default:
-          return false;
-      }
+      return switch (topLevel()) {
+        case "java", "javax" -> true;
+        default -> false;
+      };
     }
 
     /**
@@ -252,8 +261,10 @@ public class ImportOrderer {
     public String toString() {
       final StringBuilder sb = new StringBuilder();
       sb.append("import ");
-      if (isStatic()) {
-        sb.append("static ");
+      switch (importType) {
+        case STATIC -> sb.append("static ");
+        case MODULE -> sb.append("module ");
+        case NORMAL -> {}
       }
       sb.append(imported()).append(';');
       if (trailing().trim().isEmpty()) {
@@ -308,8 +319,13 @@ public class ImportOrderer {
       if (isSpaceToken(i)) {
         i++;
       }
-      final boolean isStatic = tokenAt(i).equals("static");
-      if (isStatic) {
+      final ImportType importType =
+          switch (tokenAt(i)) {
+            case "static" -> ImportType.STATIC;
+            case "module" -> ImportType.MODULE;
+            default -> ImportType.NORMAL;
+          };
+      if (!importType.equals(ImportType.NORMAL)) {
         i++;
         if (isSpaceToken(i)) {
           i++;
@@ -354,7 +370,7 @@ public class ImportOrderer {
         // Extra semicolons are not allowed by the JLS but are accepted by javac.
         i++;
       }
-      imports.add(new Import(importedName, trailing.toString(), isStatic));
+      imports.add(new Import(importedName, trailing.toString(), importType));
       // Remember the position just after the import we just saw, before skipping blank lines.
       // If the next thing after the blank lines is not another import then we don't want to
       // include those blank lines in the text to be replaced.

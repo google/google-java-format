@@ -73,15 +73,16 @@ public class Newlines {
     for (int i = 0; i < text.length(); i++) {
       char c = text.charAt(i);
       switch (c) {
-        case '\r':
+        case '\r' -> {
           if (i + 1 < text.length() && text.charAt(i + 1) == '\n') {
             return "\r\n";
           }
           return "\r";
-        case '\n':
+        }
+        case '\n' -> {
           return "\n";
-        default:
-          break;
+        }
+        default -> {}
       }
     }
     return "\n";

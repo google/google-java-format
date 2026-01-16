@@ -16,13 +16,12 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.googlejavaformat.java.Trees.getEndPosition;
 import static java.lang.Math.max;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
@@ -41,9 +40,6 @@ import com.sun.source.util.DocTreePathScanner;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.api.JavacTrees;
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.parser.JavacParser;
-import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCReference;
 import com.sun.tools.javac.tree.JCTree;
@@ -51,22 +47,15 @@ import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCImport;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Options;
-import java.io.IOError;
-import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.URI;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
-import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardLocation;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Removes unused imports from a source file. Imports that are only used in javadoc are also
@@ -228,38 +217,10 @@ public class RemoveUnusedImports {
 
   private static JCCompilationUnit parse(Context context, String javaInput)
       throws FormatterException {
-    DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-    context.put(DiagnosticListener.class, diagnostics);
-    Options.instance(context).put("--enable-preview", "true");
-    Options.instance(context).put("allowStringFolding", "false");
-    JCCompilationUnit unit;
-    JavacFileManager fileManager = new JavacFileManager(context, true, UTF_8);
-    try {
-      fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, ImmutableList.of());
-    } catch (IOException e) {
-      // impossible
-      throw new IOError(e);
-    }
-    SimpleJavaFileObject source =
-        new SimpleJavaFileObject(URI.create("source"), JavaFileObject.Kind.SOURCE) {
-          @Override
-          public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-            return javaInput;
-          }
-        };
-    Log.instance(context).useSource(source);
-    ParserFactory parserFactory = ParserFactory.instance(context);
-    JavacParser parser =
-        parserFactory.newParser(
-            javaInput,
-            /* keepDocComments= */ true,
-            /* keepEndPos= */ true,
-            /* keepLineMap= */ true);
-    unit = parser.parseCompilationUnit();
-    unit.sourcefile = source;
-    Iterable<Diagnostic<? extends JavaFileObject>> errorDiagnostics =
-        Iterables.filter(diagnostics.getDiagnostics(), Formatter::errorDiagnostic);
-    if (!Iterables.isEmpty(errorDiagnostics)) {
+    List<Diagnostic<? extends JavaFileObject>> errorDiagnostics = new ArrayList<>();
+    JCTree.JCCompilationUnit unit =
+        Trees.parse(context, errorDiagnostics, /* allowStringFolding= */ false, javaInput);
+    if (!errorDiagnostics.isEmpty()) {
       // error handling is done during formatting
       throw FormatterException.fromJavacDiagnostics(errorDiagnostics);
     }
@@ -274,12 +235,15 @@ public class RemoveUnusedImports {
       Multimap<String, Range<Integer>> usedInJavadoc) {
     RangeMap<Integer, String> replacements = TreeRangeMap.create();
     for (JCTree importTree : unit.getImports()) {
+      if (isModuleImport(importTree)) {
+        continue;
+      }
       String simpleName = getSimpleName(importTree);
       if (!isUnused(unit, usedNames, usedInJavadoc, importTree, simpleName)) {
         continue;
       }
       // delete the import
-      int endPosition = importTree.getEndPosition(unit.endPositions);
+      int endPosition = getEndPosition(importTree, unit);
       endPosition = max(CharMatcher.isNot(' ').indexIn(contents, endPosition), endPosition);
       String sep = Newlines.guessLineSeparator(contents);
       if (endPosition + sep.length() < contents.length()
@@ -322,10 +286,42 @@ public class RemoveUnusedImports {
     return true;
   }
 
+  private static final Method GET_QUALIFIED_IDENTIFIER_METHOD = getQualifiedIdentifierMethod();
+
+  private static @Nullable Method getQualifiedIdentifierMethod() {
+    try {
+      return JCImport.class.getMethod("getQualifiedIdentifier");
+    } catch (NoSuchMethodException e) {
+      return null;
+    }
+  }
+
   private static JCFieldAccess getQualifiedIdentifier(JCTree importTree) {
+    checkArgument(!isModuleImport(importTree));
     // Use reflection because the return type is JCTree in some versions and JCFieldAccess in others
     try {
-      return (JCFieldAccess) JCImport.class.getMethod("getQualifiedIdentifier").invoke(importTree);
+      return (JCFieldAccess) GET_QUALIFIED_IDENTIFIER_METHOD.invoke(importTree);
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
+  }
+
+  private static final @Nullable Method IS_MODULE_METHOD = getIsModuleMethod();
+
+  private static @Nullable Method getIsModuleMethod() {
+    try {
+      return ImportTree.class.getMethod("isModule");
+    } catch (NoSuchMethodException ignored) {
+      return null;
+    }
+  }
+
+  private static boolean isModuleImport(JCTree importTree) {
+    if (IS_MODULE_METHOD == null) {
+      return false;
+    }
+    try {
+      return (boolean) IS_MODULE_METHOD.invoke(importTree);
     } catch (ReflectiveOperationException e) {
       throw new LinkageError(e.getMessage(), e);
     }

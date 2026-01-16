@@ -59,6 +59,7 @@ public class FormatterIntegrationTest {
               "I981",
               "I1020",
               "I1037")
+          .putAll(25, "ModuleImport")
           .build();
 
   @Parameters(name = "{index}: {0}")
@@ -81,13 +82,9 @@ public class FormatterIntegrationTest {
           contents = CharStreams.toString(new InputStreamReader(stream, UTF_8));
         }
         switch (extension) {
-          case "input":
-            inputs.put(baseName, contents);
-            break;
-          case "output":
-            outputs.put(baseName, contents);
-            break;
-          default: // fall out
+          case "input" -> inputs.put(baseName, contents);
+          case "output" -> outputs.put(baseName, contents);
+          default -> {}
         }
       }
     }

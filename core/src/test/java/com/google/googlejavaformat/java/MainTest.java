@@ -49,6 +49,15 @@ public class MainTest {
 
   @Rule public TemporaryFolder testFolder = new TemporaryFolder();
 
+  /** Filters out JVM "Picked up" messages from stderr (e.g., JAVA_TOOL_OPTIONS, _JAVA_OPTIONS). */
+  private static String filterJvmStderr(String stderr) {
+    return stderr.lines()
+        .filter(line -> !line.startsWith("Picked up "))
+        .reduce((a, b) -> a + System.lineSeparator() + b)
+        .map(s -> s + System.lineSeparator())
+        .orElse("");
+  }
+
   // PrintWriter instances used below are hard-coded to use system-default line separator.
   private final Joiner joiner = Joiner.on(System.lineSeparator());
 
@@ -463,7 +472,7 @@ public class MainTest {
     process.waitFor();
     String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
     String out = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
-    assertThat(err).isEmpty();
+    assertThat(filterJvmStderr(err)).isEmpty();
     assertThat(out).isEqualTo("<stdin>" + System.lineSeparator());
     assertThat(process.exitValue()).isEqualTo(1);
   }
@@ -490,7 +499,7 @@ public class MainTest {
     process.waitFor();
     String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
     String out = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
-    assertThat(err).isEmpty();
+    assertThat(filterJvmStderr(err)).isEmpty();
     assertThat(out).isEqualTo(path.toAbsolutePath() + System.lineSeparator());
     assertThat(process.exitValue()).isEqualTo(1);
   }

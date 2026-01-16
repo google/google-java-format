@@ -57,88 +57,35 @@ public final class JavadocFormatter {
     final JavadocWriter output = new JavadocWriter(blockIndent, maxWidth);
     for (final Token token : input) {
       switch (token.getType()) {
-        case BEGIN_JAVADOC:
-          output.writeBeginJavadoc();
-          break;
-        case END_JAVADOC:
+        case BEGIN_JAVADOC -> output.writeBeginJavadoc();
+        case END_JAVADOC -> {
           output.writeEndJavadoc();
           return output.toString();
-        case FOOTER_JAVADOC_TAG_START:
-          output.writeFooterJavadocTagStart(token);
-          break;
-        case SNIPPET_BEGIN:
-          output.writeSnippetBegin(token);
-          break;
-        case SNIPPET_END:
-          output.writeSnippetEnd(token);
-          break;
-        case LIST_OPEN_TAG:
-          output.writeListOpen(token);
-          break;
-        case LIST_CLOSE_TAG:
-          output.writeListClose(token);
-          break;
-        case LIST_ITEM_OPEN_TAG:
-          output.writeListItemOpen(token);
-          break;
-        case HEADER_OPEN_TAG:
-          output.writeHeaderOpen(token);
-          break;
-        case HEADER_CLOSE_TAG:
-          output.writeHeaderClose(token);
-          break;
-        case PARAGRAPH_OPEN_TAG:
-          output.writeParagraphOpen(standardizePToken(token));
-          break;
-        case BLOCKQUOTE_OPEN_TAG:
-        case BLOCKQUOTE_CLOSE_TAG:
-          output.writeBlockquoteOpenOrClose(token);
-          break;
-        case PRE_OPEN_TAG:
-          output.writePreOpen(token);
-          break;
-        case PRE_CLOSE_TAG:
-          output.writePreClose(token);
-          break;
-        case CODE_OPEN_TAG:
-          output.writeCodeOpen(token);
-          break;
-        case CODE_CLOSE_TAG:
-          output.writeCodeClose(token);
-          break;
-        case TABLE_OPEN_TAG:
-          output.writeTableOpen(token);
-          break;
-        case TABLE_CLOSE_TAG:
-          output.writeTableClose(token);
-          break;
-        case MOE_BEGIN_STRIP_COMMENT:
-          output.requestMoeBeginStripComment(token);
-          break;
-        case MOE_END_STRIP_COMMENT:
-          output.writeMoeEndStripComment(token);
-          break;
-        case HTML_COMMENT:
-          output.writeHtmlComment(token);
-          break;
-        case BR_TAG:
-          output.writeBr(standardizeBrToken(token));
-          break;
-        case WHITESPACE:
-          output.requestWhitespace();
-          break;
-        case FORCED_NEWLINE:
-          output.writeLineBreakNoAutoIndent();
-          break;
-        case LITERAL:
-          output.writeLiteral(token);
-          break;
-        case PARAGRAPH_CLOSE_TAG:
-        case LIST_ITEM_CLOSE_TAG:
-        case OPTIONAL_LINE_BREAK:
-          break;
-        default:
-          throw new AssertionError(token.getType());
+        }
+        case FOOTER_JAVADOC_TAG_START -> output.writeFooterJavadocTagStart(token);
+        case SNIPPET_BEGIN -> output.writeSnippetBegin(token);
+        case SNIPPET_END -> output.writeSnippetEnd(token);
+        case LIST_OPEN_TAG -> output.writeListOpen(token);
+        case LIST_CLOSE_TAG -> output.writeListClose(token);
+        case LIST_ITEM_OPEN_TAG -> output.writeListItemOpen(token);
+        case HEADER_OPEN_TAG -> output.writeHeaderOpen(token);
+        case HEADER_CLOSE_TAG -> output.writeHeaderClose(token);
+        case PARAGRAPH_OPEN_TAG -> output.writeParagraphOpen(standardizePToken(token));
+        case BLOCKQUOTE_OPEN_TAG, BLOCKQUOTE_CLOSE_TAG -> output.writeBlockquoteOpenOrClose(token);
+        case PRE_OPEN_TAG -> output.writePreOpen(token);
+        case PRE_CLOSE_TAG -> output.writePreClose(token);
+        case CODE_OPEN_TAG -> output.writeCodeOpen(token);
+        case CODE_CLOSE_TAG -> output.writeCodeClose(token);
+        case TABLE_OPEN_TAG -> output.writeTableOpen(token);
+        case TABLE_CLOSE_TAG -> output.writeTableClose(token);
+        case MOE_BEGIN_STRIP_COMMENT -> output.requestMoeBeginStripComment(token);
+        case MOE_END_STRIP_COMMENT -> output.writeMoeEndStripComment(token);
+        case HTML_COMMENT -> output.writeHtmlComment(token);
+        case BR_TAG -> output.writeBr(standardizeBrToken(token));
+        case WHITESPACE -> output.requestWhitespace();
+        case FORCED_NEWLINE -> output.writeLineBreakNoAutoIndent();
+        case LITERAL -> output.writeLiteral(token);
+        case PARAGRAPH_CLOSE_TAG, LIST_ITEM_CLOSE_TAG, OPTIONAL_LINE_BREAK -> {}
       }
     }
     throw new AssertionError();

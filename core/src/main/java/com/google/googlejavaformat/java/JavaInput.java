@@ -561,20 +561,18 @@ public final class JavaInput extends Input {
         // TODO(cushon): find a better strategy.
         if (toks.get(k).isSlashStarComment()) {
           switch (tok.getText()) {
-            case "(":
-            case "<":
-            case ".":
+            case "(", "<", "." -> {
               break OUTER;
-            default:
-              break;
+            }
+            default -> {}
           }
         }
         if (toks.get(k).isJavadocComment()) {
           switch (tok.getText()) {
-            case ";":
+            case ";" -> {
               break OUTER;
-            default:
-              break;
+            }
+            default -> {}
           }
         }
         if (isParamComment(toks.get(k))) {

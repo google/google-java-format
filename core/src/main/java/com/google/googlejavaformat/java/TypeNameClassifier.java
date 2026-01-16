@@ -30,20 +30,17 @@ public final class TypeNameClassifier {
     START(false) {
       @Override
       public TyParseState next(JavaCaseFormat n) {
-        switch (n) {
-          case UPPERCASE:
-            // if we see an UpperCamel later, assume this was a class
-            // e.g. com.google.FOO.Bar
-            return TyParseState.AMBIGUOUS;
-          case LOWER_CAMEL:
-            return TyParseState.REJECT;
-          case LOWERCASE:
-            // could be a package
-            return TyParseState.START;
-          case UPPER_CAMEL:
-            return TyParseState.TYPE;
-        }
-        throw new AssertionError();
+        return switch (n) {
+          case UPPERCASE ->
+              // if we see an UpperCamel later, assume this was a class
+              // e.g. com.google.FOO.Bar
+              TyParseState.AMBIGUOUS;
+          case LOWER_CAMEL -> TyParseState.REJECT;
+          case LOWERCASE ->
+              // could be a package
+              TyParseState.START;
+          case UPPER_CAMEL -> TyParseState.TYPE;
+        };
       }
     },
 
@@ -51,15 +48,10 @@ public final class TypeNameClassifier {
     TYPE(true) {
       @Override
       public TyParseState next(JavaCaseFormat n) {
-        switch (n) {
-          case UPPERCASE:
-          case LOWER_CAMEL:
-          case LOWERCASE:
-            return TyParseState.FIRST_STATIC_MEMBER;
-          case UPPER_CAMEL:
-            return TyParseState.TYPE;
-        }
-        throw new AssertionError();
+        return switch (n) {
+          case UPPERCASE, LOWER_CAMEL, LOWERCASE -> TyParseState.FIRST_STATIC_MEMBER;
+          case UPPER_CAMEL -> TyParseState.TYPE;
+        };
       }
     },
 
@@ -83,16 +75,11 @@ public final class TypeNameClassifier {
     AMBIGUOUS(false) {
       @Override
       public TyParseState next(JavaCaseFormat n) {
-        switch (n) {
-          case UPPERCASE:
-            return AMBIGUOUS;
-          case LOWER_CAMEL:
-          case LOWERCASE:
-            return TyParseState.REJECT;
-          case UPPER_CAMEL:
-            return TyParseState.TYPE;
-        }
-        throw new AssertionError();
+        return switch (n) {
+          case UPPERCASE -> AMBIGUOUS;
+          case LOWER_CAMEL, LOWERCASE -> TyParseState.REJECT;
+          case UPPER_CAMEL -> TyParseState.TYPE;
+        };
       }
     };
 
