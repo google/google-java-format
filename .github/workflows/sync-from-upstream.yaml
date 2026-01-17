@@ -1,0 +1,64 @@
+name: Sync from Upstream Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+  pull_request:
+    types: [closed]
+    branches: [master]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.UPDATE_FROM_TEMPLATE_PAT }}
+
+      - name: Check and sync upstream release
+        env:
+          GH_TOKEN: ${{ secrets.UPDATE_FROM_TEMPLATE_PAT }}
+        run: |
+          LATEST=$(gh api repos/google/google-java-format/releases/latest --jq '.tag_name')
+
+          if git tag -l | grep -qx "$LATEST"; then
+            echo "Already synced $LATEST"
+            exit 0
+          fi
+
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+
+          git remote add upstream https://github.com/google/google-java-format.git
+          git fetch upstream --tags
+          git checkout -B sync-upstream "$LATEST"
+          git push -fu origin sync-upstream
+
+          gh pr create --head sync-upstream --base master \
+            --title "Sync upstream release $LATEST" \
+            --body "Sync [upstream $LATEST](https://github.com/google/google-java-format/releases/tag/$LATEST)" \
+            || gh pr edit --title "Sync upstream release $LATEST"
+
+  tag:
+    if: github.event.pull_request.merged && startsWith(github.event.pull_request.title, 'Sync upstream release ')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.UPDATE_FROM_TEMPLATE_PAT }}
+
+      - name: Create tag
+        run: |
+          TAG="${{ github.event.pull_request.title }}"
+          TAG="${TAG#Sync upstream release }"
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git tag "$TAG"
+          git push origin "$TAG"
