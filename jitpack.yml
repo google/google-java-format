@@ -1,5 +1,0 @@
-before_install:
-  - sdk install java 21.0.6-tem
-  - sdk use java 21.0.6-tem
-  - sdk install maven 3.9.9
-  - sdk use maven 3.9.9
