@@ -1,0 +1,139 @@
+name: Sync from Upstream Release
+
+# This workflow syncs from upstream google/google-java-format when a new release is published.
+# It checks daily for new releases, creates a PR to sync the changes, and after merge,
+# creates a tag that triggers the GitHub release workflow.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6 AM UTC
+  workflow_dispatch:
+  pull_request:
+    types: [closed]
+    branches: [master]
+
+env:
+  UPDATE_BRANCH: update-from-upstream
+  REMOTE_URL: https://github.com/google/google-java-format.git
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-and-sync:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.UPDATE_FROM_TEMPLATE_PAT }}
+
+      - name: Init Git
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+      - name: Check for new upstream release
+        id: check-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Fetching latest release from google/google-java-format..."
+          LATEST_RELEASE=$(gh api repos/google/google-java-format/releases/latest --jq '.tag_name')
+          echo "Latest upstream release: $LATEST_RELEASE"
+          echo "latest_release=$LATEST_RELEASE" >> $GITHUB_OUTPUT
+
+          # Check if we already have this release synced (look for matching tag)
+          if git tag --list | grep -q "^${LATEST_RELEASE}$"; then
+            echo "Release $LATEST_RELEASE already synced (tag exists)"
+            echo "needs_sync=false" >> $GITHUB_OUTPUT
+          else
+            echo "New release $LATEST_RELEASE needs to be synced"
+            echo "needs_sync=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sync upstream release
+        if: steps.check-release.outputs.needs_sync == 'true'
+        id: sync
+        run: |
+          RELEASE_TAG="${{ steps.check-release.outputs.latest_release }}"
+          echo "Syncing upstream release $RELEASE_TAG"
+
+          echo "Adding remote upstream"
+          git remote add upstream ${{ env.REMOTE_URL }}
+
+          echo "Fetching upstream tags"
+          git fetch upstream --tags
+
+          echo "Deleting local update branch if present"
+          git branch -D ${{ env.UPDATE_BRANCH }} || true
+
+          echo "Creating update branch from upstream release tag"
+          git checkout -b ${{ env.UPDATE_BRANCH }} "$RELEASE_TAG"
+
+          echo "Pushing update branch"
+          git push -f -u origin ${{ env.UPDATE_BRANCH }}
+
+          echo "Getting current default branch"
+          git checkout master
+          current_branch=$(git branch --show-current)
+          echo "Current branch is $current_branch"
+          echo "current_branch=$current_branch" >> $GITHUB_OUTPUT
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Create or update pull request
+        if: steps.check-release.outputs.needs_sync == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.UPDATE_FROM_TEMPLATE_PAT }}
+        run: |
+          RELEASE_TAG="${{ steps.sync.outputs.release_tag }}"
+
+          # Close any existing sync PRs
+          existing_prs=$(gh pr list --head "${{ env.UPDATE_BRANCH }}" --json number --jq '.[].number')
+          for pr in $existing_prs; do
+            echo "Closing existing PR #$pr"
+            gh pr close "$pr" || true
+          done
+
+          # Create new PR
+          gh pr create \
+            --head "${{ env.UPDATE_BRANCH }}" \
+            --base "${{ steps.sync.outputs.current_branch }}" \
+            --title "Sync upstream release $RELEASE_TAG" \
+            --body "Automated PR to sync changes from upstream google-java-format release $RELEASE_TAG.
+
+After this PR is merged, a tag will be automatically created which triggers a GitHub release.
+
+**Upstream release:** https://github.com/google/google-java-format/releases/tag/$RELEASE_TAG"
+
+  create-tag-on-merge:
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.title, 'Sync upstream release ')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.UPDATE_FROM_TEMPLATE_PAT }}
+
+      - name: Extract version and create tag
+        run: |
+          # Extract version from PR title "Sync upstream release v1.25.0"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          RELEASE_TAG=$(echo "$PR_TITLE" | sed 's/Sync upstream release //')
+          echo "Creating tag: $RELEASE_TAG"
+
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+          # Create and push the tag (this triggers cjf-github-release.yml)
+          git tag "$RELEASE_TAG"
+          git push origin "$RELEASE_TAG"
+
+          echo "Tag $RELEASE_TAG created and pushed"
