@@ -30,16 +30,9 @@ export JAVA_FORMAT_WIDTH=120
 java -jar configurable-java-format.jar File.java
 ```
 
-## IntelliJ Plugin
+## Acknowledgments
 
-[![Version](https://img.shields.io/jetbrains/plugin/v/23827.svg)](https://plugins.jetbrains.com/plugin/23827)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/23827.svg)](https://plugins.jetbrains.com/plugin/23827)
-
-The IntelliJ plugin is separate from the formatter and can be found here:
-
-Plugin page: https://plugins.jetbrains.com/plugin/23827-external-java-formatter
-
-Source code: https://github.com/MrDolch/external-java-formatter-intellij-plugin
+Thanks to [MrDolch](https://github.com/MrDolch) for his contributions.
 
 ## License
 
