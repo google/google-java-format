@@ -453,8 +453,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
+  // Replace with Flags.IMPLICIT_CLASS once JDK 25 is the minimum supported version
+  private static final int IMPLICIT_CLASS = 1 << 19;
+
   @Override
   public Void visitClass(ClassTree tree, Void unused) {
+    if ((TreeInfo.flags((JCTree) tree) & IMPLICIT_CLASS) == IMPLICIT_CLASS) {
+      visitImplicitClass(tree);
+      return null;
+    }
     switch (tree.getKind()) {
       case ANNOTATION_TYPE -> visitAnnotationType(tree);
       case CLASS, INTERFACE -> visitClassDeclaration(tree);
@@ -463,6 +470,12 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       default -> throw new AssertionError(tree.getKind());
     }
     return null;
+  }
+
+  private void visitImplicitClass(ClassTree node) {
+    builder.open(minusTwo);
+    addBodyDeclarations(node.getMembers(), BracesOrNot.NO, FirstDeclarationsOrNot.YES);
+    builder.close();
   }
 
   public void visitAnnotationType(ClassTree node) {
