@@ -4,8 +4,31 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "sunday"
+      time: "07:00"
+    groups:
+      google-annotations:
+        patterns:
+          - "com.google.auto.value:*"
+          - "com.google.auto.service:*"
+          - "com.google.errorprone:*"
+      test-dependencies:
+        patterns:
+          - "junit:*"
+          - "com.google.truth:*"
+          - "com.google.guava:guava-testlib"
+      maven-plugins:
+        patterns:
+          - "org.apache.maven.plugins:*"
+          - "org.apache.felix:maven-bundle-plugin"
+          - "org.codehaus.mojo:*"
+          - "org.graalvm.buildtools:*"
+          - "org.sonatype.central:*"
+          - "com.google.code.maven-replacer-plugin:*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "sunday"
+      time: "07:00"
