@@ -20,11 +20,11 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          token: ${{ secrets.UPDATE_FROM_TEMPLATE_PAT }}
+          token: ${{ secrets.UPSTREAM_SYNC_PAT }}
 
       - name: Check and sync upstream release
         env:
-          GH_TOKEN: ${{ secrets.UPDATE_FROM_TEMPLATE_PAT }}
+          GH_TOKEN: ${{ secrets.UPSTREAM_SYNC_PAT }}
         run: |
           LATEST=$(gh api repos/google/google-java-format/releases/latest --jq '.tag_name')
 
@@ -52,7 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          token: ${{ secrets.UPDATE_FROM_TEMPLATE_PAT }}
+          token: ${{ secrets.UPSTREAM_SYNC_PAT }}
 
       - name: Create tag
         run: |
