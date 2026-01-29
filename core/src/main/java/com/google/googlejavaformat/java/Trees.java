@@ -14,10 +14,9 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.googlejavaformat.java.Trees.getEndPosition;
-import static com.google.googlejavaformat.java.Trees.getStartPosition;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -41,6 +40,10 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 import java.io.IOError;
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
 import java.net.URI;
 import java.util.List;
 import javax.lang.model.element.Name;
@@ -49,6 +52,7 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardLocation;
+import org.jspecify.annotations.Nullable;
 
 /** Utilities for working with {@link Tree}s. */
 class Trees {
@@ -69,7 +73,12 @@ class Trees {
 
   /** Returns the source end position of the node. */
   public static int getEndPosition(Tree tree, CompilationUnitTree unit) {
-    return ((JCTree) tree).getEndPosition(((JCCompilationUnit) unit).endPositions);
+    try {
+      return (int) GET_END_POS_HANDLE.invokeExact((JCTree) tree, (JCCompilationUnit) unit);
+    } catch (Throwable e) {
+      Throwables.throwIfUnchecked(e);
+      throw new AssertionError(e);
+    }
   }
 
   /** Returns the source text for the node. */
@@ -167,12 +176,20 @@ class Trees {
         };
     Log.instance(context).useSource(source);
     ParserFactory parserFactory = ParserFactory.instance(context);
-    JavacParser parser =
-        parserFactory.newParser(
-            javaInput,
-            /* keepDocComments= */ true,
-            /* keepEndPos= */ true,
-            /* keepLineMap= */ true);
+    JavacParser parser;
+    try {
+      parser =
+          (JavacParser)
+              NEW_PARSER_HANDLE.invokeExact(
+                  parserFactory,
+                  (CharSequence) javaInput,
+                  /* keepDocComments */ true,
+                  /* keepEndPos */ true,
+                  /* keepLineMap */ true);
+    } catch (Throwable e) {
+      Throwables.throwIfUnchecked(e);
+      throw new AssertionError(e);
+    }
     JCCompilationUnit unit = parser.parseCompilationUnit();
     unit.sourcefile = source;
     return unit;
@@ -185,5 +202,80 @@ class Trees {
     // accept constructor-like method declarations that don't match the name of their
     // enclosing class
     return !input.getCode().equals("compiler.err.invalid.meth.decl.ret.type.req");
+  }
+
+  private static final @Nullable Class<?> END_POS_TABLE_CLASS = getEndPosTableClass();
+
+  private static @Nullable Class<?> getEndPosTableClass() {
+    try {
+      return Class.forName("com.sun.tools.javac.tree.EndPosTable");
+    } catch (ClassNotFoundException e) {
+      // JDK versions after https://bugs.openjdk.org/browse/JDK-8372948
+      return null;
+    }
+  }
+
+  private static final MethodHandle NEW_PARSER_HANDLE = getNewParserHandle();
+
+  private static MethodHandle getNewParserHandle() {
+    MethodHandles.Lookup lookup = MethodHandles.lookup();
+    if (END_POS_TABLE_CLASS == null) {
+      try {
+        // (parserFactory, input, keepDocComments, keepEndPos, keepLineMap) ->
+        //     parserFactory.newParser(input, keepDocComments, keepLineMap)
+        return MethodHandles.dropArguments(
+            lookup.findVirtual(
+                ParserFactory.class,
+                "newParser",
+                MethodType.methodType(
+                    JavacParser.class, CharSequence.class, boolean.class, boolean.class)),
+            2,
+            boolean.class);
+      } catch (ReflectiveOperationException e) {
+        throw new LinkageError(e.getMessage(), e);
+      }
+    }
+    try {
+      // (parserFactory, input, keepDocComments, keepEndPos, keepLineMap) ->
+      //     parserFactory.newParser(input, keepDocComments, keepEndPos, keepLineMap)
+      return lookup.findVirtual(
+          ParserFactory.class,
+          "newParser",
+          MethodType.methodType(
+              JavacParser.class, CharSequence.class, boolean.class, boolean.class, boolean.class));
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
+  }
+
+  private static final MethodHandle GET_END_POS_HANDLE = getEndPosMethodHandle();
+
+  private static MethodHandle getEndPosMethodHandle() {
+    MethodHandles.Lookup lookup = MethodHandles.lookup();
+    if (END_POS_TABLE_CLASS == null) {
+      try {
+        // (tree, unit) -> tree.getEndPosition()
+        return MethodHandles.dropArguments(
+            lookup.findVirtual(JCTree.class, "getEndPosition", MethodType.methodType(int.class)),
+            1,
+            JCCompilationUnit.class);
+      } catch (ReflectiveOperationException e1) {
+        throw new LinkageError(e1.getMessage(), e1);
+      }
+    }
+    try {
+      // (tree, unit) -> tree.getEndPosition(unit.endPositions)
+      return MethodHandles.filterArguments(
+          lookup.findVirtual(
+              JCTree.class,
+              "getEndPosition",
+              MethodType.methodType(int.class, END_POS_TABLE_CLASS)),
+          1,
+          lookup
+              .findVarHandle(JCCompilationUnit.class, "endPositions", END_POS_TABLE_CLASS)
+              .toMethodHandle(VarHandle.AccessMode.GET));
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
   }
 }
