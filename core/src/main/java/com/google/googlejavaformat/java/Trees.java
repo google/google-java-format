@@ -229,7 +229,7 @@ class Trees {
                 "newParser",
                 MethodType.methodType(
                     JavacParser.class, CharSequence.class, boolean.class, boolean.class)),
-            2,
+            3,
             boolean.class);
       } catch (ReflectiveOperationException e) {
         throw new LinkageError(e.getMessage(), e);
