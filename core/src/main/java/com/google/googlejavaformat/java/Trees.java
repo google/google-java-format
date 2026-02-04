@@ -179,13 +179,12 @@ class Trees {
     JavacParser parser;
     try {
       parser =
-          (JavacParser)
-              NEW_PARSER_HANDLE.invokeExact(
-                  parserFactory,
-                  (CharSequence) javaInput,
-                  /* keepDocComments */ true,
-                  /* keepEndPos */ true,
-                  /* keepLineMap */ true);
+          newParser(
+              parserFactory,
+              javaInput,
+              /* keepDocComments= */ true,
+              /* keepEndPos= */ true,
+              /* keepLineMap= */ true);
     } catch (Throwable e) {
       Throwables.throwIfUnchecked(e);
       throw new AssertionError(e);
@@ -193,6 +192,19 @@ class Trees {
     JCCompilationUnit unit = parser.parseCompilationUnit();
     unit.sourcefile = source;
     return unit;
+  }
+
+  private static JavacParser newParser(
+      ParserFactory parserFactory,
+      CharSequence source,
+      boolean keepDocComments,
+      boolean keepEndPos,
+      boolean keepLineMap) {
+    if (END_POS_TABLE_CLASS != null) {
+      return parserFactory.newParser(source, keepDocComments, keepEndPos, keepLineMap);
+    }
+    return parserFactory.newParser(
+        source, keepDocComments, keepLineMap, /* parseModuleInfo */ false);
   }
 
   private static boolean errorDiagnostic(Diagnostic<?> input) {
@@ -212,39 +224,6 @@ class Trees {
     } catch (ClassNotFoundException e) {
       // JDK versions after https://bugs.openjdk.org/browse/JDK-8372948
       return null;
-    }
-  }
-
-  private static final MethodHandle NEW_PARSER_HANDLE = getNewParserHandle();
-
-  private static MethodHandle getNewParserHandle() {
-    MethodHandles.Lookup lookup = MethodHandles.lookup();
-    if (END_POS_TABLE_CLASS == null) {
-      try {
-        // (parserFactory, input, keepDocComments, keepEndPos, keepLineMap) ->
-        //     parserFactory.newParser(input, keepDocComments, keepLineMap)
-        return MethodHandles.dropArguments(
-            lookup.findVirtual(
-                ParserFactory.class,
-                "newParser",
-                MethodType.methodType(
-                    JavacParser.class, CharSequence.class, boolean.class, boolean.class)),
-            3,
-            boolean.class);
-      } catch (ReflectiveOperationException e) {
-        throw new LinkageError(e.getMessage(), e);
-      }
-    }
-    try {
-      // (parserFactory, input, keepDocComments, keepEndPos, keepLineMap) ->
-      //     parserFactory.newParser(input, keepDocComments, keepEndPos, keepLineMap)
-      return lookup.findVirtual(
-          ParserFactory.class,
-          "newParser",
-          MethodType.methodType(
-              JavacParser.class, CharSequence.class, boolean.class, boolean.class, boolean.class));
-    } catch (ReflectiveOperationException e) {
-      throw new LinkageError(e.getMessage(), e);
     }
   }
 
