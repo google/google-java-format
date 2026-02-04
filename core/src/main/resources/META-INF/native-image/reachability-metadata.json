@@ -1,0 +1,106 @@
+{
+  "reflection": [
+    {
+      "type": "com.google.googlejavaformat.java.JavacTokens$CommentSavingTokenizer"
+    },
+    {
+      "type": "com.sun.source.tree.CaseTree"
+    },
+    {
+      "type": "com.sun.source.tree.ImportTree",
+      "methods": [
+        {
+          "name": "isModule",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.tools.javac.parser.JavaTokenizer"
+    },
+    {
+      "type": "com.sun.tools.javac.parser.ParserFactory",
+      "methods": [
+        {
+          "name": "newParser",
+          "parameterTypes": [
+            "java.lang.CharSequence",
+            "boolean",
+            "boolean",
+            "boolean"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.sun.tools.javac.parser.UnicodeReader",
+      "methods": [
+        {
+          "name": "getRawCharacters",
+          "parameterTypes": [
+            "int",
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.sun.tools.javac.tree.EndPosTable"
+    },
+    {
+      "type": "com.sun.tools.javac.tree.JCTree",
+      "methods": [
+        {
+          "name": "getEndPosition",
+          "parameterTypes": [
+            "com.sun.tools.javac.tree.EndPosTable"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.sun.tools.javac.tree.JCTree$JCCompilationUnit",
+      "fields": [
+        {
+          "name": "endPositions"
+        }
+      ]
+    },
+    {
+      "type": "com.sun.tools.javac.tree.JCTree$JCImport",
+      "methods": [
+        {
+          "name": "getQualifiedIdentifier",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.tools.javac.util.Log$DeferredDiagnosticHandler",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "com.sun.tools.javac.util.Log"
+          ]
+        },
+        {
+          "name": "getDiagnostics",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Boolean",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "getBoolean",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    }
+  ]
+}
