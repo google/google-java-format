@@ -301,7 +301,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         ImmutableList.of(
             "org.jspecify.annotations.NonNull",
             "org.jspecify.annotations.Nullable",
-            "org.jspecify.annotations.Nullable",
             "org.checkerframework.checker.nullness.qual.NonNull",
             "org.checkerframework.checker.nullness.qual.Nullable")) {
       String simpleName = annotation.substring(annotation.lastIndexOf('.') + 1);
