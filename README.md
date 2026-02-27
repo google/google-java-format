@@ -135,6 +135,7 @@ Once you've done that, restart the IDE.
 *   [Github Actions](https://github.com/features/actions)
     *   [googlejavaformat-action](https://github.com/axel-op/googlejavaformat-action):
         Automatically format your Java files when you push on github
+*   [Trunk Check](https://trunk.io/products/check), a universal linter & formatter (has a [CLI](https://docs.trunk.io/docs/initialize-trunk-in-a-git-repo), [VSCode extension](https://marketplace.visualstudio.com/items?itemName=Trunk.io), and [GitHub Action](https://github.com/trunk-io/trunk-action))
 
 ### as a library
 
