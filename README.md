@@ -36,7 +36,7 @@ Using `@<filename>` reads options and filenames from a file, instead of
 arguments.
 
 To reformat changed lines in a specific patch, use
-[`google-java-format-diff.py`](https://github.com/google/google-java-format/blob/master/scripts/google-java-format-diff.py).
+[`google_java_format_diff.py`](https://github.com/google/google-java-format/blob/master/scripts/google_java_format_diff.py).
 
 ***Note:*** *There is no configurability as to the formatter's algorithm for
 formatting. This is a deliberate design decision to unify our code formatting on

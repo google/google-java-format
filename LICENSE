@@ -1,5 +1,5 @@
 The following Apache 2.0 license applies to all code in this package except
-google-java-format-diff.py.
+google_java_format_diff.py.
 
                                  Apache License
                            Version 2.0, January 2004
@@ -205,7 +205,7 @@ google-java-format-diff.py.
 
 ------------------------------------------------------------------------------
 
-The following NCSA license applies only to google-java-format-diff.py.
+The following NCSA license applies only to google_java_format_diff.py.
 
 ==============================================================================
 LLVM Release License
