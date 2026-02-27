@@ -3686,15 +3686,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           builder.open(ZERO);
           {
             visitAnnotations(annotations, BreakOrNot.NO, BreakOrNot.YES);
-            if (typeWithDims.isPresent() && typeWithDims.get().node != null) {
+            if (isVar) {
+              token("var");
+            } else if (typeWithDims.isPresent() && typeWithDims.get().node != null) {
               scan(typeWithDims.get().node, null);
               int totalDims = dims.size();
               builder.open(plusFour);
               maybeAddDims(dims);
               builder.close();
               baseDims = totalDims - dims.size();
-            } else if (isVar) {
-              token("var");
             } else {
               scan(type, null);
             }
