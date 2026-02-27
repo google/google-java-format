@@ -14,7 +14,9 @@
 
 package com.google.googlejavaformat.java;
 
-import com.google.auto.value.AutoValue;
+import static java.util.Objects.requireNonNull;
+
+import com.google.auto.value.AutoBuilder;
 import com.google.errorprone.annotations.Immutable;
 
 /**
@@ -26,10 +28,14 @@ import com.google.errorprone.annotations.Immutable;
  * <p>The goal of google-java-format is to provide consistent formatting, and to free developers
  * from arguments over style choices. It is an explicit non-goal to support developers' individual
  * preferences, and in fact it would work directly against our primary goals.
+ *
+ * @param style Returns the code style.
  */
 @Immutable
-@AutoValue
-public abstract class JavaFormatterOptions {
+public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifiers, Style style) {
+  public JavaFormatterOptions {
+    requireNonNull(style, "style");
+  }
 
   public enum Style {
     /** The default Google Java Style configuration. */
@@ -54,13 +60,6 @@ public abstract class JavaFormatterOptions {
     return style().indentationMultiplier();
   }
 
-  public abstract boolean formatJavadoc();
-
-  public abstract boolean reorderModifiers();
-
-  /** Returns the code style. */
-  public abstract Style style();
-
   /** Returns the default formatting options. */
   public static JavaFormatterOptions defaultOptions() {
     return builder().build();
@@ -68,14 +67,14 @@ public abstract class JavaFormatterOptions {
 
   /** Returns a builder for {@link JavaFormatterOptions}. */
   public static Builder builder() {
-    return new AutoValue_JavaFormatterOptions.Builder()
+    return new AutoBuilder_JavaFormatterOptions_Builder()
         .style(Style.GOOGLE)
         .formatJavadoc(true)
         .reorderModifiers(true);
   }
 
   /** A builder for {@link JavaFormatterOptions}. */
-  @AutoValue.Builder
+  @AutoBuilder
   public abstract static class Builder {
 
     public abstract Builder style(Style style);

@@ -14,7 +14,8 @@
 
 package com.google.googlejavaformat.java;
 
-import com.google.auto.value.AutoValue;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
@@ -28,26 +29,25 @@ import org.jspecify.annotations.Nullable;
  */
 class FormatFileCallable implements Callable<FormatFileCallable.Result> {
 
-  @AutoValue
-  abstract static class Result {
-    abstract @Nullable Path path();
-
-    abstract String input();
-
-    abstract @Nullable String output();
+  record Result(
+      @Nullable Path path,
+      String input,
+      @Nullable String output,
+      @Nullable FormatterException exception) {
+    Result {
+      requireNonNull(input, "input");
+    }
 
     boolean changed() {
       return !input().equals(output());
     }
-
-    abstract @Nullable FormatterException exception();
 
     static Result create(
         @Nullable Path path,
         String input,
         @Nullable String output,
         @Nullable FormatterException exception) {
-      return new AutoValue_FormatFileCallable_Result(path, input, output, exception);
+      return new Result(path, input, output, exception);
     }
   }
 
