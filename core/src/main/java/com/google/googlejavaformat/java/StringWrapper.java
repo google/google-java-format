@@ -275,7 +275,7 @@ public final class StringWrapper {
           // continue below
         } else if (hasEscapedWhitespaceAt(text, idx) != -1) {
           // continue below
-        } else if (hasEscapedNewlineAt(text, idx) != -1) {
+        } else if (hasEscapedNewlineAt(text, idx) != -1 || hasEscapedBackslashAt(text, idx) != -1) {
           int length;
           while ((length = hasEscapedNewlineAt(text, idx)) != -1) {
             idx += length;
@@ -300,6 +300,13 @@ public final class StringWrapper {
       result.add(piece.toString());
     }
     return result.build();
+  }
+
+  static int hasEscapedBackslashAt(String input, int idx) {
+    if (input.startsWith("\\\\", idx)) {
+      return 2;
+    }
+    return -1;
   }
 
   static int hasEscapedWhitespaceAt(String input, int idx) {
