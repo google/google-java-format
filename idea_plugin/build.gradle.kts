@@ -20,10 +20,7 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 plugins {
   id("org.jetbrains.intellij.platform") version "2.10.2"
   // See https://plugins.jetbrains.com/docs/intellij/using-kotlin.html#bundled-stdlib-versions
-  // This version of Kotlin will crash if your Gradle daemon is running under Java 25 (even if that
-  // isn't the JDK you're using to compile). So make sure to update JAVA_HOME and then
-  // `./gradlew --stop`
-  kotlin("jvm") version "2.0.21"
+  kotlin("jvm") version "2.1.10"
 }
 
 repositories {
@@ -33,13 +30,11 @@ repositories {
 }
 
 // https://github.com/google/google-java-format/releases
-val googleJavaFormatVersion = "1.31.0"
+val googleJavaFormatVersion = "1.35.0"
 val pluginPatchVersion = "0"
 
 java {
-  toolchain {
-    languageVersion = JavaLanguageVersion.of(21)
-  }
+  toolchain { languageVersion = JavaLanguageVersion.of(21) }
   sourceCompatibility = JavaVersion.VERSION_21
   targetCompatibility = JavaVersion.VERSION_21
 }
@@ -51,7 +46,7 @@ intellijPlatform {
     name = "google-java-format"
     version = "${googleJavaFormatVersion}.${pluginPatchVersion}"
     ideaVersion {
-      sinceBuild = "242"
+      sinceBuild = "251"
       untilBuild = provider { null }
     }
   }
@@ -84,8 +79,9 @@ tasks { withType<Test>().configureEach { jvmArgs(gjfRequiredJvmArgs) } }
 
 dependencies {
   intellijPlatform {
-    intellijIdeaCommunity("2024.3")
+    intellijIdeaCommunity("2025.1")
     bundledPlugin("com.intellij.java")
+    testFramework(TestFrameworkType.Platform)
     testFramework(TestFrameworkType.Plugin.Java)
   }
   implementation("com.google.googlejavaformat:google-java-format:${googleJavaFormatVersion}")
@@ -93,5 +89,5 @@ dependencies {
   testImplementation("junit:junit:4.13.2")
   // https://mvnrepository.com/artifact/com.google.truth/truth
   testImplementation("com.google.truth:truth:1.4.5")
-  implementation(kotlin("stdlib-jdk8"))
+  implementation(kotlin("stdlib"))
 }

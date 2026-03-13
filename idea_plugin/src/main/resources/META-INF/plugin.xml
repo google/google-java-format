@@ -35,6 +35,9 @@
   ]]></description>
   <change-notes><![CDATA[
     <dl>
+      <dt>1.35.0.0</dt>
+      <dd>Updated to use google-java-format 1.35.0.</dd>
+      <dd>Minimum supported IntelliJ version is now 2025.1.</dd>
       <dt>1.31.0.0</dt>
       <dd>Updated to use google-java-format 1.31.0.</dd>
       <dt>1.30.0.1</dt>
