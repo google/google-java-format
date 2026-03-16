@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat.java.javadoc;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.regex.Matcher;
@@ -50,10 +49,9 @@ final class CharStream {
    */
   boolean tryConsumeRegex(Pattern pattern) {
     Matcher matcher = pattern.matcher(input).region(start, input.length());
-    if (!matcher.find()) {
+    if (!matcher.lookingAt()) {
       return false;
     }
-    checkArgument(matcher.start() == start);
     tokenEnd = matcher.end();
     return true;
   }

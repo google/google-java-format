@@ -393,7 +393,7 @@ final class JavadocLexer {
     ImmutableList.Builder<Token> output = ImmutableList.builder();
 
     for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
-      if (tokens.peek().getType() == LITERAL && tokens.peek().getValue().matches("^href=[^>]*>")) {
+      if (tokens.peek().getType() == LITERAL && tokens.peek().getValue().matches("href=[^>]*>")) {
         output.add(tokens.next());
 
         if (tokens.peek().getType() == WHITESPACE) {
@@ -519,18 +519,18 @@ final class JavadocLexer {
    * We'd remove the trailing whitespace later on (in JavaCommentsHelper.rewrite), but I feel safer
    * stripping it now: It otherwise might confuse our line-length count, which we use for wrapping.
    */
-  private static final Pattern NEWLINE_PATTERN = compile("^[ \t]*\n[ \t]*[*]?[ \t]?");
+  private static final Pattern NEWLINE_PATTERN = compile("[ \t]*\n[ \t]*[*]?[ \t]?");
 
   // We ensure elsewhere that we match this only at the beginning of a line.
   // Only match tags that start with a lowercase letter, to avoid false matches on unescaped
   // annotations inside code blocks.
   // Match "@param <T>" specially in case the <T> is a <P> or other HTML tag we treat specially.
-  private static final Pattern FOOTER_TAG_PATTERN = compile("^@(param\\s+<\\w+>|[a-z]\\w*)");
+  private static final Pattern FOOTER_TAG_PATTERN = compile("@(param\\s+<\\w+>|[a-z]\\w*)");
   private static final Pattern MOE_BEGIN_STRIP_COMMENT_PATTERN =
-      compile("^<!--\\s*M" + "OE:begin_intracomment_strip\\s*-->");
+      compile("<!--\\s*M" + "OE:begin_intracomment_strip\\s*-->");
   private static final Pattern MOE_END_STRIP_COMMENT_PATTERN =
-      compile("^<!--\\s*M" + "OE:end_intracomment_strip\\s*-->");
-  private static final Pattern HTML_COMMENT_PATTERN = fullCommentPattern();
+      compile("<!--\\s*M" + "OE:end_intracomment_strip\\s*-->");
+  private static final Pattern HTML_COMMENT_PATTERN = compile("<!--.*?-->", DOTALL);
   private static final Pattern PRE_OPEN_PATTERN = openTagPattern("pre");
   private static final Pattern PRE_CLOSE_PATTERN = closeTagPattern("pre");
   private static final Pattern CODE_OPEN_PATTERN = openTagPattern("code");
@@ -548,8 +548,8 @@ final class JavadocLexer {
   private static final Pattern BLOCKQUOTE_OPEN_PATTERN = openTagPattern("blockquote");
   private static final Pattern BLOCKQUOTE_CLOSE_PATTERN = closeTagPattern("blockquote");
   private static final Pattern BR_PATTERN = openTagPattern("br");
-  private static final Pattern SNIPPET_TAG_OPEN_PATTERN = compile("^[{]@snippet\\b");
-  private static final Pattern INLINE_TAG_OPEN_PATTERN = compile("^[{]@\\w*");
+  private static final Pattern SNIPPET_TAG_OPEN_PATTERN = compile("[{]@snippet\\b");
+  private static final Pattern INLINE_TAG_OPEN_PATTERN = compile("[{]@\\w*");
   /*
    * We exclude < so that we don't swallow following HTML tags. This lets us fix up "foo<p>" (~400
    * hits in Google-internal code). We will join unnecessarily split "words" (like "foo<b>bar</b>")
@@ -560,18 +560,14 @@ final class JavadocLexer {
    * with matching only one character here. That would eliminate the need for the regex entirely.
    * That might be faster or slower than what we do now.
    */
-  private static final Pattern LITERAL_PATTERN = compile("^.[^ \t\n@<{}*]*", DOTALL);
-
-  private static Pattern fullCommentPattern() {
-    return compile("^<!--.*?-->", DOTALL);
-  }
+  private static final Pattern LITERAL_PATTERN = compile(".[^ \t\n@<{}*]*", DOTALL);
 
   private static Pattern openTagPattern(String namePattern) {
-    return compile(format("^<(?:%s)\\b[^>]*>", namePattern), CASE_INSENSITIVE);
+    return compile(format("<(?:%s)\\b[^>]*>", namePattern), CASE_INSENSITIVE);
   }
 
   private static Pattern closeTagPattern(String namePattern) {
-    return compile(format("^</(?:%s)\\b[^>]*>", namePattern), CASE_INSENSITIVE);
+    return compile(format("</(?:%s)\\b[^>]*>", namePattern), CASE_INSENSITIVE);
   }
 
   static class LexException extends Exception {}
