@@ -27,42 +27,45 @@ import java.util.regex.Pattern;
  * characters from tryConsume? -- but it is convenient for the lexer.
  */
 final class CharStream {
-  String remaining;
-  int toConsume;
+  private final String input;
+  private int start;
+  private int tokenEnd = -1; // Negative value means no token, and will cause an exception if used.
 
   CharStream(String input) {
-    this.remaining = checkNotNull(input);
+    this.input = checkNotNull(input);
   }
 
   boolean tryConsume(String expected) {
-    if (!remaining.startsWith(expected)) {
+    if (!input.startsWith(expected, start)) {
       return false;
     }
-    toConsume = expected.length();
+    tokenEnd = start + expected.length();
     return true;
   }
 
-  /*
+  /**
+   * Tries to consume characters from the current position that match the given pattern.
+   *
    * @param pattern the pattern to search for, which must be anchored to match only at position 0
    */
   boolean tryConsumeRegex(Pattern pattern) {
-    Matcher matcher = pattern.matcher(remaining);
+    Matcher matcher = pattern.matcher(input).region(start, input.length());
     if (!matcher.find()) {
       return false;
     }
-    checkArgument(matcher.start() == 0);
-    toConsume = matcher.end();
+    checkArgument(matcher.start() == start);
+    tokenEnd = matcher.end();
     return true;
   }
 
   String readAndResetRecorded() {
-    String result = remaining.substring(0, toConsume);
-    remaining = remaining.substring(toConsume);
-    toConsume = 0; // TODO(cpovirk): Set this to a bogus value here and in the constructor.
+    String result = input.substring(start, tokenEnd);
+    start = tokenEnd;
+    tokenEnd = -1;
     return result;
   }
 
   boolean isExhausted() {
-    return remaining.isEmpty();
+    return start == input.length();
   }
 }
