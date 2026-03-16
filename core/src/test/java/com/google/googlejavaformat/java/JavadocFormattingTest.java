@@ -1488,4 +1488,46 @@ public final class JavadocFormattingTest {
     };
     doFormatTest(input, expected);
   }
+
+  @Test
+  public void simpleMarkdown() {
+    String[] input = {
+      "package com.example;",
+      "",
+      "/// # Heading",
+      "///",
+      "/// A very long line of text, long enough that it will need to be wrapped to fit within the"
+          + " maximum line length.",
+      "class Test {",
+      "  /// Another very long line of text, also long enough that it will need to be wrapped to"
+          + " fit within the maximum line length.",
+      "  /// @param <T> a generic type",
+      "  <T> T method() {",
+      "    return null;",
+      "  }",
+      "}",
+    };
+    // TODO(emcmanus): Fix the formatter so it doesn't produce this nonsense:
+    // - wrapped lines should start with /// not //
+    // - blank line before @param
+    String[] expected = {
+      "package com.example;",
+      "",
+      "/// # Heading",
+      "///",
+      "/// A very long line of text, long enough that it will need to be wrapped to fit within the"
+          + " maximum",
+      "// line length.",
+      "class Test {",
+      "  /// Another very long line of text, also long enough that it will need to be wrapped to"
+          + " fit within",
+      "  // the maximum line length.",
+      "  /// @param <T> a generic type",
+      "  <T> T method() {",
+      "    return null;",
+      "  }",
+      "}",
+    };
+    doFormatTest(input, expected);
+  }
 }
