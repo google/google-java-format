@@ -108,6 +108,9 @@ public final class JavaCommentsHelper implements CommentsHelper {
     return builder.toString();
   }
 
+  /** Probably a markdown comment, so don't try to wrap it. */
+  private static final Pattern MARKDOWN_JAVADOC_PREFIX = Pattern.compile("^///(\\s|$)");
+
   // Preserve special `//noinspection` and `//$NON-NLS-x$` comments used by IDEs, which cannot
   // contain leading spaces.
   private static final Pattern LINE_COMMENT_MISSING_SPACE_PREFIX =
@@ -116,6 +119,13 @@ public final class JavaCommentsHelper implements CommentsHelper {
   private List<String> wrapLineComments(List<String> lines, int column0) {
     List<String> result = new ArrayList<>();
     for (String line : lines) {
+      if (MARKDOWN_JAVADOC_PREFIX.matcher(line).find()) {
+        // Don't try to wrap comments that might be markdown javadoc.
+        // This is fairly approximate: a /// comment is only javadoc if it precedes a javadocable
+        // program element. But even if this isn't javadoc, it's not a disaster if we don't wrap it.
+        result.add(line);
+        continue;
+      }
       // Add missing leading spaces to line comments: `//foo` -> `// foo`.
       Matcher matcher = LINE_COMMENT_MISSING_SPACE_PREFIX.matcher(line);
       if (matcher.find()) {
