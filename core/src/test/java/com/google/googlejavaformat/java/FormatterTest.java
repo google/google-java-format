@@ -49,17 +49,16 @@ public final class FormatterTest {
         "class A{void b(){while(true){weCanBeCertainThatThisWillEndUpGettingWrapped("
             + "because, it, is, just, so, very, very, very, very, looong);}}}";
     String expectedOutput =
-        Joiner.on("\n")
-            .join(
-                "class A {",
-                "    void b() {",
-                "        while (true) {",
-                "            weCanBeCertainThatThisWillEndUpGettingWrapped(",
-                "                    because, it, is, just, so, very, very, very, very, looong);",
-                "        }",
-                "    }",
-                "}",
-                "");
+        """
+        class A {
+            void b() {
+                while (true) {
+                    weCanBeCertainThatThisWillEndUpGettingWrapped(
+                            because, it, is, just, so, very, very, very, very, looong);
+                }
+            }
+        }
+        """;
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("A.java");
@@ -82,7 +81,7 @@ public final class FormatterTest {
 
     // should succeed because non-Java files are skipped
     assertThat(main.format("foo.go")).isEqualTo(0);
-    assertThat(err.toString()).contains("Skipping non-Java file: " + "foo.go");
+    assertThat(err.toString()).contains("Skipping non-Java file: foo.go");
 
     // format still fails on missing files
     assertThat(main.format("Foo.java")).isEqualTo(1);
@@ -91,8 +90,8 @@ public final class FormatterTest {
 
   @Test
   public void testFormatStdinStdoutWithDashFlag() throws Exception {
-    String input = "class Foo{\n" + "void f\n" + "() {\n" + "}\n" + "}\n";
-    String expectedOutput = "class Foo {\n" + "  void f() {}\n" + "}\n";
+    String input = "class Foo{\nvoid f\n() {\n}\n}\n";
+    String expectedOutput = "class Foo {\n  void f() {}\n}\n";
 
     InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
     StringWriter out = new StringWriter();
@@ -110,8 +109,8 @@ public final class FormatterTest {
 
   @Test
   public void testFormatLengthUpToEOF() throws Exception {
-    String input = "class Foo{\n" + "void f\n" + "() {\n" + "}\n" + "}\n\n\n\n\n\n";
-    String expectedOutput = "class Foo {\n" + "  void f() {}\n" + "}\n";
+    String input = "class Foo{\nvoid f\n() {\n}\n}\n\n\n\n\n\n";
+    String expectedOutput = "class Foo {\n  void f() {}\n}\n";
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("Foo.java");
