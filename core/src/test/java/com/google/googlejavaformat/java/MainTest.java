@@ -20,7 +20,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import java.io.BufferedWriter;
@@ -48,9 +47,6 @@ import org.junit.runners.JUnit4;
 public class MainTest {
 
   @Rule public TemporaryFolder testFolder = new TemporaryFolder();
-
-  // PrintWriter instances used below are hard-coded to use system-default line separator.
-  private final Joiner joiner = Joiner.on(System.lineSeparator());
 
   private static final ImmutableList<String> ADD_EXPORTS =
       ImmutableList.of(
@@ -137,39 +133,38 @@ public class MainTest {
   // end to end javadoc formatting test
   @Test
   public void javadoc() throws Exception {
-    String[] input = {
-      "/**",
-      " * graph",
-      " *",
-      " * graph",
-      " *",
-      " * @param foo lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do"
-          + " eiusmod tempor incididunt ut labore et dolore magna aliqua",
-      " */",
-      "class Test {",
-      "  /**",
-      "   * creates entropy",
-      "   */",
-      "  public static void main(String... args) {}",
-      "}",
-    };
-    String[] expected = {
-      "/**",
-      " * graph",
-      " *",
-      " * <p>graph",
-      " *",
-      " * @param foo lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do"
-          + " eiusmod tempor",
-      " *     incididunt ut labore et dolore magna aliqua",
-      " */",
-      "class Test {",
-      "  /** creates entropy */",
-      "  public static void main(String... args) {}",
-      "}",
-      "",
-    };
-    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    String input =
+"""
+/**
+ * graph
+ *
+ * graph
+ *
+ * @param foo lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+ */
+class Test {
+  /**
+   * creates entropy
+   */
+  public static void main(String... args) {}
+}\
+""";
+    String expected =
+"""
+/**
+ * graph
+ *
+ * <p>graph
+ *
+ * @param foo lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+ *     incididunt ut labore et dolore magna aliqua
+ */
+class Test {
+  /** creates entropy */
+  public static void main(String... args) {}
+}
+""";
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
     StringWriter out = new StringWriter();
     Main main =
         new Main(
@@ -177,35 +172,37 @@ public class MainTest {
             new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             in);
     assertThat(main.format("-")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(joiner.join(expected));
+    assertThat(out.toString()).isEqualTo(expected);
   }
 
   // end to end import fixing test
   @Test
   public void imports() throws Exception {
-    String[] input = {
-      "import java.util.LinkedList;",
-      "import java.util.List;",
-      "import java.util.ArrayList;",
-      "class Test {",
-      "  /**",
-      "   * May be an {@link ArrayList}.",
-      "   */",
-      "  public static List<String> names;",
-      "}",
-    };
-    String[] expected = {
-      "import java.util.ArrayList;",
-      "import java.util.List;",
-      "",
-      "class Test {",
-      "  /**",
-      "   * May be an {@link ArrayList}.",
-      "   */",
-      "  public static List<String> names;",
-      "}",
-    };
-    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    String input =
+        """
+        import java.util.LinkedList;
+        import java.util.List;
+        import java.util.ArrayList;
+        class Test {
+          /**
+           * May be an {@link ArrayList}.
+           */
+          public static List<String> names;
+        }\
+        """;
+    String expected =
+        """
+        import java.util.ArrayList;
+        import java.util.List;
+
+        class Test {
+          /**
+           * May be an {@link ArrayList}.
+           */
+          public static List<String> names;
+        }\
+        """;
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
     StringWriter out = new StringWriter();
     Main main =
         new Main(
@@ -213,40 +210,42 @@ public class MainTest {
             new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             in);
     assertThat(main.format("-", "--fix-imports-only")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(joiner.join(expected));
+    assertThat(out.toString()).isEqualTo(expected);
   }
 
   @Test
   public void optimizeImportsDoesNotLeaveEmptyLines() throws Exception {
-    String[] input = {
-      "package abc;",
-      "",
-      "import java.util.LinkedList;",
-      "import java.util.List;",
-      "import java.util.ArrayList;",
-      "",
-      "import static java.nio.charset.StandardCharsets.UTF_8;",
-      "",
-      "import java.util.EnumSet;",
-      "",
-      "class Test ",
-      "extends ArrayList {",
-      "}"
-    };
-    String[] expected = {
-      "package abc;", //
-      "",
-      "import java.util.ArrayList;",
-      "",
-      "class Test extends ArrayList {}",
-      ""
-    };
+    @SuppressWarnings("MisleadingEscapedSpace") // TODO(b/496180372): remove
+    String input =
+        """
+        package abc;
+
+        import java.util.LinkedList;
+        import java.util.List;
+        import java.util.ArrayList;
+
+        import static java.nio.charset.StandardCharsets.UTF_8;
+
+        import java.util.EnumSet;
+
+        class Test\s
+        extends ArrayList {
+        }\
+        """;
+    String expected =
+        """
+        package abc;
+
+        import java.util.ArrayList;
+
+        class Test extends ArrayList {}
+        """;
 
     // pre-check expectation with local formatter instance
-    String optimized = new Formatter().formatSourceAndFixImports(joiner.join(input));
-    assertThat(optimized).isEqualTo(joiner.join(expected));
+    String optimized = new Formatter().formatSourceAndFixImports(input);
+    assertThat(optimized).isEqualTo(expected);
 
-    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
     StringWriter out = new StringWriter();
     Main main =
         new Main(
@@ -254,36 +253,39 @@ public class MainTest {
             new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             in);
     assertThat(main.format("-")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(joiner.join(expected));
+    assertThat(out.toString()).isEqualTo(expected);
   }
 
   // test that -lines handling works with import removal
   @Test
   public void importRemovalLines() throws Exception {
-    String[] input = {
-      "import java.util.ArrayList;",
-      "import java.util.List;",
-      "class Test {",
-      "ArrayList<String> a = new ArrayList<>();",
-      "ArrayList<String> b = new ArrayList<>();",
-      "}",
-    };
-    String[] expected = {
-      "import java.util.ArrayList;",
-      "",
-      "class Test {",
-      "  ArrayList<String> a = new ArrayList<>();",
-      "ArrayList<String> b = new ArrayList<>();",
-      "}",
-    };
+    String input =
+        """
+        import java.util.ArrayList;
+        import java.util.List;
+        class Test {
+        ArrayList<String> a = new ArrayList<>();
+        ArrayList<String> b = new ArrayList<>();
+        }\
+        """;
+    String expected =
+        """
+        import java.util.ArrayList;
+
+        class Test {
+          ArrayList<String> a = new ArrayList<>();
+        ArrayList<String> b = new ArrayList<>();
+        }\
+        """;
     StringWriter out = new StringWriter();
     Main main =
         new Main(
             new PrintWriter(out, true),
             new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
-            new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
+            new ByteArrayInputStream(input.getBytes(UTF_8)));
     assertThat(main.format("-", "-lines", "4")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(joiner.join(expected));
+    assertThat(out.toString()).isEqualTo(expected);
+    // Line 4 gets rewritten because of `-lines 4`, but line 5 does not.
   }
 
   // test that errors are reported on the right line when imports are removed
@@ -293,19 +295,20 @@ public class MainTest {
     try {
       Locale.setDefault(Locale.ROOT);
 
-      String[] input = {
-        "import java.util.ArrayList;", //
-        "import java.util.List;",
-        "class Test {",
-        "}}",
-      };
+      String input =
+          """
+          import java.util.ArrayList;
+          import java.util.List;
+          class Test {
+          }}\
+          """;
       StringWriter out = new StringWriter();
       StringWriter err = new StringWriter();
       Main main =
           new Main(
               new PrintWriter(out, true),
               new PrintWriter(err, true),
-              new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
+              new ByteArrayInputStream(input.getBytes(UTF_8)));
       assertThat(main.format("-")).isEqualTo(1);
       assertThat(err.toString()).contains("<stdin>:4:2: error: class, interface");
 
@@ -316,24 +319,24 @@ public class MainTest {
 
   @Test
   public void packageInfo() throws Exception {
-    String[] input = {
-      "@CheckReturnValue",
-      "@ParametersAreNonnullByDefault",
-      "package com.google.common.labs.base;",
-      "",
-      "import com.google.errorprone.annotations.CheckReturnValue;",
-      "import javax.annotation.ParametersAreNonnullByDefault;",
-      "",
-    };
+    String input =
+        """
+        @CheckReturnValue
+        @ParametersAreNonnullByDefault
+        package com.google.common.labs.base;
+
+        import com.google.errorprone.annotations.CheckReturnValue;
+        import javax.annotation.ParametersAreNonnullByDefault;
+        """;
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
     Main main =
         new Main(
             new PrintWriter(out, true),
             new PrintWriter(err, true),
-            new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
+            new ByteArrayInputStream(input.getBytes(UTF_8)));
     assertThat(main.format("-")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(joiner.join(input));
+    assertThat(out.toString()).isEqualTo(input);
   }
 
   @Test
@@ -497,55 +500,56 @@ public class MainTest {
 
   @Test
   public void assumeFilename_error() throws Exception {
-    String[] input = {
-      "class Test {}}",
-    };
+    String input =
+        """
+        class Test {}}\
+        """;
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
     Main main =
         new Main(
             new PrintWriter(out, true),
             new PrintWriter(err, true),
-            new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
+            new ByteArrayInputStream(input.getBytes(UTF_8)));
     assertThat(main.format("--assume-filename=Foo.java", "-")).isEqualTo(1);
     assertThat(err.toString()).contains("Foo.java:1:14: error: class, interface");
   }
 
   @Test
   public void assumeFilename_dryRun() throws Exception {
-    String[] input = {
-      "class Test {", //
-      "}",
-    };
+    String input =
+        """
+        class Test {
+        }\
+        """;
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
     Main main =
         new Main(
             new PrintWriter(out, true),
             new PrintWriter(err, true),
-            new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8)));
+            new ByteArrayInputStream(input.getBytes(UTF_8)));
     assertThat(main.format("--dry-run", "--assume-filename=Foo.java", "-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo("Foo.java" + System.lineSeparator());
   }
 
   @Test
   public void reflowLongStrings() throws Exception {
-    String[] input = {
-      "class T {", //
-      "  String s = \"one long incredibly unbroken sentence moving from topic to topic so that no"
-          + " one had a chance to interrupt\";",
-      "}"
-    };
-    String[] expected = {
-      "class T {",
-      "  String s =",
-      "      \"one long incredibly unbroken sentence moving from topic to topic so that no one had"
-          + " a chance\"",
-      "          + \" to interrupt\";",
-      "}",
-      "",
-    };
-    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    String input =
+        """
+        class T {
+          String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+        }\
+        """;
+    String expected =
+        """
+        class T {
+          String s =
+              "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance"
+                  + " to interrupt";
+        }
+        """;
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
     StringWriter out = new StringWriter();
     Main main =
         new Main(
@@ -553,26 +557,25 @@ public class MainTest {
             new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             in);
     assertThat(main.format("-")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(joiner.join(expected));
+    assertThat(out.toString()).isEqualTo(expected);
   }
 
   @Test
   public void noReflowLongStrings() throws Exception {
-    String[] input = {
-      "class T {", //
-      "  String s = \"one long incredibly unbroken sentence moving from topic to topic so that no"
-          + " one had a chance to interrupt\";",
-      "}"
-    };
-    String[] expected = {
-      "class T {",
-      "  String s =",
-      "      \"one long incredibly unbroken sentence moving from topic to topic so that no one had"
-          + " a chance to interrupt\";",
-      "}",
-      "",
-    };
-    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    String input =
+"""
+class T {
+  String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+}\
+""";
+    String expected =
+"""
+class T {
+  String s =
+      "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+}
+""";
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
     StringWriter out = new StringWriter();
     Main main =
         new Main(
@@ -580,29 +583,29 @@ public class MainTest {
             new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             in);
     assertThat(main.format("--skip-reflowing-long-strings", "-")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(joiner.join(expected));
+    assertThat(out.toString()).isEqualTo(expected);
   }
 
   @Test
   public void noFormatJavadoc() throws Exception {
-    String[] input = {
-      "/**",
-      " * graph",
-      " *",
-      " * graph",
-      " *",
-      " * @param foo lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do"
-          + " eiusmod tempor incididunt ut labore et dolore magna aliqua",
-      " */",
-      "class Test {",
-      "  /**",
-      "   * creates entropy",
-      "   */",
-      "  public static void main(String... args) {}",
-      "}",
-      "",
-    };
-    InputStream in = new ByteArrayInputStream(joiner.join(input).getBytes(UTF_8));
+    String input =
+        """
+        /**
+         * graph
+         *
+         * graph
+         *
+         * @param foo lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+         *     incididunt ut labore et dolore magna aliqua
+         */
+        class Test {
+          /**
+           * creates entropy
+           */
+          public static void main(String... args) {}
+        }
+        """;
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
     StringWriter out = new StringWriter();
     Main main =
         new Main(
@@ -610,84 +613,83 @@ public class MainTest {
             new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             in);
     assertThat(main.format("--skip-javadoc-formatting", "-")).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(joiner.join(input));
+    assertThat(out.toString()).isEqualTo(input);
   }
 
   @Test
   public void reorderModifiersOptionTest() throws Exception {
-    String[] input = {
-      "class Test {", //
-      "  static public void main(String... args) {}",
-      "}",
-      "",
-    };
-    String[] fixed = {
-      "class Test {", //
-      "  public static void main(String... args) {}",
-      "}",
-      "",
-    };
-    String source = joiner.join(input);
-    assertThat(new Formatter(JavaFormatterOptions.builder().build()).formatSource(source))
-        .isEqualTo(joiner.join(fixed));
+    String input =
+        """
+        class Test {
+          static public void main(String... args) {}
+        }
+        """;
+    String fixed =
+        """
+        class Test {
+          public static void main(String... args) {}
+        }
+        """;
+    assertThat(new Formatter(JavaFormatterOptions.builder().build()).formatSource(input))
+        .isEqualTo(fixed);
     assertThat(
             new Formatter(JavaFormatterOptions.builder().reorderModifiers(false).build())
-                .formatSource(source))
-        .isEqualTo(source);
+                .formatSource(input))
+        .isEqualTo(input);
   }
 
   @Test
   public void syntaxError() throws Exception {
     Path path = testFolder.newFile("Test.java").toPath();
-    String[] input = {
-      "class Test {", //
-      "  void f(int package) {",
-      "    int",
-      "  }",
-      "}",
-      "",
-    };
-    String source = joiner.join(input);
-    Files.writeString(path, source, UTF_8);
+    String input =
+        """
+        class Test {
+          void f(int package) {
+            int
+          }
+        }\
+        """;
+    Files.writeString(path, input, UTF_8);
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
     Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     int errorCode = main.format(path.toAbsolutePath().toString());
     assertWithMessage("Error Code").that(errorCode).isEqualTo(1);
-    String[] expected = {
-      path + ":2:13: error: <identifier> expected",
-      "  void f(int package) {",
-      "            ^",
-      path + ":3:5: error: not a statement",
-      "    int",
-      "    ^",
-      path + ":3:8: error: ';' expected",
-      "    int",
-      "       ^",
-      "",
-    };
-    assertThat(err.toString()).isEqualTo(joiner.join(expected));
+    String expected =
+        """
+        «path»:2:13: error: <identifier> expected
+          void f(int package) {
+                    ^
+        «path»:3:5: error: not a statement
+            int
+            ^
+        «path»:3:8: error: ';' expected
+            int
+               ^
+        """
+            .replace("«path»", path.toString())
+            .replace("\n", System.lineSeparator());
+    assertThat(err.toString()).isEqualTo(expected);
   }
 
   @Test
   public void syntaxErrorBeginning() throws Exception {
     Path path = testFolder.newFile("Test.java").toPath();
-    String[] input = {
-      "error", //
-    };
-    String source = joiner.join(input);
-    Files.writeString(path, source, UTF_8);
+    String input = "error";
+    Files.writeString(path, input, UTF_8);
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();
     Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     int errorCode = main.format(path.toAbsolutePath().toString());
     assertWithMessage("Error Code").that(errorCode).isEqualTo(1);
-    String[] expected = {
-      path + ":1:1: error: reached end of file while parsing", //
-      "error",
-      "^",
-      "",
-    };
-    assertThat(err.toString()).isEqualTo(joiner.join(expected));
+    String expected =
+        """
+        «path»:1:1: error: reached end of file while parsing
+        error
+        ^
+        """
+            .replace("«path»", path.toString())
+            .replace("\n", System.lineSeparator());
+    assertThat(err.toString()).isEqualTo(expected);
   }
 }

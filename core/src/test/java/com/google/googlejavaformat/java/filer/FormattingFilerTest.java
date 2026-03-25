@@ -90,14 +90,13 @@ public class FormattingFilerTest {
 
     assertThat(sourceFile.getCharContent(false).toString())
         .isEqualTo(
-            Joiner.on('\n')
-                .join(
-                    "package foo;",
-                    "",
-                    "class Bar {",
-                    "  private String baz;",
-                    "}",
-                    "")); // trailing newline
+            """
+            package foo;
+
+            class Bar {
+              private String baz;
+            }
+            """);
   }
 
   private static class FakeFiler implements Filer {

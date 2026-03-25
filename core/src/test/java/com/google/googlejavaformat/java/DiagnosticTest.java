@@ -17,7 +17,6 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Joiner;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,19 +54,19 @@ public class DiagnosticTest {
   @Test
   public void parseError() throws Exception {
     String input =
-        Joiner.on('\n')
-            .join(
-                "public class InvalidSyntax {",
-                "  private static NumPrinter {",
-                "    public static void print(int n) {",
-                "      System.out.printf(\"%d%n\", n);",
-                "    }",
-                "  }",
-                "",
-                "  public static void main(String[] args) {",
-                "    NumPrinter.print(args.length);",
-                "  }",
-                "}");
+        """
+        public class InvalidSyntax {
+          private static NumPrinter {
+            public static void print(int n) {
+              System.out.printf("%d%n", n);
+            }
+          }
+
+          public static void main(String[] args) {
+            NumPrinter.print(args.length);
+          }
+        }\
+        """;
 
     StringWriter stdout = new StringWriter();
     StringWriter stderr = new StringWriter();
@@ -150,7 +149,11 @@ public class DiagnosticTest {
 
   @Test
   public void parseError2() throws FormatterException, IOException, UsageException {
-    String input = "class Foo { void f() {\n g() } }";
+    String input =
+        """
+        class Foo { void f() {
+         g() } }
+        """;
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("A.java");
@@ -169,7 +172,11 @@ public class DiagnosticTest {
 
   @Test
   public void parseErrorStdin() throws FormatterException, IOException, UsageException {
-    String input = "class Foo { void f() {\n g() } }";
+    String input =
+        """
+        class Foo { void f() {
+         g() } }
+        """;
 
     InputStream inStream = new ByteArrayInputStream(input.getBytes(UTF_8));
     StringWriter out = new StringWriter();
@@ -184,7 +191,11 @@ public class DiagnosticTest {
 
   @Test
   public void lexError2() throws FormatterException, IOException, UsageException {
-    String input = "class Foo { void f() {\n g('foo'); } }";
+    String input =
+        """
+        class Foo { void f() {
+         g('foo'); } }
+        """;
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("A.java");
@@ -203,7 +214,11 @@ public class DiagnosticTest {
 
   @Test
   public void lexErrorStdin() throws FormatterException, IOException, UsageException {
-    String input = "class Foo { void f() {\n g('foo'); } }";
+    String input =
+        """
+        class Foo { void f() {
+         g('foo'); } }
+        """;
     InputStream inStream = new ByteArrayInputStream(input.getBytes(UTF_8));
     StringWriter out = new StringWriter();
     StringWriter err = new StringWriter();

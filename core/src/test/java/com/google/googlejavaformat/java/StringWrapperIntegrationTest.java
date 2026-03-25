@@ -17,7 +17,6 @@ package com.google.googlejavaformat.java;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.common.base.Joiner;
 import java.util.Arrays;
 import java.util.Collection;
 import org.junit.Test;
@@ -31,404 +30,389 @@ public class StringWrapperIntegrationTest {
 
   @Parameters
   public static Collection<Object[]> parameters() {
-    String[][][] inputsAndOutputs = {
+    String[][] inputsAndOutputs = {
       {
-        {
-          "class T {", //
-          "  String s =",
-          "      \"one long incredibly unbroken sentence\"",
-          "          + \" moving from topic to topic\"",
-          "          + \" so that no-one had a chance to\"",
-          "          + \" interrupt\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"one long incredibly unbroken\"",
-          "          + \" sentence moving from\"",
-          "          + \" topic to topic so that\"",
-          "          + \" no-one had a chance to\"",
-          "          + \" interrupt\";",
-          "}",
+        """
+        class T {
+          String s =
+              "one long incredibly unbroken sentence"
+                  + " moving from topic to topic"
+                  + " so that no-one had a chance to"
+                  + " interrupt";
         }
-      },
-      {
-        {
-          "class T {", //
-          "  String s =",
-          "      \"one long incredibly unbroken\"",
-          "          + \" sentence moving from topic to topic so that\"",
-          "          + \" no-one had a chance to\"",
-          "          + \" interrupt\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"one long incredibly unbroken\"",
-          "          + \" sentence moving from\"",
-          "          + \" topic to topic so that\"",
-          "          + \" no-one had a chance to\"",
-          "          + \" interrupt\";",
-          "}",
+        """,
+        """
+        class T {
+          String s =
+              "one long incredibly unbroken"
+                  + " sentence moving from"
+                  + " topic to topic so that"
+                  + " no-one had a chance to"
+                  + " interrupt";
         }
+        """,
       },
       {
-        {
-          "class T {", //
-          "  String s =",
-          "      \"one long incredibly unbroken\"",
-          "          + \" sentence moving from topic to topic\"",
-          "          + \" so that no-one had a chance to interr\"",
-          "          + \"upt\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"one long incredibly unbroken\"",
-          "          + \" sentence moving from\"",
-          "          + \" topic to topic so that\"",
-          "          + \" no-one had a chance to\"",
-          "          + \" interrupt\";",
-          "}",
+        """
+        class T {
+          String s =
+              "one long incredibly unbroken"
+                  + " sentence moving from topic to topic so that"
+                  + " no-one had a chance to"
+                  + " interrupt";
         }
-      },
-      {
-        {
-          "class T {", //
-          "  String s = \"one long incredibly unbroken sentence moving from topic to topic so that"
-              + " no-one had a chance to interrupt\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"one long incredibly unbroken\"",
-          "          + \" sentence moving from\"",
-          "          + \" topic to topic so that\"",
-          "          + \" no-one had a chance to\"",
-          "          + \" interrupt\";",
-          "}",
-        },
-      },
-      {
-        {
-          "class T {", //
-          "  String s =",
-          "      \"one long incredibly unbroken sentence\"",
-          "          + \" moving from topic to topic\"",
-          "          + 42",
-          "          + \" so that no-one had a chance to interr\"",
-          "          + \"upt\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"one long incredibly unbroken\"",
-          "          + \" sentence moving from\"",
-          "          + \" topic to topic\"",
-          "          + 42",
-          "          + \" so that no-one had a\"",
-          "          + \" chance to interrupt\";",
-          "}",
+        """,
+        """
+        class T {
+          String s =
+              "one long incredibly unbroken"
+                  + " sentence moving from"
+                  + " topic to topic so that"
+                  + " no-one had a chance to"
+                  + " interrupt";
         }
+        """,
       },
       {
-        {
-          "class T {", //
-          "  String s ="
-              + " \"onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto"
-              + " interrupt\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "     "
-              + " \"onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto\"",
-          "          + \" interrupt\";",
-          "}",
+        """
+        class T {
+          String s =
+              "one long incredibly unbroken"
+                  + " sentence moving from topic to topic"
+                  + " so that no-one had a chance to interr"
+                  + "upt";
         }
-      },
-      {
-        {
-          "class T {", //
-          "  String s = \"\\n\\none\\nlong\\nincredibly\\nunbroken\\nsentence\\nmoving\\nfrom\\n"
-              + " topic\\nto\\n topic\\nso\\nthat\\nno-one\\nhad\\na\\nchance\\nto\\ninterrupt\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"\\n\\n\"",
-          "          + \"one\\n\"",
-          "          + \"long\\n\"",
-          "          + \"incredibly\\n\"",
-          "          + \"unbroken\\n\"",
-          "          + \"sentence\\n\"",
-          "          + \"moving\\n\"",
-          "          + \"from\\n\"",
-          "          + \" topic\\n\"",
-          "          + \"to\\n\"",
-          "          + \" topic\\n\"",
-          "          + \"so\\n\"",
-          "          + \"that\\n\"",
-          "          + \"no-one\\n\"",
-          "          + \"had\\n\"",
-          "          + \"a\\n\"",
-          "          + \"chance\\n\"",
-          "          + \"to\\n\"",
-          "          + \"interrupt\";",
-          "}",
-        },
-      },
-      {
-        {
-          "class T {", //
-          "  String s = \"\\n\\n\\none\\n\\nlong\\n\\nincredibly\\n\\nunbroken\\n\\nsentence\\n\\n"
-              + "moving\\n\\nfrom\\n\\n topic\\n\\nto\\n\\n topic\\n\\nso\\n\\nthat\\n\\nno-one"
-              + "\\n\\nhad\\n\\na\\n\\nchance\\n\\nto\\n\\ninterrupt\\n\\n\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"\\n\\n\\n\"",
-          "          + \"one\\n\\n\"",
-          "          + \"long\\n\\n\"",
-          "          + \"incredibly\\n\\n\"",
-          "          + \"unbroken\\n\\n\"",
-          "          + \"sentence\\n\\n\"",
-          "          + \"moving\\n\\n\"",
-          "          + \"from\\n\\n\"",
-          "          + \" topic\\n\\n\"",
-          "          + \"to\\n\\n\"",
-          "          + \" topic\\n\\n\"",
-          "          + \"so\\n\\n\"",
-          "          + \"that\\n\\n\"",
-          "          + \"no-one\\n\\n\"",
-          "          + \"had\\n\\n\"",
-          "          + \"a\\n\\n\"",
-          "          + \"chance\\n\\n\"",
-          "          + \"to\\n\\n\"",
-          "          + \"interrupt\\n\\n\";",
-          "}",
-        },
-      },
-      {
-        {
-          "class T {", //
-          "  String s = \"onelongincrediblyunbrokensenten\\tcemovingfromtopictotopicsothatnoonehada"
-              + "chance tointerrupt\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"onelongincrediblyunbrokensenten\"",
-          "          + \"\\tcemovingfromtopictotopicsothatnoonehadachance\"",
-          "          + \" tointerrupt\";",
-          "}",
+        """,
+        """
+        class T {
+          String s =
+              "one long incredibly unbroken"
+                  + " sentence moving from"
+                  + " topic to topic so that"
+                  + " no-one had a chance to"
+                  + " interrupt";
         }
+        """,
       },
       {
-        {
-          "class T {", //
-          "  String s = \"onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehada"
-              + "chancetointerrupt_____________________)_\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehada"
-              + "chancetointerrupt_____________________)_\";",
-          "}",
+        """
+        class T {
+          String s = "one long incredibly unbroken sentence moving from topic to topic so that no-one had a chance to interrupt";
         }
-      },
-      {
-        {
-          "class T {", //
-          "  String s = \"onelongincrediblyunbrokensentencemovingfromtopictotopicsot atnoonehada"
-              + "chancetointerrupt______________________\";;",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"onelongincrediblyunbrokensentencemovingfromtopictotopicsot\"",
-          "          + \" atnoonehadachancetointerrupt______________________\";",
-          "  ;",
-          "}",
+        """,
+        """
+        class T {
+          String s =
+              "one long incredibly unbroken"
+                  + " sentence moving from"
+                  + " topic to topic so that"
+                  + " no-one had a chance to"
+                  + " interrupt";
         }
+        """,
       },
       {
-        {
-          "class T {", //
-          "  String s = \"__ onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehada"
-              + "chanceto interrupt\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"__"
-              + " onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto\"",
-          "          + \" interrupt\";",
-          "}",
+        """
+        class T {
+          String s =
+              "one long incredibly unbroken sentence"
+                  + " moving from topic to topic"
+                  + 42
+                  + " so that no-one had a chance to interr"
+                  + "upt";
         }
-      },
-      {
-        {
-          "class T {", //
-          "  String s =",
-          "      \"one long incredibly unbroken sentence\"",
-          "          // comment",
-          "          + \" moving from topic to topic\"",
-          "          // comment",
-          "          + \" so that no-one had a chance to\"",
-          "          // comment",
-          "          + \" interrupt\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"one long incredibly unbroken\"",
-          "          + \" sentence\"",
-          "          // comment",
-          "          + \" moving from topic to\"",
-          "          + \" topic\"",
-          "          // comment",
-          "          + \" so that no-one had a\"",
-          "          + \" chance to\"",
-          "          // comment",
-          "          + \" interrupt\";",
-          "}",
+        """,
+        """
+        class T {
+          String s =
+              "one long incredibly unbroken"
+                  + " sentence moving from"
+                  + " topic to topic"
+                  + 42
+                  + " so that no-one had a"
+                  + " chance to interrupt";
         }
+        """,
       },
       {
-        {
-          "class T {", //
-          "  String s =",
-          "      \"aaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbb ccccccccccccccccccccccccccc"
-              + " dddddddddddddddddd\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"aaaaaaaaaaaaaaaaaaaaaaaa\"",
-          "          + \" bbbbbbbbbbbbbbbbbb\"",
-          "          + \" ccccccccccccccccccccccccccc\"",
-          "          + \" dddddddddddddddddd\";",
-          "}",
+        """
+        class T {
+          String s = "onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto interrupt";
         }
-      },
-      {
-        {
-          "class T {", //
-          "  String s =",
-          "      \"aaaaaaaaaaaaaaaaaaaaaaaa \"",
-          "          + \"bbbbbbbbbbbbbbbbbb \"",
-          "          + \"ccccccccccccccccccccccccccc \"",
-          "          + \"dddddddddddddddddd\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"aaaaaaaaaaaaaaaaaaaaaaaa\"",
-          "          + \" bbbbbbbbbbbbbbbbbb\"",
-          "          + \" ccccccccccccccccccccccccccc\"",
-          "          + \" dddddddddddddddddd\";",
-          "}",
+        """,
+        """
+        class T {
+          String s =
+              "onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto"
+                  + " interrupt";
         }
+        """,
       },
       {
-        {
-          "class T {", //
-          "  byte[] bytes =",
-          "      \"one long incredibly unbroken sentence moving from topic to topic so that no-one"
-              + " had a chance to interrupt\".getBytes();",
-          "}"
-        },
-        {
-          "class T {", //
-          "  byte[] bytes =",
-          "      \"one long incredibly unbroken sentence moving from topic to topic so that no-one"
-              + " had a chance to interrupt\"",
-          "          .getBytes();",
-          "}"
-        },
+"""
+class T {
+  String s = "\\n\\none\\nlong\\nincredibly\\nunbroken\\nsentence\\nmoving\\n\
+from\\n topic\\nto\\n topic\\nso\\nthat\\nno-one\\nhad\\na\\nchance\\nto\\ninterrupt";
+}
+""",
+"""
+class T {
+  String s =
+      "\\n\\n"
+          + "one\\n"
+          + "long\\n"
+          + "incredibly\\n"
+          + "unbroken\\n"
+          + "sentence\\n"
+          + "moving\\n"
+          + "from\\n"
+          + " topic\\n"
+          + "to\\n"
+          + " topic\\n"
+          + "so\\n"
+          + "that\\n"
+          + "no-one\\n"
+          + "had\\n"
+          + "a\\n"
+          + "chance\\n"
+          + "to\\n"
+          + "interrupt";
+}
+""",
       },
       {
-        {
-          "class T {", //
-          "  String s = \"\\r\\rone\\rlong\\rincredibly\\runbroken\\rsentence\\rmoving\\rfrom\\r"
-              + " topic\\rto\\r topic\\rso\\rthat\\rno-one\\rhad\\ra\\rchance\\rto\\rinterrupt\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"\\r\\r\"",
-          "          + \"one\\r\"",
-          "          + \"long\\r\"",
-          "          + \"incredibly\\r\"",
-          "          + \"unbroken\\r\"",
-          "          + \"sentence\\r\"",
-          "          + \"moving\\r\"",
-          "          + \"from\\r\"",
-          "          + \" topic\\r\"",
-          "          + \"to\\r\"",
-          "          + \" topic\\r\"",
-          "          + \"so\\r\"",
-          "          + \"that\\r\"",
-          "          + \"no-one\\r\"",
-          "          + \"had\\r\"",
-          "          + \"a\\r\"",
-          "          + \"chance\\r\"",
-          "          + \"to\\r\"",
-          "          + \"interrupt\";",
-          "}",
-        },
+"""
+class T {
+  String s = "\\n\\n\\none\\n\\nlong\\n\\nincredibly\\n\\nunbroken\\n\\nsentence\\n\\nmoving\\n\\n\
+from\\n\\n topic\\n\\nto\\n\\n topic\\n\\nso\\n\\nthat\\n\\nno-one\\n\\nhad\\n\\na\\n\\nchance\\n\\nto\\n\\ninterrupt\\n\\n";
+}
+""",
+"""
+class T {
+  String s =
+      "\\n\\n\\n"
+          + "one\\n\\n"
+          + "long\\n\\n"
+          + "incredibly\\n\\n"
+          + "unbroken\\n\\n"
+          + "sentence\\n\\n"
+          + "moving\\n\\n"
+          + "from\\n\\n"
+          + " topic\\n\\n"
+          + "to\\n\\n"
+          + " topic\\n\\n"
+          + "so\\n\\n"
+          + "that\\n\\n"
+          + "no-one\\n\\n"
+          + "had\\n\\n"
+          + "a\\n\\n"
+          + "chance\\n\\n"
+          + "to\\n\\n"
+          + "interrupt\\n\\n";
+}
+""",
       },
       {
-        {
-          "class T {", //
-          "  String s = \"\\r\\n\\r\\none\\r\\nlong\\r\\nincredibly\\r\\nunbroken\\r\\nsentence"
-              + "\\r\\nmoving\\r\\nfrom\\r\\n topic\\r\\nto\\r\\n topic\\r\\nso\\r\\nthat\\r\\n"
-              + "no-one\\r\\nhad\\r\\na\\r\\nchance\\r\\nto\\r\\ninterrupt\";",
-          "}"
-        },
-        {
-          "class T {",
-          "  String s =",
-          "      \"\\r\\n\\r\\n\"",
-          "          + \"one\\r\\n\"",
-          "          + \"long\\r\\n\"",
-          "          + \"incredibly\\r\\n\"",
-          "          + \"unbroken\\r\\n\"",
-          "          + \"sentence\\r\\n\"",
-          "          + \"moving\\r\\n\"",
-          "          + \"from\\r\\n\"",
-          "          + \" topic\\r\\n\"",
-          "          + \"to\\r\\n\"",
-          "          + \" topic\\r\\n\"",
-          "          + \"so\\r\\n\"",
-          "          + \"that\\r\\n\"",
-          "          + \"no-one\\r\\n\"",
-          "          + \"had\\r\\n\"",
-          "          + \"a\\r\\n\"",
-          "          + \"chance\\r\\n\"",
-          "          + \"to\\r\\n\"",
-          "          + \"interrupt\";",
-          "}",
-        },
+        """
+        class T {
+          String s = "onelongincrediblyunbrokensenten\\tcemovingfromtopictotopicsothatnoonehadachance tointerrupt";
+        }
+        """,
+        """
+        class T {
+          String s =
+              "onelongincrediblyunbrokensenten"
+                  + "\\tcemovingfromtopictotopicsothatnoonehadachance"
+                  + " tointerrupt";
+        }
+        """,
+      },
+      {
+        """
+        class T {
+          String s = "onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachancetointerrupt_____________________)_";
+        }
+        """,
+        """
+        class T {
+          String s =
+              "onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachancetointerrupt_____________________)_";
+        }
+        """,
+      },
+      {
+        """
+        class T {
+          String s = "onelongincrediblyunbrokensentencemovingfromtopictotopicsot atnoonehadachancetointerrupt______________________";;
+        }
+        """,
+        """
+        class T {
+          String s =
+              "onelongincrediblyunbrokensentencemovingfromtopictotopicsot"
+                  + " atnoonehadachancetointerrupt______________________";
+          ;
+        }
+        """,
+      },
+      {
+        """
+        class T {
+          String s = "__ onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto interrupt";
+        }
+        """,
+        """
+        class T {
+          String s =
+              "__ onelongincrediblyunbrokensentencemovingfromtopictotopicsothatnoonehadachanceto"
+                  + " interrupt";
+        }
+        """,
+      },
+      {
+        """
+        class T {
+          String s =
+              "one long incredibly unbroken sentence"
+                  // comment
+                  + " moving from topic to topic"
+                  // comment
+                  + " so that no-one had a chance to"
+                  // comment
+                  + " interrupt";
+        }
+        """,
+        """
+        class T {
+          String s =
+              "one long incredibly unbroken"
+                  + " sentence"
+                  // comment
+                  + " moving from topic to"
+                  + " topic"
+                  // comment
+                  + " so that no-one had a"
+                  + " chance to"
+                  // comment
+                  + " interrupt";
+        }
+        """,
+      },
+      {
+        """
+        class T {
+          String s =
+              "aaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbb ccccccccccccccccccccccccccc dddddddddddddddddd";
+        }
+        """,
+        """
+        class T {
+          String s =
+              "aaaaaaaaaaaaaaaaaaaaaaaa"
+                  + " bbbbbbbbbbbbbbbbbb"
+                  + " ccccccccccccccccccccccccccc"
+                  + " dddddddddddddddddd";
+        }
+        """,
+      },
+      {
+        """
+        class T {
+          String s =
+              "aaaaaaaaaaaaaaaaaaaaaaaa "
+                  + "bbbbbbbbbbbbbbbbbb "
+                  + "ccccccccccccccccccccccccccc "
+                  + "dddddddddddddddddd";
+        }
+        """,
+        """
+        class T {
+          String s =
+              "aaaaaaaaaaaaaaaaaaaaaaaa"
+                  + " bbbbbbbbbbbbbbbbbb"
+                  + " ccccccccccccccccccccccccccc"
+                  + " dddddddddddddddddd";
+        }
+        """,
+      },
+      {
+"""
+class T {
+  byte[] bytes =
+      "one long incredibly unbroken sentence moving from topic to topic so that no-one had a chance to interrupt".getBytes();
+}
+""",
+"""
+class T {
+  byte[] bytes =
+      "one long incredibly unbroken sentence moving from topic to topic so that no-one had a chance to interrupt"
+          .getBytes();
+}
+""",
+      },
+      {
+"""
+class T {
+  String s = "\\r\\rone\\rlong\\rincredibly\\runbroken\\rsentence\\rmoving\\r\
+from\\r topic\\rto\\r topic\\rso\\rthat\\rno-one\\rhad\\ra\\rchance\\rto\\rinterrupt";
+}
+""",
+"""
+class T {
+  String s =
+      "\\r\\r"
+          + "one\\r"
+          + "long\\r"
+          + "incredibly\\r"
+          + "unbroken\\r"
+          + "sentence\\r"
+          + "moving\\r"
+          + "from\\r"
+          + " topic\\r"
+          + "to\\r"
+          + " topic\\r"
+          + "so\\r"
+          + "that\\r"
+          + "no-one\\r"
+          + "had\\r"
+          + "a\\r"
+          + "chance\\r"
+          + "to\\r"
+          + "interrupt";
+}
+""",
+      },
+      {
+"""
+class T {
+  String s = "\\r\\n\\r\\none\\r\\nlong\\r\\nincredibly\\r\\nunbroken\\r\\nsentence\\r\\nmoving\\r\\n\
+from\\r\\n topic\\r\\nto\\r\\n topic\\r\\nso\\r\\nthat\\r\\nno-one\\r\\nhad\\r\\na\\r\\nchance\\r\\nto\\r\\ninterrupt";
+}
+""",
+"""
+class T {
+  String s =
+      "\\r\\n\\r\\n"
+          + "one\\r\\n"
+          + "long\\r\\n"
+          + "incredibly\\r\\n"
+          + "unbroken\\r\\n"
+          + "sentence\\r\\n"
+          + "moving\\r\\n"
+          + "from\\r\\n"
+          + " topic\\r\\n"
+          + "to\\r\\n"
+          + " topic\\r\\n"
+          + "so\\r\\n"
+          + "that\\r\\n"
+          + "no-one\\r\\n"
+          + "had\\r\\n"
+          + "a\\r\\n"
+          + "chance\\r\\n"
+          + "to\\r\\n"
+          + "interrupt";
+}
+""",
       },
     };
     return Arrays.stream(inputsAndOutputs)
@@ -436,8 +420,7 @@ public class StringWrapperIntegrationTest {
             inputAndOutput -> {
               assertThat(inputAndOutput).hasLength(2);
               return new String[] {
-                Joiner.on('\n').join(inputAndOutput[0]) + '\n', //
-                Joiner.on('\n').join(inputAndOutput[1]) + '\n',
+                inputAndOutput[0], inputAndOutput[1],
               };
             })
         .collect(toImmutableList());
