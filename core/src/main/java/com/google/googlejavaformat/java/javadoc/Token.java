@@ -19,7 +19,7 @@ package com.google.googlejavaformat.java.javadoc;
  * naturally expect. The decision is usually pragmatic rather than theoretical. Most of the details
  * are in {@link JavadocLexer}.
  */
-final class Token {
+record Token(Token.Type type, String value) {
   /**
    * Javadoc token type.
    *
@@ -108,28 +108,12 @@ final class Token {
     ;
   }
 
-  private final Type type;
-  private final String value;
-
-  Token(Type type, String value) {
-    this.type = type;
-    this.value = value;
-  }
-
-  Type getType() {
-    return type;
-  }
-
-  String getValue() {
-    return value;
-  }
-
   int length() {
     return value.length();
   }
 
   @Override
   public String toString() {
-    return "\n" + getType() + ": " + getValue();
+    return "\n" + type() + ": " + value();
   }
 }

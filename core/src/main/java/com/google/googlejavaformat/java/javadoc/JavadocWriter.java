@@ -359,7 +359,7 @@ final class JavadocWriter {
     }
 
     if (requestedMoeBeginStripComment != null) {
-      output.append(requestedMoeBeginStripComment.getValue());
+      output.append(requestedMoeBeginStripComment.value());
       requestedMoeBeginStripComment = null;
       indentForMoeEndStripComment = innerIndent();
       requestNewline();
@@ -367,9 +367,9 @@ final class JavadocWriter {
       return;
     }
 
-    output.append(token.getValue());
+    output.append(token.value());
 
-    if (!START_OF_LINE_TOKENS.contains(token.getType())) {
+    if (!START_OF_LINE_TOKENS.contains(token.type())) {
       atStartOfLine = false;
     }
 

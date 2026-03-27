@@ -56,7 +56,7 @@ public final class JavadocFormatter {
   private static String render(List<Token> input, int blockIndent) {
     JavadocWriter output = new JavadocWriter(blockIndent);
     for (Token token : input) {
-      switch (token.getType()) {
+      switch (token.type()) {
         case BEGIN_JAVADOC -> output.writeBeginJavadoc();
         case END_JAVADOC -> {
           output.writeEndJavadoc();
@@ -105,7 +105,7 @@ public final class JavadocFormatter {
   }
 
   private static Token standardize(Token token, Token standardToken) {
-    return SIMPLE_TAG_PATTERN.matcher(token.getValue()).matches() ? standardToken : token;
+    return SIMPLE_TAG_PATTERN.matcher(token.value()).matches() ? standardToken : token;
   }
 
   private static final Token STANDARD_BR_TOKEN = new Token(BR_TAG, "<br>");

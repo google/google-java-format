@@ -295,8 +295,8 @@ final class JavadocLexer {
     StringBuilder accumulated = new StringBuilder();
 
     for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
-      if (tokens.peek().getType() == LITERAL) {
-        accumulated.append(tokens.peek().getValue());
+      if (tokens.peek().type() == LITERAL) {
+        accumulated.append(tokens.peek().value());
         tokens.next();
         continue;
       }
@@ -315,14 +315,14 @@ final class JavadocLexer {
       }
 
       StringBuilder seenWhitespace = new StringBuilder();
-      while (tokens.peek().getType() == WHITESPACE) {
-        seenWhitespace.append(tokens.next().getValue());
+      while (tokens.peek().type() == WHITESPACE) {
+        seenWhitespace.append(tokens.next().value());
       }
 
-      if (tokens.peek().getType() == LITERAL && tokens.peek().getValue().startsWith("@")) {
+      if (tokens.peek().type() == LITERAL && tokens.peek().value().startsWith("@")) {
         // OK, we're in the case described above.
         accumulated.append(" ");
-        accumulated.append(tokens.peek().getValue());
+        accumulated.append(tokens.peek().value());
         tokens.next();
         continue;
       }
@@ -355,14 +355,13 @@ final class JavadocLexer {
     ImmutableList.Builder<Token> output = ImmutableList.builder();
 
     for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
-      if (tokens.peek().getType() == LITERAL) {
+      if (tokens.peek().type() == LITERAL) {
         output.add(tokens.next());
 
-        if (tokens.peek().getType() == WHITESPACE
-            && hasMultipleNewlines(tokens.peek().getValue())) {
+        if (tokens.peek().type() == WHITESPACE && hasMultipleNewlines(tokens.peek().value())) {
           output.add(tokens.next());
 
-          if (tokens.peek().getType() == LITERAL) {
+          if (tokens.peek().type() == LITERAL) {
             output.add(new Token(PARAGRAPH_OPEN_TAG, "<p>"));
           }
         }
@@ -393,11 +392,11 @@ final class JavadocLexer {
     ImmutableList.Builder<Token> output = ImmutableList.builder();
 
     for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
-      if (tokens.peek().getType() == LITERAL && tokens.peek().getValue().matches("href=[^>]*>")) {
+      if (tokens.peek().type() == LITERAL && tokens.peek().value().matches("href=[^>]*>")) {
         output.add(tokens.next());
 
-        if (tokens.peek().getType() == WHITESPACE) {
-          output.add(new Token(OPTIONAL_LINE_BREAK, tokens.next().getValue()));
+        if (tokens.peek().type() == WHITESPACE) {
+          output.add(new Token(OPTIONAL_LINE_BREAK, tokens.next().value()));
         }
       } else {
         output.add(tokens.next());
@@ -422,18 +421,17 @@ final class JavadocLexer {
     // TODO: b/323389829 - De-indent {@snippet ...} blocks, too.
     ImmutableList.Builder<Token> output = ImmutableList.builder();
     for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
-      if (tokens.peek().getType() != PRE_OPEN_TAG) {
+      if (tokens.peek().type() != PRE_OPEN_TAG) {
         output.add(tokens.next());
         continue;
       }
 
       output.add(tokens.next());
       List<Token> initialNewlines = new ArrayList<>();
-      while (tokens.hasNext() && tokens.peek().getType() == FORCED_NEWLINE) {
+      while (tokens.hasNext() && tokens.peek().type() == FORCED_NEWLINE) {
         initialNewlines.add(tokens.next());
       }
-      if (tokens.peek().getType() != LITERAL
-          || !tokens.peek().getValue().matches("[ \t]*[{]@code")) {
+      if (tokens.peek().type() != LITERAL || !tokens.peek().value().matches("[ \t]*[{]@code")) {
         output.addAll(initialNewlines);
         output.add(tokens.next());
         continue;
@@ -447,15 +445,15 @@ final class JavadocLexer {
   private static void deindentPreCodeBlock(
       ImmutableList.Builder<Token> output, PeekingIterator<Token> tokens) {
     Deque<Token> saved = new ArrayDeque<>();
-    output.add(new Token(LITERAL, tokens.next().getValue().trim()));
-    while (tokens.hasNext() && tokens.peek().getType() != PRE_CLOSE_TAG) {
+    output.add(new Token(LITERAL, tokens.next().value().trim()));
+    while (tokens.hasNext() && tokens.peek().type() != PRE_CLOSE_TAG) {
       Token token = tokens.next();
       saved.addLast(token);
     }
-    while (!saved.isEmpty() && saved.peekFirst().getType() == FORCED_NEWLINE) {
+    while (!saved.isEmpty() && saved.peekFirst().type() == FORCED_NEWLINE) {
       saved.removeFirst();
     }
-    while (!saved.isEmpty() && saved.peekLast().getType() == FORCED_NEWLINE) {
+    while (!saved.isEmpty() && saved.peekLast().type() == FORCED_NEWLINE) {
       saved.removeLast();
     }
     if (saved.isEmpty()) {
@@ -465,11 +463,10 @@ final class JavadocLexer {
     // move the trailing `}` to its own line
     Token last = saved.peekLast();
     boolean trailingBrace = false;
-    if (last.getType() == LITERAL && last.getValue().endsWith("}")) {
+    if (last.type() == LITERAL && last.value().endsWith("}")) {
       saved.removeLast();
       if (last.length() > 1) {
-        saved.addLast(
-            new Token(LITERAL, last.getValue().substring(0, last.getValue().length() - 1)));
+        saved.addLast(new Token(LITERAL, last.value().substring(0, last.value().length() - 1)));
         saved.addLast(new Token(FORCED_NEWLINE, null));
       }
       trailingBrace = true;
@@ -477,8 +474,8 @@ final class JavadocLexer {
 
     int trim = -1;
     for (Token token : saved) {
-      if (token.getType() == LITERAL) {
-        int idx = CharMatcher.isNot(' ').indexIn(token.getValue());
+      if (token.type() == LITERAL) {
+        int idx = CharMatcher.isNot(' ').indexIn(token.value());
         if (idx != -1 && (trim == -1 || idx < trim)) {
           trim = idx;
         }
@@ -487,13 +484,11 @@ final class JavadocLexer {
 
     output.add(new Token(FORCED_NEWLINE, "\n"));
     for (Token token : saved) {
-      if (token.getType() == LITERAL) {
+      if (token.type() == LITERAL) {
         output.add(
             new Token(
                 LITERAL,
-                trim > 0 && token.length() > trim
-                    ? token.getValue().substring(trim)
-                    : token.getValue()));
+                trim > 0 && token.length() > trim ? token.value().substring(trim) : token.value()));
       } else {
         output.add(token);
       }
