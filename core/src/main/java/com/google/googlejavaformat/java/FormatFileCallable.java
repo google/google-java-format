@@ -56,7 +56,7 @@ class FormatFileCallable implements Callable<FormatFileCallable.Result> {
   private final CommandLineOptions parameters;
   private final JavaFormatterOptions options;
 
-  public FormatFileCallable(
+  FormatFileCallable(
       CommandLineOptions parameters, Path path, String input, JavaFormatterOptions options) {
     this.path = path;
     this.input = input;

@@ -48,7 +48,7 @@ final class JavacTokens {
   record RawTok(String stringVal, TokenKind kind, int pos, int endPos) {}
 
   /** Lex the input and return a list of {@link RawTok}s. */
-  public static ImmutableList<RawTok> getTokens(
+  static ImmutableList<RawTok> getTokens(
       String source, Context context, Set<TokenKind> stopTokens) {
     if (source == null) {
       return ImmutableList.of();
@@ -106,7 +106,7 @@ final class JavacTokens {
   }
 
   /** A {@link JavaTokenizer} that saves comments. */
-  static class CommentSavingTokenizer extends JavaTokenizer {
+  private static class CommentSavingTokenizer extends JavaTokenizer {
 
     private final Map<Comment, CommentWithTextAndPosition> comments = new HashMap<>();
 
@@ -148,7 +148,7 @@ final class JavacTokens {
   }
 
   /** A {@link Comment} that saves its text and start position. */
-  record CommentWithTextAndPosition(int pos, int endPos, String text) {
+  private record CommentWithTextAndPosition(int pos, int endPos, String text) {
     /**
      * Returns the source position of the character at index {@code index} in the comment text.
      *
@@ -171,8 +171,8 @@ final class JavacTokens {
   }
 
   // Scanner(ScannerFactory, JavaTokenizer) is protected
-  static class AccessibleScanner extends Scanner {
-    protected AccessibleScanner(ScannerFactory fac, JavaTokenizer tokenizer) {
+  private static class AccessibleScanner extends Scanner {
+    AccessibleScanner(ScannerFactory fac, JavaTokenizer tokenizer) {
       super(fac, tokenizer);
     }
   }

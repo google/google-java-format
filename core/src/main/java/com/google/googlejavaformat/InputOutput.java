@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** This interface defines methods common to an {@link Input} or an {@link Output}. */
+/** This class defines methods common to an {@link Input} or an {@link Output}. */
 public abstract class InputOutput {
   private ImmutableList<String> lines = ImmutableList.of();
 

@@ -71,17 +71,12 @@ public class SnippetFormatter {
     formatter = new Formatter(formatterOptions);
   }
 
-  public String createIndentationString(int indentationLevel) {
+  private static String createIndentationString(int indentationLevel) {
     Preconditions.checkArgument(
         indentationLevel >= 0,
         "Indentation level cannot be less than zero. Given: %s",
         indentationLevel);
-    int spaces = indentationLevel * INDENTATION_SIZE;
-    StringBuilder buf = new StringBuilder(spaces);
-    for (int i = 0; i < spaces; i++) {
-      buf.append(' ');
-    }
-    return buf.toString();
+    return " ".repeat(indentationLevel * INDENTATION_SIZE);
   }
 
   private static Range<Integer> offsetRange(Range<Integer> range, int offset) {

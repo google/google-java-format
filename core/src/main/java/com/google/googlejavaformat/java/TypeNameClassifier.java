@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 /** Heuristics for classifying qualified names as types. */
-public final class TypeNameClassifier {
+final class TypeNameClassifier {
 
   private TypeNameClassifier() {}
 
@@ -89,12 +89,12 @@ public final class TypeNameClassifier {
       this.isSingleUnit = isSingleUnit;
     }
 
-    public boolean isSingleUnit() {
+    boolean isSingleUnit() {
       return isSingleUnit;
     }
 
     /** Transition function. */
-    public abstract TyParseState next(JavaCaseFormat n);
+    abstract TyParseState next(JavaCaseFormat n);
   }
 
   /**
@@ -125,7 +125,7 @@ public final class TypeNameClassifier {
   }
 
   /** Case formats used in Java identifiers. */
-  public enum JavaCaseFormat {
+  enum JavaCaseFormat {
     UPPERCASE,
     LOWERCASE,
     UPPER_CAMEL,

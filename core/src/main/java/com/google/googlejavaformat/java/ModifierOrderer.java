@@ -50,7 +50,7 @@ final class ModifierOrderer {
    * (e.g. for {@code public}), but may be multiple tokens for modifiers containing {@code -} (e.g.
    * {@code non-sealed}).
    */
-  record ModifierTokens(ImmutableList<Token> tokens, Modifier modifier)
+  private record ModifierTokens(ImmutableList<Token> tokens, Modifier modifier)
       implements Comparable<ModifierTokens> {
 
     static ModifierTokens create(ImmutableList<Token> tokens) {
@@ -234,4 +234,6 @@ final class ModifierOrderer {
     }
     return new JavaInput(sb.toString());
   }
+
+  private ModifierOrderer() {}
 }

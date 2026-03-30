@@ -63,13 +63,12 @@ public class ImportOrderer {
   }
 
   private String reorderImports() throws FormatterException {
-    int firstImportStart;
     Optional<Integer> maybeFirstImport = findIdentifier(0, IMPORT_OR_CLASS_START);
     if (!maybeFirstImport.isPresent() || !tokenAt(maybeFirstImport.get()).equals("import")) {
       // No imports, so nothing to do.
       return text;
     }
-    firstImportStart = maybeFirstImport.get();
+    int firstImportStart = maybeFirstImport.get();
     int unindentedFirstImportStart = unindent(firstImportStart);
 
     ImportsAndIndex imports = scanImports(firstImportStart);
@@ -189,7 +188,7 @@ public class ImportOrderer {
     }
   }
 
-  enum ImportType {
+  private enum ImportType {
     STATIC,
     MODULE,
     NORMAL
@@ -206,7 +205,8 @@ public class ImportOrderer {
    * @param importType the {@link ImportType} of the import.
    * @param lineSeparator the line separator to use when formatting the import.
    */
-  record Import(String imported, String trailing, ImportType importType, String lineSeparator) {
+  private record Import(
+      String imported, String trailing, ImportType importType, String lineSeparator) {
     /** The top-level package of the import. */
     String topLevel() {
       return DOT_SPLITTER.split(imported).iterator().next();
@@ -227,7 +227,7 @@ public class ImportOrderer {
     }
 
     /** True if this is a third-party import per AOSP style. */
-    public boolean isThirdParty() {
+    boolean isThirdParty() {
       return !(isAndroid() || isJava());
     }
 

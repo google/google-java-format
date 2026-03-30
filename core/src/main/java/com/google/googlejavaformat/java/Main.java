@@ -241,7 +241,7 @@ public final class Main {
   }
 
   /** Parses and validates command-line flags. */
-  public static CommandLineOptions processArgs(String... args) throws UsageException {
+  static CommandLineOptions processArgs(String... args) throws UsageException {
     CommandLineOptions parameters;
     try {
       parameters = CommandLineOptionsParser.parse(Arrays.asList(args));

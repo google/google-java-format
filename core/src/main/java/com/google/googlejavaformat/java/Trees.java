@@ -18,7 +18,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ExpressionTree;
@@ -72,7 +71,7 @@ class Trees {
   }
 
   /** Returns the source end position of the node. */
-  public static int getEndPosition(Tree tree, CompilationUnitTree unit) {
+  static int getEndPosition(Tree tree, CompilationUnitTree unit) {
     try {
       return (int) GET_END_POS_HANDLE.invokeExact((JCTree) tree, (JCCompilationUnit) unit);
     } catch (Throwable e) {
@@ -125,22 +124,6 @@ class Trees {
   /** Returns the precedence of an expression's operator. */
   static int precedence(ExpressionTree expression) {
     return TreeInfo.opPrec(((JCTree) expression).getTag());
-  }
-
-  /**
-   * Returns the enclosing type declaration (class, enum, interface, or annotation) for the given
-   * path.
-   */
-  static ClassTree getEnclosingTypeDeclaration(TreePath path) {
-    for (; path != null; path = path.getParentPath()) {
-      switch (path.getLeaf().getKind()) {
-        case CLASS, ENUM, INTERFACE, ANNOTATED_TYPE -> {
-          return (ClassTree) path.getLeaf();
-        }
-        default -> {}
-      }
-    }
-    throw new AssertionError();
   }
 
   /** Skips a single parenthesized tree. */

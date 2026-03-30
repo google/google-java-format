@@ -348,15 +348,6 @@ public final class JavaOutput extends Output {
     return writer.toString();
   }
 
-  /** The earliest position of any Tok in the Token, including leading whitespace. */
-  public static int startPosition(Token token) {
-    int min = token.getTok().getPosition();
-    for (Input.Tok tok : token.getToksBefore()) {
-      min = min(min, tok.getPosition());
-    }
-    return min;
-  }
-
   /** The earliest non-whitespace Tok in the Token. */
   public static Input.Tok startTok(Token token) {
     for (Input.Tok tok : token.getToksBefore()) {

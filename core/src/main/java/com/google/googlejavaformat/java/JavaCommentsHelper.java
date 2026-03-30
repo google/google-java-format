@@ -27,12 +27,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** {@code JavaCommentsHelper} extends {@link CommentsHelper} to rewrite Java comments. */
-public final class JavaCommentsHelper implements CommentsHelper {
+final class JavaCommentsHelper implements CommentsHelper {
 
   private final String lineSeparator;
   private final JavaFormatterOptions options;
 
-  public JavaCommentsHelper(String lineSeparator, JavaFormatterOptions options) {
+  JavaCommentsHelper(String lineSeparator, JavaFormatterOptions options) {
     this.lineSeparator = lineSeparator;
     this.options = options;
   }
