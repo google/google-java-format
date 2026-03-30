@@ -155,8 +155,8 @@ public final class StringWrapper {
           return null;
         }
         Tree parent = getCurrentPath().getParentPath().getLeaf();
-        if (parent instanceof MemberSelectTree
-            && ((MemberSelectTree) parent).getExpression().equals(literalTree)) {
+        if (parent instanceof MemberSelectTree memberSelectTree
+            && memberSelectTree.getExpression().equals(literalTree)) {
           return null;
         }
         int endPosition = getEndPosition(literalTree, unit);

@@ -267,8 +267,8 @@ public abstract class Doc {
       breaks.clear();
       splits.add(new ArrayList<>());
       for (Doc doc : docs) {
-        if (doc instanceof Break) {
-          breaks.add((Break) doc);
+        if (doc instanceof Break b) {
+          breaks.add(b);
           splits.add(new ArrayList<>());
         } else {
           getLast(splits).add(doc);

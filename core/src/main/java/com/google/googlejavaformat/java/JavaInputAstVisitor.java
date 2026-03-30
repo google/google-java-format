@@ -366,8 +366,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public Void scan(Tree tree, Void unused) {
     // Pre-visit AST for preview features, since com.sun.source.tree.AnyPattern can't be
     // accessed directly without --enable-preview.
-    if (tree instanceof JCTree.JCAnyPattern) {
-      visitJcAnyPattern((JCTree.JCAnyPattern) tree);
+    if (tree instanceof JCTree.JCAnyPattern jcAnyPattern) {
+      visitJcAnyPattern(jcAnyPattern);
       return null;
     }
     inExpression.addLast(tree instanceof ExpressionTree || inExpression.peekLast());
@@ -890,8 +890,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     ArrayList<VariableTree> enumConstants = new ArrayList<>();
     ArrayList<Tree> members = new ArrayList<>();
     for (Tree member : node.getMembers()) {
-      if (member instanceof JCTree.JCVariableDecl) {
-        JCTree.JCVariableDecl variableDecl = (JCTree.JCVariableDecl) member;
+      if (member instanceof JCTree.JCVariableDecl variableDecl) {
+
         if ((variableDecl.mods.flags & Flags.ENUM) == Flags.ENUM) {
           enumConstants.add(variableDecl);
           continue;
@@ -1426,8 +1426,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             builder.breakOp(" ");
           }
         }
-        if (argument instanceof AssignmentTree) {
-          visitAnnotationArgument((AssignmentTree) argument);
+        if (argument instanceof AssignmentTree assignmentTree) {
+          visitAnnotationArgument(assignmentTree);
         } else {
           scan(argument, null);
         }
@@ -1447,11 +1447,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   }
 
   private static boolean isArrayValue(ExpressionTree argument) {
-    if (!(argument instanceof AssignmentTree)) {
+    if (!(argument instanceof AssignmentTree assignmentTree)) {
       return false;
     }
-    ExpressionTree expression = ((AssignmentTree) argument).getExpression();
-    return expression instanceof NewArrayTree && ((NewArrayTree) expression).getType() == null;
+    ExpressionTree expression = assignmentTree.getExpression();
+    return expression instanceof NewArrayTree newArrayTree && newArrayTree.getType() == null;
   }
 
   public void visitAnnotationArgument(AssignmentTree node) {
@@ -1474,8 +1474,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public Void visitAnnotatedType(AnnotatedTypeTree node, Void unused) {
     sync(node);
     ExpressionTree base = node.getUnderlyingType();
-    if (base instanceof MemberSelectTree) {
-      MemberSelectTree selectTree = (MemberSelectTree) base;
+    if (base instanceof MemberSelectTree selectTree) {
+
       scan(selectTree.getExpression(), null);
       token(".");
       visitAnnotations(node.getAnnotations(), BreakOrNot.NO, BreakOrNot.NO);
@@ -1757,10 +1757,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return indexes(
             parts.stream(),
             p -> {
-              if (!(p instanceof MethodInvocationTree)) {
+              if (!(p instanceof MethodInvocationTree methodInvocationTree)) {
                 return false;
               }
-              Name name = getMethodName((MethodInvocationTree) p);
+              Name name = getMethodName(methodInvocationTree);
               return Stream.of("stream", "parallelStream", "toBuilder")
                   .anyMatch(name::contentEquals);
             })
@@ -2119,8 +2119,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         if (afterFirstToken) {
           builder.forcedBreak();
         }
-        if (resource instanceof VariableTree) {
-          VariableTree variableTree = (VariableTree) resource;
+        if (resource instanceof VariableTree variableTree) {
+
           declareOne(
               DeclarationKind.PARAMETER,
               fieldAnnotationDirection(variableTree.getModifiers()),
@@ -2642,10 +2642,10 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   boolean isTypeAnnotation(AnnotationTree annotationTree) {
     Tree annotationType = annotationTree.getAnnotationType();
-    if (!(annotationType instanceof IdentifierTree)) {
+    if (!(annotationType instanceof IdentifierTree identifierTree)) {
       return false;
     }
-    return typeAnnotationSimpleNames.contains(((IdentifierTree) annotationType).getName());
+    return typeAnnotationSimpleNames.contains(identifierTree.getName());
   }
 
   private static boolean isModifier(String token) {
@@ -2748,8 +2748,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       ExpressionTree expression,
       List<ExpressionTree> operands,
       List<String> operators) {
-    if (expression instanceof BinaryTree) {
-      BinaryTree binaryTree = (BinaryTree) expression;
+    if (expression instanceof BinaryTree binaryTree) {
+
       if (precedence(binaryTree) == precedence) {
         walkInfix(precedence, binaryTree.getLeftOperand(), operands, operators);
         operators.add(operatorName(expression));
@@ -3325,9 +3325,11 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return node;
   }
 
-  private static ExpressionTree getMethodReceiver(MethodInvocationTree methodInvocation) {
+  private static @Nullable ExpressionTree getMethodReceiver(MethodInvocationTree methodInvocation) {
     ExpressionTree select = methodInvocation.getMethodSelect();
-    return select instanceof MemberSelectTree ? ((MemberSelectTree) select).getExpression() : null;
+    return select instanceof MemberSelectTree memberSelectTree
+        ? memberSelectTree.getExpression()
+        : null;
   }
 
   private void dotExpressionArgsAndParen(

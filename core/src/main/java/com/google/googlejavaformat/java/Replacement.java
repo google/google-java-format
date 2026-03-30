@@ -57,8 +57,8 @@ public final class Replacement {
     if (o == this) {
       return true;
     }
-    if (o instanceof Replacement) {
-      Replacement that = (Replacement) o;
+    if (o instanceof Replacement that) {
+
       return replaceRange.equals(that.getReplaceRange())
           && replacementString.equals(that.getReplacementString());
     }

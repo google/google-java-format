@@ -138,11 +138,10 @@ public final class OpsBuilder {
 
       @Override
       public BlankLineWanted merge(BlankLineWanted other) {
-        if (!(other instanceof ConditionalBlankLine)) {
+        if (!(other instanceof ConditionalBlankLine conditionalBlankLine)) {
           return other;
         }
-        return new ConditionalBlankLine(
-            Iterables.concat(this.tags, ((ConditionalBlankLine) other).tags));
+        return new ConditionalBlankLine(Iterables.concat(this.tags, conditionalBlankLine.tags));
       }
     }
   }
@@ -495,13 +494,13 @@ public final class OpsBuilder {
     int opsN = ops.size();
     for (int i = 0; i < opsN; i++) {
       Op op = ops.get(i);
-      if (op instanceof Doc.Token) {
+      if (op instanceof Doc.Token tokenOp) {
         /*
          * Token ops can have associated non-tokens, including comments, which we need to insert.
          * They can also cause line breaks, so we insert them before or after the current level,
          * when possible.
          */
-        Doc.Token tokenOp = (Doc.Token) op;
+
         Input.Token token = tokenOp.getToken();
         int j = i; // Where to insert toksBefore before.
         while (0 < j && ops.get(j - 1) instanceof OpenOp) {
@@ -616,8 +615,8 @@ public final class OpsBuilder {
       Op op = ops.get(i);
       if (afterForcedBreak
           && (op instanceof Doc.Space
-              || (op instanceof Doc.Break
-                  && ((Doc.Break) op).getPlusIndent() == 0
+              || (op instanceof Doc.Break b
+                  && b.getPlusIndent() == 0
                   && " ".equals(((Doc) op).getFlat())))) {
         continue;
       }
@@ -636,7 +635,7 @@ public final class OpsBuilder {
   }
 
   private static boolean isForcedBreak(Op op) {
-    return op instanceof Doc.Break && ((Doc.Break) op).isForced();
+    return op instanceof Doc.Break b && b.isForced();
   }
 
   private static List<Op> makeComment(Input.Tok comment) {
