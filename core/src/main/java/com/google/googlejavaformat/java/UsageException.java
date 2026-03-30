@@ -16,66 +16,62 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Joiner;
-
 /** Checked exception class for formatter command-line usage errors. */
 final class UsageException extends Exception {
 
-  private static final Joiner NEWLINE_JOINER = Joiner.on(System.lineSeparator());
+  private static final String DOCS_LINK =
+      "https://github.com/google/google-java-format";
 
-  private static final String[] DOCS_LINK = {
-    "https://github.com/google/google-java-format",
-  };
+  private static final String USAGE =
+"""
 
-  private static final String[] USAGE = {
-    "",
-    "Usage: google-java-format [options] file(s)",
-    "",
-    "Options:",
-    "  -i, -r, -replace, --replace",
-    "    Send formatted output back to files, not stdout.",
-    "  -",
-    "    Format stdin -> stdout",
-    "  --assume-filename, -assume-filename",
-    "    File name to use for diagnostics when formatting standard input (default is <stdin>).",
-    "  --aosp, -aosp, -a",
-    "    Use AOSP style instead of Google Style (4-space indentation).",
-    "  --fix-imports-only",
-    "    Fix import order and remove any unused imports, but do no other formatting.",
-    "  --skip-sorting-imports",
-    "    Do not fix the import order. Unused imports will still be removed.",
-    "  --skip-removing-unused-imports",
-    "    Do not remove unused imports. Imports will still be sorted.",
-    "  --skip-reflowing-long-strings",
-    "    Do not reflow string literals that exceed the column limit.",
-    "  --skip-javadoc-formatting",
-    "    Do not reformat javadoc.",
-    "  --dry-run, -n",
-    "    Prints the paths of the files whose contents would change if the formatter were run"
-        + " normally.",
-    "  --set-exit-if-changed",
-    "    Return exit code 1 if there are any formatting changes.",
-    "  --lines, -lines, --line, -line",
-    "    Line range(s) to format, e.g. the first 5 lines are 1:5 (1-based; default is all).",
-    "  --offset, -offset",
-    "    Character offset to format (0-based; default is all).",
-    "  --length, -length",
-    "    Character length to format.",
-    "  --help, -help, -h",
-    "    Print this usage statement.",
-    "  --version, -version, -v",
-    "    Print the version.",
-    "  @<filename>",
-    "    Read options and filenames from file.",
-    "",
-  };
+Usage: google-java-format [options] file(s)
 
-  private static final String[] ADDITIONAL_USAGE = {
-    "If -i is given with -, the result is sent to stdout.",
-    "The --lines, --offset, and --length flags may be given more than once.",
-    "The --offset and --length flags must be given an equal number of times.",
-    "If --lines, --offset, or --length are given, only one file (or -) may be given."
-  };
+Options:
+  -i, -r, -replace, --replace
+    Send formatted output back to files, not stdout.
+  -
+    Format stdin -> stdout
+  --assume-filename, -assume-filename
+    File name to use for diagnostics when formatting standard input (default is <stdin>).
+  --aosp, -aosp, -a
+    Use AOSP style instead of Google Style (4-space indentation).
+  --fix-imports-only
+    Fix import order and remove any unused imports, but do no other formatting.
+  --skip-sorting-imports
+    Do not fix the import order. Unused imports will still be removed.
+  --skip-removing-unused-imports
+    Do not remove unused imports. Imports will still be sorted.
+  --skip-reflowing-long-strings
+    Do not reflow string literals that exceed the column limit.
+  --skip-javadoc-formatting
+    Do not reformat javadoc.
+  --dry-run, -n
+    Prints the paths of the files whose contents would change if the formatter were run normally.
+  --set-exit-if-changed
+    Return exit code 1 if there are any formatting changes.
+  --lines, -lines, --line, -line
+    Line range(s) to format, e.g. the first 5 lines are 1:5 (1-based; default is all).
+  --offset, -offset
+    Character offset to format (0-based; default is all).
+  --length, -length
+    Character length to format.
+  --help, -help, -h
+    Print this usage statement.
+  --version, -version, -v
+    Print the version.
+  @<filename>
+    Read options and filenames from file.
+
+""";
+
+  private static final String ADDITIONAL_USAGE =
+"""
+If -i is given with -, the result is sent to stdout.
+The --lines, --offset, and --length flags may be given more than once.
+The --offset and --length flags must be given an equal number of times.
+If --lines, --offset, or --length are given, only one file (or -) may be given.
+""";
 
   UsageException() {
     super(buildMessage(null));
@@ -90,19 +86,15 @@ final class UsageException extends Exception {
     if (message != null) {
       builder.append(message).append('\n');
     }
-    appendLines(builder, USAGE);
-    appendLines(builder, ADDITIONAL_USAGE);
-    appendLines(builder, new String[] {""});
-    appendLine(builder, Main.versionString());
-    appendLines(builder, DOCS_LINK);
+    appendText(builder, USAGE);
+    appendText(builder, ADDITIONAL_USAGE);
+    appendText(builder, "\n");
+    appendText(builder, Main.versionString());
+    appendText(builder, DOCS_LINK);
     return builder.toString();
   }
 
-  private static void appendLine(StringBuilder builder, String line) {
-    builder.append(line).append(System.lineSeparator());
-  }
-
-  private static void appendLines(StringBuilder builder, String[] lines) {
-    NEWLINE_JOINER.appendTo(builder, lines).append(System.lineSeparator());
+  private static void appendText(StringBuilder builder, String text) {
+    builder.append(text.replace("\n", System.lineSeparator()));
   }
 }
