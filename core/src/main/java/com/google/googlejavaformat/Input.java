@@ -141,7 +141,7 @@ public abstract class Input extends InputOutput {
    * numbers.
    */
   public FormatterDiagnostic createDiagnostic(int inputPosition, String message) {
-    return FormatterDiagnostic.create(
+    return new FormatterDiagnostic(
         getLineNumber(inputPosition), getColumnNumber(inputPosition), message);
   }
 }

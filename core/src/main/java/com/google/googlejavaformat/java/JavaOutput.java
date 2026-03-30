@@ -337,13 +337,13 @@ public final class JavaOutput extends Output {
 
   public static String applyReplacements(String input, List<Replacement> replacements) {
     replacements = new ArrayList<>(replacements);
-    replacements.sort(comparing((Replacement r) -> r.getReplaceRange().lowerEndpoint()).reversed());
+    replacements.sort(comparing((Replacement r) -> r.replaceRange().lowerEndpoint()).reversed());
     StringBuilder writer = new StringBuilder(input);
     for (Replacement replacement : replacements) {
       writer.replace(
-          replacement.getReplaceRange().lowerEndpoint(),
-          replacement.getReplaceRange().upperEndpoint(),
-          replacement.getReplacementString());
+          replacement.replaceRange().lowerEndpoint(),
+          replacement.replaceRange().upperEndpoint(),
+          replacement.replacementString());
     }
     return writer.toString();
   }

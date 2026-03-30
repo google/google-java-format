@@ -32,7 +32,7 @@ public final class FormatterException extends Exception {
   private final ImmutableList<FormatterDiagnostic> diagnostics;
 
   public FormatterException(String message) {
-    this(FormatterDiagnostic.create(message));
+    this(new FormatterDiagnostic(message));
   }
 
   public FormatterException(FormatterDiagnostic diagnostic) {
@@ -57,7 +57,7 @@ public final class FormatterException extends Exception {
   }
 
   private static FormatterDiagnostic toFormatterDiagnostic(Diagnostic<?> input) {
-    return FormatterDiagnostic.create(
+    return new FormatterDiagnostic(
         (int) input.getLineNumber(), (int) input.getColumnNumber(), input.getMessage(ENGLISH));
   }
 

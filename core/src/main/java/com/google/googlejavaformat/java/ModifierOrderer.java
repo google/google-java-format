@@ -50,9 +50,8 @@ final class ModifierOrderer {
    * (e.g. for {@code public}), but may be multiple tokens for modifiers containing {@code -} (e.g.
    * {@code non-sealed}).
    */
-  static class ModifierTokens implements Comparable<ModifierTokens> {
-    private final ImmutableList<Token> tokens;
-    private final Modifier modifier;
+  record ModifierTokens(ImmutableList<Token> tokens, Modifier modifier)
+      implements Comparable<ModifierTokens> {
 
     static ModifierTokens create(ImmutableList<Token> tokens) {
       return new ModifierTokens(tokens, asModifier(tokens));
@@ -62,21 +61,8 @@ final class ModifierOrderer {
       return new ModifierTokens(ImmutableList.of(), null);
     }
 
-    ModifierTokens(ImmutableList<Token> tokens, Modifier modifier) {
-      this.tokens = tokens;
-      this.modifier = modifier;
-    }
-
     boolean isEmpty() {
       return tokens.isEmpty() || modifier == null;
-    }
-
-    Modifier modifier() {
-      return modifier;
-    }
-
-    ImmutableList<Token> tokens() {
-      return tokens;
     }
 
     private Token first() {

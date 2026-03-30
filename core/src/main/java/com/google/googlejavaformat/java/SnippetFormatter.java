@@ -126,7 +126,7 @@ public class SnippetFormatter {
             replacement.length() - (wrapper.contents.length() - wrapper.offset - source.length()));
 
     return toReplacements(source, replacement).stream()
-        .filter(r -> rangeSet.encloses(r.getReplaceRange()))
+        .filter(r -> rangeSet.encloses(r.replaceRange()))
         .collect(toImmutableList());
   }
 

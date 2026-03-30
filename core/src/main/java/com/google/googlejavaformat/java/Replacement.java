@@ -18,15 +18,15 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Range;
-import java.util.Objects;
+import com.google.errorprone.annotations.InlineMe;
 
 /**
  * Represents a range in the original source and replacement text for that range.
  *
- * <p>google-java-format doesn't depend on AutoValue, to allow AutoValue to depend on
- * google-java-format.
+ * @param replaceRange The range of characters in the original source to replace.
+ * @param replacementString The string to replace the range of characters with.
  */
-public final class Replacement {
+public record Replacement(Range<Integer> replaceRange, String replacementString) {
 
   public static Replacement create(int startPosition, int endPosition, String replaceWith) {
     checkArgument(startPosition >= 0, "startPosition must be non-negative");
@@ -34,39 +34,18 @@ public final class Replacement {
     return new Replacement(Range.closedOpen(startPosition, endPosition), replaceWith);
   }
 
-  private final Range<Integer> replaceRange;
-  private final String replacementString;
-
-  private Replacement(Range<Integer> replaceRange, String replacementString) {
-    this.replaceRange = checkNotNull(replaceRange, "Null replaceRange");
-    this.replacementString = checkNotNull(replacementString, "Null replacementString");
+  public Replacement {
+    checkNotNull(replaceRange, "Null replaceRange");
+    checkNotNull(replacementString, "Null replacementString");
   }
 
-  /** The range of characters in the original source to replace. */
+  @InlineMe(replacement = "this.replaceRange()")
   public Range<Integer> getReplaceRange() {
-    return replaceRange;
+    return replaceRange();
   }
 
-  /** The string to replace the range of characters with. */
+  @InlineMe(replacement = "this.replacementString()")
   public String getReplacementString() {
-    return replacementString;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (o instanceof Replacement that) {
-
-      return replaceRange.equals(that.getReplaceRange())
-          && replacementString.equals(that.getReplacementString());
-    }
-    return false;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(replaceRange, replacementString);
+    return replacementString();
   }
 }

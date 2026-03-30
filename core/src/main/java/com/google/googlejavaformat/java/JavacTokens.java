@@ -37,40 +37,15 @@ final class JavacTokens {
   // TODO(b/33103797): fix javac and remove the work-around
   private static final CharSequence EOF_COMMENT = "\n//EOF";
 
-  /** An unprocessed input token, including whitespace and comments. */
-  static class RawTok {
-    private final String stringVal;
-    private final TokenKind kind;
-    private final int pos;
-    private final int endPos;
-
-    RawTok(String stringVal, TokenKind kind, int pos, int endPos) {
-      this.stringVal = stringVal;
-      this.kind = kind;
-      this.pos = pos;
-      this.endPos = endPos;
-    }
-
-    /** The token kind, or {@code null} for whitespace and comments. */
-    public TokenKind kind() {
-      return kind;
-    }
-
-    /** The start position. */
-    public int pos() {
-      return pos;
-    }
-
-    /** The end position. */
-    public int endPos() {
-      return endPos;
-    }
-
-    /** The escaped string value of a literal, or {@code null} for other tokens. */
-    public String stringVal() {
-      return stringVal;
-    }
-  }
+  /**
+   * An unprocessed input token, including whitespace and comments.
+   *
+   * @param stringVal the escaped string value of a literal, or {@code null} for other tokens.
+   * @param kind the token kind, or {@code null} for whitespace and comments.
+   * @param pos the start position.
+   * @param endPos the end position.
+   */
+  record RawTok(String stringVal, TokenKind kind, int pos, int endPos) {}
 
   /** Lex the input and return a list of {@link RawTok}s. */
   public static ImmutableList<RawTok> getTokens(
@@ -94,8 +69,8 @@ final class JavacTokens {
             tokens.add(new RawTok(null, null, last, c.getSourcePos(0)));
           }
           tokens.add(
-              new RawTok(null, null, c.getSourcePos(0), c.getSourcePos(0) + c.getText().length()));
-          last = c.getSourcePos(0) + c.getText().length();
+              new RawTok(null, null, c.getSourcePos(0), c.getSourcePos(0) + c.text().length()));
+          last = c.getSourcePos(0) + c.text().length();
         }
       }
       if (stopTokens.contains(t.kind)) {
@@ -173,25 +148,14 @@ final class JavacTokens {
   }
 
   /** A {@link Comment} that saves its text and start position. */
-  static class CommentWithTextAndPosition {
-
-    private final int pos;
-    private final int endPos;
-    private final String text;
-
-    public CommentWithTextAndPosition(int pos, int endPos, String text) {
-      this.pos = pos;
-      this.endPos = endPos;
-      this.text = text;
-    }
-
+  record CommentWithTextAndPosition(int pos, int endPos, String text) {
     /**
      * Returns the source position of the character at index {@code index} in the comment text.
      *
      * <p>The handling of javadoc comments in javac has more logic to skip over leading whitespace
      * and '*' characters when indexing into doc comments, but we don't need any of that.
      */
-    public int getSourcePos(int index) {
+    int getSourcePos(int index) {
       checkArgument(
           0 <= index && index < (endPos - pos),
           "Expected %s in the range [0, %s)",
@@ -200,13 +164,9 @@ final class JavacTokens {
       return pos + index;
     }
 
-    public String getText() {
-      return text;
-    }
-
     @Override
     public String toString() {
-      return String.format("Comment: '%s'", getText());
+      return String.format("Comment: '%s'", text());
     }
   }
 

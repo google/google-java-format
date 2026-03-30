@@ -17,60 +17,36 @@ package com.google.googlejavaformat;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/** An error that prevented formatting from succeeding. */
-public class FormatterDiagnostic {
-  private final int lineNumber;
-  private final String message;
-  private final int column;
-
-  public static FormatterDiagnostic create(String message) {
-    return new FormatterDiagnostic(-1, -1, message);
-  }
-
-  public static FormatterDiagnostic create(int lineNumber, int column, String message) {
-    checkArgument(lineNumber >= 0);
-    checkArgument(column >= 0);
+/**
+ * An error that prevented formatting from succeeding.
+ *
+ * @param line the line number on which the error occurred, or {@code -1} if the error does not have
+ *     a line number.
+ * @param column the 1-indexed column number on which the error occurred, or {@code -1} if the error
+ *     does not have a column.
+ * @param message a description of the problem that prevented formatting from succeeding.
+ */
+public record FormatterDiagnostic(int line, int column, String message) {
+  public FormatterDiagnostic {
+    checkArgument(line >= -1);
+    checkArgument(column >= -1);
     checkNotNull(message);
-    return new FormatterDiagnostic(lineNumber, column, message);
   }
 
-  private FormatterDiagnostic(int lineNumber, int column, String message) {
-    this.lineNumber = lineNumber;
-    this.column = column;
-    this.message = message;
-  }
-
-  /**
-   * Returns the line number on which the error occurred, or {@code -1} if the error does not have a
-   * line number.
-   */
-  public int line() {
-    return lineNumber;
-  }
-
-  /**
-   * Returns the 1-indexed column number on which the error occurred, or {@code -1} if the error
-   * does not have a column.
-   */
-  public int column() {
-    return column;
-  }
-
-  /** Returns a description of the problem that prevented formatting from succeeding. */
-  public String message() {
-    return message;
+  public FormatterDiagnostic(String message) {
+    this(-1, -1, message);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    if (lineNumber >= 0) {
-      sb.append(lineNumber).append(':');
+    if (line >= 0) {
+      sb.append(line).append(':');
     }
     if (column >= 0) {
       sb.append(column).append(':');
     }
-    if (lineNumber >= 0 || column >= 0) {
+    if (line >= 0 || column >= 0) {
       sb.append(' ');
     }
     sb.append("error: ").append(message);

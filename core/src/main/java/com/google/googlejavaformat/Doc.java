@@ -74,19 +74,7 @@ public abstract class Doc {
   public static final int MAX_LINE_WIDTH = 1000;
 
   /** State for writing. */
-  public static final class State {
-    final int lastIndent;
-    final int indent;
-    final int column;
-    final boolean mustBreak;
-
-    State(int lastIndent, int indent, int column, boolean mustBreak) {
-      this.lastIndent = lastIndent;
-      this.indent = indent;
-      this.column = column;
-      this.mustBreak = mustBreak;
-    }
-
+  public record State(int lastIndent, int indent, int column, boolean mustBreak) {
     public State(int indent0, int column0) {
       this(indent0, indent0, column0, false);
     }
@@ -97,16 +85,6 @@ public abstract class Doc {
 
     State withMustBreak(boolean mustBreak) {
       return new State(lastIndent, indent, column, mustBreak);
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(this)
-          .add("lastIndent", lastIndent)
-          .add("indent", indent)
-          .add("column", column)
-          .add("mustBreak", mustBreak)
-          .toString();
     }
   }
 

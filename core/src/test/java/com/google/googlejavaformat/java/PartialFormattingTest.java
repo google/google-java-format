@@ -665,13 +665,13 @@ public final class PartialFormattingTest {
             .getFormatReplacements(input, ImmutableList.of(Range.closedOpen(start, start + 1)));
     assertThat(ranges).hasSize(1);
     Replacement replacement = ranges.get(0);
-    assertThat(replacement.getReplacementString())
+    assertThat(replacement.replacementString())
         .isEqualTo(
             lines(
                 "", //
                 "  void f() {}"));
     int replaceFrom = input.indexOf("void f") - newline.length();
-    assertThat(replacement.getReplaceRange().lowerEndpoint()).isEqualTo(replaceFrom);
+    assertThat(replacement.replaceRange().lowerEndpoint()).isEqualTo(replaceFrom);
   }
 
   @Test
@@ -892,7 +892,7 @@ public final class PartialFormattingTest {
     // expect replacements in ascending order, by start position
     List<Integer> startPositions = new ArrayList<>();
     for (Replacement replacement : replacements) {
-      startPositions.add(replacement.getReplaceRange().lowerEndpoint());
+      startPositions.add(replacement.replaceRange().lowerEndpoint());
     }
     assertThat(startPositions).hasSize(3);
     assertThat(startPositions).isInStrictOrder();
@@ -920,7 +920,7 @@ public final class PartialFormattingTest {
     // expect replacements in ascending order, by start position
     List<Integer> startPositions = new ArrayList<>();
     for (Replacement replacement : replacements) {
-      startPositions.add(replacement.getReplaceRange().lowerEndpoint());
+      startPositions.add(replacement.replaceRange().lowerEndpoint());
     }
     assertThat(startPositions).hasSize(3);
     assertThat(startPositions).isInStrictOrder();

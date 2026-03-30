@@ -30,8 +30,8 @@ public class ReplacementTest {
   @Test
   public void testCreateWithValidInput() {
     Replacement replacement = Replacement.create(3, 7, "replacementText");
-    assertThat(replacement.getReplaceRange()).isEqualTo(Range.closedOpen(3, 7));
-    assertThat(replacement.getReplacementString()).isEqualTo("replacementText");
+    assertThat(replacement.replaceRange()).isEqualTo(Range.closedOpen(3, 7));
+    assertThat(replacement.replacementString()).isEqualTo("replacementText");
   }
 
   @Test
