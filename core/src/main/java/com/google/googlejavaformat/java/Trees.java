@@ -94,9 +94,11 @@ class Trees {
   /** Returns the simple name of a (possibly qualified) method invocation expression. */
   static Name getMethodName(MethodInvocationTree methodInvocation) {
     ExpressionTree select = methodInvocation.getMethodSelect();
-    return select instanceof MemberSelectTree memberSelectTree
-        ? memberSelectTree.getIdentifier()
-        : ((IdentifierTree) select).getName();
+    return switch (select) {
+      case MemberSelectTree memberSelect -> memberSelect.getIdentifier();
+      case IdentifierTree identifier -> identifier.getName();
+      default -> throw new AssertionError(select);
+    };
   }
 
   /** Returns the receiver of a qualified method invocation expression, or {@code null}. */
