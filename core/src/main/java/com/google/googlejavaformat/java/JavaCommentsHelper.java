@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import com.google.googlejavaformat.CommentsHelper;
 import com.google.googlejavaformat.Input.Tok;
 import com.google.googlejavaformat.Newlines;
@@ -31,10 +32,15 @@ final class JavaCommentsHelper implements CommentsHelper {
 
   private final String lineSeparator;
   private final JavaFormatterOptions options;
+  private final ImmutableSet<Integer> markdownJavadocPositions;
 
-  JavaCommentsHelper(String lineSeparator, JavaFormatterOptions options) {
+  JavaCommentsHelper(
+      String lineSeparator,
+      JavaFormatterOptions options,
+      ImmutableSet<Integer> markdownJavadocPositions) {
     this.lineSeparator = lineSeparator;
     this.options = options;
+    this.markdownJavadocPositions = markdownJavadocPositions;
   }
 
   @Override
@@ -56,7 +62,7 @@ final class JavaCommentsHelper implements CommentsHelper {
       }
     }
     if (tok.isSlashSlashComment()) {
-      return indentLineComments(lines, column0);
+      return indentLineComments(tok, lines, column0);
     }
     return CommentsHelper.reformatParameterComment(tok)
         .orElseGet(
@@ -97,8 +103,8 @@ final class JavaCommentsHelper implements CommentsHelper {
   }
 
   // Wraps and re-indents line comments.
-  private String indentLineComments(List<String> lines, int column0) {
-    lines = wrapLineComments(lines, column0);
+  private String indentLineComments(Tok tok, List<String> lines, int column0) {
+    lines = wrapLineComments(tok, lines, column0);
     StringBuilder builder = new StringBuilder();
     builder.append(lines.get(0).trim());
     String indentString = Strings.repeat(" ", column0);
@@ -108,21 +114,17 @@ final class JavaCommentsHelper implements CommentsHelper {
     return builder.toString();
   }
 
-  /** Probably a markdown comment, so don't try to wrap it. */
-  private static final Pattern MARKDOWN_JAVADOC_PREFIX = Pattern.compile("^///(\\s|$)");
-
   // Preserve special `//noinspection` and `//$NON-NLS-x$` comments used by IDEs, which cannot
   // contain leading spaces.
   private static final Pattern LINE_COMMENT_MISSING_SPACE_PREFIX =
       Pattern.compile("^(//+)(?!noinspection|\\$NON-NLS-\\d+\\$)[^\\s/]");
 
-  private List<String> wrapLineComments(List<String> lines, int column0) {
+  private List<String> wrapLineComments(Tok tok, List<String> lines, int column0) {
     List<String> result = new ArrayList<>();
     for (String line : lines) {
-      if (MARKDOWN_JAVADOC_PREFIX.matcher(line).find()) {
-        // Don't try to wrap comments that might be markdown javadoc.
-        // This is fairly approximate: a /// comment is only javadoc if it precedes a javadocable
-        // program element. But even if this isn't javadoc, it's not a disaster if we don't wrap it.
+      if (markdownJavadocPositions.contains(tok.getPosition())) {
+        // Don't wrap markdown comments. Eventually we will format them properly, but for now at
+        // least don't mangle them by wrapping with `// ` on the continuation lines.
         result.add(line);
         continue;
       }

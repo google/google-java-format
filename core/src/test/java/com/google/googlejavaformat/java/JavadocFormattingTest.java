@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.ByteStreams;
@@ -25,6 +26,7 @@ import org.junit.runners.JUnit4;
 /** Tests formatting javadoc. */
 @RunWith(JUnit4.class)
 public final class JavadocFormattingTest {
+  private static final boolean MARKDOWN_JAVADOC_SUPPORTED = Runtime.version().feature() >= 23;
 
   private final Formatter formatter = new Formatter();
 
@@ -1599,38 +1601,73 @@ public final class JavadocFormattingTest {
 
   @Test
   public void simpleMarkdown() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
-        """
-        package com.example;
+"""
+package com.example;
 
-        /// # Heading
-        ///
-        /// A very long line of text, long enough that it will need to be wrapped to fit within the maximum line length.
-        class Test {
-          /// Another very long line of text, also long enough that it will need to be wrapped to fit within the maximum line length.
-          /// @param <T> a generic type
-          <T> T method() {
-            return null;
-          }
-        }\
-        """;
+/// # Heading
+///
+/// A very long line of text, long enough that it will need to be wrapped to fit within the maximum line length.
+class Test {
+  /// Another very long line of text, also long enough that it will need to be wrapped to fit within the maximum line length.
+  /// @param <T> a generic type
+  <T> T method() {
+    return null;
+  }
+
+  /// This long line of text looks like a javadoc comment, but is not, because it is separated from the actual javadoc comment by a plain comment.
+  // This is the plain comment.
+  /// A third very long line of text, this time a javadoc comment on a field, which again exceeds the maximum line length.
+  String field;
+
+  /// A fourth very long line of text, which however is not a javadoc comment so will be wrapped like a regular // comment.
+}\
+""";
     // TODO(emcmanus): Actually format the javadoc. For now, we just leave `///` lines alone, unlike
     // `//` lines which get wrapped.
     String expected =
-        """
-        package com.example;
+"""
+package com.example;
 
-        /// # Heading
-        ///
-        /// A very long line of text, long enough that it will need to be wrapped to fit within the maximum line length.
-        class Test {
-          /// Another very long line of text, also long enough that it will need to be wrapped to fit within the maximum line length.
-          /// @param <T> a generic type
-          <T> T method() {
-            return null;
-          }
-        }
-        """;
+/// # Heading
+///
+/// A very long line of text, long enough that it will need to be wrapped to fit within the maximum line length.
+class Test {
+  /// Another very long line of text, also long enough that it will need to be wrapped to fit within the maximum line length.
+  /// @param <T> a generic type
+  <T> T method() {
+    return null;
+  }
+
+  /// This long line of text looks like a javadoc comment, but is not, because it is separated from
+  // the actual javadoc comment by a plain comment.
+  // This is the plain comment.
+  /// A third very long line of text, this time a javadoc comment on a field, which again exceeds the maximum line length.
+  String field;
+
+  /// A fourth very long line of text, which however is not a javadoc comment so will be wrapped
+  // like a regular // comment.
+}
+""";
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void moduleMarkdown() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+"""
+/// A very long line of text, long enough that it will need to be wrapped to fit within the maximum line length.
+module com.example {}
+""";
+    // TODO(emcmanus): Actually format the javadoc. For now, we just leave `///` lines alone, unlike
+    // `//` lines which get wrapped.
+    String expected =
+"""
+/// A very long line of text, long enough that it will need to be wrapped to fit within the maximum line length.
+module com.example {}
+""";
     doFormatTest(input, expected);
   }
 }

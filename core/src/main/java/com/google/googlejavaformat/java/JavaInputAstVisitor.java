@@ -170,6 +170,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -270,6 +271,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   }
 
   private final OpsBuilder builder;
+  private final ImmutableSet.Builder<Integer> markdownJavadocPositions;
 
   private static final Indent.Const ZERO = Indent.Const.ZERO;
   private final int indentMultiplier;
@@ -306,9 +308,13 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    *
    * @param builder the {@link OpsBuilder}
    */
-  JavaInputAstVisitor(OpsBuilder builder, int indentMultiplier) {
+  JavaInputAstVisitor(
+      OpsBuilder builder,
+      int indentMultiplier,
+      ImmutableSet.Builder<Integer> markdownJavadocPositions) {
     this.builder = builder;
     this.indentMultiplier = indentMultiplier;
+    this.markdownJavadocPositions = markdownJavadocPositions;
     minusTwo = Indent.Const.make(-2, indentMultiplier);
     minusFour = Indent.Const.make(-4, indentMultiplier);
     plusTwo = Indent.Const.make(+2, indentMultiplier);
@@ -396,13 +402,23 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /** Skips over extra semi-colons at the top-level, or in a class member declaration lists. */
+  /** Skips over extra semicolons at the top-level, or in a class member declaration lists. */
   private void dropEmptyDeclarations() {
     if (builder.peekToken().equals(Optional.of(";"))) {
       while (builder.peekToken().equals(Optional.of(";"))) {
         builder.forcedBreak();
         markForPartialFormat();
         token(";");
+      }
+    }
+  }
+
+  private void recordMarkdownJavadocPosition(Tree tree) {
+    OptionalInt javadocPosition = javadocPosition(tree);
+    if (javadocPosition.isPresent()) {
+      int pos = javadocPosition.getAsInt();
+      if (builder.getInput().getText().startsWith("///", pos)) {
+        markdownJavadocPositions.add(pos);
       }
     }
   }
@@ -416,6 +432,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       visitImplicitClass(tree);
       return null;
     }
+    recordMarkdownJavadocPosition(tree);
     switch (tree.getKind()) {
       case ANNOTATION_TYPE -> visitAnnotationType(tree);
       case CLASS, INTERFACE -> visitClassDeclaration(tree);
@@ -1020,6 +1037,9 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       Direction annotationDirection) {
     if (fragments.size() == 1) {
       VariableTree fragment = fragments.get(0);
+      if (declarationKind == DeclarationKind.FIELD) {
+        recordMarkdownJavadocPosition(fragment);
+      }
       declareOne(
           declarationKind,
           annotationDirection,
@@ -1455,6 +1475,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   @Override
   public Void visitMethod(MethodTree node, Void unused) {
+    recordMarkdownJavadocPosition(node);
     sync(node);
     List<? extends AnnotationTree> annotations = node.getModifiers().getAnnotations();
     List<? extends AnnotationTree> returnTypeAnnotations = ImmutableList.of();
@@ -2781,6 +2802,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   @Override
   public Void visitModule(ModuleTree node, Void unused) {
+    recordMarkdownJavadocPosition(node);
     for (AnnotationTree annotation : node.getAnnotations()) {
       scan(annotation, null);
       builder.forcedBreak();
@@ -3941,18 +3963,34 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return fragments;
   }
 
-  /** Does this declaration have javadoc preceding it? */
-  private boolean hasJavaDoc(Tree bodyDeclaration) {
+  private OptionalInt javadocPosition(Tree bodyDeclaration) {
     int position = ((JCTree) bodyDeclaration).getStartPosition();
     Input.Token token = builder.getInput().getPositionTokenMap().get(position);
-    if (token != null) {
-      for (Input.Tok tok : token.getToksBefore()) {
-        if (tok.getText().startsWith("/**")) {
-          return true;
-        }
+    if (token == null) {
+      return OptionalInt.empty();
+    }
+    var toksBefore = token.getToksBefore();
+    // toksBefore is in source order. If there are several comments preceding bodyDeclaration, we
+    // want the last one that is a javadoc comment.
+    for (int i = toksBefore.size() - 1; i >= 0; i--) {
+      Input.Tok tok = toksBefore.get(i);
+      String text = tok.getText();
+      // TODO: consider making earlier versions behave compatibly. Prior to Java 23, there are no
+      // markdown javadoc comments, and /// is just a regular // comment that happens to start with
+      // an additional slash. As of Java 23, /// is markdown javadoc, and all consecutive /// lines
+      // are part of the same javac token. To ensure consistent formatting before and after this
+      // change, we would have to merge /// lines in a compatible way, including when we are
+      // extracting their text to make a comment that might be reformatted.
+      if (text.startsWith("/**") || (Runtime.version().feature() >= 23 && text.startsWith("///"))) {
+        return OptionalInt.of(tok.getPosition());
       }
     }
-    return false;
+    return OptionalInt.empty();
+  }
+
+  /** Does this declaration have javadoc preceding it? */
+  private boolean hasJavaDoc(Tree bodyDeclaration) {
+    return javadocPosition(bodyDeclaration).isPresent();
   }
 
   private static Optional<? extends Input.Token> getNextToken(Input input, int position) {
