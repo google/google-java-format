@@ -425,9 +425,8 @@ final class JavadocWriter {
     return innerIndent;
   }
 
-  // If this is a hotspot, keep a String of many spaces around, and call append(string, start, end).
   private void appendSpaces(int count) {
-    output.append(" ".repeat(count));
+    output.repeat(' ', count);
   }
 
   /**
