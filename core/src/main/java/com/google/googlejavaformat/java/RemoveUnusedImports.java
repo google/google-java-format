@@ -58,8 +58,8 @@ import javax.tools.JavaFileObject;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Removes unused imports from a source file. Imports that are only used in javadoc are also
- * removed, and the references in javadoc are replaced with fully qualified names.
+ * Removes unused imports from a source file. Imports that are only used in javadoc are nevertheless
+ * kept.
  */
 public class RemoveUnusedImports {
 
