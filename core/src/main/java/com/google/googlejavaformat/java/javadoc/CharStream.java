@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  */
 final class CharStream {
   private final String input;
-  private int start;
+  private int position;
   private int tokenEnd = -1; // Negative value means no token, and will cause an exception if used.
 
   CharStream(String input) {
@@ -35,10 +35,10 @@ final class CharStream {
   }
 
   boolean tryConsume(String expected) {
-    if (!input.startsWith(expected, start)) {
+    if (!input.startsWith(expected, position)) {
       return false;
     }
-    tokenEnd = start + expected.length();
+    tokenEnd = position + expected.length();
     return true;
   }
 
@@ -48,7 +48,7 @@ final class CharStream {
    * @param pattern the pattern to search for, which must be anchored to match only at position 0
    */
   boolean tryConsumeRegex(Pattern pattern) {
-    Matcher matcher = pattern.matcher(input).region(start, input.length());
+    Matcher matcher = pattern.matcher(input).region(position, input.length());
     if (!matcher.lookingAt()) {
       return false;
     }
@@ -57,13 +57,17 @@ final class CharStream {
   }
 
   String readAndResetRecorded() {
-    String result = input.substring(start, tokenEnd);
-    start = tokenEnd;
+    String result = input.substring(position, tokenEnd);
+    position = tokenEnd;
     tokenEnd = -1;
     return result;
   }
 
   boolean isExhausted() {
-    return start == input.length();
+    return position == input.length();
+  }
+
+  int position() {
+    return position;
   }
 }

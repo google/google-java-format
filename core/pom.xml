@@ -39,6 +39,11 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.commonmark</groupId>
+      <artifactId>commonmark</artifactId>
+      <version>0.28.0</version>
+    </dependency>
 
     <!-- Compile-time dependencies -->
     <dependency>

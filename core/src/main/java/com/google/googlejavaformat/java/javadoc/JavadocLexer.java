@@ -55,7 +55,6 @@ import static java.util.regex.Pattern.compile;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.PeekingIterator;
-import com.google.googlejavaformat.java.javadoc.Token.Type;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -65,15 +64,24 @@ import java.util.regex.Pattern;
 /** Lexer for the Javadoc formatter. */
 final class JavadocLexer {
   /** Takes a Javadoc comment, including ∕✱✱ and ✱∕, and returns tokens, including ∕✱✱ and ✱∕. */
-  static ImmutableList<Token> lex(String input) throws LexException {
-    /*
-     * TODO(cpovirk): In theory, we should interpret Unicode escapes (yet output them in their
-     * original form). This would mean mean everything from an encoded ∕✱✱ to an encoded <pre> tag,
-     * so we'll probably never bother.
-     */
-    input = stripJavadocBeginAndEnd(input);
+  static ImmutableList<Token> lex(String input, boolean classicJavadoc) throws LexException {
+    MarkdownPositions markdownPositions;
+    if (classicJavadoc) {
+      /*
+       * TODO(cpovirk): In theory, we should interpret Unicode escapes (yet output them in their
+       * original form). This would mean mean everything from an encoded ∕✱✱ to an encoded <pre>
+       * tag, so we'll probably never bother.
+       */
+      input = stripJavadocBeginAndEnd(input);
+      markdownPositions = MarkdownPositions.EMPTY;
+    } else {
+      checkArgument(input.startsWith("///"));
+      input = input.substring("///".length());
+      markdownPositions = MarkdownPositions.parse(input);
+    }
     input = normalizeLineEndings(input);
-    return new JavadocLexer(new CharStream(input)).generateTokens();
+    return new JavadocLexer(new CharStream(input), markdownPositions, classicJavadoc)
+        .generateTokens();
   }
 
   /** The lexer crashes on windows line endings, so for now just normalize to `\n`. */
@@ -95,6 +103,8 @@ final class JavadocLexer {
   }
 
   private final CharStream input;
+  private final boolean classicJavadoc;
+  private final MarkdownPositions markdownPositions;
   private final NestingStack braceStack = new NestingStack();
   private final NestingStack preStack = new NestingStack();
   private final NestingStack codeStack = new NestingStack();
@@ -102,49 +112,56 @@ final class JavadocLexer {
   private boolean outerInlineTagIsSnippet;
   private boolean somethingSinceNewline;
 
-  private JavadocLexer(CharStream input) {
+  private JavadocLexer(
+      CharStream input, MarkdownPositions markdownPositions, boolean classicJavadoc) {
     this.input = checkNotNull(input);
+    this.markdownPositions = markdownPositions;
+    this.classicJavadoc = classicJavadoc;
   }
 
   private ImmutableList<Token> generateTokens() throws LexException {
     ImmutableList.Builder<Token> tokens = ImmutableList.builder();
 
-    Token token = new Token(BEGIN_JAVADOC, "/**");
+    Token token = new Token(BEGIN_JAVADOC, classicJavadoc ? "/**" : "///");
     tokens.add(token);
 
     while (!input.isExhausted()) {
+      tokens.addAll(markdownPositions.tokensAt(input.position()));
       token = readToken();
       tokens.add(token);
     }
 
     checkMatchingTags();
 
-    token = new Token(END_JAVADOC, "*/");
+    token = new Token(END_JAVADOC, classicJavadoc ? "*/" : "");
     tokens.add(token);
 
     ImmutableList<Token> result = tokens.build();
     result = joinAdjacentLiteralsAndAdjacentWhitespace(result);
-    result = inferParagraphTags(result);
+    if (classicJavadoc) {
+      result = inferParagraphTags(result);
+    }
     result = optionalizeSpacesAfterLinks(result);
     result = deindentPreCodeBlocks(result);
     return result;
   }
 
   private Token readToken() throws LexException {
-    Type type = consumeToken();
+    Token.Type type = consumeToken();
     String value = input.readAndResetRecorded();
     return new Token(type, value);
   }
 
-  private Type consumeToken() throws LexException {
+  private Token.Type consumeToken() throws LexException {
     boolean preserveExistingFormatting = preserveExistingFormatting();
 
-    if (input.tryConsumeRegex(NEWLINE_PATTERN)) {
+    Pattern newlinePattern = classicJavadoc ? CLASSIC_NEWLINE_PATTERN : MARKDOWN_NEWLINE_PATTERN;
+    if (input.tryConsumeRegex(newlinePattern)) {
       somethingSinceNewline = false;
       return preserveExistingFormatting ? FORCED_NEWLINE : WHITESPACE;
     } else if (input.tryConsume(" ") || input.tryConsume("\t")) {
       // TODO(cpovirk): How about weird whitespace chars? Ideally we'd distinguish breaking vs. not.
-      // Returning LITERAL here prevent us from breaking a <pre> line. For more info, see LITERAL.
+      // Returning LITERAL here prevents us from breaking a <pre> line. For more info, see LITERAL.
       return preserveExistingFormatting ? LITERAL : WHITESPACE;
     }
 
@@ -187,7 +204,7 @@ final class JavadocLexer {
 
     // Inside an inline tag, don't do any HTML interpretation.
     if (!braceStack.isEmpty()) {
-      verify(input.tryConsumeRegex(LITERAL_PATTERN));
+      verify(input.tryConsumeRegex(literalPattern()));
       return LITERAL;
     }
 
@@ -216,7 +233,7 @@ final class JavadocLexer {
     }
 
     if (preserveExistingFormatting) {
-      verify(input.tryConsumeRegex(LITERAL_PATTERN));
+      verify(input.tryConsumeRegex(literalPattern()));
       return LITERAL;
     }
 
@@ -248,7 +265,7 @@ final class JavadocLexer {
       return MOE_END_STRIP_COMMENT;
     } else if (input.tryConsumeRegex(HTML_COMMENT_PATTERN)) {
       return HTML_COMMENT;
-    } else if (input.tryConsumeRegex(LITERAL_PATTERN)) {
+    } else if (input.tryConsumeRegex(literalPattern())) {
       return LITERAL;
     }
     throw new AssertionError();
@@ -274,7 +291,7 @@ final class JavadocLexer {
    * Join together adjacent literal tokens, and join together adjacent whitespace tokens.
    *
    * <p>For literal tokens, this means something like {@code ["<b>", "foo", "</b>"] =>
-   * ["<b>foo</b>"]}. See {@link #LITERAL_PATTERN} for discussion of why those tokens are separate
+   * ["<b>foo</b>"]}. See {@link #literalPattern()} for discussion of why those tokens are separate
    * to begin with.
    *
    * <p>Whitespace tokens are treated analogously. We don't really "want" to join whitespace tokens,
@@ -514,7 +531,8 @@ final class JavadocLexer {
    * We'd remove the trailing whitespace later on (in JavaCommentsHelper.rewrite), but I feel safer
    * stripping it now: It otherwise might confuse our line-length count, which we use for wrapping.
    */
-  private static final Pattern NEWLINE_PATTERN = compile("[ \t]*\n[ \t]*[*]?[ \t]?");
+  private static final Pattern CLASSIC_NEWLINE_PATTERN = compile("[ \t]*\n[ \t]*[*]?[ \t]?");
+  private static final Pattern MARKDOWN_NEWLINE_PATTERN = compile("[ \t]*\n[ \t]*");
 
   // We ensure elsewhere that we match this only at the beginning of a line.
   // Only match tags that start with a lowercase letter, to avoid false matches on unescaped
@@ -545,17 +563,29 @@ final class JavadocLexer {
   private static final Pattern BR_PATTERN = openTagPattern("br");
   private static final Pattern SNIPPET_TAG_OPEN_PATTERN = compile("[{]@snippet\\b");
   private static final Pattern INLINE_TAG_OPEN_PATTERN = compile("[{]@\\w*");
+
   /*
    * We exclude < so that we don't swallow following HTML tags. This lets us fix up "foo<p>" (~400
-   * hits in Google-internal code). We will join unnecessarily split "words" (like "foo<b>bar</b>")
-   * in a later step. There's a similar story for braces. I'm not sure I actually need to exclude @
-   * or *. TODO(cpovirk): Try removing them.
+   * hits in Google-internal code).
    *
-   * Thanks to the "rejoin" step in joinAdjacentLiteralsAndAdjacentWhitespace(), we could get away
-   * with matching only one character here. That would eliminate the need for the regex entirely.
-   * That might be faster or slower than what we do now.
+   * TODO(cpovirk): might not need to exclude @ or *.
    */
-  private static final Pattern LITERAL_PATTERN = compile(".[^ \t\n@<{}*]*", DOTALL);
+  private static final Pattern CLASSIC_LITERAL_PATTERN = compile(".[^ \t\n@<{}*]*", DOTALL);
+
+  /*
+   * Many characters have special meaning in Markdown. Rather than list them all, we'll just match
+   * a sequence of alphabetic characters. Even digits can have special meaning, for numbered lists.
+   */
+  private static final Pattern MARKDOWN_LITERAL_PATTERN = compile(".\\p{IsAlphabetic}*", DOTALL);
+
+  /**
+   * The pattern used for "literals", things that do not have any special formatting meaning. This
+   * doesn't have to be a maximal sequence of literal characters, since adjacent literals will be
+   * joined together in a later step.
+   */
+  private Pattern literalPattern() {
+    return classicJavadoc ? CLASSIC_LITERAL_PATTERN : MARKDOWN_LITERAL_PATTERN;
+  }
 
   private static Pattern openTagPattern(String namePattern) {
     return compile(format("<(?:%s)\\b[^>]*>", namePattern), CASE_INSENSITIVE);

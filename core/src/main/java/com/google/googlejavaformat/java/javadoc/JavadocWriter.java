@@ -28,7 +28,6 @@ import static com.google.googlejavaformat.java.javadoc.Token.Type.LIST_ITEM_OPEN
 import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_OPEN_TAG;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.googlejavaformat.java.javadoc.Token.Type;
 
 /**
  * Stateful object that accepts "requests" and "writes," producing formatted Javadoc.
@@ -39,6 +38,7 @@ import com.google.googlejavaformat.java.javadoc.Token.Type;
  */
 final class JavadocWriter {
   private final int blockIndent;
+  private final boolean classicJavadoc;
   private final StringBuilder output = new StringBuilder();
 
   /**
@@ -59,8 +59,9 @@ final class JavadocWriter {
   private int indentForMoeEndStripComment;
   private boolean wroteAnythingSignificant;
 
-  JavadocWriter(int blockIndent) {
+  JavadocWriter(int blockIndent, boolean classicJavadoc) {
     this.blockIndent = blockIndent;
+    this.classicJavadoc = classicJavadoc;
   }
 
   /**
@@ -72,24 +73,35 @@ final class JavadocWriter {
     requestWhitespace(WHITESPACE);
   }
 
+  private void requestWhitespace(RequestedWhitespace requestedWhitespace) {
+    this.requestedWhitespace = max(requestedWhitespace, this.requestedWhitespace);
+  }
+
   void requestMoeBeginStripComment(Token token) {
     // We queue this up so that we can put it after any requested whitespace.
     requestedMoeBeginStripComment = checkNotNull(token);
   }
 
   void writeBeginJavadoc() {
-    /*
-     * JavaCommentsHelper will make sure this is indented right. But it seems sensible enough that,
-     * if our input starts with ∕✱✱, so too does our output.
-     */
-    output.append("/**");
-    writeNewline();
+    if (classicJavadoc) {
+      /*
+       * JavaCommentsHelper will make sure this is indented right. But it seems sensible enough
+       * that, if our input starts with ∕✱✱, so too does our output.
+       */
+      output.append("/**");
+      writeNewline();
+    } else {
+      output.append("/// ");
+      remainingOnLine = JavadocFormatter.MAX_LINE_LENGTH - blockIndent - 4;
+    }
   }
 
   void writeEndJavadoc() {
-    output.append("\n");
-    appendSpaces(blockIndent + 1);
-    output.append("*/");
+    if (classicJavadoc) {
+      output.append("\n");
+      appendSpaces(blockIndent + 1);
+      output.append("*/");
+    }
   }
 
   void writeFooterJavadocTagStart(Token token) {
@@ -157,11 +169,14 @@ final class JavadocWriter {
   }
 
   void writeListOpen(Token token) {
-    requestBlankLine();
+    if (classicJavadoc) {
+      requestBlankLine();
+    }
 
     writeToken(token);
     continuingListItemOfInnermostList = false;
-    continuingListStack.push(2);
+    int indent = token.value().isEmpty() ? 0 : 2; // No indent for Markdown since no explicit open
+    continuingListStack.push(indent);
     postWriteModifiedContinuingListStack.push();
 
     requestNewline();
@@ -187,11 +202,14 @@ final class JavadocWriter {
     }
     writeToken(token);
     continuingListItemOfInnermostList = true;
-    continuingListItemStack.push(4);
+    int indent = token.value().isEmpty() ? 2 : 4; // Indent 2 for Markdown, 4 for HTML.
+    continuingListItemStack.push(indent);
   }
 
   void writeHeaderOpen(Token token) {
-    requestBlankLine();
+    if (wroteAnythingSignificant) {
+      requestBlankLine();
+    }
 
     writeToken(token);
   }
@@ -301,10 +319,6 @@ final class JavadocWriter {
     requestWhitespace(NEWLINE);
   }
 
-  private void requestWhitespace(RequestedWhitespace requestedWhitespace) {
-    this.requestedWhitespace = max(requestedWhitespace, this.requestedWhitespace);
-  }
-
   /**
    * The kind of whitespace that has been requested between the previous and next tokens. The order
    * of the values is significant: It goes from lowest priority to highest. For example, if the
@@ -316,7 +330,6 @@ final class JavadocWriter {
     WHITESPACE,
     NEWLINE,
     BLANK_LINE,
-    ;
   }
 
   private void writeToken(Token token) {
@@ -388,10 +401,14 @@ final class JavadocWriter {
     wroteAnythingSignificant = true;
   }
 
-  private void writeBlankLine() {
+  private void writeNewlineStart() {
     output.append("\n");
-    appendSpaces(blockIndent + 1);
-    output.append("*");
+    appendSpaces(blockIndent + (classicJavadoc ? 1 : 0));
+    output.append(classicJavadoc ? "*" : "///");
+  }
+
+  private void writeBlankLine() {
+    writeNewlineStart();
     writeNewline();
   }
 
@@ -400,11 +417,9 @@ final class JavadocWriter {
   }
 
   private void writeNewline(AutoIndent autoIndent) {
-    output.append("\n");
-    appendSpaces(blockIndent + 1);
-    output.append("*");
+    writeNewlineStart();
     appendSpaces(1);
-    remainingOnLine = JavadocFormatter.MAX_LINE_LENGTH - blockIndent - 3;
+    remainingOnLine = JavadocFormatter.MAX_LINE_LENGTH - blockIndent - (classicJavadoc ? 3 : 4);
     if (autoIndent == AUTO_INDENT) {
       appendSpaces(innerIndent());
       remainingOnLine -= innerIndent();
@@ -437,6 +452,6 @@ final class JavadocWriter {
    * done by the lexer. The special pinning here is necessary because these tokens are not of type
    * LITERAL (because they require other special handling).
    */
-  private static final ImmutableSet<Type> START_OF_LINE_TOKENS =
+  private static final ImmutableSet<Token.Type> START_OF_LINE_TOKENS =
       immutableEnumSet(LIST_ITEM_OPEN_TAG, PARAGRAPH_OPEN_TAG, HEADER_OPEN_TAG);
 }

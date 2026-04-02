@@ -1609,6 +1609,8 @@ package com.example;
 /// # Heading
 ///
 /// A very long line of text, long enough that it will need to be wrapped to fit within the maximum line length.
+///
+/// A second paragraph.
 class Test {
   /// Another very long line of text, also long enough that it will need to be wrapped to fit within the maximum line length.
   /// @param <T> a generic type
@@ -1624,17 +1626,20 @@ class Test {
   /// A fourth very long line of text, which however is not a javadoc comment so will be wrapped like a regular // comment.
 }\
 """;
-    // TODO(emcmanus): Actually format the javadoc. For now, we just leave `///` lines alone, unlike
-    // `//` lines which get wrapped.
     String expected =
 """
 package com.example;
 
 /// # Heading
 ///
-/// A very long line of text, long enough that it will need to be wrapped to fit within the maximum line length.
+/// A very long line of text, long enough that it will need to be wrapped to fit within the maximum
+/// line length.
+///
+/// A second paragraph.
 class Test {
-  /// Another very long line of text, also long enough that it will need to be wrapped to fit within the maximum line length.
+  /// Another very long line of text, also long enough that it will need to be wrapped to fit within
+  /// the maximum line length.
+  ///
   /// @param <T> a generic type
   <T> T method() {
     return null;
@@ -1643,7 +1648,8 @@ class Test {
   /// This long line of text looks like a javadoc comment, but is not, because it is separated from
   // the actual javadoc comment by a plain comment.
   // This is the plain comment.
-  /// A third very long line of text, this time a javadoc comment on a field, which again exceeds the maximum line length.
+  /// A third very long line of text, this time a javadoc comment on a field, which again exceeds
+  /// the maximum line length.
   String field;
 
   /// A fourth very long line of text, which however is not a javadoc comment so will be wrapped
@@ -1661,12 +1667,41 @@ class Test {
 /// A very long line of text, long enough that it will need to be wrapped to fit within the maximum line length.
 module com.example {}
 """;
-    // TODO(emcmanus): Actually format the javadoc. For now, we just leave `///` lines alone, unlike
-    // `//` lines which get wrapped.
     String expected =
 """
-/// A very long line of text, long enough that it will need to be wrapped to fit within the maximum line length.
+/// A very long line of text, long enough that it will need to be wrapped to fit within the maximum
+/// line length.
 module com.example {}
+""";
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownBulletList() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+"""
+/// A list that contains:
+/// - things
+/// - very very long lines that are going to need to be wrapped with appropriate indentation on the next line
+/// - item that unnecessarily
+///   continues onto the next line
+/// - a nested list
+///   * nested thing 1
+///   * nested thing 2
+class Test {}
+""";
+    String expected =
+"""
+/// A list that contains:
+/// - things
+/// - very very long lines that are going to need to be wrapped with appropriate indentation on the
+///   next line
+/// - item that unnecessarily continues onto the next line
+/// - a nested list
+///   * nested thing 1
+///   * nested thing 2
+class Test {}
 """;
     doFormatTest(input, expected);
   }
