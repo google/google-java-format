@@ -49,9 +49,9 @@ final class JavadocWriter {
   private boolean continuingListItemOfInnermostList;
 
   private boolean continuingFooterTag;
-  private final NestingCounter continuingListItemCount = new NestingCounter();
-  private final NestingCounter continuingListCount = new NestingCounter();
-  private final NestingCounter postWriteModifiedContinuingListCount = new NestingCounter();
+  private final NestingStack continuingListItemStack = new NestingStack();
+  private final NestingStack continuingListStack = new NestingStack();
+  private final NestingStack postWriteModifiedContinuingListStack = new NestingStack();
   private int remainingOnLine;
   private boolean atStartOfLine;
   private RequestedWhitespace requestedWhitespace = NONE;
@@ -102,13 +102,13 @@ final class JavadocWriter {
      * currently know which of those tags are open.
      */
     continuingListItemOfInnermostList = false;
-    continuingListItemCount.reset();
-    continuingListCount.reset();
+    continuingListItemStack.reset();
+    continuingListStack.reset();
     /*
      * There's probably no need for this, since its only effect is to disable blank lines in some
      * cases -- and we're doing that already in the footer.
      */
-    postWriteModifiedContinuingListCount.reset();
+    postWriteModifiedContinuingListStack.reset();
 
     if (!wroteAnythingSignificant) {
       // Javadoc consists solely of tags. This is frowned upon in general but OK for @Overrides.
@@ -161,8 +161,8 @@ final class JavadocWriter {
 
     writeToken(token);
     continuingListItemOfInnermostList = false;
-    continuingListCount.increment();
-    postWriteModifiedContinuingListCount.increment();
+    continuingListStack.push(2);
+    postWriteModifiedContinuingListStack.push();
 
     requestNewline();
   }
@@ -170,10 +170,10 @@ final class JavadocWriter {
   void writeListClose(Token token) {
     requestNewline();
 
-    continuingListItemCount.decrementIfPositive();
-    continuingListCount.decrementIfPositive();
+    continuingListItemStack.popIfNotEmpty();
+    continuingListStack.popIfNotEmpty();
     writeToken(token);
-    postWriteModifiedContinuingListCount.decrementIfPositive();
+    postWriteModifiedContinuingListStack.popIfNotEmpty();
 
     requestBlankLine();
   }
@@ -183,11 +183,11 @@ final class JavadocWriter {
 
     if (continuingListItemOfInnermostList) {
       continuingListItemOfInnermostList = false;
-      continuingListItemCount.decrementIfPositive();
+      continuingListItemStack.popIfNotEmpty();
     }
     writeToken(token);
     continuingListItemOfInnermostList = true;
-    continuingListItemCount.increment();
+    continuingListItemStack.push(4);
   }
 
   void writeHeaderOpen(Token token) {
@@ -325,7 +325,7 @@ final class JavadocWriter {
     }
 
     if (requestedWhitespace == BLANK_LINE
-        && (postWriteModifiedContinuingListCount.isPositive() || continuingFooterTag)) {
+        && (!postWriteModifiedContinuingListStack.isEmpty() || continuingFooterTag)) {
       /*
        * We don't write blank lines inside lists or footer tags, even in cases where we otherwise
        * would (e.g., before a <p> tag). Justification: We don't write blank lines _between_ list
@@ -418,7 +418,7 @@ final class JavadocWriter {
   }
 
   private int innerIndent() {
-    int innerIndent = continuingListItemCount.value() * 4 + continuingListCount.value() * 2;
+    int innerIndent = continuingListItemStack.total() + continuingListStack.total();
     if (continuingFooterTag) {
       innerIndent += 4;
     }

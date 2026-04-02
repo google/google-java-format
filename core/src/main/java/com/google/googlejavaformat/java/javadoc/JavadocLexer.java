@@ -95,10 +95,10 @@ final class JavadocLexer {
   }
 
   private final CharStream input;
-  private final NestingCounter braceDepth = new NestingCounter();
-  private final NestingCounter preDepth = new NestingCounter();
-  private final NestingCounter codeDepth = new NestingCounter();
-  private final NestingCounter tableDepth = new NestingCounter();
+  private final NestingStack braceStack = new NestingStack();
+  private final NestingStack preStack = new NestingStack();
+  private final NestingStack codeStack = new NestingStack();
+  private final NestingStack tableStack = new NestingStack();
   private boolean outerInlineTagIsSnippet;
   private boolean somethingSinceNewline;
 
@@ -162,56 +162,56 @@ final class JavadocLexer {
     somethingSinceNewline = true;
 
     if (input.tryConsumeRegex(SNIPPET_TAG_OPEN_PATTERN)) {
-      if (braceDepth.value() == 0) {
-        braceDepth.increment();
+      if (braceStack.isEmpty()) {
+        braceStack.push();
         outerInlineTagIsSnippet = true;
         return SNIPPET_BEGIN;
       }
-      braceDepth.increment();
+      braceStack.push();
       return LITERAL;
     } else if (input.tryConsumeRegex(INLINE_TAG_OPEN_PATTERN)) {
-      braceDepth.increment();
+      braceStack.push();
       return LITERAL;
     } else if (input.tryConsume("{")) {
-      braceDepth.incrementIfPositive();
+      braceStack.incrementIfPositive();
       return LITERAL;
     } else if (input.tryConsume("}")) {
-      if (outerInlineTagIsSnippet && braceDepth.value() == 1) {
-        braceDepth.decrementIfPositive();
+      if (outerInlineTagIsSnippet && braceStack.total() == 1) {
+        braceStack.popIfNotEmpty();
         outerInlineTagIsSnippet = false;
         return SNIPPET_END;
       }
-      braceDepth.decrementIfPositive();
+      braceStack.popIfNotEmpty();
       return LITERAL;
     }
 
     // Inside an inline tag, don't do any HTML interpretation.
-    if (braceDepth.isPositive()) {
+    if (!braceStack.isEmpty()) {
       verify(input.tryConsumeRegex(LITERAL_PATTERN));
       return LITERAL;
     }
 
     if (input.tryConsumeRegex(PRE_OPEN_PATTERN)) {
-      preDepth.increment();
+      preStack.push();
       return preserveExistingFormatting ? LITERAL : PRE_OPEN_TAG;
     } else if (input.tryConsumeRegex(PRE_CLOSE_PATTERN)) {
-      preDepth.decrementIfPositive();
+      preStack.popIfNotEmpty();
       return preserveExistingFormatting() ? LITERAL : PRE_CLOSE_TAG;
     }
 
     if (input.tryConsumeRegex(CODE_OPEN_PATTERN)) {
-      codeDepth.increment();
+      codeStack.push();
       return preserveExistingFormatting ? LITERAL : CODE_OPEN_TAG;
     } else if (input.tryConsumeRegex(CODE_CLOSE_PATTERN)) {
-      codeDepth.decrementIfPositive();
+      codeStack.popIfNotEmpty();
       return preserveExistingFormatting() ? LITERAL : CODE_CLOSE_TAG;
     }
 
     if (input.tryConsumeRegex(TABLE_OPEN_PATTERN)) {
-      tableDepth.increment();
+      tableStack.push();
       return preserveExistingFormatting ? LITERAL : TABLE_OPEN_TAG;
     } else if (input.tryConsumeRegex(TABLE_CLOSE_PATTERN)) {
-      tableDepth.decrementIfPositive();
+      tableStack.popIfNotEmpty();
       return preserveExistingFormatting() ? LITERAL : TABLE_CLOSE_TAG;
     }
 
@@ -255,17 +255,17 @@ final class JavadocLexer {
   }
 
   private boolean preserveExistingFormatting() {
-    return preDepth.isPositive()
-        || tableDepth.isPositive()
-        || codeDepth.isPositive()
+    return !preStack.isEmpty()
+        || !tableStack.isEmpty()
+        || !codeStack.isEmpty()
         || outerInlineTagIsSnippet;
   }
 
   private void checkMatchingTags() throws LexException {
-    if (braceDepth.isPositive()
-        || preDepth.isPositive()
-        || tableDepth.isPositive()
-        || codeDepth.isPositive()) {
+    if (!braceStack.isEmpty()
+        || !preStack.isEmpty()
+        || !tableStack.isEmpty()
+        || !codeStack.isEmpty()) {
       throw new LexException();
     }
   }
