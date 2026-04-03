@@ -126,7 +126,12 @@ final class JavadocLexer {
     tokens.add(token);
 
     while (!input.isExhausted()) {
-      tokens.addAll(markdownPositions.tokensAt(input.position()));
+      for (Token markdownToken : markdownPositions.tokensAt(input.position())) {
+        boolean consumed = input.tryConsume(markdownToken.value());
+        verify(consumed, "Did not consume markdown token: %s", markdownToken);
+        var unused = input.readAndResetRecorded();
+        tokens.add(markdownToken);
+      }
       token = readToken();
       tokens.add(token);
     }

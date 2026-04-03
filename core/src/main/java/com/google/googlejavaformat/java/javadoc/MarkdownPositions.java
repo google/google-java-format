@@ -13,14 +13,19 @@
  */
 package com.google.googlejavaformat.java.javadoc;
 
+import static com.google.common.base.Verify.verify;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ListMultimap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.commonmark.node.BulletList;
 import org.commonmark.node.Heading;
 import org.commonmark.node.ListItem;
 import org.commonmark.node.Node;
+import org.commonmark.node.OrderedList;
 import org.commonmark.node.Paragraph;
 import org.commonmark.parser.IncludeSourceSpans;
 import org.commonmark.parser.Parser;
@@ -50,7 +55,7 @@ final class MarkdownPositions {
   static MarkdownPositions parse(String input) {
     Node document = PARSER.parse(input);
     ListMultimap<Integer, Token> positionToToken = ArrayListMultimap.create();
-    new TokenVisitor(positionToToken).visit(document);
+    new TokenVisitor(input, positionToToken).visit(document);
     return new MarkdownPositions(ImmutableListMultimap.copyOf(positionToToken));
   }
 
@@ -59,9 +64,11 @@ final class MarkdownPositions {
   }
 
   private static class TokenVisitor {
+    private final String input;
     private final ListMultimap<Integer, Token> positionToToken;
 
-    TokenVisitor(ListMultimap<Integer, Token> positionToToken) {
+    TokenVisitor(String input, ListMultimap<Integer, Token> positionToToken) {
+      this.input = input;
       this.positionToToken = positionToToken;
     }
 
@@ -74,8 +81,15 @@ final class MarkdownPositions {
             addSpan(positionToToken, paragraph, PARAGRAPH_OPEN_TOKEN, PARAGRAPH_CLOSE_TOKEN);
         case BulletList bulletList ->
             addSpan(positionToToken, bulletList, LIST_OPEN_TOKEN, LIST_CLOSE_TOKEN);
+        case OrderedList orderedList ->
+            addSpan(positionToToken, orderedList, LIST_OPEN_TOKEN, LIST_CLOSE_TOKEN);
         case ListItem listItem -> {
-          addSpan(positionToToken, listItem, LIST_ITEM_OPEN_TOKEN, LIST_ITEM_CLOSE_TOKEN);
+          int startPosition = listItem.getSourceSpans().getFirst().getInputIndex();
+          Matcher matcher =
+              LIST_ITEM_START_PATTERN.matcher(input).region(startPosition, input.length());
+          verify(matcher.lookingAt());
+          Token openToken = new Token(Token.Type.LIST_ITEM_OPEN_TAG, matcher.group(1));
+          addSpan(positionToToken, listItem, openToken, LIST_ITEM_CLOSE_TOKEN);
           if (listItem.getFirstChild() instanceof Paragraph paragraph) {
             // A ListItem typically contains a Paragraph, but we don't want to visit that Paragraph
             // because that would lead us to introduce a line break after the list introduction
@@ -133,12 +147,17 @@ final class MarkdownPositions {
 
   private static final Parser PARSER =
       Parser.builder().includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES).build();
+
   private static final Token HEADER_OPEN_TOKEN = new Token(Token.Type.HEADER_OPEN_TAG, "");
   private static final Token HEADER_CLOSE_TOKEN = new Token(Token.Type.HEADER_CLOSE_TAG, "");
   private static final Token PARAGRAPH_OPEN_TOKEN = new Token(Token.Type.PARAGRAPH_OPEN_TAG, "");
   private static final Token PARAGRAPH_CLOSE_TOKEN = new Token(Token.Type.PARAGRAPH_CLOSE_TAG, "");
   private static final Token LIST_OPEN_TOKEN = new Token(Token.Type.LIST_OPEN_TAG, "");
   private static final Token LIST_CLOSE_TOKEN = new Token(Token.Type.LIST_CLOSE_TAG, "");
-  private static final Token LIST_ITEM_OPEN_TOKEN = new Token(Token.Type.LIST_ITEM_OPEN_TAG, "");
   private static final Token LIST_ITEM_CLOSE_TOKEN = new Token(Token.Type.LIST_ITEM_CLOSE_TAG, "");
+
+  // The leading \s here works around what appears to be a CommonMark bug. We shouldn't ever see
+  // space at the purported start of a list item?
+  private static final Pattern LIST_ITEM_START_PATTERN =
+      Pattern.compile("(?:\\s*)((-|\\*|[0-9]+\\.)\\s)");
 }

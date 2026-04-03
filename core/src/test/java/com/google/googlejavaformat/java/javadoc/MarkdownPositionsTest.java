@@ -47,9 +47,9 @@ public final class MarkdownPositionsTest {
     ImmutableListMultimap<Integer, Token> expected =
         ImmutableListMultimap.<Integer, Token>builder()
             .put(firstBullet, new Token(Token.Type.LIST_OPEN_TAG, ""))
-            .put(firstBullet, new Token(Token.Type.LIST_ITEM_OPEN_TAG, ""))
+            .put(firstBullet, new Token(Token.Type.LIST_ITEM_OPEN_TAG, "- "))
             .put(secondBullet - 1, new Token(Token.Type.LIST_ITEM_CLOSE_TAG, ""))
-            .put(secondBullet, new Token(Token.Type.LIST_ITEM_OPEN_TAG, ""))
+            .put(secondBullet, new Token(Token.Type.LIST_ITEM_OPEN_TAG, "- "))
             .put(end, new Token(Token.Type.LIST_ITEM_CLOSE_TAG, ""))
             .put(end, new Token(Token.Type.LIST_CLOSE_TAG, ""))
             .build();

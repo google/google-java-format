@@ -1677,7 +1677,7 @@ module com.example {}
   }
 
   @Test
-  public void markdownBulletList() {
+  public void markdownLists() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
 """
@@ -1689,6 +1689,14 @@ module com.example {}
 /// - a nested list
 ///   * nested thing 1
 ///   * nested thing 2
+/// -    a nested numbered list with unnecessary leading whitespace
+///      1. nested thing 1
+///         on more than one line
+///      2. nested thing 2 on only one line but which is long enough that it is going to need to be wrapped
+///
+///      3. nested thing 3 after a blank line
+///
+/// A following paragraph.
 class Test {}
 """;
     String expected =
@@ -1701,6 +1709,13 @@ class Test {}
 /// - a nested list
 ///   * nested thing 1
 ///   * nested thing 2
+/// - a nested numbered list with unnecessary leading whitespace
+///   1. nested thing 1 on more than one line
+///   2. nested thing 2 on only one line but which is long enough that it is going to need to be
+///      wrapped
+///   3. nested thing 3 after a blank line
+///
+/// A following paragraph.
 class Test {}
 """;
     doFormatTest(input, expected);

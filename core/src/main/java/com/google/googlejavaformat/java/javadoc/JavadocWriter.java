@@ -183,14 +183,18 @@ final class JavadocWriter {
   }
 
   void writeListClose(Token token) {
-    requestNewline();
+    if (classicJavadoc) {
+      requestNewline();
+    }
 
     continuingListItemStack.popIfNotEmpty();
     continuingListStack.popIfNotEmpty();
     writeToken(token);
     postWriteModifiedContinuingListStack.popIfNotEmpty();
 
-    requestBlankLine();
+    if (classicJavadoc) {
+      requestBlankLine();
+    }
   }
 
   void writeListItemOpen(Token token) {
@@ -202,7 +206,7 @@ final class JavadocWriter {
     }
     writeToken(token);
     continuingListItemOfInnermostList = true;
-    int indent = token.value().isEmpty() ? 2 : 4; // Indent 2 for Markdown, 4 for HTML.
+    int indent = token.value().length();
     continuingListItemStack.push(indent);
   }
 
