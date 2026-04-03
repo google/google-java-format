@@ -16,8 +16,6 @@ package com.google.googlejavaformat.java.javadoc;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.googlejavaformat.java.javadoc.JavadocLexer.lex;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.BR_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_OPEN_TAG;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.compile;
 import static java.util.stream.Collectors.joining;
@@ -25,6 +23,35 @@ import static java.util.stream.Collectors.joining;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.java.javadoc.JavadocLexer.LexException;
+import com.google.googlejavaformat.java.javadoc.Token.BeginJavadoc;
+import com.google.googlejavaformat.java.javadoc.Token.BlockquoteCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.BlockquoteOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.BrTag;
+import com.google.googlejavaformat.java.javadoc.Token.CodeCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.CodeOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.EndJavadoc;
+import com.google.googlejavaformat.java.javadoc.Token.FooterJavadocTagStart;
+import com.google.googlejavaformat.java.javadoc.Token.ForcedNewline;
+import com.google.googlejavaformat.java.javadoc.Token.HeaderCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.HeaderOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.HtmlComment;
+import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.Literal;
+import com.google.googlejavaformat.java.javadoc.Token.MoeBeginStripComment;
+import com.google.googlejavaformat.java.javadoc.Token.MoeEndStripComment;
+import com.google.googlejavaformat.java.javadoc.Token.OptionalLineBreak;
+import com.google.googlejavaformat.java.javadoc.Token.ParagraphCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ParagraphOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.PreCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.PreOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.SnippetBegin;
+import com.google.googlejavaformat.java.javadoc.Token.SnippetEnd;
+import com.google.googlejavaformat.java.javadoc.Token.TableCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.TableOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.Whitespace;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -74,36 +101,39 @@ public final class JavadocFormatter {
   private static String render(List<Token> input, int blockIndent, boolean classicJavadoc) {
     JavadocWriter output = new JavadocWriter(blockIndent, classicJavadoc);
     for (Token token : input) {
-      switch (token.type()) {
-        case BEGIN_JAVADOC -> output.writeBeginJavadoc();
-        case END_JAVADOC -> {
+      switch (token) {
+        case BeginJavadoc unused -> output.writeBeginJavadoc();
+        case EndJavadoc unused -> {
           output.writeEndJavadoc();
           return output.toString();
         }
-        case FOOTER_JAVADOC_TAG_START -> output.writeFooterJavadocTagStart(token);
-        case SNIPPET_BEGIN -> output.writeSnippetBegin(token);
-        case SNIPPET_END -> output.writeSnippetEnd(token);
-        case LIST_OPEN_TAG -> output.writeListOpen(token);
-        case LIST_CLOSE_TAG -> output.writeListClose(token);
-        case LIST_ITEM_OPEN_TAG -> output.writeListItemOpen(token);
-        case HEADER_OPEN_TAG -> output.writeHeaderOpen(token);
-        case HEADER_CLOSE_TAG -> output.writeHeaderClose(token);
-        case PARAGRAPH_OPEN_TAG -> output.writeParagraphOpen(standardizePToken(token));
-        case BLOCKQUOTE_OPEN_TAG, BLOCKQUOTE_CLOSE_TAG -> output.writeBlockquoteOpenOrClose(token);
-        case PRE_OPEN_TAG -> output.writePreOpen(token);
-        case PRE_CLOSE_TAG -> output.writePreClose(token);
-        case CODE_OPEN_TAG -> output.writeCodeOpen(token);
-        case CODE_CLOSE_TAG -> output.writeCodeClose(token);
-        case TABLE_OPEN_TAG -> output.writeTableOpen(token);
-        case TABLE_CLOSE_TAG -> output.writeTableClose(token);
-        case MOE_BEGIN_STRIP_COMMENT -> output.requestMoeBeginStripComment(token);
-        case MOE_END_STRIP_COMMENT -> output.writeMoeEndStripComment(token);
-        case HTML_COMMENT -> output.writeHtmlComment(token);
-        case BR_TAG -> output.writeBr(standardizeBrToken(token));
-        case WHITESPACE -> output.requestWhitespace();
-        case FORCED_NEWLINE -> output.writeLineBreakNoAutoIndent();
-        case LITERAL -> output.writeLiteral(token);
-        case PARAGRAPH_CLOSE_TAG, LIST_ITEM_CLOSE_TAG, OPTIONAL_LINE_BREAK -> {}
+        case FooterJavadocTagStart t -> output.writeFooterJavadocTagStart(t);
+        case SnippetBegin t -> output.writeSnippetBegin(t);
+        case SnippetEnd t -> output.writeSnippetEnd(t);
+        case ListOpenTag t -> output.writeListOpen(t);
+        case ListCloseTag t -> output.writeListClose(t);
+        case ListItemOpenTag t -> output.writeListItemOpen(t);
+        case HeaderOpenTag t -> output.writeHeaderOpen(t);
+        case HeaderCloseTag t -> output.writeHeaderClose(t);
+        case ParagraphOpenTag t -> output.writeParagraphOpen(standardizePToken(t));
+        case BlockquoteOpenTag t -> output.writeBlockquoteOpenOrClose(t);
+        case BlockquoteCloseTag t -> output.writeBlockquoteOpenOrClose(t);
+        case PreOpenTag t -> output.writePreOpen(t);
+        case PreCloseTag t -> output.writePreClose(t);
+        case CodeOpenTag t -> output.writeCodeOpen(t);
+        case CodeCloseTag t -> output.writeCodeClose(t);
+        case TableOpenTag t -> output.writeTableOpen(t);
+        case TableCloseTag t -> output.writeTableClose(t);
+        case MoeBeginStripComment t -> output.requestMoeBeginStripComment(t);
+        case MoeEndStripComment t -> output.writeMoeEndStripComment(t);
+        case HtmlComment t -> output.writeHtmlComment(t);
+        case BrTag t -> output.writeBr(standardizeBrToken(t));
+        case Whitespace unused -> output.requestWhitespace();
+        case ForcedNewline unused -> output.writeLineBreakNoAutoIndent();
+        case Literal t -> output.writeLiteral(t);
+        case ParagraphCloseTag unused -> {}
+        case ListItemCloseTag unused -> {}
+        case OptionalLineBreak unused -> {}
       }
     }
     throw new AssertionError();
@@ -126,8 +156,8 @@ public final class JavadocFormatter {
     return SIMPLE_TAG_PATTERN.matcher(token.value()).matches() ? standardToken : token;
   }
 
-  private static final Token STANDARD_BR_TOKEN = new Token(BR_TAG, "<br>");
-  private static final Token STANDARD_P_TOKEN = new Token(PARAGRAPH_OPEN_TAG, "<p>");
+  private static final Token STANDARD_BR_TOKEN = new BrTag("<br>");
+  private static final Token STANDARD_P_TOKEN = new ParagraphOpenTag("<p>");
   private static final Pattern SIMPLE_TAG_PATTERN = compile("^<\\w+\\s*/?\\s*>", CASE_INSENSITIVE);
 
   private static final Pattern ONE_CONTENT_LINE_PATTERN = compile(" */[*][*]\n *[*] (.*)\n *[*]/");

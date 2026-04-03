@@ -17,6 +17,14 @@ import static com.google.common.collect.ImmutableListMultimap.flatteningToImmuta
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.googlejavaformat.java.javadoc.Token.HeaderCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.HeaderOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.ParagraphCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ParagraphOpenTag;
 import java.util.Map;
 import java.util.stream.IntStream;
 import org.junit.Test;
@@ -46,12 +54,12 @@ public final class MarkdownPositionsTest {
     int end = text.length() - 1;
     ImmutableListMultimap<Integer, Token> expected =
         ImmutableListMultimap.<Integer, Token>builder()
-            .put(firstBullet, new Token(Token.Type.LIST_OPEN_TAG, ""))
-            .put(firstBullet, new Token(Token.Type.LIST_ITEM_OPEN_TAG, "- "))
-            .put(secondBullet - 1, new Token(Token.Type.LIST_ITEM_CLOSE_TAG, ""))
-            .put(secondBullet, new Token(Token.Type.LIST_ITEM_OPEN_TAG, "- "))
-            .put(end, new Token(Token.Type.LIST_ITEM_CLOSE_TAG, ""))
-            .put(end, new Token(Token.Type.LIST_CLOSE_TAG, ""))
+            .put(firstBullet, new ListOpenTag(""))
+            .put(firstBullet, new ListItemOpenTag("- "))
+            .put(secondBullet - 1, new ListItemCloseTag(""))
+            .put(secondBullet, new ListItemOpenTag("- "))
+            .put(end, new ListItemCloseTag(""))
+            .put(end, new ListCloseTag(""))
             .build();
     assertThat(map).isEqualTo(expected);
   }
@@ -80,14 +88,14 @@ tiddly pom
     int secondParagraphEnd = text.indexOf('\n', secondParagraph);
     ImmutableListMultimap<Integer, Token> expected =
         ImmutableListMultimap.<Integer, Token>builder()
-            .put(firstHeading, new Token(Token.Type.HEADER_OPEN_TAG, ""))
-            .put(firstHeadingEnd, new Token(Token.Type.HEADER_CLOSE_TAG, ""))
-            .put(firstParagraph, new Token(Token.Type.PARAGRAPH_OPEN_TAG, ""))
-            .put(firstParagraphEnd, new Token(Token.Type.PARAGRAPH_CLOSE_TAG, ""))
-            .put(secondHeading, new Token(Token.Type.HEADER_OPEN_TAG, ""))
-            .put(secondHeadingEnd, new Token(Token.Type.HEADER_CLOSE_TAG, ""))
-            .put(secondParagraph, new Token(Token.Type.PARAGRAPH_OPEN_TAG, ""))
-            .put(secondParagraphEnd, new Token(Token.Type.PARAGRAPH_CLOSE_TAG, ""))
+            .put(firstHeading, new HeaderOpenTag(""))
+            .put(firstHeadingEnd, new HeaderCloseTag(""))
+            .put(firstParagraph, new ParagraphOpenTag(""))
+            .put(firstParagraphEnd, new ParagraphCloseTag(""))
+            .put(secondHeading, new HeaderOpenTag(""))
+            .put(secondHeadingEnd, new HeaderCloseTag(""))
+            .put(secondParagraph, new ParagraphOpenTag(""))
+            .put(secondParagraphEnd, new ParagraphCloseTag(""))
             .build();
     assertThat(map).isEqualTo(expected);
   }

@@ -19,6 +19,14 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ListMultimap;
+import com.google.googlejavaformat.java.javadoc.Token.HeaderCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.HeaderOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.ParagraphCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ParagraphOpenTag;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.commonmark.node.BulletList;
@@ -33,16 +41,14 @@ import org.commonmark.parser.Parser;
 /**
  * Determines the locations in a Markdown string where Markdown constructs occur. For example, if
  * position 10 in the string looks like {@code # Heading\n}, the {@code positionToToken} map will
- * contain an entry for 10 with a {@code HEADER_OPEN_TAG} token and an entry for (10 +
- * "#&nbsp;Heading".length()) with a {@code HEADER_CLOSE_TAG} token. These locations can then be
+ * contain an entry for 10 with a {@code HeaderOpenTag} token and an entry for (10 +
+ * "#&nbsp;Heading".length()) with a {@code HeaderCloseTag} token. These locations can then be
  * inserted at the appropriate point in the stream of {@link Token} instances that the lexer
  * produces.
  *
- * <p>The text ({@Token#value()}) of these inserted tokens is not added to the output, since the
- * original Markdown characters are treated as literals. The tokens serve only to identify
- * constructs, for example to manage indentation of lists.
+ * <p>The text ({@Token#value()}) of these inserted tokens is mostly not added to the output, since
+ * the original Markdown characters are treated as literals.
  */
-// TODO: it might make more sense to give some of the inserted tokens non-empty text
 final class MarkdownPositions {
   final ImmutableListMultimap<Integer, Token> positionToToken;
 
@@ -88,7 +94,7 @@ final class MarkdownPositions {
           Matcher matcher =
               LIST_ITEM_START_PATTERN.matcher(input).region(startPosition, input.length());
           verify(matcher.lookingAt());
-          Token openToken = new Token(Token.Type.LIST_ITEM_OPEN_TAG, matcher.group(1));
+          Token openToken = new ListItemOpenTag(matcher.group(1));
           addSpan(positionToToken, listItem, openToken, LIST_ITEM_CLOSE_TOKEN);
           if (listItem.getFirstChild() instanceof Paragraph paragraph) {
             // A ListItem typically contains a Paragraph, but we don't want to visit that Paragraph
@@ -124,10 +130,9 @@ final class MarkdownPositions {
    * input, and {@code endToken} at the point where it ends. The {@code startToken} goes after any
    * other tokens at that position and the {@code endToken} goes before any other tokens at that
    * position. That reflects the structure. For example, at the start of a bullet list, the visitor
-   * will see {@link BulletList} then {@link ListItem}. We will translate this into {@link
-   * Token.Type.LIST_OPEN_TAG} then {@link Token.Type.LIST_ITEM_OPEN_TAG} at the start position, and
-   * {@link Token.Type.LIST_ITEM_CLOSE_TAG} then {@link Token.Type.LIST_CLOSE_TAG} (in that order)
-   * at the end position.
+   * we will translate this into {@link ListOpenTag} then {@link ListItemOpenTag} at the start
+   * position, and {@link ListItemCloseTag} then {@link ListCloseTag} (in that order) at the end
+   * position.
    */
   private static void addSpan(
       ListMultimap<Integer, Token> positionToToken, Node node, Token startToken, Token endToken) {
@@ -148,13 +153,13 @@ final class MarkdownPositions {
   private static final Parser PARSER =
       Parser.builder().includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES).build();
 
-  private static final Token HEADER_OPEN_TOKEN = new Token(Token.Type.HEADER_OPEN_TAG, "");
-  private static final Token HEADER_CLOSE_TOKEN = new Token(Token.Type.HEADER_CLOSE_TAG, "");
-  private static final Token PARAGRAPH_OPEN_TOKEN = new Token(Token.Type.PARAGRAPH_OPEN_TAG, "");
-  private static final Token PARAGRAPH_CLOSE_TOKEN = new Token(Token.Type.PARAGRAPH_CLOSE_TAG, "");
-  private static final Token LIST_OPEN_TOKEN = new Token(Token.Type.LIST_OPEN_TAG, "");
-  private static final Token LIST_CLOSE_TOKEN = new Token(Token.Type.LIST_CLOSE_TAG, "");
-  private static final Token LIST_ITEM_CLOSE_TOKEN = new Token(Token.Type.LIST_ITEM_CLOSE_TAG, "");
+  private static final Token HEADER_OPEN_TOKEN = new HeaderOpenTag("");
+  private static final Token HEADER_CLOSE_TOKEN = new HeaderCloseTag("");
+  private static final Token PARAGRAPH_OPEN_TOKEN = new ParagraphOpenTag("");
+  private static final Token PARAGRAPH_CLOSE_TOKEN = new ParagraphCloseTag("");
+  private static final Token LIST_OPEN_TOKEN = new ListOpenTag("");
+  private static final Token LIST_CLOSE_TOKEN = new ListCloseTag("");
+  private static final Token LIST_ITEM_CLOSE_TOKEN = new ListItemCloseTag("");
 
   // The leading \s here works around what appears to be a CommonMark bug. We shouldn't ever see
   // space at the purported start of a list item?

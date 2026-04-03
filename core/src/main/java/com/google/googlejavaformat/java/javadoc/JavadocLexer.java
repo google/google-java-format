@@ -18,35 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.Iterators.peekingIterator;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.BEGIN_JAVADOC;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.BLOCKQUOTE_CLOSE_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.BLOCKQUOTE_OPEN_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.BR_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.CODE_CLOSE_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.CODE_OPEN_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.END_JAVADOC;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.FOOTER_JAVADOC_TAG_START;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.FORCED_NEWLINE;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.HEADER_CLOSE_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.HEADER_OPEN_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.HTML_COMMENT;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.LIST_CLOSE_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.LIST_ITEM_CLOSE_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.LIST_ITEM_OPEN_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.LIST_OPEN_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.LITERAL;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.MOE_BEGIN_STRIP_COMMENT;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.MOE_END_STRIP_COMMENT;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.OPTIONAL_LINE_BREAK;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_CLOSE_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_OPEN_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.PRE_CLOSE_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.PRE_OPEN_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.SNIPPET_BEGIN;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.SNIPPET_END;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.TABLE_CLOSE_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.TABLE_OPEN_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.WHITESPACE;
 import static java.lang.String.format;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.DOTALL;
@@ -55,10 +26,40 @@ import static java.util.regex.Pattern.compile;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.PeekingIterator;
+import com.google.googlejavaformat.java.javadoc.Token.BeginJavadoc;
+import com.google.googlejavaformat.java.javadoc.Token.BlockquoteCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.BlockquoteOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.BrTag;
+import com.google.googlejavaformat.java.javadoc.Token.CodeCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.CodeOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.EndJavadoc;
+import com.google.googlejavaformat.java.javadoc.Token.FooterJavadocTagStart;
+import com.google.googlejavaformat.java.javadoc.Token.ForcedNewline;
+import com.google.googlejavaformat.java.javadoc.Token.HeaderCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.HeaderOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.HtmlComment;
+import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.Literal;
+import com.google.googlejavaformat.java.javadoc.Token.MoeBeginStripComment;
+import com.google.googlejavaformat.java.javadoc.Token.MoeEndStripComment;
+import com.google.googlejavaformat.java.javadoc.Token.OptionalLineBreak;
+import com.google.googlejavaformat.java.javadoc.Token.ParagraphCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ParagraphOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.PreCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.PreOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.SnippetBegin;
+import com.google.googlejavaformat.java.javadoc.Token.SnippetEnd;
+import com.google.googlejavaformat.java.javadoc.Token.TableCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.TableOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.Whitespace;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /** Lexer for the Javadoc formatter. */
@@ -122,7 +123,7 @@ final class JavadocLexer {
   private ImmutableList<Token> generateTokens() throws LexException {
     ImmutableList.Builder<Token> tokens = ImmutableList.builder();
 
-    Token token = new Token(BEGIN_JAVADOC, classicJavadoc ? "/**" : "///");
+    Token token = new BeginJavadoc(classicJavadoc ? "/**" : "///");
     tokens.add(token);
 
     while (!input.isExhausted()) {
@@ -138,7 +139,7 @@ final class JavadocLexer {
 
     checkMatchingTags();
 
-    token = new Token(END_JAVADOC, classicJavadoc ? "*/" : "");
+    token = new EndJavadoc(classicJavadoc ? "*/" : "");
     tokens.add(token);
 
     ImmutableList<Token> result = tokens.build();
@@ -152,22 +153,22 @@ final class JavadocLexer {
   }
 
   private Token readToken() throws LexException {
-    Token.Type type = consumeToken();
+    Function<String, Token> tokenFactory = consumeToken();
     String value = input.readAndResetRecorded();
-    return new Token(type, value);
+    return tokenFactory.apply(value);
   }
 
-  private Token.Type consumeToken() throws LexException {
+  private Function<String, Token> consumeToken() throws LexException {
     boolean preserveExistingFormatting = preserveExistingFormatting();
 
     Pattern newlinePattern = classicJavadoc ? CLASSIC_NEWLINE_PATTERN : MARKDOWN_NEWLINE_PATTERN;
     if (input.tryConsumeRegex(newlinePattern)) {
       somethingSinceNewline = false;
-      return preserveExistingFormatting ? FORCED_NEWLINE : WHITESPACE;
+      return preserveExistingFormatting ? ForcedNewline::new : Whitespace::new;
     } else if (input.tryConsume(" ") || input.tryConsume("\t")) {
       // TODO(cpovirk): How about weird whitespace chars? Ideally we'd distinguish breaking vs. not.
-      // Returning LITERAL here prevents us from breaking a <pre> line. For more info, see LITERAL.
-      return preserveExistingFormatting ? LITERAL : WHITESPACE;
+      // Returning Literal here prevents us from breaking a <pre> line. For more info, see Literal.
+      return preserveExistingFormatting ? Literal::new : Whitespace::new;
     }
 
     /*
@@ -179,7 +180,7 @@ final class JavadocLexer {
     if (!somethingSinceNewline && input.tryConsumeRegex(FOOTER_TAG_PATTERN)) {
       checkMatchingTags();
       somethingSinceNewline = true;
-      return FOOTER_JAVADOC_TAG_START;
+      return FooterJavadocTagStart::new;
     }
     somethingSinceNewline = true;
 
@@ -187,91 +188,91 @@ final class JavadocLexer {
       if (braceStack.isEmpty()) {
         braceStack.push();
         outerInlineTagIsSnippet = true;
-        return SNIPPET_BEGIN;
+        return SnippetBegin::new;
       }
       braceStack.push();
-      return LITERAL;
+      return Literal::new;
     } else if (input.tryConsumeRegex(INLINE_TAG_OPEN_PATTERN)) {
       braceStack.push();
-      return LITERAL;
+      return Literal::new;
     } else if (input.tryConsume("{")) {
       braceStack.incrementIfPositive();
-      return LITERAL;
+      return Literal::new;
     } else if (input.tryConsume("}")) {
       if (outerInlineTagIsSnippet && braceStack.total() == 1) {
         braceStack.popIfNotEmpty();
         outerInlineTagIsSnippet = false;
-        return SNIPPET_END;
+        return SnippetEnd::new;
       }
       braceStack.popIfNotEmpty();
-      return LITERAL;
+      return Literal::new;
     }
 
     // Inside an inline tag, don't do any HTML interpretation.
     if (!braceStack.isEmpty()) {
       verify(input.tryConsumeRegex(literalPattern()));
-      return LITERAL;
+      return Literal::new;
     }
 
     if (input.tryConsumeRegex(PRE_OPEN_PATTERN)) {
       preStack.push();
-      return preserveExistingFormatting ? LITERAL : PRE_OPEN_TAG;
+      return preserveExistingFormatting ? Literal::new : PreOpenTag::new;
     } else if (input.tryConsumeRegex(PRE_CLOSE_PATTERN)) {
       preStack.popIfNotEmpty();
-      return preserveExistingFormatting() ? LITERAL : PRE_CLOSE_TAG;
+      return preserveExistingFormatting() ? Literal::new : PreCloseTag::new;
     }
 
     if (input.tryConsumeRegex(CODE_OPEN_PATTERN)) {
       codeStack.push();
-      return preserveExistingFormatting ? LITERAL : CODE_OPEN_TAG;
+      return preserveExistingFormatting ? Literal::new : CodeOpenTag::new;
     } else if (input.tryConsumeRegex(CODE_CLOSE_PATTERN)) {
       codeStack.popIfNotEmpty();
-      return preserveExistingFormatting() ? LITERAL : CODE_CLOSE_TAG;
+      return preserveExistingFormatting() ? Literal::new : CodeCloseTag::new;
     }
 
     if (input.tryConsumeRegex(TABLE_OPEN_PATTERN)) {
       tableStack.push();
-      return preserveExistingFormatting ? LITERAL : TABLE_OPEN_TAG;
+      return preserveExistingFormatting ? Literal::new : TableOpenTag::new;
     } else if (input.tryConsumeRegex(TABLE_CLOSE_PATTERN)) {
       tableStack.popIfNotEmpty();
-      return preserveExistingFormatting() ? LITERAL : TABLE_CLOSE_TAG;
+      return preserveExistingFormatting() ? Literal::new : TableCloseTag::new;
     }
 
     if (preserveExistingFormatting) {
       verify(input.tryConsumeRegex(literalPattern()));
-      return LITERAL;
+      return Literal::new;
     }
 
     if (input.tryConsumeRegex(PARAGRAPH_OPEN_PATTERN)) {
-      return PARAGRAPH_OPEN_TAG;
+      return ParagraphOpenTag::new;
     } else if (input.tryConsumeRegex(PARAGRAPH_CLOSE_PATTERN)) {
-      return PARAGRAPH_CLOSE_TAG;
+      return ParagraphCloseTag::new;
     } else if (input.tryConsumeRegex(LIST_OPEN_PATTERN)) {
-      return LIST_OPEN_TAG;
+      return ListOpenTag::new;
     } else if (input.tryConsumeRegex(LIST_CLOSE_PATTERN)) {
-      return LIST_CLOSE_TAG;
+      return ListCloseTag::new;
     } else if (input.tryConsumeRegex(LIST_ITEM_OPEN_PATTERN)) {
-      return LIST_ITEM_OPEN_TAG;
+      return ListItemOpenTag::new;
     } else if (input.tryConsumeRegex(LIST_ITEM_CLOSE_PATTERN)) {
-      return LIST_ITEM_CLOSE_TAG;
+      return ListItemCloseTag::new;
     } else if (input.tryConsumeRegex(BLOCKQUOTE_OPEN_PATTERN)) {
-      return BLOCKQUOTE_OPEN_TAG;
+      return BlockquoteOpenTag::new;
     } else if (input.tryConsumeRegex(BLOCKQUOTE_CLOSE_PATTERN)) {
-      return BLOCKQUOTE_CLOSE_TAG;
+      return BlockquoteCloseTag::new;
     } else if (input.tryConsumeRegex(HEADER_OPEN_PATTERN)) {
-      return HEADER_OPEN_TAG;
+      return HeaderOpenTag::new;
     } else if (input.tryConsumeRegex(HEADER_CLOSE_PATTERN)) {
-      return HEADER_CLOSE_TAG;
+      return HeaderCloseTag::new;
     } else if (input.tryConsumeRegex(BR_PATTERN)) {
-      return BR_TAG;
+      return BrTag::new;
     } else if (input.tryConsumeRegex(MOE_BEGIN_STRIP_COMMENT_PATTERN)) {
-      return MOE_BEGIN_STRIP_COMMENT;
+      return MoeBeginStripComment::new;
     } else if (input.tryConsumeRegex(MOE_END_STRIP_COMMENT_PATTERN)) {
-      return MOE_END_STRIP_COMMENT;
+      return MoeEndStripComment::new;
     } else if (input.tryConsumeRegex(HTML_COMMENT_PATTERN)) {
-      return HTML_COMMENT;
+      return HtmlComment::new;
     } else if (input.tryConsumeRegex(literalPattern())) {
-      return LITERAL;
+      return Literal::new;
     }
     throw new AssertionError();
   }
@@ -317,9 +318,8 @@ final class JavadocLexer {
     StringBuilder accumulated = new StringBuilder();
 
     for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
-      if (tokens.peek().type() == LITERAL) {
-        accumulated.append(tokens.peek().value());
-        tokens.next();
+      if (tokens.peek() instanceof Literal) {
+        accumulated.append(tokens.next().value());
         continue;
       }
 
@@ -331,29 +331,27 @@ final class JavadocLexer {
        */
 
       if (accumulated.length() == 0) {
-        output.add(tokens.peek());
-        tokens.next();
+        output.add(tokens.next());
         continue;
       }
 
       StringBuilder seenWhitespace = new StringBuilder();
-      while (tokens.peek().type() == WHITESPACE) {
+      while (tokens.peek() instanceof Whitespace) {
         seenWhitespace.append(tokens.next().value());
       }
 
-      if (tokens.peek().type() == LITERAL && tokens.peek().value().startsWith("@")) {
+      if (tokens.peek() instanceof Literal literal && literal.value().startsWith("@")) {
         // OK, we're in the case described above.
         accumulated.append(" ");
-        accumulated.append(tokens.peek().value());
-        tokens.next();
+        accumulated.append(tokens.next().value());
         continue;
       }
 
-      output.add(new Token(LITERAL, accumulated.toString()));
+      output.add(new Literal(accumulated.toString()));
       accumulated.setLength(0);
 
       if (seenWhitespace.length() > 0) {
-        output.add(new Token(WHITESPACE, seenWhitespace.toString()));
+        output.add(new Whitespace(seenWhitespace.toString()));
       }
 
       // We have another token coming, possibly of type OTHER. Leave it for the next iteration.
@@ -377,14 +375,14 @@ final class JavadocLexer {
     ImmutableList.Builder<Token> output = ImmutableList.builder();
 
     for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
-      if (tokens.peek().type() == LITERAL) {
+      if (tokens.peek() instanceof Literal) {
         output.add(tokens.next());
 
-        if (tokens.peek().type() == WHITESPACE && hasMultipleNewlines(tokens.peek().value())) {
+        if (tokens.peek() instanceof Whitespace && hasMultipleNewlines(tokens.peek().value())) {
           output.add(tokens.next());
 
-          if (tokens.peek().type() == LITERAL) {
-            output.add(new Token(PARAGRAPH_OPEN_TAG, "<p>"));
+          if (tokens.peek() instanceof Literal) {
+            output.add(new ParagraphOpenTag("<p>"));
           }
         }
       } else {
@@ -414,11 +412,11 @@ final class JavadocLexer {
     ImmutableList.Builder<Token> output = ImmutableList.builder();
 
     for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
-      if (tokens.peek().type() == LITERAL && tokens.peek().value().matches("href=[^>]*>")) {
+      if (tokens.peek() instanceof Literal && tokens.peek().value().matches("href=[^>]*>")) {
         output.add(tokens.next());
 
-        if (tokens.peek().type() == WHITESPACE) {
-          output.add(new Token(OPTIONAL_LINE_BREAK, tokens.next().value()));
+        if (tokens.peek() instanceof Whitespace) {
+          output.add(new OptionalLineBreak(tokens.next().value()));
         }
       } else {
         output.add(tokens.next());
@@ -443,17 +441,17 @@ final class JavadocLexer {
     // TODO: b/323389829 - De-indent {@snippet ...} blocks, too.
     ImmutableList.Builder<Token> output = ImmutableList.builder();
     for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
-      if (tokens.peek().type() != PRE_OPEN_TAG) {
+      if (!(tokens.peek() instanceof PreOpenTag)) {
         output.add(tokens.next());
         continue;
       }
 
       output.add(tokens.next());
       List<Token> initialNewlines = new ArrayList<>();
-      while (tokens.hasNext() && tokens.peek().type() == FORCED_NEWLINE) {
+      while (tokens.hasNext() && tokens.peek() instanceof ForcedNewline) {
         initialNewlines.add(tokens.next());
       }
-      if (tokens.peek().type() != LITERAL || !tokens.peek().value().matches("[ \t]*[{]@code")) {
+      if (!(tokens.peek() instanceof Literal) || !tokens.peek().value().matches("[ \t]*[{]@code")) {
         output.addAll(initialNewlines);
         output.add(tokens.next());
         continue;
@@ -467,15 +465,15 @@ final class JavadocLexer {
   private static void deindentPreCodeBlock(
       ImmutableList.Builder<Token> output, PeekingIterator<Token> tokens) {
     Deque<Token> saved = new ArrayDeque<>();
-    output.add(new Token(LITERAL, tokens.next().value().trim()));
-    while (tokens.hasNext() && tokens.peek().type() != PRE_CLOSE_TAG) {
+    output.add(new Literal(tokens.next().value().trim()));
+    while (tokens.hasNext() && !(tokens.peek() instanceof PreCloseTag)) {
       Token token = tokens.next();
       saved.addLast(token);
     }
-    while (!saved.isEmpty() && saved.peekFirst().type() == FORCED_NEWLINE) {
+    while (!saved.isEmpty() && saved.peekFirst() instanceof ForcedNewline) {
       saved.removeFirst();
     }
-    while (!saved.isEmpty() && saved.peekLast().type() == FORCED_NEWLINE) {
+    while (!saved.isEmpty() && saved.peekLast() instanceof ForcedNewline) {
       saved.removeLast();
     }
     if (saved.isEmpty()) {
@@ -485,18 +483,18 @@ final class JavadocLexer {
     // move the trailing `}` to its own line
     Token last = saved.peekLast();
     boolean trailingBrace = false;
-    if (last.type() == LITERAL && last.value().endsWith("}")) {
+    if (last instanceof Literal && last.value().endsWith("}")) {
       saved.removeLast();
       if (last.length() > 1) {
-        saved.addLast(new Token(LITERAL, last.value().substring(0, last.value().length() - 1)));
-        saved.addLast(new Token(FORCED_NEWLINE, null));
+        saved.addLast(new Literal(last.value().substring(0, last.value().length() - 1)));
+        saved.addLast(new ForcedNewline(null));
       }
       trailingBrace = true;
     }
 
     int trim = -1;
     for (Token token : saved) {
-      if (token.type() == LITERAL) {
+      if (token instanceof Literal) {
         int idx = CharMatcher.isNot(' ').indexIn(token.value());
         if (idx != -1 && (trim == -1 || idx < trim)) {
           trim = idx;
@@ -504,12 +502,11 @@ final class JavadocLexer {
       }
     }
 
-    output.add(new Token(FORCED_NEWLINE, "\n"));
+    output.add(new ForcedNewline("\n"));
     for (Token token : saved) {
-      if (token.type() == LITERAL) {
+      if (token instanceof Literal) {
         output.add(
-            new Token(
-                LITERAL,
+            new Literal(
                 trim > 0 && token.length() > trim ? token.value().substring(trim) : token.value()));
       } else {
         output.add(token);
@@ -517,9 +514,9 @@ final class JavadocLexer {
     }
 
     if (trailingBrace) {
-      output.add(new Token(LITERAL, "}"));
+      output.add(new Literal("}"));
     } else {
-      output.add(new Token(FORCED_NEWLINE, "\n"));
+      output.add(new ForcedNewline("\n"));
     }
   }
 

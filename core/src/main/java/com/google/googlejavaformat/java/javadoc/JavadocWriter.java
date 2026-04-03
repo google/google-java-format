@@ -16,18 +16,14 @@ package com.google.googlejavaformat.java.javadoc;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Comparators.max;
-import static com.google.common.collect.Sets.immutableEnumSet;
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.AutoIndent.AUTO_INDENT;
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.AutoIndent.NO_AUTO_INDENT;
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWhitespace.BLANK_LINE;
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWhitespace.NEWLINE;
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWhitespace.NONE;
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWhitespace.WHITESPACE;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.HEADER_OPEN_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.LIST_ITEM_OPEN_TAG;
-import static com.google.googlejavaformat.java.javadoc.Token.Type.PARAGRAPH_OPEN_TAG;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.googlejavaformat.java.javadoc.Token.StartOfLineToken;
 
 /**
  * Stateful object that accepts "requests" and "writes," producing formatted Javadoc.
@@ -386,7 +382,7 @@ final class JavadocWriter {
 
     output.append(token.value());
 
-    if (!START_OF_LINE_TOKENS.contains(token.type())) {
+    if (!(token instanceof StartOfLineToken)) {
       atStartOfLine = false;
     }
 
@@ -447,15 +443,4 @@ final class JavadocWriter {
   private void appendSpaces(int count) {
     output.repeat(' ', count);
   }
-
-  /**
-   * Tokens that are always pinned to the following token. For example, {@code <p>} in {@code <p>Foo
-   * bar} (never {@code <p> Foo bar} or {@code <p>\nFoo bar}).
-   *
-   * <p>This is not the only kind of "pinning" that we do: See also the joining of LITERAL tokens
-   * done by the lexer. The special pinning here is necessary because these tokens are not of type
-   * LITERAL (because they require other special handling).
-   */
-  private static final ImmutableSet<Token.Type> START_OF_LINE_TOKENS =
-      immutableEnumSet(LIST_ITEM_OPEN_TAG, PARAGRAPH_OPEN_TAG, HEADER_OPEN_TAG);
 }
