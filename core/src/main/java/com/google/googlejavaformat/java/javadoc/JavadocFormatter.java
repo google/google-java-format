@@ -144,20 +144,20 @@ public final class JavadocFormatter {
    * should include them as part of its own postprocessing? Or even the writer could make sense.
    */
 
-  private static Token standardizeBrToken(Token token) {
+  private static BrTag standardizeBrToken(BrTag token) {
     return standardize(token, STANDARD_BR_TOKEN);
   }
 
-  private static Token standardizePToken(Token token) {
+  private static ParagraphOpenTag standardizePToken(ParagraphOpenTag token) {
     return standardize(token, STANDARD_P_TOKEN);
   }
 
-  private static Token standardize(Token token, Token standardToken) {
+  private static <T extends Token> T standardize(T token, T standardToken) {
     return SIMPLE_TAG_PATTERN.matcher(token.value()).matches() ? standardToken : token;
   }
 
-  private static final Token STANDARD_BR_TOKEN = new BrTag("<br>");
-  private static final Token STANDARD_P_TOKEN = new ParagraphOpenTag("<p>");
+  private static final BrTag STANDARD_BR_TOKEN = new BrTag("<br>");
+  private static final ParagraphOpenTag STANDARD_P_TOKEN = new ParagraphOpenTag("<p>");
   private static final Pattern SIMPLE_TAG_PATTERN = compile("^<\\w+\\s*/?\\s*>", CASE_INSENSITIVE);
 
   private static final Pattern ONE_CONTENT_LINE_PATTERN = compile(" */[*][*]\n *[*] (.*)\n *[*]/");

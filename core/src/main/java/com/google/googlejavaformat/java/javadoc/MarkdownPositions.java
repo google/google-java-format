@@ -94,7 +94,7 @@ final class MarkdownPositions {
           Matcher matcher =
               LIST_ITEM_START_PATTERN.matcher(input).region(startPosition, input.length());
           verify(matcher.lookingAt());
-          Token openToken = new ListItemOpenTag(matcher.group(1));
+          ListItemOpenTag openToken = new ListItemOpenTag(matcher.group(1));
           addSpan(positionToToken, listItem, openToken, LIST_ITEM_CLOSE_TOKEN);
           if (listItem.getFirstChild() instanceof Paragraph paragraph) {
             // A ListItem typically contains a Paragraph, but we don't want to visit that Paragraph
@@ -153,13 +153,13 @@ final class MarkdownPositions {
   private static final Parser PARSER =
       Parser.builder().includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES).build();
 
-  private static final Token HEADER_OPEN_TOKEN = new HeaderOpenTag("");
-  private static final Token HEADER_CLOSE_TOKEN = new HeaderCloseTag("");
-  private static final Token PARAGRAPH_OPEN_TOKEN = new ParagraphOpenTag("");
-  private static final Token PARAGRAPH_CLOSE_TOKEN = new ParagraphCloseTag("");
-  private static final Token LIST_OPEN_TOKEN = new ListOpenTag("");
-  private static final Token LIST_CLOSE_TOKEN = new ListCloseTag("");
-  private static final Token LIST_ITEM_CLOSE_TOKEN = new ListItemCloseTag("");
+  private static final HeaderOpenTag HEADER_OPEN_TOKEN = new HeaderOpenTag("");
+  private static final HeaderCloseTag HEADER_CLOSE_TOKEN = new HeaderCloseTag("");
+  private static final ParagraphOpenTag PARAGRAPH_OPEN_TOKEN = new ParagraphOpenTag("");
+  private static final ParagraphCloseTag PARAGRAPH_CLOSE_TOKEN = new ParagraphCloseTag("");
+  private static final ListOpenTag LIST_OPEN_TOKEN = new ListOpenTag("");
+  private static final ListCloseTag LIST_CLOSE_TOKEN = new ListCloseTag("");
+  private static final ListItemCloseTag LIST_ITEM_CLOSE_TOKEN = new ListItemCloseTag("");
 
   // The leading \s here works around what appears to be a CommonMark bug. We shouldn't ever see
   // space at the purported start of a list item?

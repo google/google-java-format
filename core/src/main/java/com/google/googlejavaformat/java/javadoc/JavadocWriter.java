@@ -23,7 +23,25 @@ import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWh
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWhitespace.NONE;
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWhitespace.WHITESPACE;
 
+import com.google.googlejavaformat.java.javadoc.Token.CodeCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.CodeOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.FooterJavadocTagStart;
+import com.google.googlejavaformat.java.javadoc.Token.HeaderCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.HeaderOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.HtmlComment;
+import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.Literal;
+import com.google.googlejavaformat.java.javadoc.Token.MoeBeginStripComment;
+import com.google.googlejavaformat.java.javadoc.Token.MoeEndStripComment;
+import com.google.googlejavaformat.java.javadoc.Token.PreCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.PreOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.SnippetBegin;
+import com.google.googlejavaformat.java.javadoc.Token.SnippetEnd;
 import com.google.googlejavaformat.java.javadoc.Token.StartOfLineToken;
+import com.google.googlejavaformat.java.javadoc.Token.TableCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.TableOpenTag;
 
 /**
  * Stateful object that accepts "requests" and "writes," producing formatted Javadoc.
@@ -73,7 +91,7 @@ final class JavadocWriter {
     this.requestedWhitespace = max(requestedWhitespace, this.requestedWhitespace);
   }
 
-  void requestMoeBeginStripComment(Token token) {
+  void requestMoeBeginStripComment(MoeBeginStripComment token) {
     // We queue this up so that we can put it after any requested whitespace.
     requestedMoeBeginStripComment = checkNotNull(token);
   }
@@ -100,7 +118,7 @@ final class JavadocWriter {
     }
   }
 
-  void writeFooterJavadocTagStart(Token token) {
+  void writeFooterJavadocTagStart(FooterJavadocTagStart token) {
     // Close any unclosed lists (e.g., <li> without <ul>).
     // TODO(cpovirk): Actually generate </ul>, etc.?
     /*
@@ -132,7 +150,7 @@ final class JavadocWriter {
     continuingFooterTag = true;
   }
 
-  void writeSnippetBegin(Token token) {
+  void writeSnippetBegin(SnippetBegin token) {
     requestBlankLine();
     writeToken(token);
     /*
@@ -146,7 +164,7 @@ final class JavadocWriter {
      */
   }
 
-  void writeSnippetEnd(Token token) {
+  void writeSnippetEnd(SnippetEnd token) {
     /*
      * We don't request a newline here because we have preserved all newlines that existed in the
      * input. TODO: b/323389829 - Improve upon that. Specifically:
@@ -164,7 +182,7 @@ final class JavadocWriter {
     requestBlankLine();
   }
 
-  void writeListOpen(Token token) {
+  void writeListOpen(ListOpenTag token) {
     if (classicJavadoc) {
       requestBlankLine();
     }
@@ -178,7 +196,7 @@ final class JavadocWriter {
     requestNewline();
   }
 
-  void writeListClose(Token token) {
+  void writeListClose(ListCloseTag token) {
     if (classicJavadoc) {
       requestNewline();
     }
@@ -193,7 +211,7 @@ final class JavadocWriter {
     }
   }
 
-  void writeListItemOpen(Token token) {
+  void writeListItemOpen(ListItemOpenTag token) {
     requestNewline();
 
     if (continuingListItemOfInnermostList) {
@@ -206,7 +224,7 @@ final class JavadocWriter {
     continuingListItemStack.push(indent);
   }
 
-  void writeHeaderOpen(Token token) {
+  void writeHeaderOpen(HeaderOpenTag token) {
     if (wroteAnythingSignificant) {
       requestBlankLine();
     }
@@ -214,7 +232,7 @@ final class JavadocWriter {
     writeToken(token);
   }
 
-  void writeHeaderClose(Token token) {
+  void writeHeaderClose(HeaderCloseTag token) {
     writeToken(token);
 
     requestBlankLine();
@@ -242,39 +260,39 @@ final class JavadocWriter {
     requestBlankLine();
   }
 
-  void writePreOpen(Token token) {
+  void writePreOpen(PreOpenTag token) {
     requestBlankLine();
 
     writeToken(token);
   }
 
-  void writePreClose(Token token) {
+  void writePreClose(PreCloseTag token) {
     writeToken(token);
 
     requestBlankLine();
   }
 
-  void writeCodeOpen(Token token) {
+  void writeCodeOpen(CodeOpenTag token) {
     writeToken(token);
   }
 
-  void writeCodeClose(Token token) {
+  void writeCodeClose(CodeCloseTag token) {
     writeToken(token);
   }
 
-  void writeTableOpen(Token token) {
+  void writeTableOpen(TableOpenTag token) {
     requestBlankLine();
 
     writeToken(token);
   }
 
-  void writeTableClose(Token token) {
+  void writeTableClose(TableCloseTag token) {
     writeToken(token);
 
     requestBlankLine();
   }
 
-  void writeMoeEndStripComment(Token token) {
+  void writeMoeEndStripComment(MoeEndStripComment token) {
     writeLineBreakNoAutoIndent();
     appendSpaces(indentForMoeEndStripComment);
 
@@ -284,7 +302,7 @@ final class JavadocWriter {
     requestNewline();
   }
 
-  void writeHtmlComment(Token token) {
+  void writeHtmlComment(HtmlComment token) {
     requestNewline();
 
     writeToken(token);
@@ -302,7 +320,7 @@ final class JavadocWriter {
     writeNewline(NO_AUTO_INDENT);
   }
 
-  void writeLiteral(Token token) {
+  void writeLiteral(Literal token) {
     writeToken(token);
   }
 
