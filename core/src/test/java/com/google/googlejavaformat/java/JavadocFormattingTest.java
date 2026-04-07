@@ -1720,4 +1720,58 @@ class Test {}
 """;
     doFormatTest(input, expected);
   }
+
+  @Test
+  public void markdownFencedCodeBlocks() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    // If fenced code blocks are not supported correctly, the contents of each one will be joined.
+    // If the input lines survive as separate lines, that means we identified the code block.
+    String input =
+"""
+/// ```
+/// foo
+/// bar
+/// ```
+///
+/// -  ```
+///    code block
+///    in a list
+///    ```
+///
+/// ~~~java
+/// code block
+/// with tildes and an info string ("java")
+/// ~~~
+///
+///  ````
+///  code block
+///  with more than three backticks and an extra leading space
+///  ````
+class Test {}
+""";
+    String expected =
+"""
+/// ```
+/// foo
+/// bar
+/// ```
+///
+/// - ```
+///   code block
+///   in a list
+///   ```
+///
+/// ~~~java
+/// code block
+/// with tildes and an info string ("java")
+/// ~~~
+///
+/// ````
+/// code block
+/// with more than three backticks and an extra leading space
+/// ````
+class Test {}
+""";
+    doFormatTest(input, expected);
+  }
 }

@@ -127,11 +127,26 @@ final class JavadocLexer {
     tokens.add(token);
 
     while (!input.isExhausted()) {
-      for (Token markdownToken : markdownPositions.tokensAt(input.position())) {
-        boolean consumed = input.tryConsume(markdownToken.value());
-        verify(consumed, "Did not consume markdown token: %s", markdownToken);
-        var unused = input.readAndResetRecorded();
-        tokens.add(markdownToken);
+      boolean moreMarkdown;
+      do {
+        moreMarkdown = false;
+        // If there are one or more markdown tokens at the current position, consume their text and
+        // add them to the token list. If a token has non-empty text, consuming its text changes the
+        // position, so we need to start looking for markdown tokens at the new position. It is
+        // assumed that there are no other tokens (markdown or otherwise) in a non-empty text span
+        // covered by a markdown token.
+        for (Token markdownToken : markdownPositions.tokensAt(input.position())) {
+          tokens.add(markdownToken);
+          if (!markdownToken.value().isEmpty()) {
+            boolean consumed = input.tryConsume(markdownToken.value());
+            verify(consumed, "Did not consume markdown token: %s", markdownToken);
+            var unused = input.readAndResetRecorded();
+            moreMarkdown = true;
+          }
+        }
+      } while (moreMarkdown);
+      if (input.isExhausted()) {
+        break;
       }
       token = readToken();
       tokens.add(token);

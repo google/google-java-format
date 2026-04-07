@@ -104,6 +104,27 @@ sealed interface Token {
   record BrTag(String value) implements Token {}
 
   /**
+   * A fenced code block, like:
+   *
+   * <pre>
+   * ```java
+   * code block
+   * with an info string ("java")
+   * ```
+   * </pre>
+   *
+   * @param value the full text of the code block as it appeared in the input, including the start
+   *     and end fences and the literal content.
+   * @param start the start fence, including the info string if any ({@code ```java} in the
+   *     example).
+   * @param end the end fence.
+   * @param literal the text that the code block represents. This does not include the start and end
+   *     fences, nor any indentation that precedes these fences and every intervening line.
+   */
+  record MarkdownFencedCodeBlock(String value, String start, String end, String literal)
+      implements Token {}
+
+  /**
    * Whitespace that is not in a {@code <pre>} or {@code <table>} section. Whitespace includes
    * leading newlines, asterisks, and tabs and spaces. In the output, it is translated to newlines
    * (with leading spaces and asterisks) or spaces.

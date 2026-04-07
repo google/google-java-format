@@ -25,11 +25,13 @@ import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphOpenTag;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.commonmark.node.BulletList;
+import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.node.Heading;
 import org.commonmark.node.ListItem;
 import org.commonmark.node.Node;
@@ -102,6 +104,25 @@ final class MarkdownPositions {
             visitNodeList(paragraph.getNext());
           }
         }
+        case FencedCodeBlock fencedCodeBlock -> {
+          // Any indentation before the code block is part of FencedCodeBlock. This makes sense
+          // because the lines inside the code block must also be indented by that amount. That
+          // indentation gets subtracted from FencedCodeBlock.getLiteral(), which is the actual text
+          // represented by the code block.
+          int start = startPosition(fencedCodeBlock) + fencedCodeBlock.getFenceIndent();
+          MarkdownFencedCodeBlock token =
+              new MarkdownFencedCodeBlock(
+                  input.substring(start, endPosition(fencedCodeBlock)),
+                  fencedCodeBlock
+                          .getFenceCharacter()
+                          .repeat(fencedCodeBlock.getOpeningFenceLength())
+                      + fencedCodeBlock.getInfo(),
+                  fencedCodeBlock
+                      .getFenceCharacter()
+                      .repeat(fencedCodeBlock.getClosingFenceLength()),
+                  fencedCodeBlock.getLiteral());
+          positionToToken.get(start).addLast(token);
+        }
         // TODO: others
         default -> {}
       }
@@ -131,12 +152,17 @@ final class MarkdownPositions {
      */
     private void addSpan(Node node, Token startToken, Token endToken) {
       // We could write the first part more simply as a `put`, but we do it this way for symmetry.
-      var first = node.getSourceSpans().getFirst();
-      int startPosition = first.getInputIndex();
-      positionToToken.get(startPosition).addLast(startToken);
+      positionToToken.get(startPosition(node)).addLast(startToken);
+      positionToToken.get(endPosition(node)).addFirst(endToken);
+    }
+
+    private int startPosition(Node node) {
+      return node.getSourceSpans().getFirst().getInputIndex();
+    }
+
+    private int endPosition(Node node) {
       var last = node.getSourceSpans().getLast();
-      int endPosition = last.getInputIndex() + last.getLength();
-      positionToToken.get(endPosition).addFirst(endToken);
+      return last.getInputIndex() + last.getLength();
     }
   }
 

@@ -23,6 +23,7 @@ import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphOpenTag;
 import java.util.Map;
@@ -96,6 +97,62 @@ tiddly pom
             .put(secondHeadingEnd, new HeaderCloseTag(""))
             .put(secondParagraph, new ParagraphOpenTag(""))
             .put(secondParagraphEnd, new ParagraphCloseTag(""))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
+  @Test
+  public void codeBlock() {
+    String text =
+"""
+- ```
+  foo
+  bar
+  ```
+
+~~~java
+code
+with tildes
+~~~
+
+  ````
+  indented code
+  with more than three backticks
+  ````
+""";
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    int bullet = text.indexOf('-');
+    int firstCodeStart = text.indexOf("```");
+    int firstCodeEnd = text.indexOf("```", firstCodeStart + 3) + 3;
+    int secondCodeStart = text.indexOf("~~~", firstCodeEnd);
+    int secondCodeEnd = text.indexOf("~~~", secondCodeStart + 3) + 3;
+    int thirdCodeStart = text.indexOf("````", secondCodeEnd);
+    int thirdCodeEnd = text.indexOf("````", thirdCodeStart + 4) + 4;
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(bullet, new ListOpenTag(""))
+            .put(bullet, new ListItemOpenTag("- "))
+            .put(
+                firstCodeStart,
+                new MarkdownFencedCodeBlock(
+                    text.substring(firstCodeStart, firstCodeEnd), "```", "```", "foo\nbar\n"))
+            .put(firstCodeEnd, new ListItemCloseTag(""))
+            .put(firstCodeEnd, new ListCloseTag(""))
+            .put(
+                secondCodeStart,
+                new MarkdownFencedCodeBlock(
+                    text.substring(secondCodeStart, secondCodeEnd),
+                    "~~~java",
+                    "~~~",
+                    "code\nwith tildes\n"))
+            .put(
+                thirdCodeStart,
+                new MarkdownFencedCodeBlock(
+                    text.substring(thirdCodeStart, thirdCodeEnd),
+                    "````",
+                    "````",
+                    "indented code\nwith more than three backticks\n"))
             .build();
     assertThat(map).isEqualTo(expected);
   }

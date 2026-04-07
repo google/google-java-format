@@ -23,6 +23,7 @@ import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWh
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWhitespace.NONE;
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWhitespace.WHITESPACE;
 
+import com.google.googlejavaformat.java.javadoc.Token.BrTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.FooterJavadocTagStart;
@@ -33,6 +34,7 @@ import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.Literal;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
 import com.google.googlejavaformat.java.javadoc.Token.MoeBeginStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.MoeEndStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.PreCloseTag;
@@ -310,7 +312,7 @@ final class JavadocWriter {
     requestNewline();
   }
 
-  void writeBr(Token token) {
+  void writeBr(BrTag token) {
     writeToken(token);
 
     requestNewline();
@@ -322,6 +324,22 @@ final class JavadocWriter {
 
   void writeLiteral(Literal token) {
     writeToken(token);
+  }
+
+  void writeMarkdownFencedCodeBlock(MarkdownFencedCodeBlock token) {
+    flushWhitespace();
+    output.append(token.start());
+    token
+        .literal()
+        .lines()
+        .forEach(
+            line -> {
+              writeNewline();
+              output.append(line);
+            });
+    writeNewline();
+    output.append(token.end());
+    requestBlankLine();
   }
 
   @Override
@@ -350,12 +368,13 @@ final class JavadocWriter {
     BLANK_LINE,
   }
 
-  private void writeToken(Token token) {
+  private void flushWhitespace() {
     if (requestedMoeBeginStripComment != null) {
       requestNewline();
     }
 
-    if (requestedWhitespace == BLANK_LINE
+    if (classicJavadoc
+        && requestedWhitespace == BLANK_LINE
         && (!postWriteModifiedContinuingListStack.isEmpty() || continuingFooterTag)) {
       /*
        * We don't write blank lines inside lists or footer tags, even in cases where we otherwise
@@ -374,6 +393,14 @@ final class JavadocWriter {
       writeNewline();
       requestedWhitespace = NONE;
     }
+  }
+
+  private void writeToken(Token token) {
+    if (token.value().isEmpty()) {
+      return;
+    }
+
+    flushWhitespace();
     boolean needWhitespace = (requestedWhitespace == WHITESPACE);
 
     /*
