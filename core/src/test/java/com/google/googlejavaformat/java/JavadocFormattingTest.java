@@ -1775,6 +1775,187 @@ class Test {}
     doFormatTest(input, expected);
   }
 
+  @Test
+  public void markdownBackslashes() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// \\<br> is not a break.
+        /// \\&#42; is not an HTML entity.
+        /// foo\\
+        /// bar
+        class Test {}
+        """;
+    // TODO: the <br> should not cause a line break, and the end-of-line backslash should.
+    // I don't think anything changes if we do or do not respect the \& backslash.
+    String expected =
+        """
+        /// \\<br>
+        /// is not a break. \\&#42; is not an HTML entity. foo\\ bar
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownThematicBreaks() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// foo
+        /// ***
+        /// bar
+        class Test {}
+        """;
+    // TODO: the line break before `***` should be preserved.
+    // It's OK to introduce a blank line before `bar` since it is a new paragraph.
+    String expected =
+        """
+        /// foo ***
+        ///
+        /// bar
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownSetextHeadings() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// Heading
+        /// =======
+        /// Phoebe B. Peabody-Beebe
+        ///
+        /// Subheading
+        /// ----------
+        class Test {}
+        """;
+    // TODO: the line breaks before the lines of repeated characters should be preserved.
+    //    Or, we could rewrite this style of heading as `# Heading`.
+    String expected =
+        """
+        /// Heading =======
+        ///
+        /// Phoebe B. Peabody-Beebe
+        ///
+        /// Subheading ----------
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownIndentedCodeBlocks() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        ///     code block
+        ///     is indented
+        class Test {}
+        """;
+    // TODO: the evil indented code block should be preserved.
+    String expected =
+        """
+        /// code block is indented
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownLinkReferenceDefinitions() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// [foo]
+        /// [foo]: /url "title"
+        class Test {}
+        """;
+    String expected =
+        """
+        /// [foo] [foo]: /url "title"
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownLooseLists() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// - item 1
+        ///
+        /// - item 2
+        class Test {}
+        """;
+    // TODO: the line break between items should be preserved, and there should not be a blank line
+    //   before the list.
+    String expected =
+        """
+        ///
+        /// - item 1
+        /// - item 2
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownBlockQuotes() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// > foo
+        /// > bar
+        class Test {}
+        """;
+    // TODO: the block quote should be preserved, and ideally bar would be joined to foo.
+    String expected =
+        """
+        /// >
+        ///
+        /// foo > bar
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownCodeSpans() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// `<ul>` should not trigger list handling.
+        class Test {}
+        """;
+    // TODO: the <ul> should not be recognized as a list, so `<ul>` should be preserved.
+    // TODO: test that text with `...` is subject to line wrapping, including joining short lines.
+    String expected =
+        """
+        /// `<ul>
+        ///   ` should not trigger list handling.
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownAutolinks() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// <http://example.com> should be preserved.
+        class Test {}
+        """;
+    // TODO: find a test case that will break if autolinks are not handled correctly.
+    // Probably something like: <http://{@code>this should not be handled like a code span}
+    String expected = input;
+    doFormatTest(input, expected);
+  }
+
   // TODO: b/346668798 - Test the following Markdown constructs, and make the tests work as needed.
   // We can assume that the CommonMark parser correctly handles Markdown, so the question is whether
   // they are subsequently mishandled by our formatting logic. So for example the CommonMark parser
@@ -1821,7 +2002,10 @@ class Test {}
   //   inside a list. https://spec.commonmark.org/0.31.2/#block-quotes
   //
   // - Code spans
-  //   `<ul>` should not trigger list handling. https://spec.commonmark.org/0.31.2/#code-spans
+  //   `<ul>` should not trigger list handling.
+  //   Text within `...` should still be subject to line wrapping, both splitting long lines and
+  //   joining short lines. https://spec.commonmark.org/0.31.2/#code-spans
+  //
   //
   // - Autolinks
   //   <http://example.com> should be preserved. https://spec.commonmark.org/0.31.2/#autolink
