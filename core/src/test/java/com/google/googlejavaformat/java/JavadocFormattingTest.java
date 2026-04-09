@@ -1774,4 +1774,55 @@ class Test {}
 """;
     doFormatTest(input, expected);
   }
+
+  // TODO: b/346668798 - Test the following Markdown constructs, and make the tests work as needed.
+  // We can assume that the CommonMark parser correctly handles Markdown, so the question is whether
+  // they are subsequently mishandled by our formatting logic. So for example the CommonMark parser
+  // already recognizes <pre>...</pre> and doesn't look for Markdown constructs within such a block,
+  // so we should not need to check that that is handled correctly, given that we already check
+  // <pre> handling elsewhere. On the other hand, if we don't handle Markdown code spans (`...`)
+  // correctly then we might incorrectly recognize HTML tags like `<ul>` inside them.
+  //
+  // - Backslashes
+  //   - \<br> is not a break.
+  //   - \&#42; is not an HTML entity.
+  //   - \⏎ is a hard line break. https://spec.commonmark.org/0.31.2/#hard-line-break
+  //     A hard line break can also be written as two or more spaces followed by a newline. I think
+  //     that is ridiculous and it is absolutely fine to destroy those spaces. However the line
+  //     break will show up in the CommonMark parse.
+  //
+  // - Thematic breaks: ---, ***, ___, which are all rendered as <hr> and should presumably have a
+  //   line break before and after. https://spec.commonmark.org/0.31.2/#thematic-breaks
+  //
+  // - Setext headings: text, not necessarily all on one line, followed by a line with only hyphens
+  //   or equals signs. We need to preserve the line breaks before and after that line.
+  //   https://spec.commonmark.org/0.31.2/#setext-headings
+  //
+  // - Indented code blocks
+  //   Clearly evil, but we should not mangle them. *Maybe* rewrite them as fenced code blocks? But
+  //   I'm sure there are lots of tricky cases, like if the indented code block includes ```.
+  //   https://spec.commonmark.org/0.31.2/#indented-code-blocks
+  //
+  // - Link reference definitions should not be joined onto previous lines.
+  //   [foo]: /url "title"
+  //   https://spec.commonmark.org/0.31.2/#link-reference-definitions
+  //
+  // - Loose lists
+  //   "A list is loose if any of its constituent list items are separated by blank lines, or if any
+  //   of its constituent list items directly contain two block-level elements with a blank line
+  //   between them."
+  //   We should test that we do not remove blank lines from a loose list, which would make it a
+  //   tight one. https://spec.commonmark.org/0.31.2/#loose
+  //
+  // - Block quotes
+  //   > foo
+  //   > bar
+  //   We need to ensure that each > stays at the start of its line with appropriate indentation if
+  //   inside a list. https://spec.commonmark.org/0.31.2/#block-quotes
+  //
+  // - Code spans
+  //   `<ul>` should not trigger list handling. https://spec.commonmark.org/0.31.2/#code-spans
+  //
+  // - Autolinks
+  //   <http://example.com> should be preserved. https://spec.commonmark.org/0.31.2/#autolink
 }
