@@ -25,6 +25,7 @@ import static java.util.regex.Pattern.compile;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.PeekingIterator;
 import com.google.googlejavaformat.java.javadoc.Token.BeginJavadoc;
 import com.google.googlejavaformat.java.javadoc.Token.BlockquoteCloseTag;
@@ -103,14 +104,35 @@ final class JavadocLexer {
     return input.substring("/**".length(), input.length() - "*/".length());
   }
 
+  /**
+   * An element of the nested contexts we might be in. For example, if we are inside {@code
+   * <pre>{@code ...}</pre>} then the stack of nested contexts would be {@code PRE} plus {@code
+   * CODE_CONTEXT}.
+   */
+  enum NestingContext {
+    /** {@code <pre>...</pre>}. */
+    PRE,
+
+    /** {@code {@code ...}}. */
+    CODE_CONTEXT,
+
+    /** {@code <table>...</table>}. */
+    TABLE,
+
+    /** {@code {@snippet ...}}. */
+    SNIPPET_CONTEXT,
+
+    /** Nested braces within one of the other contexts. */
+    BRACE_CONTEXT,
+
+    /** {@code an inline tag such as {@link ...}} */
+    TAG_CONTEXT
+  }
+
   private final CharStream input;
   private final boolean classicJavadoc;
   private final MarkdownPositions markdownPositions;
-  private final NestingStack braceStack = new NestingStack();
-  private final NestingStack preStack = new NestingStack();
-  private final NestingStack codeStack = new NestingStack();
-  private final NestingStack tableStack = new NestingStack();
-  private boolean outerInlineTagIsSnippet;
+  private final NestingStack<NestingContext> contextStack = new NestingStack<>();
   private boolean somethingSinceNewline;
 
   private JavadocLexer(
@@ -200,56 +222,60 @@ final class JavadocLexer {
     somethingSinceNewline = true;
 
     if (input.tryConsumeRegex(SNIPPET_TAG_OPEN_PATTERN)) {
-      if (braceStack.isEmpty()) {
-        braceStack.push();
-        outerInlineTagIsSnippet = true;
-        return SnippetBegin::new;
-      }
-      braceStack.push();
-      return Literal::new;
+      // {@snippet ...}
+      boolean outermost = contextStack.isEmpty();
+      contextStack.push(NestingContext.SNIPPET_CONTEXT);
+      return outermost ? SnippetBegin::new : Literal::new;
     } else if (input.tryConsumeRegex(INLINE_TAG_OPEN_PATTERN)) {
-      braceStack.push();
+      // {@foo ...}. We recognize this even in something like {@code {@foo ...}}, but it doesn't
+      // make any difference.
+      contextStack.push(NestingContext.TAG_CONTEXT);
       return Literal::new;
     } else if (input.tryConsume("{")) {
-      braceStack.incrementIfPositive();
+      // A left brace that is not the start of {@foo}. If we are inside another context, we'll
+      // record the brace, for cases like {@code foo{bar}}, where the second brace is the end of the
+      // tag.
+      if (contextStack.containsAny(BRACE_CONTEXTS)) {
+        contextStack.push(NestingContext.BRACE_CONTEXT);
+      }
       return Literal::new;
     } else if (input.tryConsume("}")) {
-      if (outerInlineTagIsSnippet && braceStack.total() == 1) {
-        braceStack.popIfNotEmpty();
-        outerInlineTagIsSnippet = false;
+      var popped = contextStack.popIfNotEmpty();
+      if (contextStack.isEmpty() && popped == NestingContext.SNIPPET_CONTEXT) {
         return SnippetEnd::new;
       }
-      braceStack.popIfNotEmpty();
       return Literal::new;
     }
 
     // Inside an inline tag, don't do any HTML interpretation.
-    if (!braceStack.isEmpty()) {
+    if (contextStack.containsAny(TAG_CONTEXTS)) {
       verify(input.tryConsumeRegex(literalPattern()));
       return Literal::new;
     }
 
     if (input.tryConsumeRegex(PRE_OPEN_PATTERN)) {
-      preStack.push();
+      contextStack.push(NestingContext.PRE);
       return preserveExistingFormatting ? Literal::new : PreOpenTag::new;
     } else if (input.tryConsumeRegex(PRE_CLOSE_PATTERN)) {
-      preStack.popIfNotEmpty();
+      contextStack.popUntil(NestingContext.PRE);
       return preserveExistingFormatting() ? Literal::new : PreCloseTag::new;
     }
 
     if (input.tryConsumeRegex(CODE_OPEN_PATTERN)) {
-      codeStack.push();
+      // <code>
+      contextStack.push(NestingContext.CODE_CONTEXT);
       return preserveExistingFormatting ? Literal::new : CodeOpenTag::new;
     } else if (input.tryConsumeRegex(CODE_CLOSE_PATTERN)) {
-      codeStack.popIfNotEmpty();
+      // </code>
+      contextStack.popUntil(NestingContext.CODE_CONTEXT);
       return preserveExistingFormatting() ? Literal::new : CodeCloseTag::new;
     }
 
     if (input.tryConsumeRegex(TABLE_OPEN_PATTERN)) {
-      tableStack.push();
+      contextStack.push(NestingContext.TABLE);
       return preserveExistingFormatting ? Literal::new : TableOpenTag::new;
     } else if (input.tryConsumeRegex(TABLE_CLOSE_PATTERN)) {
-      tableStack.popIfNotEmpty();
+      contextStack.popUntil(NestingContext.TABLE);
       return preserveExistingFormatting() ? Literal::new : TableCloseTag::new;
     }
 
@@ -293,17 +319,11 @@ final class JavadocLexer {
   }
 
   private boolean preserveExistingFormatting() {
-    return !preStack.isEmpty()
-        || !tableStack.isEmpty()
-        || !codeStack.isEmpty()
-        || outerInlineTagIsSnippet;
+    return contextStack.containsAny(PRESERVE_FORMATTING_CONTEXTS);
   }
 
   private void checkMatchingTags() throws LexException {
-    if (!braceStack.isEmpty()
-        || !preStack.isEmpty()
-        || !tableStack.isEmpty()
-        || !codeStack.isEmpty()) {
+    if (!contextStack.isEmpty()) {
       throw new LexException();
     }
   }
@@ -534,6 +554,31 @@ final class JavadocLexer {
       output.add(new ForcedNewline("\n"));
     }
   }
+
+  /** Contexts that imply that we should not do HTML interpretation. */
+  private static final ImmutableSet<NestingContext> TAG_CONTEXTS =
+      ImmutableSet.of(NestingContext.SNIPPET_CONTEXT, NestingContext.TAG_CONTEXT);
+
+  /**
+   * Contexts that are opened by a left brace and closed by a matching right brace. These are the
+   * ones where a nested left brace should open a nested context.
+   */
+  private static final ImmutableSet<NestingContext> BRACE_CONTEXTS =
+      ImmutableSet.of(
+          NestingContext.CODE_CONTEXT,
+          NestingContext.SNIPPET_CONTEXT,
+          NestingContext.BRACE_CONTEXT);
+
+  /**
+   * Contexts that preserve formatting, including line breaks and leading whitespace, within the
+   * context.
+   */
+  private static final ImmutableSet<NestingContext> PRESERVE_FORMATTING_CONTEXTS =
+      ImmutableSet.of(
+          NestingContext.PRE,
+          NestingContext.TABLE,
+          NestingContext.CODE_CONTEXT,
+          NestingContext.SNIPPET_CONTEXT);
 
   private static final CharMatcher NEWLINE = CharMatcher.is('\n');
 
