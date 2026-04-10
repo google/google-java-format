@@ -14,42 +14,51 @@
 
 package com.google.googlejavaformat.java.javadoc;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Deque;
+import org.jspecify.annotations.Nullable;
 
 /**
- * Stack for tracking the level of nesting. In the simplest case, each entry is just the integer 1,
- * and the stack is effectively a counter. In more complex cases, the entries may depend on context.
- * For example, if the stack is keeping track of Javadoc lists, the entries represent indentation
- * levels, and those depend on whether the list is an HTML list or a Markdown list.
+ * Stack for tracking the level of nesting. In the simplest case, we have a stack of {@link Integer}
+ * where each entry is just the integer 1, and the stack is effectively a counter. In more complex
+ * cases, the entries may depend on context. For example, if the stack is keeping track of Javadoc
+ * lists, the entries represent indentation levels, and those depend on whether the list is an HTML
+ * list or a Markdown list.
+ *
+ * @param <E> The type of the elements in the stack.
  */
-final class NestingStack {
-  private int total;
-  private final Deque<Integer> stack = new ArrayDeque<>();
+sealed class NestingStack<E> {
+  private final Deque<E> stack = new ArrayDeque<>();
 
-  int total() {
-    return total;
-  }
-
-  void push() {
-    push(1);
-  }
-
-  void push(int value) {
+  void push(E value) {
     stack.push(value);
-    total += value;
   }
 
-  void incrementIfPositive() {
-    if (total > 0) {
-      push();
+  @CanIgnoreReturnValue
+  @Nullable E popIfNotEmpty() {
+    return isEmpty() ? null : stack.pop();
+  }
+
+  /**
+   * If the stack contains the given element, pop it and everything above it. Otherwise, do nothing.
+   */
+  void popUntil(E value) {
+    if (stack.contains(value)) {
+      E popped;
+      do {
+        popped = stack.pop();
+      } while (!popped.equals(value));
     }
   }
 
-  void popIfNotEmpty() {
-    if (!isEmpty()) {
-      total -= stack.pop();
-    }
+  boolean contains(E value) {
+    return stack.contains(value);
+  }
+
+  boolean containsAny(Collection<E> values) {
+    return stack.stream().anyMatch(values::contains);
   }
 
   boolean isEmpty() {
@@ -57,7 +66,39 @@ final class NestingStack {
   }
 
   void reset() {
-    total = 0;
     stack.clear();
+  }
+
+  static final class Int extends NestingStack<Integer> {
+    private int total;
+
+    int total() {
+      return total;
+    }
+
+    @Override
+    void push(Integer value) {
+      super.push(value);
+      total += value;
+    }
+
+    void push() {
+      push(1);
+    }
+
+    @Override
+    Integer popIfNotEmpty() {
+      Integer popped = super.popIfNotEmpty();
+      if (popped != null) {
+        total -= popped;
+      }
+      return popped;
+    }
+
+    @Override
+    void reset() {
+      super.reset();
+      total = 0;
+    }
   }
 }

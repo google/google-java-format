@@ -43,8 +43,8 @@ public class B29368546 {
    * foo bar
    * }
    *
-   * more stuff that ends with {
-   * }</pre>
+   * more stuff that ends with {}
+   * </pre>
    */
   int x;
 
@@ -52,10 +52,12 @@ public class B29368546 {
    * Example:
    *
    * <pre>{@code
-   * class T {}
-   * </pre> // oops, we forgot the close brace
+   * class T {
+   * }</pre>
    *
-   * more stuff that ends with {}
+   * // oops, we forgot the close brace
+   *
+   * <p>more stuff that ends with {}
    */
   int x;
 }
