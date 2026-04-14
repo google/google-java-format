@@ -65,9 +65,9 @@ final class JavadocWriter {
   private boolean continuingListItemOfInnermostList;
 
   private boolean continuingFooterTag;
-  private final NestingStack continuingListItemStack = new NestingStack();
-  private final NestingStack continuingListStack = new NestingStack();
-  private final NestingStack postWriteModifiedContinuingListStack = new NestingStack();
+  private final NestingStack.Int continuingListItemStack = new NestingStack.Int();
+  private final NestingStack.Int continuingListStack = new NestingStack.Int();
+  private final NestingStack.Int postWriteModifiedContinuingListStack = new NestingStack.Int();
   private int remainingOnLine;
   private boolean atStartOfLine;
   private RequestedWhitespace requestedWhitespace = NONE;
