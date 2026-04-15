@@ -120,6 +120,7 @@ public final class Main {
         JavaFormatterOptions.builder()
             .style(parameters.aosp() ? Style.AOSP : Style.GOOGLE)
             .formatJavadoc(parameters.formatJavadoc())
+            .reorderModifiers(parameters.reorderModifiers())
             .build();
 
     if (parameters.stdin()) {

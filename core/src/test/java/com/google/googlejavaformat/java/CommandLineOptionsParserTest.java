@@ -53,6 +53,7 @@ public class CommandLineOptionsParserTest {
     assertThat(options.setExitIfChanged()).isFalse();
     assertThat(options.reflowLongStrings()).isTrue();
     assertThat(options.formatJavadoc()).isTrue();
+    assertThat(options.reorderModifiers()).isTrue();
   }
 
   @Test
@@ -198,6 +199,14 @@ public class CommandLineOptionsParserTest {
     assertThat(
             CommandLineOptionsParser.parse(Arrays.asList("--skip-javadoc-formatting"))
                 .formatJavadoc())
+        .isFalse();
+  }
+
+  @Test
+  public void skipReorderingModifiers() {
+    assertThat(
+            CommandLineOptionsParser.parse(Arrays.asList("--skip-reordering-modifiers"))
+                .reorderModifiers())
         .isFalse();
   }
 }
