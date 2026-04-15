@@ -79,6 +79,7 @@ final class CommandLineOptionsParser {
         case "--skip-removing-unused-imports" -> optionsBuilder.removeUnusedImports(false);
         case "--skip-reflowing-long-strings" -> optionsBuilder.reflowLongStrings(false);
         case "--skip-javadoc-formatting" -> optionsBuilder.formatJavadoc(false);
+        case "--skip-reordering-modifiers" -> optionsBuilder.reorderModifiers(false);
         case "-" -> optionsBuilder.stdin(true);
         case "-n", "--dry-run" -> optionsBuilder.dryRun(true);
         case "--set-exit-if-changed" -> optionsBuilder.setExitIfChanged(true);
