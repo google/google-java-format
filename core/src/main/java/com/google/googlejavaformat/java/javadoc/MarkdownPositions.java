@@ -87,48 +87,51 @@ final class MarkdownPositions {
         case Paragraph paragraph -> addSpan(paragraph, PARAGRAPH_OPEN_TOKEN, PARAGRAPH_CLOSE_TOKEN);
         case BulletList bulletList -> addSpan(bulletList, LIST_OPEN_TOKEN, LIST_CLOSE_TOKEN);
         case OrderedList orderedList -> addSpan(orderedList, LIST_OPEN_TOKEN, LIST_CLOSE_TOKEN);
-        case ListItem listItem -> {
-          int startPosition = listItem.getSourceSpans().getFirst().getInputIndex();
-          Matcher matcher =
-              LIST_ITEM_START_PATTERN.matcher(input).region(startPosition, input.length());
-          verify(matcher.lookingAt());
-          ListItemOpenTag openToken = new ListItemOpenTag(matcher.group(1));
-          addSpan(listItem, openToken, LIST_ITEM_CLOSE_TOKEN);
-          if (listItem.getFirstChild() instanceof Paragraph paragraph) {
-            // A ListItem typically contains a Paragraph, but we don't want to visit that Paragraph
-            // because that would lead us to introduce a line break after the list introduction
-            // (the `-` or whatever). So we visit the children and siblings of the Paragraph
-            // instead.
-            alreadyVisitedChildren = true;
-            visitNodeList(paragraph.getFirstChild());
-            visitNodeList(paragraph.getNext());
-          }
-        }
-        case FencedCodeBlock fencedCodeBlock -> {
-          // Any indentation before the code block is part of FencedCodeBlock. This makes sense
-          // because the lines inside the code block must also be indented by that amount. That
-          // indentation gets subtracted from FencedCodeBlock.getLiteral(), which is the actual text
-          // represented by the code block.
-          int start = startPosition(fencedCodeBlock) + fencedCodeBlock.getFenceIndent();
-          MarkdownFencedCodeBlock token =
-              new MarkdownFencedCodeBlock(
-                  input.substring(start, endPosition(fencedCodeBlock)),
-                  fencedCodeBlock
-                          .getFenceCharacter()
-                          .repeat(fencedCodeBlock.getOpeningFenceLength())
-                      + fencedCodeBlock.getInfo(),
-                  fencedCodeBlock
-                      .getFenceCharacter()
-                      .repeat(fencedCodeBlock.getClosingFenceLength()),
-                  fencedCodeBlock.getLiteral());
-          positionToToken.get(start).addLast(token);
-        }
+        case ListItem listItem -> alreadyVisitedChildren = visitListItem(listItem);
+        case FencedCodeBlock fencedCodeBlock -> visitFencedCodeBlock(fencedCodeBlock);
         // TODO: others
         default -> {}
       }
       if (!alreadyVisitedChildren) {
         visitNodeList(node.getFirstChild());
       }
+    }
+
+    // Returns true if this method visited the children of the given ListItem.
+    private boolean visitListItem(ListItem listItem) {
+      int startPosition = listItem.getSourceSpans().getFirst().getInputIndex();
+      Matcher matcher =
+          LIST_ITEM_START_PATTERN.matcher(input).region(startPosition, input.length());
+      verify(matcher.lookingAt());
+      ListItemOpenTag openToken = new ListItemOpenTag(matcher.group(1));
+      addSpan(listItem, openToken, LIST_ITEM_CLOSE_TOKEN);
+      return switch (listItem.getFirstChild()) {
+        case Paragraph paragraph -> {
+          // A ListItem typically contains a Paragraph, but we don't want to visit that Paragraph
+          // because that would lead us to introduce a line break after the list introduction
+          // (the `-` or whatever). So we visit the children and siblings of the Paragraph instead.
+          visitNodeList(paragraph.getFirstChild());
+          visitNodeList(paragraph.getNext());
+          yield true;
+        }
+        default -> false;
+      };
+    }
+
+    private void visitFencedCodeBlock(FencedCodeBlock fencedCodeBlock) {
+      // Any indentation before the code block is part of FencedCodeBlock. This makes sense
+      // because the lines inside the code block must also be indented by that amount. That
+      // indentation gets subtracted from FencedCodeBlock.getLiteral(), which is the actual text
+      // represented by the code block.
+      int start = startPosition(fencedCodeBlock) + fencedCodeBlock.getFenceIndent();
+      MarkdownFencedCodeBlock token =
+          new MarkdownFencedCodeBlock(
+              input.substring(start, endPosition(fencedCodeBlock)),
+              fencedCodeBlock.getFenceCharacter().repeat(fencedCodeBlock.getOpeningFenceLength())
+                  + fencedCodeBlock.getInfo(),
+              fencedCodeBlock.getFenceCharacter().repeat(fencedCodeBlock.getClosingFenceLength()),
+              fencedCodeBlock.getLiteral());
+      positionToToken.get(start).addLast(token);
     }
 
     /**
