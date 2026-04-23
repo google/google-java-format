@@ -1988,6 +1988,30 @@ class Test {}
     doFormatTest(input, expected);
   }
 
+  @Test
+  public void markdownTables() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+"""
+/// | foo | bar |
+/// | --- | --- |
+/// | baz | qux |
+///
+/// - |foo|bar|
+///   |--:|:--|
+///   |baz|qux|
+class Test {}
+""";
+    // TODO: unmangle the tables
+    String expected =
+"""
+/// | foo | bar | | --- | --- | | baz | qux |
+/// - |foo|bar| |--:|:--| |baz|qux|
+class Test {}
+""";
+    doFormatTest(input, expected);
+  }
+
   // TODO: b/346668798 - Test the following Markdown constructs, and make the tests work as needed.
   // We can assume that the CommonMark parser correctly handles Markdown, so the question is whether
   // they are subsequently mishandled by our formatting logic. So for example the CommonMark parser
@@ -2027,4 +2051,10 @@ class Test {}
   //
   // - Autolinks
   //   <http://example.com> should be preserved. https://spec.commonmark.org/0.31.2/#autolink
+  //
+  // - Tables
+  //   | foo | bar |
+  //   | --- | --- |
+  //   | baz | qux |
+  //   Probably we should just try not to mangle them. https://spec.commonmark.org/0.31.2/#tables
 }
