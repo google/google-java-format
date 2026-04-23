@@ -152,6 +152,9 @@ sealed interface Token {
    */
   record ForcedNewline(String value) implements Token {}
 
+  /** A Markdown hard line break ({@code \} at the end of a line). */
+  record MarkdownHardLineBreak(String value) implements Token {}
+
   /**
    * Token that permits but does not force a line break. The way that we accomplish this is somewhat
    * indirect: As far as {@link JavadocWriter} is concerned, this token is meaningless. But its mere

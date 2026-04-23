@@ -46,6 +46,7 @@ import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.Literal;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanEnd;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanStart;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownHardLineBreak;
 import com.google.googlejavaformat.java.javadoc.Token.MoeBeginStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.MoeEndStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.OptionalLineBreak;
@@ -238,8 +239,21 @@ final class JavadocLexer {
       // remaining characters being matched *could* be those things, so the regex stops at
       // whitespace or a backtick. The *first* character could be a backtick, in constructs like
       // `` `foo` ``, where the backticks adjacent to "foo" are part of the text of the code span.
+      //
+      // Backslash has no special meaning inside `...` so this code precedes the backslash code.
       verify(input.tryConsumeRegex(WORD_IN_CODE_SPAN_PATTERN));
       return Literal::new;
+    }
+    if (!classicJavadoc) {
+      // Markdown backslash handling. \ at end of line, optionally followed by whitespace, is a hard
+      // line break. \ elsewhere cancels any special meaning of the following character.
+      if (input.tryConsumeRegex(MARKDOWN_HARD_LINE_BREAK_PATTERN)) {
+        somethingSinceNewline = false;
+        return MarkdownHardLineBreak::new;
+      } else if (input.tryConsumeRegex(BACKSLASH_PLUS_CHARACTER_PATTERN)) {
+        somethingSinceNewline = true;
+        return Literal::new;
+      }
     }
 
     /*
@@ -661,6 +675,8 @@ final class JavadocLexer {
   private static final Pattern SNIPPET_TAG_OPEN_PATTERN = compile("[{]@snippet\\b");
   private static final Pattern INLINE_TAG_OPEN_PATTERN = compile("[{]@\\w*");
   private static final Pattern WORD_IN_CODE_SPAN_PATTERN = compile(".[^ \t\n`]*");
+  private static final Pattern MARKDOWN_HARD_LINE_BREAK_PATTERN = compile("\\\\[ \t]*\n");
+  private static final Pattern BACKSLASH_PLUS_CHARACTER_PATTERN = compile("\\\\.");
 
   /*
    * We exclude < so that we don't swallow following HTML tags. This lets us fix up "foo<p>" (~400

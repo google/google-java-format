@@ -43,6 +43,7 @@ import com.google.googlejavaformat.java.javadoc.Token.Literal;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanEnd;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanStart;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownHardLineBreak;
 import com.google.googlejavaformat.java.javadoc.Token.MoeBeginStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.MoeEndStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.OptionalLineBreak;
@@ -133,6 +134,7 @@ public final class JavadocFormatter {
         case BrTag t -> output.writeBr(standardizeBrToken(t));
         case Whitespace unused -> output.requestWhitespace();
         case ForcedNewline unused -> output.writeLineBreakNoAutoIndent();
+        case MarkdownHardLineBreak unused -> output.writeMarkdownHardLineBreak();
         case Literal t -> output.writeLiteral(t);
         case MarkdownFencedCodeBlock t -> output.writeMarkdownFencedCodeBlock(t);
         case ListItemCloseTag unused -> {}

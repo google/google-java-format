@@ -1778,22 +1778,42 @@ class Test {}
   @Test
   public void markdownBackslashes() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    // We write `╲` (a box drawing character) instead of `\\` here and then substitute. That makes
+    // the test case a bit easier to read and also means that we can see where the line wrapping
+    // should happen. (Having to write \\ instead of \ would make the source text lines wider than
+    // the strings they represent.)
+    @SuppressWarnings("MisleadingEscapedSpace")
     String input =
-        """
-        /// \\<br> is not a break.
-        /// \\&#42; is not an HTML entity.
-        /// foo\\
-        /// bar
-        class Test {}
-        """;
-    // TODO: the <br> should not cause a line break, and the end-of-line backslash should.
-    // I don't think anything changes if we do or do not respect the \& backslash.
+"""
+/// ╲<br> is not a break.
+/// ╲&#42; is not an HTML entity.
+/// Backslash does not escape the end of a `code span╲` so <br> is a real break,
+/// but backslash does escape the *start* of a ╲`code span so <br> is also a real break.
+/// hard╲
+/// line╲\t\s
+/// breaks
+/// - foo ╲
+///     bar
+/// ╲@param not a param tag
+/// ╲╲@param not a param tag either
+class Test {}
+"""
+            .replace('╲', '\\');
+    // I don't think anything changes if we do or do not respect the \& backslash so nothing here
+    // proves whether we do.
     String expected =
-        """
-        /// \\<br>
-        /// is not a break. \\&#42; is not an HTML entity. foo\\ bar
-        class Test {}
-        """;
+"""
+/// ╲<br> is not a break. ╲&#42; is not an HTML entity. Backslash does not escape the end of a `code
+/// span╲` so <br>
+/// is a real break, but backslash does escape the *start* of a ╲`code span so <br>
+/// is also a real break. hard╲
+/// line╲
+/// breaks
+/// - foo ╲
+///   bar ╲@param not a param tag ╲╲@param not a param tag either
+class Test {}
+"""
+            .replace('╲', '\\');
     doFormatTest(input, expected);
   }
 
@@ -1975,14 +1995,6 @@ class Test {}
   // so we should not need to check that that is handled correctly, given that we already check
   // <pre> handling elsewhere. On the other hand, if we don't handle Markdown code spans (`...`)
   // correctly then we might incorrectly recognize HTML tags like `<ul>` inside them.
-  //
-  // - Backslashes
-  //   - \<br> is not a break.
-  //   - \&#42; is not an HTML entity.
-  //   - \⏎ is a hard line break. https://spec.commonmark.org/0.31.2/#hard-line-break
-  //     A hard line break can also be written as two or more spaces followed by a newline. I think
-  //     that is ridiculous and it is absolutely fine to destroy those spaces. However the line
-  //     break will show up in the CommonMark parse.
   //
   // - Thematic breaks: ---, ***, ___, which are all rendered as <hr> and should presumably have a
   //   line break before and after. https://spec.commonmark.org/0.31.2/#thematic-breaks

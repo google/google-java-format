@@ -53,6 +53,9 @@ import com.google.googlejavaformat.java.javadoc.Token.TableOpenTag;
  * are we inside?"
  */
 final class JavadocWriter {
+
+  private static final Literal BACKSLASH_LITERAL = new Literal("\\");
+
   private final int blockIndent;
   private final boolean classicJavadoc;
   private final StringBuilder output = new StringBuilder();
@@ -320,6 +323,11 @@ final class JavadocWriter {
 
   void writeLineBreakNoAutoIndent() {
     writeNewline(NO_AUTO_INDENT);
+  }
+
+  void writeMarkdownHardLineBreak() {
+    writeLiteral(BACKSLASH_LITERAL);
+    writeNewline();
   }
 
   void writeLiteral(Literal token) {
