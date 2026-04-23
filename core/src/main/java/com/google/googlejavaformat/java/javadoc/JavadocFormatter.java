@@ -40,6 +40,8 @@ import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.Literal;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanEnd;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanStart;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
 import com.google.googlejavaformat.java.javadoc.Token.MoeBeginStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.MoeEndStripComment;
@@ -132,10 +134,12 @@ public final class JavadocFormatter {
         case Whitespace unused -> output.requestWhitespace();
         case ForcedNewline unused -> output.writeLineBreakNoAutoIndent();
         case Literal t -> output.writeLiteral(t);
-        case ParagraphCloseTag unused -> {}
+        case MarkdownFencedCodeBlock t -> output.writeMarkdownFencedCodeBlock(t);
         case ListItemCloseTag unused -> {}
         case OptionalLineBreak unused -> {}
-        case MarkdownFencedCodeBlock t -> output.writeMarkdownFencedCodeBlock(t);
+        case ParagraphCloseTag unused -> {}
+        case MarkdownCodeSpanStart unused -> {}
+        case MarkdownCodeSpanEnd unused -> {}
       }
     }
     throw new AssertionError();

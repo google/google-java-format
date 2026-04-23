@@ -44,6 +44,8 @@ import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.Literal;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanEnd;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanStart;
 import com.google.googlejavaformat.java.javadoc.Token.MoeBeginStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.MoeEndStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.OptionalLineBreak;
@@ -67,6 +69,7 @@ import java.util.regex.Pattern;
 final class JavadocLexer {
   /** Takes a Javadoc comment, including ∕✱✱ and ✱∕, and returns tokens, including ∕✱✱ and ✱∕. */
   static ImmutableList<Token> lex(String input, boolean classicJavadoc) throws LexException {
+    input = normalizeLineEndings(input);
     MarkdownPositions markdownPositions;
     if (classicJavadoc) {
       /*
@@ -81,7 +84,6 @@ final class JavadocLexer {
       input = input.substring("///".length());
       markdownPositions = MarkdownPositions.parse(input);
     }
-    input = normalizeLineEndings(input);
     return new JavadocLexer(new CharStream(input), markdownPositions, classicJavadoc)
         .generateTokens();
   }
@@ -115,6 +117,9 @@ final class JavadocLexer {
 
     /** {@code <code>...</code>}. */
     HTML_CODE_CONTEXT,
+
+    /** Markdown {@code `...`}. */
+    MARKDOWN_CODE_CONTEXT,
 
     /** {@code <table>...</table>}. */
     TABLE,
@@ -161,6 +166,21 @@ final class JavadocLexer {
         // assumed that there are no other tokens (markdown or otherwise) in a non-empty text span
         // covered by a markdown token.
         for (Token markdownToken : markdownPositions.tokensAt(input.position())) {
+          // For `...`, we switch to MARKDOWN_CODE_CONTEXT for the duration of the span, and we
+          // change the start or end token to a Literal so it will get joined to adjacent Literal
+          // tokens. That prevents line breaks adjacent to the backticks in "foo`bar`baz", but still
+          // allows them at the spaces in "foo `bar` baz" or "foo` bar `baz".
+          switch (markdownToken) {
+            case MarkdownCodeSpanStart unused -> {
+              contextStack.push(NestingContext.MARKDOWN_CODE_CONTEXT);
+              markdownToken = new Literal(markdownToken.value());
+            }
+            case MarkdownCodeSpanEnd unused -> {
+              contextStack.popUntil(NestingContext.MARKDOWN_CODE_CONTEXT);
+              markdownToken = new Literal(markdownToken.value());
+            }
+            default -> {}
+          }
           tokens.add(markdownToken);
           if (!markdownToken.value().isEmpty()) {
             boolean consumed = input.tryConsume(markdownToken.value());
@@ -209,6 +229,17 @@ final class JavadocLexer {
       // TODO(cpovirk): How about weird whitespace chars? Ideally we'd distinguish breaking vs. not.
       // Returning Literal here prevents us from breaking a <pre> line. For more info, see Literal.
       return preserveExistingFormatting ? Literal::new : Whitespace::new;
+    }
+
+    if (contextStack.contains(NestingContext.MARKDOWN_CODE_CONTEXT)) {
+      // Consume one or more characters. We know the first character isn't a newline or space
+      // because we've eliminated those possibilities, and it can't be the end of the `...` span
+      // either because that would have caused us to pop MARKDOWN_CODE_CONTEXT from the stack. The
+      // remaining characters being matched *could* be those things, so the regex stops at
+      // whitespace or a backtick. The *first* character could be a backtick, in constructs like
+      // `` `foo` ``, where the backticks adjacent to "foo" are part of the text of the code span.
+      verify(input.tryConsumeRegex(WORD_IN_CODE_SPAN_PATTERN));
+      return Literal::new;
     }
 
     /*
@@ -369,7 +400,7 @@ final class JavadocLexer {
        * it into a tag.
        */
 
-      if (accumulated.length() == 0) {
+      if (accumulated.isEmpty()) {
         output.add(tokens.next());
         continue;
       }
@@ -389,7 +420,7 @@ final class JavadocLexer {
       output.add(new Literal(accumulated.toString()));
       accumulated.setLength(0);
 
-      if (seenWhitespace.length() > 0) {
+      if (!seenWhitespace.isEmpty()) {
         output.add(new Whitespace(seenWhitespace.toString()));
       }
 
@@ -629,6 +660,7 @@ final class JavadocLexer {
   private static final Pattern BR_PATTERN = openTagPattern("br");
   private static final Pattern SNIPPET_TAG_OPEN_PATTERN = compile("[{]@snippet\\b");
   private static final Pattern INLINE_TAG_OPEN_PATTERN = compile("[{]@\\w*");
+  private static final Pattern WORD_IN_CODE_SPAN_PATTERN = compile(".[^ \t\n`]*");
 
   /*
    * We exclude < so that we don't swallow following HTML tags. This lets us fix up "foo<p>" (~400

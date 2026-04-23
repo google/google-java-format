@@ -104,6 +104,21 @@ sealed interface Token {
   record BrTag(String value) implements Token {}
 
   /**
+   * A Markdown code span start, like the start of {@code `foo`} or {@code ``bar``}.
+   *
+   * @param value the start backtick string, one or more backtick characters.
+   */
+  record MarkdownCodeSpanStart(String value) implements Token {}
+
+  /**
+   * A Markdown code span end, like the end of {@code `foo`} or {@code ``bar``}.
+   *
+   * @param value the end backtick string, one or more backtick characters (the same number as the
+   *     corresponding start backtick string).
+   */
+  record MarkdownCodeSpanEnd(String value) implements Token {}
+
+  /**
    * A fenced code block, like:
    *
    * <pre>

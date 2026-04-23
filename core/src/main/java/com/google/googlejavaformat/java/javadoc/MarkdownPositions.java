@@ -25,12 +25,15 @@ import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanEnd;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanStart;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphOpenTag;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.commonmark.node.BulletList;
+import org.commonmark.node.Code;
 import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.node.Heading;
 import org.commonmark.node.ListItem;
@@ -89,6 +92,7 @@ final class MarkdownPositions {
         case OrderedList orderedList -> addSpan(orderedList, LIST_OPEN_TOKEN, LIST_CLOSE_TOKEN);
         case ListItem listItem -> alreadyVisitedChildren = visitListItem(listItem);
         case FencedCodeBlock fencedCodeBlock -> visitFencedCodeBlock(fencedCodeBlock);
+        case Code code -> visitCodeSpan(code);
         // TODO: others
         default -> {}
       }
@@ -132,6 +136,22 @@ final class MarkdownPositions {
               fencedCodeBlock.getFenceCharacter().repeat(fencedCodeBlock.getClosingFenceLength()),
               fencedCodeBlock.getLiteral());
       positionToToken.get(start).addLast(token);
+    }
+
+    private void visitCodeSpan(Code code) {
+      int start = startPosition(code);
+      int end = endPosition(code);
+      int count;
+      for (count = 0; input.charAt(start + count) == '`'; count++) {
+        verify(
+            input.charAt(end - 1 - count) == '`',
+            "Mismatched backticks: %s",
+            input.substring(start, end));
+      }
+      verify(count > 0, "Code span does not start with backticks: %s", input.substring(start, end));
+      String backticks = "`".repeat(count);
+      positionToToken.get(start).addLast(new MarkdownCodeSpanStart(backticks));
+      positionToToken.get(end - count).addFirst(new MarkdownCodeSpanEnd(backticks));
     }
 
     /**

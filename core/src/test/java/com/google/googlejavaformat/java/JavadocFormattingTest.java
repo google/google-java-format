@@ -1927,18 +1927,30 @@ class Test {}
   public void markdownCodeSpans() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
-        """
-        /// `<ul>` should not trigger list handling.
-        class Test {}
-        """;
-    // TODO: the <ul> should not be recognized as a list, so `<ul>` should be preserved.
-    // TODO: test that text with `...` is subject to line wrapping, including joining short lines.
+"""
+/// `<ul>` should not trigger list handling.
+///
+/// `This very long code line should eventually trigger line wrapping because newlines are allowed in code spans.`
+///
+/// This other long line is carefully crafted to provoke a line break inside a double-backtick `` `<ul>` `` code span.
+///
+/// There should not be a line break immediately before or after a backtick in an example like this`and`that.
+class Test {}
+""";
     String expected =
-        """
-        /// `<ul>
-        ///   ` should not trigger list handling.
-        class Test {}
-        """;
+"""
+/// `<ul>` should not trigger list handling.
+///
+/// `This very long code line should eventually trigger line wrapping because newlines are allowed
+/// in code spans.`
+///
+/// This other long line is carefully crafted to provoke a line break inside a double-backtick ``
+/// `<ul>` `` code span.
+///
+/// There should not be a line break immediately before or after a backtick in an example like
+/// this`and`that.
+class Test {}
+""";
     doFormatTest(input, expected);
   }
 
@@ -2000,12 +2012,6 @@ class Test {}
   //   > bar
   //   We need to ensure that each > stays at the start of its line with appropriate indentation if
   //   inside a list. https://spec.commonmark.org/0.31.2/#block-quotes
-  //
-  // - Code spans
-  //   `<ul>` should not trigger list handling.
-  //   Text within `...` should still be subject to line wrapping, both splitting long lines and
-  //   joining short lines. https://spec.commonmark.org/0.31.2/#code-spans
-  //
   //
   // - Autolinks
   //   <http://example.com> should be preserved. https://spec.commonmark.org/0.31.2/#autolink
