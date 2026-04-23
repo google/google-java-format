@@ -46,6 +46,8 @@ Options:
     Do not reflow string literals that exceed the column limit.
   --skip-javadoc-formatting
     Do not reformat javadoc.
+  --skip-reordering-modifiers
+    Do not reorder modifiers into the JLS-recommended order.
   --dry-run, -n
     Prints the paths of the files whose contents would change if the formatter were run normally.
   --set-exit-if-changed
