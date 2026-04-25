@@ -1738,6 +1738,12 @@ class Test {}
 ///    in a list
 ///    ```
 ///
+/// - flibbertigibbet
+///
+///   ```
+///   code block in a list after text
+///   ```
+///
 /// ~~~java
 /// code block
 /// with tildes and an info string ("java")
@@ -1759,6 +1765,12 @@ class Test {}
 /// - ```
 ///   code block
 ///   in a list
+///   ```
+///
+/// - flibbertigibbet
+///
+///   ```
+///   code block in a list after text
 ///   ```
 ///
 /// ~~~java
@@ -1993,6 +2005,8 @@ class Test {}
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
 """
+/// Table McTableface
+///
 /// | foo | bar |
 /// | --- | --- |
 /// | baz | qux |
@@ -2000,15 +2014,16 @@ class Test {}
 /// - |foo|bar|
 ///   |--:|:--|
 ///   |baz|qux|
+///
+/// - Another list.
+///
+///   | which | contains |
+///   | ----- | -------- |
+///   | a | table |
 class Test {}
 """;
-    // TODO: unmangle the tables
-    String expected =
-"""
-/// | foo | bar | | --- | --- | | baz | qux |
-/// - |foo|bar| |--:|:--| |baz|qux|
-class Test {}
-""";
+    // We don't currently try to align the column markers in the rows of the last table.
+    String expected = input;
     doFormatTest(input, expected);
   }
 
