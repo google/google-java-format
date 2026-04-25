@@ -44,6 +44,7 @@ import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanEnd;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanStart;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownHardLineBreak;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownTable;
 import com.google.googlejavaformat.java.javadoc.Token.MoeBeginStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.MoeEndStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.OptionalLineBreak;
@@ -137,6 +138,7 @@ public final class JavadocFormatter {
         case MarkdownHardLineBreak unused -> output.writeMarkdownHardLineBreak();
         case Literal t -> output.writeLiteral(t);
         case MarkdownFencedCodeBlock t -> output.writeMarkdownFencedCodeBlock(t);
+        case MarkdownTable t -> output.writeMarkdownTable(t);
         case ListItemCloseTag unused -> {}
         case OptionalLineBreak unused -> {}
         case ParagraphCloseTag unused -> {}

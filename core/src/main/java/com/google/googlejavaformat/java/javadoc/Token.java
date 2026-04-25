@@ -135,9 +135,28 @@ sealed interface Token {
    * @param end the end fence.
    * @param literal the text that the code block represents. This does not include the start and end
    *     fences, nor any indentation that precedes these fences and every intervening line.
+   * @param precededByNonWhitespace whether the start of the code block is preceded by at least one
+   *     non-whitespace character on the same line, for example {@code - ```}.
    */
-  record MarkdownFencedCodeBlock(String value, String start, String end, String literal)
+  record MarkdownFencedCodeBlock(
+      String value, String start, String end, String literal, boolean precededByNonWhitespace)
       implements Token {}
+
+  /**
+   * A Markdown table, like:
+   *
+   * {@snippet :
+   * | foo | bar |
+   * | --- | --- |
+   * | baz | qux |
+   * }
+   *
+   * @param value the full text of the table as it appeared in the input, including the delimiters
+   *     and the literal content.
+   * @param precededByNonWhitespace whether the start of the table is preceded by at least one
+   *     non-whitespace character on the same line, for example {@code - |foo|bar|}.
+   */
+  record MarkdownTable(String value, boolean precededByNonWhitespace) implements Token {}
 
   /**
    * Whitespace that is not in a {@code <pre>} or {@code <table>} section. Whitespace includes

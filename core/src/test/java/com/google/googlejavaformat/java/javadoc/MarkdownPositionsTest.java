@@ -129,6 +129,7 @@ with tildes
     int secondCodeEnd = text.indexOf("~~~", secondCodeStart + 3) + 3;
     int thirdCodeStart = text.indexOf("````", secondCodeEnd);
     int thirdCodeEnd = text.indexOf("````", thirdCodeStart + 4) + 4;
+    boolean precededByNonWhitespace = true;
     ImmutableListMultimap<Integer, Token> expected =
         ImmutableListMultimap.<Integer, Token>builder()
             .put(bullet, new ListOpenTag(""))
@@ -136,7 +137,11 @@ with tildes
             .put(
                 firstCodeStart,
                 new MarkdownFencedCodeBlock(
-                    text.substring(firstCodeStart, firstCodeEnd), "```", "```", "foo\nbar\n"))
+                    text.substring(firstCodeStart, firstCodeEnd),
+                    "```",
+                    "```",
+                    "foo\nbar\n",
+                    /* precededByNonWhitespace= */ true))
             .put(firstCodeEnd, new ListItemCloseTag(""))
             .put(firstCodeEnd, new ListCloseTag(""))
             .put(
@@ -145,14 +150,16 @@ with tildes
                     text.substring(secondCodeStart, secondCodeEnd),
                     "~~~java",
                     "~~~",
-                    "code\nwith tildes\n"))
+                    "code\nwith tildes\n",
+                    /* precededByNonWhitespace= */ false))
             .put(
                 thirdCodeStart,
                 new MarkdownFencedCodeBlock(
                     text.substring(thirdCodeStart, thirdCodeEnd),
                     "````",
                     "````",
-                    "indented code\nwith more than three backticks\n"))
+                    "indented code\nwith more than three backticks\n",
+                    /* precededByNonWhitespace= */ false))
             .build();
     assertThat(map).isEqualTo(expected);
   }

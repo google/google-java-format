@@ -35,6 +35,7 @@ import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.Literal;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownTable;
 import com.google.googlejavaformat.java.javadoc.Token.MoeBeginStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.MoeEndStripComment;
 import com.google.googlejavaformat.java.javadoc.Token.PreCloseTag;
@@ -44,6 +45,7 @@ import com.google.googlejavaformat.java.javadoc.Token.SnippetEnd;
 import com.google.googlejavaformat.java.javadoc.Token.StartOfLineToken;
 import com.google.googlejavaformat.java.javadoc.Token.TableCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.TableOpenTag;
+import java.util.List;
 
 /**
  * Stateful object that accepts "requests" and "writes," producing formatted Javadoc.
@@ -335,6 +337,9 @@ final class JavadocWriter {
   }
 
   void writeMarkdownFencedCodeBlock(MarkdownFencedCodeBlock token) {
+    if (!token.precededByNonWhitespace() && wroteAnythingSignificant) {
+      requestBlankLine();
+    }
     flushWhitespace();
     output.append(token.start());
     token
@@ -347,6 +352,20 @@ final class JavadocWriter {
             });
     writeNewline();
     output.append(token.end());
+    requestBlankLine();
+  }
+
+  void writeMarkdownTable(MarkdownTable token) {
+    if (!token.precededByNonWhitespace() && wroteAnythingSignificant) {
+      requestBlankLine();
+    }
+    flushWhitespace();
+    List<String> lines = token.value().lines().toList();
+    output.append(lines.get(0));
+    for (String line : lines.subList(1, lines.size())) {
+      writeNewline(AutoIndent.NO_AUTO_INDENT);
+      output.append(line);
+    }
     requestBlankLine();
   }
 
