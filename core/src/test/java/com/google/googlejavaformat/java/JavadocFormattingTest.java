@@ -1738,6 +1738,12 @@ class Test {}
 ///    in a list
 ///    ```
 ///
+/// - flibbertigibbet
+///
+///   ```
+///   code block in a list after text
+///   ```
+///
 /// ~~~java
 /// code block
 /// with tildes and an info string ("java")
@@ -1759,6 +1765,10 @@ class Test {}
 /// - ```
 ///   code block
 ///   in a list
+///   ```
+///
+/// - flibbertigibbet```
+///   code block in a list after text
 ///   ```
 ///
 /// ~~~java
