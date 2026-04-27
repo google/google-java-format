@@ -1338,7 +1338,7 @@ public final class JavadocFormattingTest {
   @Test
   public void unicodeEscapesNotInterpretedBug() {
     /*
-     * In theory, \u003C should be treated exactly like <, and so too should the escaped versions of
+     * In theory, ╲u003C should be treated exactly like <, and so too should the escaped versions of
      * @, *, and other special chars. We don't recognize that, though, so we don't put what is
      * effectively "<p>" on a new line.
      */
