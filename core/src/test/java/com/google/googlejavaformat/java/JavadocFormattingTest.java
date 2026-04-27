@@ -1739,9 +1739,14 @@ class Test {}
 ///    ```
 ///
 /// - flibbertigibbet
+///   ```
+///   code block in a list after text with no blank line intervening (one will be inserted)
+///   ```
+///
+/// - flibbertigibbet
 ///
 ///   ```
-///   code block in a list after text
+///   code block in a list after text with a blank line intervening
 ///   ```
 ///
 /// ~~~java
@@ -1767,8 +1772,16 @@ class Test {}
 ///   in a list
 ///   ```
 ///
-/// - flibbertigibbet```
-///   code block in a list after text
+/// - flibbertigibbet
+///
+///   ```
+///   code block in a list after text with no blank line intervening (one will be inserted)
+///   ```
+///
+/// - flibbertigibbet
+///
+///   ```
+///   code block in a list after text with a blank line intervening
 ///   ```
 ///
 /// ~~~java

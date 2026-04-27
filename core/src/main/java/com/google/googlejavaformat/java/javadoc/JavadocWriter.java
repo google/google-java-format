@@ -335,6 +335,10 @@ final class JavadocWriter {
   }
 
   void writeMarkdownFencedCodeBlock(MarkdownFencedCodeBlock token) {
+    if (wroteAnythingSignificant && !atStartOfLine) {
+      // A reminder that atStartOfLine is still true after `-␣` because it is a StartOfLineToken.
+      requestBlankLine();
+    }
     flushWhitespace();
     output.append(token.start());
     token

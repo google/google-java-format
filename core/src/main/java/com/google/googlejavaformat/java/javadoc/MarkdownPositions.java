@@ -30,6 +30,7 @@ import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanStart;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphOpenTag;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.commonmark.node.BulletList;
@@ -128,12 +129,16 @@ final class MarkdownPositions {
       // indentation gets subtracted from FencedCodeBlock.getLiteral(), which is the actual text
       // represented by the code block.
       int start = startPosition(fencedCodeBlock) + fencedCodeBlock.getFenceIndent();
+      int closingLength =
+          Objects.requireNonNullElse(
+              fencedCodeBlock.getClosingFenceLength(), fencedCodeBlock.getOpeningFenceLength());
+      // We have observed getClosingFenceLength() returning null in some cases.
       MarkdownFencedCodeBlock token =
           new MarkdownFencedCodeBlock(
               input.substring(start, endPosition(fencedCodeBlock)),
               fencedCodeBlock.getFenceCharacter().repeat(fencedCodeBlock.getOpeningFenceLength())
                   + fencedCodeBlock.getInfo(),
-              fencedCodeBlock.getFenceCharacter().repeat(fencedCodeBlock.getClosingFenceLength()),
+              fencedCodeBlock.getFenceCharacter().repeat(closingLength),
               fencedCodeBlock.getLiteral());
       positionToToken.get(start).addLast(token);
     }

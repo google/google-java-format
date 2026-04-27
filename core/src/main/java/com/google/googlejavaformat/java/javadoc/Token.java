@@ -38,11 +38,12 @@ sealed interface Token {
 
   /**
    * Tokens that are always pinned to the following token. For example, {@code <p>} in {@code <p>Foo
-   * bar} (never {@code <p> Foo bar} or {@code <p>\nFoo bar}).
+   * bar} (never {@code <p> Foo bar} or {@code <p>\nFoo bar}); or {#code
+   * <li>} or {@code -␣} in {@code <li>Foo bar} or {@code -␣Foo bar}.
    *
-   * <p>This is not the only kind of "pinning" that we do: See also the joining of Literal tokens
-   * done by the lexer. The special pinning here is necessary because these tokens are not of type
-   * Literal (because they require other special handling).
+   *     <p>This is not the only kind of "pinning" that we do: See also the joining of Literal
+   *     tokens done by the lexer. The special pinning here is necessary because these tokens are
+   *     not of type Literal (because they require other special handling).
    */
   interface StartOfLineToken {}
 
