@@ -1516,15 +1516,6 @@ public final class JavadocFormattingTest {
     doFormatTest(input, expected);
   }
 
-  private void doFormatTest(String input, String expected) {
-    try {
-      String actual = formatter.formatSource(input);
-      assertThat(actual).isEqualTo(expected);
-    } catch (FormatterException e) {
-      throw new AssertionError(e);
-    }
-  }
-
   @Test
   public void windowsLineSeparator() throws FormatterException {
     String input =
@@ -2016,6 +2007,8 @@ class Test {}
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
 """
+/// Table McTableface
+///
 /// | foo | bar |
 /// | --- | --- |
 /// | baz | qux |
@@ -2023,16 +2016,26 @@ class Test {}
 /// - |foo|bar|
 ///   |--:|:--|
 ///   |baz|qux|
+///
+/// - Another list.
+///
+///   | which | contains |
+///   | ----- | -------- |
+///   | a | table |
 class Test {}
 """;
-    // TODO: unmangle the tables
-    String expected =
-"""
-/// | foo | bar | | --- | --- | | baz | qux |
-/// - |foo|bar| |--:|:--| |baz|qux|
-class Test {}
-""";
+    // We don't currently try to align the column markers in the rows of the last table.
+    String expected = input;
     doFormatTest(input, expected);
+  }
+
+  private void doFormatTest(String input, String expected) {
+    try {
+      String actual = formatter.formatSource(input);
+      assertThat(actual).isEqualTo(expected);
+    } catch (FormatterException e) {
+      throw new AssertionError(e);
+    }
   }
 
   // TODO: b/346668798 - Test the following Markdown constructs, and make the tests work as needed.
@@ -2074,10 +2077,4 @@ class Test {}
   //
   // - Autolinks
   //   <http://example.com> should be preserved. https://spec.commonmark.org/0.31.2/#autolink
-  //
-  // - Tables
-  //   | foo | bar |
-  //   | --- | --- |
-  //   | baz | qux |
-  //   Probably we should just try not to mangle them. https://spec.commonmark.org/0.31.2/#tables
 }
