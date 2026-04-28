@@ -28,14 +28,11 @@ import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanEnd;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanStart;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
-import com.google.googlejavaformat.java.javadoc.Token.MarkdownTable;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphOpenTag;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.commonmark.ext.gfm.tables.TableBlock;
-import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.BulletList;
 import org.commonmark.node.Code;
 import org.commonmark.node.FencedCodeBlock;
@@ -96,10 +93,6 @@ final class MarkdownPositions {
         case OrderedList orderedList -> addSpan(orderedList, LIST_OPEN_TOKEN, LIST_CLOSE_TOKEN);
         case ListItem listItem -> alreadyVisitedChildren = visitListItem(listItem);
         case FencedCodeBlock fencedCodeBlock -> visitFencedCodeBlock(fencedCodeBlock);
-        case TableBlock tableBlock -> {
-          visitTableBlock(tableBlock);
-          alreadyVisitedChildren = true;
-        }
         case Code code -> visitCodeSpan(code);
         // TODO: others
         default -> {}
@@ -148,12 +141,6 @@ final class MarkdownPositions {
               fencedCodeBlock.getFenceCharacter().repeat(closingLength),
               fencedCodeBlock.getLiteral());
       positionToToken.get(start).addLast(token);
-    }
-
-    private void visitTableBlock(TableBlock tableBlock) {
-      int start = startPosition(tableBlock);
-      int end = endPosition(tableBlock);
-      positionToToken.get(start).addLast(new MarkdownTable(input.substring(start, end)));
     }
 
     private void visitCodeSpan(Code code) {
@@ -213,10 +200,7 @@ final class MarkdownPositions {
   }
 
   private static final Parser PARSER =
-      Parser.builder()
-          .includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES)
-          .extensions(ImmutableList.of(TablesExtension.create()))
-          .build();
+      Parser.builder().includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES).build();
 
   private static final HeaderOpenTag HEADER_OPEN_TOKEN = new HeaderOpenTag("");
   private static final HeaderCloseTag HEADER_CLOSE_TOKEN = new HeaderCloseTag("");

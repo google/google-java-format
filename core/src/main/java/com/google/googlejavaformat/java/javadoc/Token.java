@@ -141,20 +141,6 @@ sealed interface Token {
       implements Token {}
 
   /**
-   * A Markdown table, like:
-   *
-   * {@snippet :
-   * | foo | bar |
-   * | --- | --- |
-   * | baz | qux |
-   * }
-   *
-   * @param value the full text of the table as it appeared in the input, including the delimiters
-   *     and the literal content.
-   */
-  record MarkdownTable(String value) implements Token {}
-
-  /**
    * Whitespace that is not in a {@code <pre>} or {@code <table>} section. Whitespace includes
    * leading newlines, asterisks, and tabs and spaces. In the output, it is translated to newlines
    * (with leading spaces and asterisks) or spaces.
