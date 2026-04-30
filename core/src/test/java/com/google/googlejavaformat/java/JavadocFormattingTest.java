@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.TruthJUnit.assume;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -915,16 +916,15 @@ public final class JavadocFormattingTest {
   }
 
   @Test
-  public void brAtSignBug() {
+  public void brAtSignBug() throws FormatterException {
     /*
      * This is a bug -- more of a "spec" bug than an implementation bug, and hard to fix.
      * Fortunately, some very quick searching didn't turn up any instances in the Google codebase.
      */
-    @SuppressWarnings("MisleadingEscapedSpace") // TODO(b/496180372): remove
     String input =
         """
         /**
-         * abc<br>@foo\s
+         * abc<br>@foo
          */
         class Test {}\
         """;
@@ -936,7 +936,9 @@ public final class JavadocFormattingTest {
          */
         class Test {}
         """;
-    doFormatTest(input, expected);
+    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    // This one is not idempotent since a second formatting round will introduce a blank line before
+    // the fake @foo tag. But the test is showing that there's a bug anyway.
   }
 
   @Test
@@ -2051,6 +2053,8 @@ class Test {}
     try {
       String actual = formatter.formatSource(input);
       assertThat(actual).isEqualTo(expected);
+      String reformatted = formatter.formatSource(actual);
+      assertWithMessage("When checking idempotency").that(reformatted).isEqualTo(actual);
     } catch (FormatterException e) {
       throw new AssertionError(e);
     }
