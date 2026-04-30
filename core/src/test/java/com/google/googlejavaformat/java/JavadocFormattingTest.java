@@ -1993,11 +1993,10 @@ class Test {}
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
-        /// <http://example.com> should be preserved.
+        /// <http://{@code example.com> <br> is not inside @code}.
         class Test {}
         """;
-    // TODO: find a test case that will break if autolinks are not handled correctly.
-    // Probably something like: <http://{@code>this should not be handled like a code span}
+    // TODO: the <br> should trigger a line break since it is not in fact inside {@code ...}.
     String expected = input;
     doFormatTest(input, expected);
   }
