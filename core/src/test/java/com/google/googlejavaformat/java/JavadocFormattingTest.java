@@ -1832,6 +1832,25 @@ class Test {}
   }
 
   @Test
+  public void markdownLinkWrapping() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+"""
+/// enough text to cause the following link to need to be wrapped [foo](http://very.long/url/that/will/need/to/be/wrapped)
+class Test {}
+""";
+    // It would be wrong to wrap between the ] and the (, and fortunately we don't.
+    // https://spec.commonmark.org/0.31.2/#example-511
+    String expected =
+"""
+/// enough text to cause the following link to need to be wrapped
+/// [foo](http://very.long/url/that/will/need/to/be/wrapped)
+class Test {}
+""";
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void markdownThematicBreaks() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
