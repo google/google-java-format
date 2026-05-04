@@ -639,6 +639,25 @@ class T {
   }
 
   @Test
+  public void noReorderModifiers() throws Exception {
+    String input =
+        """
+        class Test {
+          static public void main(String... args) {}
+        }
+        """;
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
+    assertThat(main.format("--skip-reordering-modifiers", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(input);
+  }
+
+  @Test
   public void syntaxError() throws Exception {
     Path path = testFolder.newFile("Test.java").toPath();
     String input =
