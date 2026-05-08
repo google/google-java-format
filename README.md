@@ -57,10 +57,16 @@ google-java-format" checkbox.
 
 To enable it by default in new projects,
 [open the default settings for new projects](https://www.jetbrains.com/help/idea/configure-project-settings.html#new-default-settings)
-and configure it under "Other Settings/google-java-format Settings".
+and configure it under "Other Settings" > "google-java-format Settings".
 
 When enabled, it will replace the normal `Reformat Code` and `Optimize Imports`
 actions.
+
+In the same location in Settings, under "Other Settings" > "google-java-format Settings",
+the drop down `Code Style` allows you to configure the formatter options:
+
+* `Default Google Java style`: using 2 spaces indent
+* `Android Open Source Project (AOSP) style`: using 4 spaces indent
 
 #### IntelliJ JRE Config
 
