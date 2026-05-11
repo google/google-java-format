@@ -58,7 +58,7 @@ public class GoogleJavaFormatImportOptimizer implements ImportOptimizer {
     final String origText = document.getText();
     String text;
     try {
-      text = ImportOrderer.reorderImports(RemoveUnusedImports.removeUnusedImports(origText), style);
+      text = formatImports(origText, style);
     } catch (FormatterException e) {
       Notifications.displayParsingErrorNotification(project, file.getName());
       return Runnables.doNothing();
@@ -80,11 +80,27 @@ public class GoogleJavaFormatImportOptimizer implements ImportOptimizer {
       // getCharsSequence() as we should have `writeAction()` (which I think means effectively a
       // write-lock) and it saves calling getText(), which apparently is expensive.
       CharSequence newText = document.getCharsSequence();
+      String textToSet = text;
       if (CharSequence.compare(origText, newText) != 0) {
-        return;
+        // while this only happens occasionally, it can be somewhat annoying when the file is
+        // not formatted correctly, even though the format seems to have completed successfully.
+        // re-run the import format. it's a bit expensive, but I think it's ok to occasionally run
+        // this on the Swing thread.
+        try {
+          textToSet = formatImports(document.getText(), style);
+        } catch (FormatterException e) {
+          Notifications.displayParsingErrorNotification(project, file.getName());
+          return;
+        }
       }
 
-      document.setText(text);
+      document.setText(textToSet);
     };
+  }
+
+  private String formatImports(String documentText, JavaFormatterOptions.Style style)
+      throws FormatterException {
+    return ImportOrderer.reorderImports(
+        RemoveUnusedImports.removeUnusedImports(documentText), style);
   }
 }
