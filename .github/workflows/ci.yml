@@ -47,11 +47,11 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     steps:
       - name: Cancel previous
-        uses: styfle/cancel-workflow-action@0.9.1
+        uses: styfle/cancel-workflow-action@0.13.1
         with:
           access_token: ${{ github.token }}
       - name: "Check out repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: "Set up JDK ${{ matrix.java }} from jdk.java.net"
         if: ${{ matrix.java == 'EA' }}
         uses: oracle-actions/setup-java@v1
@@ -60,7 +60,7 @@ jobs:
           release: ${{ matrix.java }}
       - name: "Set up JDK ${{ matrix.java }} from Zulu"
         if: ${{ matrix.java != 'EA' && matrix.java != 'GraalVM' }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.java }}
           distribution: "zulu"
@@ -85,11 +85,11 @@ jobs:
     continue-on-error: true
     steps:
       - name: Cancel previous
-        uses: styfle/cancel-workflow-action@0.9.1
+        uses: styfle/cancel-workflow-action@0.13.1
         with:
           access_token: ${{ github.token }}
       - name: "Check out repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: "Set up GraalVM ${{ matrix.java }}"
         uses: graalvm/setup-graalvm@v1
         with:
@@ -113,9 +113,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Check out repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: "Set up JDK 21"
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: 21
           distribution: "zulu"
