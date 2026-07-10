@@ -129,17 +129,17 @@ final class MarkdownPositions {
       verify(matcher.lookingAt());
       ListItemOpenTag openToken = new ListItemOpenTag(matcher.group(1));
       addSpan(listItem, openToken, LIST_ITEM_CLOSE_TOKEN);
-      return switch (listItem.getFirstChild()) {
-        case Paragraph paragraph -> {
-          // A ListItem typically contains a Paragraph, but we don't want to visit that Paragraph
-          // because that would lead us to introduce a line break after the list introduction
-          // (the `-` or whatever). So we visit the children and siblings of the Paragraph instead.
-          visitNodeList(paragraph.getFirstChild());
-          visitNodeList(paragraph.getNext());
-          yield true;
-        }
-        default -> false;
-      };
+      Node firstChild = listItem.getFirstChild();
+      // Safely handles null and non-Paragraph children.
+      if (firstChild instanceof Paragraph paragraph) {
+        // A ListItem typically contains a Paragraph, but we don't want to visit that Paragraph
+        // because that would lead us to introduce a line break after the list introduction
+        // (the `-` or whatever). So we visit the children and siblings of the Paragraph instead.
+        visitNodeList(paragraph.getFirstChild());
+        visitNodeList(paragraph.getNext());
+        return true;
+      }
+      return false;
     }
 
     private void visitHeading(Heading heading) {

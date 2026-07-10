@@ -1940,11 +1940,9 @@ class Test {}
         /// - item 2
         class Test {}
         """;
-    // TODO: the line break between items should be preserved, and there should not be a blank line
-    //   before the list.
+    // TODO: the line break between items should be preserved.
     String expected =
         """
-        ///
         /// - item 1
         /// - item 2
         class Test {}
@@ -2216,20 +2214,32 @@ package com.example;
         /// </ul>
         class Test {}
         """;
-    // requestBlankLine() in writeTableOpen() inserts a blank line after <li> before <table> when
-    // inside a list item.
+    // TODO(kak): The indentation here is still wrong (`<tr>` and `</table>` should be indented
+    // inside `<li>`). Also the blank line before </ul> should probably not be there?
     String expected =
         """
         /// <ul>
-        ///   <li>
-        ///
-        ///       <table>
+        ///   <li><table>
         /// <tr><td>Foo</td></tr>
         /// </table>
         ///
         /// </ul>
         class Test {}
         """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void tableInMarkdownListItem() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// - <table>
+        ///   <tr><td>Foo</td></tr>
+        ///   </table>
+        class Test {}
+        """;
+    String expected = input;
     doFormatTest(input, expected);
   }
 
@@ -2244,11 +2254,8 @@ package com.example;
         ///   </table>
         class Test {}
         """;
-    // requestBlankLine() in writeTableOpen() inserts a blank line after item text before <table>
-    // inside the list item.
     String expected =
         """
-        ///
         /// - item text
         ///
         ///   <table>

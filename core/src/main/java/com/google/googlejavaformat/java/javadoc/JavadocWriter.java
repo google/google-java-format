@@ -114,6 +114,7 @@ final class JavadocWriter {
     } else {
       output.append("/// ");
       remainingOnLine = JavadocFormatter.MAX_LINE_LENGTH - blockIndent - 4;
+      atStartOfLine = true;
     }
   }
 
@@ -190,7 +191,7 @@ final class JavadocWriter {
   }
 
   void writeListOpen(ListOpenTag token) {
-    if (classicJavadoc) {
+    if (classicJavadoc && wroteAnythingSignificant) {
       requestBlankLine();
     }
 
@@ -200,7 +201,9 @@ final class JavadocWriter {
     continuingListStack.push(indent);
     postWriteModifiedContinuingListStack.push();
 
-    requestNewline();
+    if (wroteAnythingSignificant) {
+      requestNewline();
+    }
   }
 
   void writeListClose(ListCloseTag token) {
@@ -219,7 +222,9 @@ final class JavadocWriter {
   }
 
   void writeListItemOpen(ListItemOpenTag token) {
-    requestNewline();
+    if (wroteAnythingSignificant) {
+      requestNewline();
+    }
 
     if (continuingListItemOfInnermostList) {
       continuingListItemOfInnermostList = false;
@@ -260,9 +265,7 @@ final class JavadocWriter {
   }
 
   void writeBlockquoteOpenOrClose(Token token) {
-    if (wroteAnythingSignificant) {
-      requestBlankLine();
-    }
+    requestBlankLineForBlockTag();
 
     writeToken(token);
 
@@ -270,9 +273,7 @@ final class JavadocWriter {
   }
 
   void writePreOpen(PreOpenTag token) {
-    if (wroteAnythingSignificant) {
-      requestBlankLine();
-    }
+    requestBlankLineForBlockTag();
 
     writeToken(token);
   }
@@ -292,9 +293,7 @@ final class JavadocWriter {
   }
 
   void writeTableOpen(TableOpenTag token) {
-    if (wroteAnythingSignificant) {
-      requestBlankLine();
-    }
+    requestBlankLineForBlockTag();
 
     writeToken(token);
   }
@@ -343,10 +342,8 @@ final class JavadocWriter {
   }
 
   void writeMarkdownFencedCodeBlock(MarkdownFencedCodeBlock token) {
-    if (wroteAnythingSignificant && !atStartOfLine) {
-      // A reminder that atStartOfLine is still true after `-␣` because it is a StartOfLineToken.
-      requestBlankLine();
-    }
+    // A reminder that atStartOfLine is still true after `-␣` because it is a StartOfLineToken.
+    requestBlankLineForBlockTag();
     flushWhitespace();
     output.append(token.start());
     token
@@ -363,9 +360,7 @@ final class JavadocWriter {
   }
 
   void writeMarkdownTable(MarkdownTable token) {
-    if (wroteAnythingSignificant && !atStartOfLine) {
-      requestBlankLine();
-    }
+    requestBlankLineForBlockTag();
     flushWhitespace();
     List<String> lines = token.value().lines().toList();
     output.append(lines.get(0));
@@ -383,6 +378,12 @@ final class JavadocWriter {
 
   private void requestBlankLine() {
     requestWhitespace(BLANK_LINE);
+  }
+
+  private void requestBlankLineForBlockTag() {
+    if (wroteAnythingSignificant && !atStartOfLine) {
+      requestBlankLine();
+    }
   }
 
   private void requestNewline() {
