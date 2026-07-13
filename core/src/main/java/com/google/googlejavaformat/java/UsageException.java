@@ -36,6 +36,9 @@ Options:
     File name to use for diagnostics when formatting standard input (default is <stdin>).
   --aosp, -aosp, -a
     Use AOSP style instead of Google Style (4-space indentation).
+  --no-aosp, -no-aosp
+    Use Google Style (2-space indentation). If both --aosp and --no-aosp are given, the last
+    one wins.
   --fix-imports-only
     Fix import order and remove any unused imports, but do no other formatting.
   --skip-sorting-imports

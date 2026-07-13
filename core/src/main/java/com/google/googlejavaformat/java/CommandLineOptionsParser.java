@@ -72,6 +72,7 @@ final class CommandLineOptionsParser {
         case "--offset", "-offset" -> optionsBuilder.addOffset(parseInteger(it, flag, value));
         case "--length", "-length" -> optionsBuilder.addLength(parseInteger(it, flag, value));
         case "--aosp", "-aosp", "-a" -> optionsBuilder.aosp(true);
+        case "--no-aosp", "-no-aosp" -> optionsBuilder.aosp(false);
         case "--version", "-version", "-v" -> optionsBuilder.version(true);
         case "--help", "-help", "-h" -> optionsBuilder.help(true);
         case "--fix-imports-only" -> optionsBuilder.fixImportsOnly(true);
