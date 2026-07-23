@@ -64,12 +64,12 @@
     <dependency>
       <groupId>org.commonmark</groupId>
       <artifactId>commonmark</artifactId>
-      <version>0.28.0</version>
+      <version>0.29.0</version>
     </dependency>
     <dependency>
       <groupId>org.commonmark</groupId>
       <artifactId>commonmark-ext-gfm-tables</artifactId>
-      <version>0.28.0</version>
+      <version>0.29.0</version>
     </dependency>
 
     <!-- Test dependencies -->
@@ -93,7 +93,7 @@
     <dependency>
       <groupId>com.google.testing.compile</groupId>
       <artifactId>compile-testing</artifactId>
-      <version>0.19</version>
+      <version>0.23.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -132,7 +132,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.2.4</version>
+        <version>3.6.2</version>
         <executions>
           <execution>
             <id>shade-all-deps</id>
@@ -204,7 +204,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-        <version>3.3.0</version>
+        <version>3.6.1</version>
         <executions>
           <execution>
             <id>add-source</id>
@@ -231,7 +231,7 @@
           <plugin>
             <groupId>org.graalvm.buildtools</groupId>
             <artifactId>native-maven-plugin</artifactId>
-            <version>0.10.0</version>
+            <version>1.1.6</version>
             <extensions>true</extensions>
             <executions>
               <execution>
