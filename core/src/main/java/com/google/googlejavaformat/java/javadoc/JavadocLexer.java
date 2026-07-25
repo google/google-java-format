@@ -28,8 +28,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.PeekingIterator;
 import com.google.googlejavaformat.java.javadoc.Token.BeginJavadoc;
-import com.google.googlejavaformat.java.javadoc.Token.BlockquoteCloseTag;
-import com.google.googlejavaformat.java.javadoc.Token.BlockquoteOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.BrTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeOpenTag;
@@ -350,9 +350,9 @@ final class JavadocLexer {
     } else if (input.tryConsumeRegex(LIST_ITEM_CLOSE_PATTERN)) {
       return ListItemCloseTag::new;
     } else if (input.tryConsumeRegex(BLOCKQUOTE_OPEN_PATTERN)) {
-      return BlockquoteOpenTag::new;
+      return BlockQuoteOpenTag::new;
     } else if (input.tryConsumeRegex(BLOCKQUOTE_CLOSE_PATTERN)) {
-      return BlockquoteCloseTag::new;
+      return BlockQuoteCloseTag::new;
     } else if (input.tryConsumeRegex(HEADER_OPEN_PATTERN)) {
       return HeaderOpenTag::new;
     } else if (input.tryConsumeRegex(HEADER_CLOSE_PATTERN)) {

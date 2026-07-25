@@ -78,9 +78,9 @@ sealed interface Token {
 
   record ParagraphCloseTag(String value) implements Token {}
 
-  record BlockquoteOpenTag(String value) implements Token {}
+  record BlockQuoteOpenTag(String value) implements Token {}
 
-  record BlockquoteCloseTag(String value) implements Token {}
+  record BlockQuoteCloseTag(String value) implements Token {}
 
   record PreOpenTag(String value) implements Token {}
 

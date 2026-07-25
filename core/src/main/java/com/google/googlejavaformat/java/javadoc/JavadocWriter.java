@@ -23,8 +23,8 @@ import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWh
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWhitespace.NONE;
 import static com.google.googlejavaformat.java.javadoc.JavadocWriter.RequestedWhitespace.WHITESPACE;
 
-import com.google.googlejavaformat.java.javadoc.Token.BlockquoteCloseTag;
-import com.google.googlejavaformat.java.javadoc.Token.BlockquoteOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.BrTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeOpenTag;
@@ -257,7 +257,7 @@ final class JavadocWriter {
     writeToken(token);
   }
 
-  void writeBlockquoteOpen(BlockquoteOpenTag token) {
+  void writeBlockQuoteOpen(BlockQuoteOpenTag token) {
     requestBlankLine();
 
     writeToken(token);
@@ -265,7 +265,7 @@ final class JavadocWriter {
     requestNewline();
   }
 
-  void writeBlockquoteClose(BlockquoteCloseTag token) {
+  void writeBlockQuoteClose(BlockQuoteCloseTag token) {
     requestNewline();
 
     writeToken(token);
