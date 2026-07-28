@@ -521,7 +521,7 @@ final class JavadocWriter {
   private int innerIndent() {
     int innerIndent = continuingListItemStack.total() + continuingListStack.total();
     if (continuingFooterTag) {
-      innerIndent += 4;
+      innerIndent += classicJavadoc ? 4 : 2;
     }
     return innerIndent;
   }

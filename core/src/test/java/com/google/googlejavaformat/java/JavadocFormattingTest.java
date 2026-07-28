@@ -1980,17 +1980,15 @@ class Test {}
 /// rather than +4.
 record Test(String foo) {}
 """;
-    // TODO(b/537488642): continuation lines should be +2 to avoid the bug here.
-    // The four-space indentation leads to the second paragraph being interpreted as a code block.
     String expected =
 """
 /// Something something something.
 ///
 /// @param foo a parameter with a long description that will need to be wrapped onto multiple lines,
-///     with each line being indented by the default amount for continuation lines in a block tag.
+///   with each line being indented by the default amount for continuation lines in a block tag.
 ///
-///     There is even a second paragraph which illustrates why the indentation should be +2 rather
-///     than +4.
+///   There is even a second paragraph which illustrates why the indentation should be +2 rather
+///   than +4.
 record Test(String foo) {}
 """;
 
