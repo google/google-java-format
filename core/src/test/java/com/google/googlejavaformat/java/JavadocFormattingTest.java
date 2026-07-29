@@ -1848,6 +1848,43 @@ class Test {}
   }
 
   @Test
+  public void markdownMoeComments() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// This is the first line.
+        ///
+        /// <!-- moe:begin_intracomment_strip -->
+        /// This is a comment that should be stripped
+        ///
+        /// ```
+        /// this is a code block
+        /// ```
+        /// <!-- moe:end_intracomment_strip -->
+        class Test {}
+        """
+            .replace("moe", "MOE");
+    // TODO(kak): Ideally the extra blank lines would not be inserted after the code block
+    String expected =
+        """
+        /// This is the first line.
+        ///
+        /// <!-- moe:begin_intracomment_strip -->
+        /// This is a comment that should be stripped
+        ///
+        /// ```
+        /// this is a code block
+        /// ```
+        ///
+        ///
+        /// <!-- moe:end_intracomment_strip -->
+        class Test {}
+        """
+            .replace("moe", "MOE");
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void markdownBackslashes() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     // We write `╲` (a box drawing character) instead of `\\` here and then substitute. That makes
