@@ -47,6 +47,7 @@ import com.google.googlejavaformat.java.javadoc.Token.SnippetEnd;
 import com.google.googlejavaformat.java.javadoc.Token.StartOfLineToken;
 import com.google.googlejavaformat.java.javadoc.Token.TableCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.TableOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.Whitespace;
 import java.util.List;
 
 /**
@@ -98,6 +99,23 @@ final class JavadocWriter {
 
   private void requestWhitespace(RequestedWhitespace requestedWhitespace) {
     this.requestedWhitespace = max(requestedWhitespace, this.requestedWhitespace);
+  }
+
+  /**
+   * Requests whitespace or a blank line depending on the whitespace token.
+   *
+   * <p>In Markdown Javadoc, if the whitespace token contains multiple newlines, it represents a
+   * blank line in the input (e.g., between a paragraph and a list, or between loose list items). We
+   * want to preserve these blank lines, so we request a blank line. Otherwise, or in classic
+   * Javadoc (where blank lines are handled via inferred {@code <p>} tags), we just request standard
+   * whitespace.
+   */
+  void requestWhitespaceOrBlankLine(Whitespace token) {
+    if (!classicJavadoc && JavadocLexer.hasMultipleNewlines(token.value())) {
+      requestBlankLine();
+    } else {
+      requestWhitespace();
+    }
   }
 
   void requestMoeBeginStripComment(MoeBeginStripComment token) {

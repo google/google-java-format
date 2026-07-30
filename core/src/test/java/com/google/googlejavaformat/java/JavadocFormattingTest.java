@@ -1745,6 +1745,7 @@ class Test {}
 ///   1. nested thing 1 on more than one line
 ///   2. nested thing 2 on only one line but which is long enough that it is going to need to be
 ///      wrapped
+///
 ///   3. nested thing 3 after a blank line
 ///
 /// A following paragraph.
@@ -2081,13 +2082,7 @@ record Test(String foo) {}
         /// - item 2
         class Test {}
         """;
-    // TODO: the line break between items should be preserved.
-    String expected =
-        """
-        /// - item 1
-        /// - item 2
-        class Test {}
-        """;
+    String expected = input;
     doFormatTest(input, expected);
   }
 
@@ -2104,16 +2099,7 @@ record Test(String foo) {}
         /// - Item 2.
         class Test {}
         """;
-    // TODO(b/534219145): The blank line before the list should be preserved.
-    String expected =
-        """
-        /// Title.
-        ///
-        /// Some paragraph.
-        /// - Item 1.
-        /// - Item 2.
-        class Test {}
-        """;
+    String expected = input;
     doFormatTest(input, expected);
   }
 
@@ -2432,13 +2418,6 @@ package com.example;
   // - Link reference definitions should not be joined onto previous lines.
   //   [foo]: /url "title"
   //   https://spec.commonmark.org/0.31.2/#link-reference-definitions
-  //
-  // - Loose lists
-  //   "A list is loose if any of its constituent list items are separated by blank lines, or if any
-  //   of its constituent list items directly contain two block-level elements with a blank line
-  //   between them."
-  //   We should test that we do not remove blank lines from a loose list, which would make it a
-  //   tight one. https://spec.commonmark.org/0.31.2/#loose
   //
   // - Block quotes
   //   > foo

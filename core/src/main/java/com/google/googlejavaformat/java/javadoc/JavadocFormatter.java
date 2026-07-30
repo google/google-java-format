@@ -131,7 +131,7 @@ public final class JavadocFormatter {
         case MoeEndStripComment t -> output.writeMoeEndStripComment(t);
         case HtmlComment t -> output.writeHtmlComment(t);
         case BrTag t -> output.writeBr(standardizeBrToken(t));
-        case Whitespace unused -> output.requestWhitespace();
+        case Whitespace t -> output.requestWhitespaceOrBlankLine(t);
         case ForcedNewline unused -> output.writeLineBreakNoAutoIndent();
         case MarkdownHardLineBreak unused -> output.writeMarkdownHardLineBreak();
         case Literal t -> output.writeLiteral(t);

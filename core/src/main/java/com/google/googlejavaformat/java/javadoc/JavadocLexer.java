@@ -388,9 +388,9 @@ final class JavadocLexer {
    * ["<b>foo</b>"]}. See {@link #literalPattern()} for discussion of why those tokens are separate
    * to begin with.
    *
-   * <p>Whitespace tokens are treated analogously. We don't really "want" to join whitespace tokens,
-   * but in the course of joining literals, we incidentally join whitespace, too. We do take
-   * advantage of the joining later on: It simplifies {@link #inferParagraphTags}.
+   * <p>Whitespace tokens are treated analogously. The joining of whitespace tokens allows our
+   * Markdown output to detect "loose lists" and our Traditional output to {@linkplain
+   * #inferParagraphTags infer where to place paragraph tags}.
    *
    * <p>Note that we do <i>not</i> merge a literal token and a whitespace token together.
    */
@@ -419,14 +419,15 @@ final class JavadocLexer {
        */
 
       if (accumulated.isEmpty()) {
-        output.add(tokens.next());
+        if (tokens.peek() instanceof Whitespace) {
+          output.add(new Whitespace(consumeAdjacentWhitespace(tokens)));
+        } else {
+          output.add(tokens.next());
+        }
         continue;
       }
 
-      StringBuilder seenWhitespace = new StringBuilder();
-      while (tokens.peek() instanceof Whitespace) {
-        seenWhitespace.append(tokens.next().value());
-      }
+      String seenWhitespace = consumeAdjacentWhitespace(tokens);
 
       if (tokens.peek() instanceof Literal literal && literal.value().startsWith("@")) {
         // OK, we're in the case described above.
@@ -439,10 +440,10 @@ final class JavadocLexer {
       accumulated.setLength(0);
 
       if (!seenWhitespace.isEmpty()) {
-        output.add(new Whitespace(seenWhitespace.toString()));
+        output.add(new Whitespace(seenWhitespace));
       }
 
-      // We have another token coming, possibly of type OTHER. Leave it for the next iteration.
+      // We have another token coming. Leave it for the next iteration.
     }
 
     /*
@@ -450,6 +451,14 @@ final class JavadocLexer {
      * /[^ -]-/, as in "non-\nblocking."
      */
     return output.build();
+  }
+
+  private static String consumeAdjacentWhitespace(PeekingIterator<Token> tokens) {
+    StringBuilder seenWhitespace = new StringBuilder();
+    while (tokens.peek() instanceof Whitespace) {
+      seenWhitespace.append(tokens.next().value());
+    }
+    return seenWhitespace.toString();
   }
 
   /**
@@ -635,7 +644,7 @@ final class JavadocLexer {
 
   private static final CharMatcher NEWLINE = CharMatcher.is('\n');
 
-  private static boolean hasMultipleNewlines(String s) {
+  static boolean hasMultipleNewlines(String s) {
     return NEWLINE.countIn(s) > 1;
   }
 
