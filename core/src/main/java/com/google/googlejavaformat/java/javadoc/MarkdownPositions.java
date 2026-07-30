@@ -123,12 +123,13 @@ final class MarkdownPositions {
 
     // Returns true if this method visited the children of the given ListItem.
     private boolean visitListItem(ListItem listItem) {
-      int startPosition = listItem.getSourceSpans().getFirst().getInputIndex();
+      int startPosition =
+          listItem.getSourceSpans().getFirst().getInputIndex() + listItem.getMarkerIndent();
       Matcher matcher =
           LIST_ITEM_START_PATTERN.matcher(input).region(startPosition, input.length());
       verify(matcher.lookingAt());
       ListItemOpenTag openToken = new ListItemOpenTag(matcher.group(1));
-      addSpan(listItem, openToken, LIST_ITEM_CLOSE_TOKEN);
+      addSpan(listItem, openToken, LIST_ITEM_CLOSE_TOKEN, startPosition);
       if (listItem.getFirstChild() instanceof Paragraph paragraph) {
         // A ListItem typically contains a Paragraph, but we don't want to visit that Paragraph
         // because that would lead us to introduce a line break after the list introduction
@@ -215,8 +216,12 @@ final class MarkdownPositions {
      * end position.
      */
     private void addSpan(Node node, Token startToken, Token endToken) {
+      addSpan(node, startToken, endToken, startPosition(node));
+    }
+
+    private void addSpan(Node node, Token startToken, Token endToken, int startPosition) {
       // We could write the first part more simply as a `put`, but we do it this way for symmetry.
-      positionToToken.get(startPosition(node)).addLast(startToken);
+      positionToToken.get(startPosition).addLast(startToken);
       positionToToken.get(endPosition(node)).addFirst(endToken);
     }
 
@@ -253,8 +258,6 @@ final class MarkdownPositions {
   private static final ListCloseTag LIST_CLOSE_TOKEN = new ListCloseTag("");
   private static final ListItemCloseTag LIST_ITEM_CLOSE_TOKEN = new ListItemCloseTag("");
 
-  // The leading \s here works around what appears to be a CommonMark bug. We shouldn't ever see
-  // space at the purported start of a list item?
   private static final Pattern LIST_ITEM_START_PATTERN =
-      Pattern.compile("(?:\\s*)(([-+*]|[0-9]+[.)])(?:\\s|$))");
+      Pattern.compile("(([-+*]|[0-9]+[.)])(?:\\s|$))");
 }

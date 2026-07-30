@@ -1754,6 +1754,26 @@ class Test {}
   }
 
   @Test
+  public void markdownIndentedListItem() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+"""
+/// A list:
+///   - `foo`: enabled by default
+///   - `bar`: disabled by default
+class Test {}
+""";
+    String expected =
+"""
+/// A list:
+/// - `foo`: enabled by default
+/// - `bar`: disabled by default
+class Test {}
+""";
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void markdownEmptyListItem() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
