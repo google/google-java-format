@@ -25,6 +25,8 @@ import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownBlockQuoteClose;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownBlockQuoteOpen;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanEnd;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanStart;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
@@ -32,6 +34,7 @@ import com.google.googlejavaformat.java.javadoc.Token.MarkdownTable;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphOpenTag;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.commonmark.ext.gfm.tables.TableBlock;
@@ -105,8 +108,7 @@ final class MarkdownPositions {
           alreadyVisitedChildren = true;
         }
         case Code code -> visitCodeSpan(code);
-        case BlockQuote blockQuote ->
-            throw new UnsupportedOperationException("Block quotes not supported");
+        case BlockQuote blockQuote -> alreadyVisitedChildren = visitBlockQuote(blockQuote);
         case IndentedCodeBlock indentedCodeBlock ->
             throw new UnsupportedOperationException("Indented code blocks not supported");
         case ThematicBreak thematicBreak ->
@@ -123,17 +125,41 @@ final class MarkdownPositions {
 
     // Returns true if this method visited the children of the given ListItem.
     private boolean visitListItem(ListItem listItem) {
-      int startPosition =
-          listItem.getSourceSpans().getFirst().getInputIndex() + listItem.getMarkerIndent();
-      Matcher matcher =
-          LIST_ITEM_START_PATTERN.matcher(input).region(startPosition, input.length());
+      return visitListItemOrBlockQuote(
+          listItem,
+          startPosition(listItem) + listItem.getMarkerIndent(),
+          LIST_ITEM_START_PATTERN,
+          ListItemOpenTag::new,
+          LIST_ITEM_CLOSE_TOKEN);
+    }
+
+    // Returns true if this method visited the children of the given BlockQuote.
+    private boolean visitBlockQuote(BlockQuote blockQuote) {
+      // CommonMark can include preceding indentation in the BlockQuote node.
+      int start = input.indexOf('>', startPosition(blockQuote));
+      return visitListItemOrBlockQuote(
+          blockQuote,
+          start,
+          BLOCKQUOTE_START_PATTERN,
+          MarkdownBlockQuoteOpen::new,
+          BLOCKQUOTE_CLOSE_TOKEN);
+    }
+
+    private boolean visitListItemOrBlockQuote(
+        Node node,
+        int start,
+        Pattern startPattern,
+        Function<String, Token> openTokenFactory,
+        Token closeToken) {
+      Matcher matcher = startPattern.matcher(input).region(start, input.length());
       verify(matcher.lookingAt());
-      ListItemOpenTag openToken = new ListItemOpenTag(matcher.group(1));
-      addSpan(listItem, openToken, LIST_ITEM_CLOSE_TOKEN, startPosition);
-      if (listItem.getFirstChild() instanceof Paragraph paragraph) {
-        // A ListItem typically contains a Paragraph, but we don't want to visit that Paragraph
-        // because that would lead us to introduce a line break after the list introduction
-        // (the `-` or whatever). So we visit the children and siblings of the Paragraph instead.
+      Token openToken = openTokenFactory.apply(matcher.group(1));
+      addSpan(node, openToken, closeToken, matcher.start(1));
+      if (node.getFirstChild() instanceof Paragraph paragraph) {
+        // A ListItem or BlockQuote typically contains a Paragraph, but we don't want to visit that
+        // Paragraph because that would lead us to introduce a line break after the list or quote
+        // introduction (the `-` or whatever). So we visit the children and siblings of the
+        // Paragraph instead.
         visitNodeList(paragraph.getFirstChild());
         visitNodeList(paragraph.getNext());
         return true;
@@ -257,6 +283,9 @@ final class MarkdownPositions {
   private static final ListOpenTag LIST_OPEN_TOKEN = new ListOpenTag("");
   private static final ListCloseTag LIST_CLOSE_TOKEN = new ListCloseTag("");
   private static final ListItemCloseTag LIST_ITEM_CLOSE_TOKEN = new ListItemCloseTag("");
+  private static final MarkdownBlockQuoteClose BLOCKQUOTE_CLOSE_TOKEN =
+      new MarkdownBlockQuoteClose("");
+  private static final Pattern BLOCKQUOTE_START_PATTERN = Pattern.compile("(> ?)");
 
   private static final Pattern LIST_ITEM_START_PATTERN =
       Pattern.compile("(([-+*]|[0-9]+[.)])(?:\\s|$))");

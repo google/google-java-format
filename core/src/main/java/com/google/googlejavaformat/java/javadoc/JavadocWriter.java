@@ -36,6 +36,7 @@ import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.Literal;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownBlockQuoteOpen;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownTable;
 import com.google.googlejavaformat.java.javadoc.Token.MoeBeginStripComment;
@@ -73,14 +74,13 @@ final class JavadocWriter {
   private boolean continuingListItemOfInnermostList;
 
   private boolean continuingFooterTag;
-  private final NestingStack.Int continuingListItemStack = new NestingStack.Int();
-  private final NestingStack.Int continuingListStack = new NestingStack.Int();
+  private final NestingStack<Indent> indentStack = new NestingStack<>();
   private final NestingStack.Int postWriteModifiedContinuingListStack = new NestingStack.Int();
   private int remainingOnLine;
   private boolean atStartOfLine;
   private RequestedWhitespace requestedWhitespace = NONE;
   private Token requestedMoeBeginStripComment;
-  private int indentForMoeEndStripComment;
+  private String indentForMoeEndStripComment = "";
   private boolean wroteAnythingSignificant;
 
   JavadocWriter(int blockIndent, boolean classicJavadoc) {
@@ -155,8 +155,7 @@ final class JavadocWriter {
      * currently know which of those tags are open.
      */
     continuingListItemOfInnermostList = false;
-    continuingListItemStack.reset();
-    continuingListStack.reset();
+    indentStack.reset();
     /*
      * There's probably no need for this, since its only effect is to disable blank lines in some
      * cases -- and we're doing that already in the footer.
@@ -215,7 +214,7 @@ final class JavadocWriter {
     writeToken(token);
     continuingListItemOfInnermostList = false;
     int indent = token.value().isEmpty() ? 0 : 2; // No indent for Markdown since no explicit open
-    continuingListStack.push(indent);
+    indentStack.push(new ListIndent(indent));
     postWriteModifiedContinuingListStack.push();
 
     requestNewline();
@@ -226,8 +225,7 @@ final class JavadocWriter {
       requestNewline();
     }
 
-    continuingListItemStack.popIfNotEmpty();
-    continuingListStack.popIfNotEmpty();
+    indentStack.popUntil(ListIndent.class);
     writeToken(token);
     postWriteModifiedContinuingListStack.popIfNotEmpty();
 
@@ -240,13 +238,14 @@ final class JavadocWriter {
     requestNewline();
 
     if (continuingListItemOfInnermostList) {
+      // TODO(cpovirk): consider whether we can handle this only with operations on the indent stack
       continuingListItemOfInnermostList = false;
-      continuingListItemStack.popIfNotEmpty();
+      indentStack.popUntil(ListItemIndent.class);
     }
     writeToken(token);
     continuingListItemOfInnermostList = true;
     int indent = token.value().length();
-    continuingListItemStack.push(indent);
+    indentStack.push(new ListItemIndent(indent));
   }
 
   void writeHeaderOpen(HeaderOpenTag token) {
@@ -277,18 +276,26 @@ final class JavadocWriter {
 
   void writeBlockQuoteOpen(BlockQuoteOpenTag token) {
     requestBlankLine();
-
     writeToken(token);
-
     requestNewline();
   }
 
   void writeBlockQuoteClose(BlockQuoteCloseTag token) {
     requestNewline();
-
     writeToken(token);
-
     requestBlankLine();
+  }
+
+  void writeMarkdownBlockQuoteOpen(MarkdownBlockQuoteOpen token) {
+    if (!atStartOfLine) {
+      requestNewline();
+    }
+    writeToken(new MarkdownBlockQuoteOpen("> "));
+    indentStack.push(new BlockQuoteIndent());
+  }
+
+  void writeMarkdownBlockQuoteClose() {
+    indentStack.popUntil(BlockQuoteIndent.class);
   }
 
   void writePreOpen(PreOpenTag token) {
@@ -325,7 +332,7 @@ final class JavadocWriter {
 
   void writeMoeEndStripComment(MoeEndStripComment token) {
     writeLineBreakNoAutoIndent();
-    appendSpaces(indentForMoeEndStripComment);
+    output.append(indentForMoeEndStripComment);
 
     // Or maybe just "output.append(token.getValue())?" I'm kind of surprised this is so easy.
     writeToken(token);
@@ -477,7 +484,7 @@ final class JavadocWriter {
     if (requestedMoeBeginStripComment != null) {
       output.append(requestedMoeBeginStripComment.value());
       requestedMoeBeginStripComment = null;
-      indentForMoeEndStripComment = innerIndent();
+      indentForMoeEndStripComment = innerIndentString();
       wroteAnythingSignificant = true;
       requestNewline();
       writeToken(token);
@@ -513,6 +520,14 @@ final class JavadocWriter {
 
   private void writeBlankLine() {
     writeNewlineStart();
+    String indent = innerIndentString();
+    if (!indent.isBlank()) {
+      // The motivation here is that we may have a blank line that is inside a Markdown block quote.
+      // Then we still want the `>` marker or markers at the start of the line, but we don't want
+      // any trailing whitespace.
+      output.append(" ");
+      output.append(indent.stripTrailing());
+    }
     writeNewline();
   }
 
@@ -525,8 +540,9 @@ final class JavadocWriter {
     appendSpaces(1);
     remainingOnLine = JavadocFormatter.MAX_LINE_LENGTH - blockIndent - (classicJavadoc ? 3 : 4);
     if (autoIndent == AUTO_INDENT) {
-      appendSpaces(innerIndent());
-      remainingOnLine -= innerIndent();
+      String indent = innerIndentString();
+      output.append(indent);
+      remainingOnLine -= indent.length();
     }
     atStartOfLine = true;
   }
@@ -536,12 +552,40 @@ final class JavadocWriter {
     NO_AUTO_INDENT
   }
 
-  private int innerIndent() {
-    int innerIndent = continuingListItemStack.total() + continuingListStack.total();
+  private String innerIndentString() {
+    StringBuilder sb = new StringBuilder();
     if (continuingFooterTag) {
-      innerIndent += classicJavadoc ? 4 : 2;
+      sb.repeat(' ', classicJavadoc ? 4 : 2);
     }
-    return innerIndent;
+    for (Indent indent : indentStack.bottomToTop()) {
+      indent.render(sb);
+    }
+    return sb.toString();
+  }
+
+  private sealed interface Indent {
+    void render(StringBuilder sb);
+  }
+
+  private record ListIndent(int width) implements Indent {
+    @Override
+    public void render(StringBuilder sb) {
+      sb.repeat(' ', width);
+    }
+  }
+
+  private record ListItemIndent(int width) implements Indent {
+    @Override
+    public void render(StringBuilder sb) {
+      sb.repeat(' ', width);
+    }
+  }
+
+  private record BlockQuoteIndent() implements Indent {
+    @Override
+    public void render(StringBuilder sb) {
+      sb.append("> ");
+    }
   }
 
   private void appendSpaces(int count) {

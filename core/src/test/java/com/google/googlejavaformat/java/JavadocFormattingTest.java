@@ -2111,12 +2111,112 @@ record Test(String foo) {}
         /// > foo
         /// > bar
         ///
-        ///
+        /// baz
         class Test {}
         """;
-    // TODO: block quotes are not supported. That means the input is unchanged. We can see this
-    // because the extra blank lines at the end are preserved.
-    String expected = input;
+    String expected =
+        """
+        /// > foo bar
+        ///
+        /// baz
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownBlockQuoteWithinListItem() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// 1. item one
+        /// 2. item two
+        ///    - sublist
+        ///    - sublist
+        ///    - > foo
+        ///      > bar
+        class Test {}
+        """;
+    String expected =
+        """
+        /// 1. item one
+        /// 2. item two
+        ///    - sublist
+        ///    - sublist
+        ///    - > foo bar
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownNestedBlockQuotes() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// > foo
+        /// > > bar
+        /// > > baz
+        class Test {}
+        """;
+    String expected =
+        """
+        /// > foo
+        /// > > bar baz
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownBlockQuoteWithCodeBlockInside() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// > foo
+        /// > ```
+        /// > >
+        /// > ```
+        /// > bar
+        class Test {}
+        """;
+    String expected =
+        """
+        /// > foo
+        /// >
+        /// > ```
+        /// > >
+        /// > ```
+        /// >
+        /// > bar
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownBlockQuoteInBlockTag() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+"""
+/// A test class.
+/// @param foo a Foo
+/// > In the reign of James the Second
+/// > It was generally reckoned
+/// > As a very serious crime
+/// > To marry two wives at one time.
+class Test {}
+""";
+    // TODO(emcmanus): the blank lines here should not be present.
+    String expected =
+"""
+/// A test class.
+///
+/// @param foo a Foo
+///   > In the reign of James the Second It was generally reckoned As a very serious crime To marry
+///   > two wives at one time.
+class Test {}
+""";
     doFormatTest(input, expected);
   }
 

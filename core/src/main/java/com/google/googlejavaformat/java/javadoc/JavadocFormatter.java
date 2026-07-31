@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.java.javadoc.JavadocLexer.LexException;
 import com.google.googlejavaformat.java.javadoc.Token.BeginJavadoc;
 import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteMarker;
 import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.BrTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeCloseTag;
@@ -40,6 +41,8 @@ import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.Literal;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownBlockQuoteClose;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownBlockQuoteOpen;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanEnd;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanStart;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
@@ -121,6 +124,8 @@ public final class JavadocFormatter {
         case ParagraphOpenTag t -> output.writeParagraphOpen(standardizePToken(t));
         case BlockQuoteOpenTag t -> output.writeBlockQuoteOpen(t);
         case BlockQuoteCloseTag t -> output.writeBlockQuoteClose(t);
+        case MarkdownBlockQuoteOpen t -> output.writeMarkdownBlockQuoteOpen(t);
+        case MarkdownBlockQuoteClose t -> output.writeMarkdownBlockQuoteClose();
         case PreOpenTag t -> output.writePreOpen(t);
         case PreCloseTag t -> output.writePreClose(t);
         case CodeOpenTag t -> output.writeCodeOpen(t);
@@ -142,6 +147,7 @@ public final class JavadocFormatter {
         case ParagraphCloseTag unused -> {}
         case MarkdownCodeSpanStart unused -> {}
         case MarkdownCodeSpanEnd unused -> {}
+        case BlockQuoteMarker unused -> {}
       }
     }
     throw new AssertionError();

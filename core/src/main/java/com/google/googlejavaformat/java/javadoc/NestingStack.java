@@ -26,10 +26,17 @@ import org.jspecify.annotations.Nullable;
  * lists, the entries represent indentation levels, and those depend on whether the list is an HTML
  * list or a Markdown list.
  *
+ * <p>Iterating over the stack goes from the bottom to the top. So for an indentation stack, for
+ * example, it produces the elements of indentation in the correct order.
+ *
  * @param <E> The type of the elements in the stack.
  */
 final class NestingStack<E> {
   private final Deque<E> stack = new ArrayDeque<>();
+
+  Iterable<E> bottomToTop() {
+    return stack::descendingIterator;
+  }
 
   void push(E value) {
     stack.push(value);
@@ -51,6 +58,12 @@ final class NestingStack<E> {
       do {
         popped = stack.pop();
       } while (!popped.equals(value));
+    }
+  }
+
+  void popUntil(Class<? extends E> valueClass) {
+    if (stack.stream().anyMatch(valueClass::isInstance)) {
+      while (!valueClass.isInstance(stack.pop())) {}
     }
   }
 

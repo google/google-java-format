@@ -78,9 +78,13 @@ sealed interface Token {
 
   record ParagraphCloseTag(String value) implements Token {}
 
-  record BlockQuoteOpenTag(String value) implements Token {}
+  record BlockQuoteOpenTag(String value) implements Token, StartOfLineToken {}
 
   record BlockQuoteCloseTag(String value) implements Token {}
+
+  record MarkdownBlockQuoteOpen(String value) implements Token, StartOfLineToken {}
+
+  record MarkdownBlockQuoteClose(String value) implements Token {}
 
   record PreOpenTag(String value) implements Token {}
 
@@ -180,6 +184,12 @@ sealed interface Token {
    * write the second. Hence, the token acts as an optional line break.
    */
   record OptionalLineBreak(String value) implements Token {}
+
+  /**
+   * Token representing a Markdown block quote marker ({@code >}). This token causes the
+   * corresponding text to be consumed, but does not itself lead to any output.
+   */
+  record BlockQuoteMarker(String value) implements Token {}
 
   /**
    * Anything else: {@code foo}, {@code <b>}, {@code {@code foo}} etc. {@link JavadocLexer}
