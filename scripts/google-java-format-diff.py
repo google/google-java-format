@@ -90,6 +90,12 @@ def main():
       action='store_true',
       default=False,
       help='do not reformat javadoc')
+  parser.add_argument(
+      '--skip-reflowing-long-strings',
+      action='store_true',
+      default=False,
+      help='do not reflow long string literals',
+  )
   parser.add_argument('-b', '--binary', help='path to google-java-format binary')
   parser.add_argument('--google-java-format-jar', metavar='ABSOLUTE_PATH', default=None,
                       help='use a custom google-java-format jar')
@@ -144,6 +150,8 @@ def main():
     base_command.append('--skip-removing-unused-imports')
   if args.skip_javadoc_formatting:
     base_command.append('--skip-javadoc-formatting')
+  if args.skip_reflowing_long_strings:
+    base_command.append('--skip-reflowing-long-strings')
 
   with ThreadPoolExecutor() as executor:
     format_futures = []
