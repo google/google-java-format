@@ -1678,14 +1678,14 @@ class Test {
   }
 
   /// This long line of text looks like a javadoc comment, but is not, because it is separated from
-  // the actual javadoc comment by a plain comment.
+  /// the actual javadoc comment by a plain comment.
   // This is the plain comment.
   /// A third very long line of text, this time a javadoc comment on a field, which again exceeds
   /// the maximum line length.
   String field;
 
   /// A fourth very long line of text, which however is not a javadoc comment so will be wrapped
-  // like a regular // comment.
+  /// like a regular // comment.
 }
 """;
     doFormatTest(input, expected);
