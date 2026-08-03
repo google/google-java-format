@@ -18,9 +18,9 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 // https://github.com/JetBrains/intellij-platform-gradle-plugin/releases
 plugins {
-  id("org.jetbrains.intellij.platform") version "2.10.2"
+  id("org.jetbrains.intellij.platform") version "2.18.1"
   // See https://plugins.jetbrains.com/docs/intellij/using-kotlin.html#bundled-stdlib-versions
-  kotlin("jvm") version "2.1.10"
+  kotlin("jvm") version "2.4.10"
 }
 
 repositories {
@@ -30,7 +30,7 @@ repositories {
 }
 
 // https://github.com/google/google-java-format/releases
-val googleJavaFormatVersion = "1.35.0"
+val googleJavaFormatVersion = "1.36.1"
 val pluginPatchVersion = "0"
 
 java {
@@ -52,7 +52,7 @@ intellijPlatform {
   }
 
   publishing {
-    val jetbrainsPluginRepoToken: String by project
+    val jetbrainsPluginRepoToken = project.providers.gradleProperty("jetbrainsPluginRepoToken")
     token.set(jetbrainsPluginRepoToken)
   }
 }
