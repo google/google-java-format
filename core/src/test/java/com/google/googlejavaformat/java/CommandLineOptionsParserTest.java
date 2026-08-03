@@ -78,6 +78,15 @@ public class CommandLineOptionsParserTest {
   }
 
   @Test
+  public void noAosp() {
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--no-aosp")).aosp()).isFalse();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--aosp", "--no-aosp")).aosp())
+        .isFalse();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--no-aosp", "--aosp")).aosp())
+        .isTrue();
+  }
+
+  @Test
   public void help() {
     assertThat(CommandLineOptionsParser.parse(Arrays.asList("-help")).help()).isTrue();
   }
