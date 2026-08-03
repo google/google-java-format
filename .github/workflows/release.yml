@@ -89,6 +89,9 @@ jobs:
   build-native-image:
     name: "Build GraalVM native-image on ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     permissions:
       contents: write
     needs: build-maven-jars
@@ -116,13 +119,16 @@ jobs:
           native-image-job-reports: "true"
           cache: "maven"
       - name: Bump Version Number
-        run: mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.event.inputs.version }}"
+        env:
+          GITHUB_EVENT_INPUTS_VERSION: ${{ github.event.inputs.version }}
+        run: mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${GITHUB_EVENT_INPUTS_VERSION}"
       - name: "Native"
         run: mvn -Pnative -DskipTests package -pl core -am
       - name: "Move outputs"
-        run: cp core/target/google-java-format${{ env.EXTENSION }} google-java-format_${{ env.SUFFIX }}${{ env.EXTENSION }}
+        run: cp core/target/google-java-format${EXTENSION} google-java-format_${SUFFIX}${EXTENSION}
       - name: "Upload native-image"
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "v${{ github.event.inputs.version }}" "google-java-format_${{ env.SUFFIX }}${{ env.EXTENSION }}"
+          GITHUB_EVENT_INPUTS_VERSION: ${{ github.event.inputs.version }}
+        run: gh release upload "v${GITHUB_EVENT_INPUTS_VERSION}" "google-java-format_${SUFFIX}${EXTENSION}"

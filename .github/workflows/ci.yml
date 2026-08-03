@@ -22,6 +22,9 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+
 jobs:
   test-OpenJDK:
     name: "JDK ${{ matrix.java }} on ${{ matrix.os }}"
