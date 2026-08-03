@@ -145,17 +145,28 @@ final class JavaCommentsHelper implements CommentsHelper {
         result.add(line);
         continue;
       }
+      // Preserve the original line-comment marker (`//` or `///`, etc.) on wrapped continuations.
+      // Hardcoding `//` used to inject `//` lines into `///` comments and would also break at the
+      // space after `///`, which mangled long unbreakable tokens such as markdown links
+      // (https://github.com/google/google-java-format/issues/1369).
+      int slashCount = 0;
+      while (slashCount < line.length() && line.charAt(slashCount) == '/') {
+        slashCount++;
+      }
+      // Line comments always start with at least "//".
+      String lineCommentPrefix = line.substring(0, Math.max(slashCount, 2));
+      int prefixLength = lineCommentPrefix.length();
       while (line.length() + column0 > Formatter.MAX_LINE_LENGTH) {
         int idx = Formatter.MAX_LINE_LENGTH - column0;
-        // only break on whitespace characters, and ignore the leading `// `
-        while (idx >= 2 && !CharMatcher.whitespace().matches(line.charAt(idx))) {
+        // only break on whitespace characters, and ignore the leading comment marker
+        while (idx >= prefixLength && !CharMatcher.whitespace().matches(line.charAt(idx))) {
           idx--;
         }
-        if (idx <= 2) {
+        if (idx <= prefixLength) {
           break;
         }
         result.add(line.substring(0, idx));
-        line = "//" + line.substring(idx);
+        line = lineCommentPrefix + line.substring(idx);
       }
       result.add(line);
     }
