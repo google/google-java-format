@@ -109,8 +109,6 @@ public final class JavadocFormattingTest {
 
   @Test
   public void commentMostlyUntouched() {
-    // This test isn't necessarily what we'd want to do, but it's what we do now, and it's OK-ish.
-    @SuppressWarnings("MisleadingEscapedSpace") // TODO(b/496180372): remove
     String input =
         """
         /**
@@ -129,14 +127,28 @@ public final class JavadocFormattingTest {
         /**
          * Foo.
          * <!--
-         *abc
+         * abc
          *   def
          * </tr>
-         *-->
+         * -->
          * bar
          */
         class Test {}
         """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownHtmlComment() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// <!--
+        /// abc
+        /// -->
+        class Test {}
+        """;
+    String expected = input;
     doFormatTest(input, expected);
   }
 
@@ -2207,7 +2219,6 @@ record Test(String foo) {}
 /// > To marry two wives at one time.
 class Test {}
 """;
-    // TODO(emcmanus): the blank lines here should not be present.
     String expected =
 """
 /// A test class.

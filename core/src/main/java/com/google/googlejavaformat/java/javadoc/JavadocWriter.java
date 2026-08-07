@@ -343,7 +343,13 @@ final class JavadocWriter {
   void writeHtmlComment(HtmlComment token) {
     requestNewline();
 
-    writeToken(token);
+    List<String> lines = token.value().lines().toList();
+    writeToken(new HtmlComment(lines.get(0)));
+    for (String line : lines.subList(1, lines.size())) {
+      writeNewline(AutoIndent.NO_AUTO_INDENT);
+      output.append(line);
+      remainingOnLine -= line.length();
+    }
 
     requestNewline();
   }

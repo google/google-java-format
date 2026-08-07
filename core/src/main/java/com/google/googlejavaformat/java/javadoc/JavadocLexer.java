@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat.java.javadoc;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.Iterators.peekingIterator;
@@ -76,16 +75,8 @@ final class JavadocLexer {
     input = normalizeLineEndings(input);
     MarkdownPositions markdownPositions;
     if (classicJavadoc) {
-      /*
-       * TODO(cpovirk): In theory, we should interpret Unicode escapes (yet output them in their
-       * original form). This would mean mean everything from an encoded ∕✱✱ to an encoded <pre>
-       * tag, so we'll probably never bother.
-       */
-      input = stripJavadocBeginAndEnd(input);
       markdownPositions = MarkdownPositions.EMPTY;
     } else {
-      checkArgument(input.startsWith("///"));
-      input = input.substring("///".length());
       try {
         markdownPositions = MarkdownPositions.parse(input);
       } catch (UnsupportedOperationException e) {
@@ -103,16 +94,6 @@ final class JavadocLexer {
   }
 
   private static final Pattern NON_UNIX_LINE_ENDING = Pattern.compile("\r\n?");
-
-  private static String stripJavadocBeginAndEnd(String input) {
-    /*
-     * We do this ahead of time so that the main part of the lexer need not say things like
-     * "(?![*]/)" to avoid accidentally swallowing ✱∕ when consuming a newline.
-     */
-    checkArgument(input.startsWith("/**"), "Missing /**: %s", input);
-    checkArgument(input.endsWith("*/") && input.length() > 4, "Missing */: %s", input);
-    return input.substring("/**".length(), input.length() - "*/".length());
-  }
 
   /**
    * An element of the nested contexts we might be in. For example, if we are inside {@code
@@ -248,8 +229,7 @@ final class JavadocLexer {
   private Function<String, Token> consumeToken() throws LexException {
     boolean preserveExistingFormatting = preserveExistingFormatting();
 
-    Pattern newlinePattern = classicJavadoc ? CLASSIC_NEWLINE_PATTERN : MARKDOWN_NEWLINE_PATTERN;
-    if (input.tryConsumeRegex(newlinePattern)) {
+    if (input.tryConsumeRegex(NEWLINE_PATTERN)) {
       somethingSinceNewline = false;
       return preserveExistingFormatting ? ForcedNewline::new : Whitespace::new;
     }
@@ -687,13 +667,11 @@ final class JavadocLexer {
    * We'd remove the trailing whitespace later on (in JavaCommentsHelper.rewrite), but I feel safer
    * stripping it now: It otherwise might confuse our line-length count, which we use for wrapping.
    */
-  private static final Pattern CLASSIC_NEWLINE_PATTERN = compile("[ \t]*\n[ \t]*[*]?[ \t]?");
   /*
-   * With Traditional comments, the initial space and leading `*` characters (if any) are still
-   * present in the input, but with Markdown comments, the leading `///` characters and shared
-   * initial whitespace have been removed at the point where this pattern is applied.
+   * The leading `///` or `*` characters and shared initial whitespace have been removed at the
+   * point where this pattern is applied.
    */
-  private static final Pattern MARKDOWN_NEWLINE_PATTERN = compile("[ \t]*\n");
+  private static final Pattern NEWLINE_PATTERN = compile("[ \t]*\n");
   private static final Pattern BLOCKQUOTE_MARKER_PATTERN = compile("> ?");
 
   // We ensure elsewhere that we match this only at the beginning of a line.
