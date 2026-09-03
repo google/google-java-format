@@ -86,7 +86,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>21</java.version>
-    <guava.version>33.6.0-jre</guava.version>
+    <guava.version>33.7.1-jre</guava.version>
     <truth.version>1.4.5</truth.version>
     <jspecify.version>1.0.1</jspecify.version>
     <errorprone.version>2.50.0</errorprone.version>
