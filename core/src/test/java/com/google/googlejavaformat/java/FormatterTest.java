@@ -39,25 +39,26 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public final class FormatterTest {
 
-  @Rule public TemporaryFolder testFolder = new TemporaryFolder();
+  @Rule
+  public TemporaryFolder testFolder = new TemporaryFolder();
 
   @Test
   public void testFormatAosp() throws Exception {
     // don't forget to misspell "long", or you will be mystified for a while
     String input =
-        "class A{void b(){while(true){weCanBeCertainThatThisWillEndUpGettingWrapped("
-            + "because, it, is, just, so, very, very, very, very, looong);}}}";
+            "class A{void b(){while(true){weCanBeCertainThatThisWillEndUpGettingWrapped("
+                    + "because, it, is, just, so, very, very, very, very, looong);}}}";
     String expectedOutput =
-        """
-        class A {
-            void b() {
-                while (true) {
-                    weCanBeCertainThatThisWillEndUpGettingWrapped(
-                            because, it, is, just, so, very, very, very, very, looong);
-                }
-            }
-        }
-        """;
+            """
+                    class A {
+                        void b() {
+                            while (true) {
+                                weCanBeCertainThatThisWillEndUpGettingWrapped(
+                                        because, it, is, just, so, very, very, very, very, looong);
+                            }
+                        }
+                    }
+                    """;
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("A.java");
@@ -90,19 +91,19 @@ public final class FormatterTest {
   @Test
   public void testFormatStdinStdoutWithDashFlag() throws Exception {
     String input =
-        """
-        class Foo{
-        void f
-        () {
-        }
-        }
-        """;
+            """
+                    class Foo{
+                    void f
+                    () {
+                    }
+                    }
+                    """;
     String expectedOutput =
-        """
-        class Foo {
-          void f() {}
-        }
-        """;
+            """
+                    class Foo {
+                      void f() {}
+                    }
+                    """;
 
     InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
     StringWriter out = new StringWriter();
@@ -121,19 +122,19 @@ public final class FormatterTest {
   @Test
   public void testFormatLengthUpToEOF() throws Exception {
     String input =
-        """
-        class Foo{
-        void f
-        () {
-        }
-        }\n\n\n\n\n
-        """;
+            """
+                    class Foo{
+                    void f
+                    () {
+                    }
+                    }\n\n\n\n\n
+                    """;
     String expectedOutput =
-        """
-        class Foo {
-          void f() {}
-        }
-        """;
+            """
+                    class Foo {
+                      void f() {}
+                    }
+                    """;
 
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("Foo.java");
@@ -163,7 +164,7 @@ public final class FormatterTest {
     String[] args = {"--offset", "0", "--length", "9999", path.toString()};
     assertThat(main.format(args)).isEqualTo(1);
     assertThat(err.toString())
-        .contains("error: invalid offset (0) or length (9999); offset + length (9999)");
+            .contains("error: invalid offset (0) or length (9999); offset + length (9999)");
   }
 
   @Test
@@ -181,137 +182,137 @@ public final class FormatterTest {
     String[] args = {"--offset", "9998", "--length", "1", path.toString()};
     assertThat(main.format(args)).isEqualTo(1);
     assertThat(err.toString())
-        .contains("error: invalid offset (9998) or length (1); offset + length (9999)");
+            .contains("error: invalid offset (9998) or length (1); offset + length (9999)");
   }
 
   @Test
   public void blankInClassBody() throws FormatterException {
     String input =
-        """
-        package test;
-        class T {
-
-        }
-        """;
+            """
+                    package test;
+                    class T {
+                    
+                    }
+                    """;
     String output = new Formatter().formatSource(input);
     String expect =
-        """
-        package test;
-
-        class T {}
-        """;
+            """
+                    package test;
+                    
+                    class T {}
+                    """;
     assertThat(output).isEqualTo(expect);
   }
 
   @Test
   public void blankInClassBodyNoTrailing() throws FormatterException {
     String input =
-        """
-        package test;
-        class T {
-
-        }\
-        """;
+            """
+                    package test;
+                    class T {
+                    
+                    }\
+                    """;
     String output = new Formatter().formatSource(input);
     String expect =
-        """
-        package test;
-
-        class T {}
-        """;
+            """
+                    package test;
+                    
+                    class T {}
+                    """;
     assertThat(output).isEqualTo(expect);
   }
 
   @Test
   public void docCommentTrailingBlank() throws FormatterException {
     String input =
-        """
-        class T {
-        /** asd */
-
-        int x;
-        }\
-        """;
+            """
+                    class T {
+                    /** asd */
+                    
+                    int x;
+                    }\
+                    """;
     String output = new Formatter().formatSource(input);
     String expect =
-        """
-        class T {
-          /** asd */
-          int x;
-        }
-        """;
+            """
+                    class T {
+                      /** asd */
+                      int x;
+                    }
+                    """;
     assertThat(output).isEqualTo(expect);
   }
 
   @Test
   public void blockCommentInteriorTrailingBlank() throws FormatterException {
     String input =
-        """
-        class T {
-        /*
-        * asd
-        * fgh
-        */
-
-        int x;
-        }\
-        """;
+            """
+                    class T {
+                    /*
+                    * asd
+                    * fgh
+                    */
+                    
+                    int x;
+                    }\
+                    """;
     String output = new Formatter().formatSource(input);
     String expect =
-        """
-        class T {
-          /*
-           * asd
-           * fgh
-           */
-
-          int x;
-        }
-        """;
+            """
+                    class T {
+                      /*
+                       * asd
+                       * fgh
+                       */
+                    
+                      int x;
+                    }
+                    """;
     assertThat(output).isEqualTo(expect);
   }
 
   @Test
   public void blockCommentTrailingBlank() throws FormatterException {
     String input =
-        """
-        class T {
-        /* asd */
-
-        int x;
-        }\
-        """;
+            """
+                    class T {
+                    /* asd */
+                    
+                    int x;
+                    }\
+                    """;
     String output = new Formatter().formatSource(input);
     String expect =
-        """
-        class T {
-          /* asd */
-
-          int x;
-        }
-        """;
+            """
+                    class T {
+                      /* asd */
+                    
+                      int x;
+                    }
+                    """;
     assertThat(output).isEqualTo(expect);
   }
 
   @Test
   public void lineCommentTrailingBlank() throws FormatterException {
     String input =
-        """
-        class T {
-        // asd
-
-        int x;
-        }\
-        """;
+            """
+                    class T {
+                    // asd
+                    
+                    int x;
+                    }\
+                    """;
     String output = new Formatter().formatSource(input);
     String expect =
-        """
-        class T {
-          // asd
-
-          int x;
-        }
-        """;
+            """
+                    class T {
+                      // asd
+                    
+                      int x;
+                    }
+                    """;
     assertThat(output).isEqualTo(expect);
   }
 
@@ -321,35 +322,35 @@ public final class FormatterTest {
     String input = "class T {\n  // asd\u2009\n}\n";
     String output = new Formatter().formatSource(input);
     String expect =
-        """
-        class T {
-          // asd
-        }
-        """;
+            """
+                    class T {
+                      // asd
+                    }
+                    """;
     assertThat(output).isEqualTo(expect);
   }
 
   @Test
   public void noBlankAfterLineCommentWithInteriorBlankLine() throws FormatterException {
     String input =
-        """
-        class T {
-        // asd
-
-        // dsa
-        int x;
-        }\
-        """;
+            """
+                    class T {
+                    // asd
+                    
+                    // dsa
+                    int x;
+                    }\
+                    """;
     String output = new Formatter().formatSource(input);
     String expect =
-        """
-        class T {
-          // asd
-
-          // dsa
-          int x;
-        }
-        """;
+            """
+                    class T {
+                      // asd
+                    
+                      // dsa
+                      int x;
+                    }
+                    """;
     assertThat(output).isEqualTo(expect);
   }
 
@@ -358,11 +359,11 @@ public final class FormatterTest {
     String input = "class X { Y() {} }";
     String output = new Formatter().formatSource(input);
     String expect =
-        """
-        class X {
-          Y() {}
-        }
-        """;
+            """
+                    class X {
+                      Y() {}
+                    }
+                    """;
     assertThat(output).isEqualTo(expect);
   }
 
@@ -371,68 +372,68 @@ public final class FormatterTest {
     String input = "class X { void Y() {} }";
     String output = new Formatter().formatSource(input);
     String expect =
-        """
-        class X {
-          void Y() {}
-        }
-        """;
+            """
+                    class X {
+                      void Y() {}
+                    }
+                    """;
     assertThat(output).isEqualTo(expect);
   }
 
   private static final String UNORDERED_IMPORTS =
-      """
-      import com.google.common.base.Preconditions;
-
-      import static org.junit.Assert.fail;
-      import static com.google.truth.Truth.assertThat;
-
-      import org.junit.runners.JUnit4;
-      import org.junit.runner.RunWith;
-
-      import java.util.List;
-
-      import javax.annotation.Nullable;
-      """;
+          """
+                  import com.google.common.base.Preconditions;
+                  
+                  import static org.junit.Assert.fail;
+                  import static com.google.truth.Truth.assertThat;
+                  
+                  import org.junit.runners.JUnit4;
+                  import org.junit.runner.RunWith;
+                  
+                  import java.util.List;
+                  
+                  import javax.annotation.Nullable;
+                  """;
 
   @Test
   public void importsNotReorderedByDefault() throws FormatterException {
     String input =
-        "package com.google.example;\n" + UNORDERED_IMPORTS + "public class ExampleTest {}\n";
+            "package com.google.example;\n" + UNORDERED_IMPORTS + "public class ExampleTest {}\n";
     String output = new Formatter().formatSource(input);
     String expect =
-        "package com.google.example;\n\n" + UNORDERED_IMPORTS + "\npublic class ExampleTest {}\n";
+            "package com.google.example;\n\n" + UNORDERED_IMPORTS + "\npublic class ExampleTest {}\n";
     assertThat(output).isEqualTo(expect);
   }
 
   @Test
   public void importsFixedIfRequested() throws FormatterException {
     String input =
-        "package com.google.example;\n"
-            + UNORDERED_IMPORTS
-            + """
-            public class ExampleTest {
-              @Nullable List<?> xs;
-            }
-            """;
+            "package com.google.example;\n"
+                    + UNORDERED_IMPORTS
+                    + """
+                    public class ExampleTest {
+                      @Nullable List<?> xs;
+                    }
+                    """;
     String output = new Formatter().formatSourceAndFixImports(input);
     String expect =
-        """
-        package com.google.example;
-
-        import java.util.List;
-        import javax.annotation.Nullable;
-
-        public class ExampleTest {
-          @Nullable List<?> xs;
-        }
-        """;
+            """
+                    package com.google.example;
+                    
+                    import java.util.List;
+                    import javax.annotation.Nullable;
+                    
+                    public class ExampleTest {
+                      @Nullable List<?> xs;
+                    }
+                    """;
     assertThat(output).isEqualTo(expect);
   }
 
   @Test
   public void importOrderingWithoutFormatting() throws IOException, UsageException {
     importOrdering(
-        "--fix-imports-only", "com/google/googlejavaformat/java/testimports/A.imports-only");
+            "--fix-imports-only", "com/google/googlejavaformat/java/testimports/A.imports-only");
   }
 
   @Test
@@ -443,19 +444,19 @@ public final class FormatterTest {
   @Test
   public void formattingWithoutImportOrdering() throws IOException, UsageException {
     importOrdering(
-        "--skip-sorting-imports",
-        "com/google/googlejavaformat/java/testimports/A.formatting-and-unused-import-removal");
+            "--skip-sorting-imports",
+            "com/google/googlejavaformat/java/testimports/A.formatting-and-unused-import-removal");
   }
 
   @Test
   public void formattingWithoutRemovingUnusedImports() throws IOException, UsageException {
     importOrdering(
-        "--skip-removing-unused-imports",
-        "com/google/googlejavaformat/java/testimports/A.formatting-and-import-sorting");
+            "--skip-removing-unused-imports",
+            "com/google/googlejavaformat/java/testimports/A.formatting-and-import-sorting");
   }
 
   private void importOrdering(String sortArg, String outputResourceName)
-      throws IOException, UsageException {
+          throws IOException, UsageException {
     Path tmpdir = testFolder.newFolder().toPath();
     Path path = tmpdir.resolve("Foo.java");
 
@@ -468,9 +469,9 @@ public final class FormatterTest {
     StringWriter err = new StringWriter();
     Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args =
-        sortArg != null
-            ? new String[] {sortArg, "-i", path.toString()}
-            : new String[] {"-i", path.toString()};
+            sortArg != null
+                    ? new String[]{sortArg, "-i", path.toString()}
+                    : new String[]{"-i", path.toString()};
     main.format(args);
 
     assertThat(err.toString()).isEmpty();
@@ -490,132 +491,132 @@ public final class FormatterTest {
   @Test
   public void testTrailingCommentWithoutTerminalNewline() throws Exception {
     assertThat(new Formatter().formatSource("/*\n * my comment */"))
-        .isEqualTo("/*\n * my comment */\n");
+            .isEqualTo("/*\n * my comment */\n");
   }
 
   @Test
   public void testEmptyArray() throws Exception {
     assertThat(new Formatter().formatSource("class T { int x[] = {,}; }"))
-        .isEqualTo(
-            """
-            class T {
-              int x[] = {,};
-            }
-            """);
+            .isEqualTo(
+                    """
+                            class T {
+                              int x[] = {,};
+                            }
+                            """);
   }
 
   @Test
   public void stringEscapeLength() throws Exception {
     assertThat(new Formatter().formatSource("class T {{ f(\"\\\"\"); }}"))
-        .isEqualTo(
-            """
-            class T {
-              {
-                f(\"\\\"\");
-              }
-            }
-            """);
+            .isEqualTo(
+                    """
+                            class T {
+                              {
+                                f(\"\\\"\");
+                              }
+                            }
+                            """);
   }
 
   @Test
   public void wrapLineComment() throws Exception {
     assertThat(
             new Formatter()
-                .formatSource(
-"""
-class T {
-  public static void main(String[] args) { // one long incredibly unbroken sentence moving from topic to topic so that no-one had a chance to interrupt;
-  }
-}
-"""))
-        .isEqualTo(
-"""
-class T {
-  public static void main(
-      String[]
-          args) { // one long incredibly unbroken sentence moving from topic to topic so that no-one
-                  // had a chance to interrupt;
-  }
-}
-""");
+                    .formatSource(
+                            """
+                                    class T {
+                                      public static void main(String[] args) { // one long incredibly unbroken sentence moving from topic to topic so that no-one had a chance to interrupt;
+                                      }
+                                    }
+                                    """))
+            .isEqualTo(
+                    """
+                            class T {
+                              public static void main(
+                                  String[]
+                                      args) { // one long incredibly unbroken sentence moving from topic to topic so that no-one
+                                              // had a chance to interrupt;
+                              }
+                            }
+                            """);
   }
 
   @Test
   public void onlyWrapLineCommentOnWhitespace() throws Exception {
     assertThat(
             new Formatter()
-                .formatSource(
-"""
-class T {
-  public static void main(String[] args) { // one_long_incredibly_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a_chance_to_interrupt;
-  }
-}
-"""))
-        .isEqualTo(
-"""
-class T {
-  public static void main(
-      String[]
-          args) { // one_long_incredibly_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a_chance_to_interrupt;
-  }
-}
-""");
+                    .formatSource(
+                            """
+                                    class T {
+                                      public static void main(String[] args) { // one_long_incredibly_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a_chance_to_interrupt;
+                                      }
+                                    }
+                                    """))
+            .isEqualTo(
+                    """
+                            class T {
+                              public static void main(
+                                  String[]
+                                      args) { // one_long_incredibly_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a_chance_to_interrupt;
+                              }
+                            }
+                            """);
   }
 
   @Test
   public void onlyWrapLineCommentOnWhitespace_noLeadingWhitespace() throws Exception {
     assertThat(
             new Formatter()
-                .formatSource(
-"""
-class T {
-  public static void main(String[] args) { //one_long_incredibly_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a_chance_to_interrupt;
-  }
-}
-"""))
-        .isEqualTo(
-"""
-class T {
-  public static void main(
-      String[]
-          args) { // one_long_incredibly_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a_chance_to_interrupt;
-  }
-}
-""");
+                    .formatSource(
+                            """
+                                    class T {
+                                      public static void main(String[] args) { //one_long_incredibly_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a_chance_to_interrupt;
+                                      }
+                                    }
+                                    """))
+            .isEqualTo(
+                    """
+                            class T {
+                              public static void main(
+                                  String[]
+                                      args) { // one_long_incredibly_unbroken_sentence_moving_from_topic_to_topic_so_that_no-one_had_a_chance_to_interrupt;
+                              }
+                            }
+                            """);
   }
 
   @Test
   public void throwsFormatterException() throws Exception {
     assertThrows(
-        FormatterException.class,
-        () -> new Formatter().formatSourceAndFixImports("package foo; public class {"));
+            FormatterException.class,
+            () -> new Formatter().formatSourceAndFixImports("package foo; public class {"));
   }
 
   @Test
   public void blankLinesImportComment() throws FormatterException {
     String withBlank =
-        """
-        package p;
-
-        /** test */
-
-        import a.A;
-
-        class T {
-          A a;
-        }
-        """;
+            """
+                    package p;
+                    
+                    /** test */
+                    
+                    import a.A;
+                    
+                    class T {
+                      A a;
+                    }
+                    """;
     String withoutBlank =
-        """
-        package p;
-
-        /** test */
-        import a.A;
-
-        class T {
-          A a;
-        }
-        """;
+            """
+                    package p;
+                    
+                    /** test */
+                    import a.A;
+                    
+                    class T {
+                      A a;
+                    }
+                    """;
 
     // Formatting deletes the blank line between the "javadoc" and the first import.
     assertThat(new Formatter().formatSource(withBlank)).isEqualTo(withoutBlank);
@@ -634,39 +635,67 @@ class T {
   public void dontWrapMoeLineComments() throws Exception {
     assertThat(
             new Formatter()
-                .formatSource(
-"""
-class T {
-  // MOE: one long incredibly unbroken sentence moving from topic to topic so that no-one had a chance to interrupt;
-}
-"""))
-        .isEqualTo(
-"""
-class T {
-  // MOE: one long incredibly unbroken sentence moving from topic to topic so that no-one had a chance to interrupt;
-}
-""");
+                    .formatSource(
+                            """
+                                    class T {
+                                      // MOE: one long incredibly unbroken sentence moving from topic to topic so that no-one had a chance to interrupt;
+                                    }
+                                    """))
+            .isEqualTo(
+                    """
+                            class T {
+                              // MOE: one long incredibly unbroken sentence moving from topic to topic so that no-one had a chance to interrupt;
+                            }
+                            """);
   }
 
   @Test
   public void removeTrailingTabsInComments() throws Exception {
     assertThat(
             new Formatter()
-                .formatSource(
-                    "class Foo {\n"
-                        + "  void f() {\n"
-                        + "    int x = 0; // comment\t\t\t\n"
-                        + "    return;\n"
-                        + "  }\n"
-                        + "}\n"))
-        .isEqualTo(
-            """
-            class Foo {
-              void f() {
-                int x = 0; // comment
-                return;
-              }
-            }
-            """);
+                    .formatSource(
+                            "class Foo {\n"
+                                    + "  void f() {\n"
+                                    + "    int x = 0; // comment\t\t\t\n"
+                                    + "    return;\n"
+                                    + "  }\n"
+                                    + "}\n"))
+            .isEqualTo(
+                    """
+                            class Foo {
+                              void f() {
+                                int x = 0; // comment
+                                return;
+                              }
+                            }
+                            """);
+  }
+
+  @Test
+  public void multivariableTryWithResources() throws Exception {
+    String input =
+            "class Test {\n"
+                    + "  void m() {\n"
+                    + "    try (var input = Files.newInputStream(Path.of(\"./input\"));\n"
+                    + "        var output = Files.newOutputStream(Path.of(\"./output\"));) {\n"
+                    + "      output.write(input.read());\n"
+                    + "    } catch (IOException _) {\n"
+                    + "    }\n"
+                    + "  }\n"
+                    + "}\n";
+    String expected =
+            "class Test {\n"
+                    + "  void m() {\n"
+                    + "    try (\n"
+                    + "        var input = Files.newInputStream(Path.of(\"./input\"));\n"
+                    + "        var output = Files.newOutputStream(Path.of(\"./output\"));\n"
+                    + "    ) {\n"
+                    + "      output.write(input.read());\n"
+                    + "    } catch (IOException _) {\n"
+                    + "    }\n"
+                    + "  }\n"
+                    + "}\n";
+
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
   }
 }
