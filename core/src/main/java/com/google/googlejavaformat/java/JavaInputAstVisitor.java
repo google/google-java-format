@@ -2091,28 +2091,30 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.space();
     if (!node.getResources().isEmpty()) {
       token("(");
-      builder.open(node.getResources().size() > 1 ? plusFour : ZERO);
+      boolean multiVariable = node.getResources().size() > 1;
+      builder.open(multiVariable ? plusFour : ZERO);
+      if (multiVariable) {
+        builder.forcedBreak();
+      }
       boolean afterFirstToken = false;
       for (Tree resource : node.getResources()) {
         if (afterFirstToken) {
           builder.forcedBreak();
         }
         if (resource instanceof VariableTree variableTree) {
-
           declareOne(
-              DeclarationKind.PARAMETER,
-              fieldAnnotationDirection(variableTree.getModifiers()),
-              Optional.of(variableTree.getModifiers()),
-              variableTree.getType(),
-              /* name= */ variableTree.getName(),
-              "",
-              "=",
-              Optional.ofNullable(variableTree.getInitializer()),
-              /* trailing= */ Optional.empty(),
-              /* receiverExpression= */ Optional.empty(),
-              /* typeWithDims= */ Optional.empty());
+                  DeclarationKind.PARAMETER,
+                  fieldAnnotationDirection(variableTree.getModifiers()),
+                  Optional.of(variableTree.getModifiers()),
+                  variableTree.getType(),
+                  /* name= */ variableTree.getName(),
+                  "",
+                  "=",
+                  Optional.ofNullable(variableTree.getInitializer()),
+                  /* trailing= */ Optional.empty(),
+                  /* receiverExpression= */ Optional.empty(),
+                  /* typeWithDims= */ Optional.empty());
         } else {
-          // TODO(cushon): think harder about what to do with `try (resource1; resource2) {}`
           scan(resource, null);
         }
         if (builder.peekToken().equals(Optional.of(";"))) {
@@ -2121,22 +2123,19 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         }
         afterFirstToken = true;
       }
-      if (builder.peekToken().equals(Optional.of(";"))) {
-        token(";");
-        builder.space();
+      builder.close();
+      if (multiVariable) {
+        builder.forcedBreak();
       }
       token(")");
-      builder.close();
       builder.space();
     }
-    // An empty try-with-resources body can collapse to "{}" if there are no trailing catch or
-    // finally blocks.
     boolean trailingClauses = !node.getCatches().isEmpty() || node.getFinallyBlock() != null;
     visitBlock(
-        node.getBlock(),
-        CollapseEmptyOrNot.valueOf(!trailingClauses),
-        AllowLeadingBlankLine.YES,
-        AllowTrailingBlankLine.valueOf(trailingClauses));
+            node.getBlock(),
+            CollapseEmptyOrNot.valueOf(!trailingClauses),
+            AllowLeadingBlankLine.YES,
+            AllowTrailingBlankLine.valueOf(trailingClauses));
     for (int i = 0; i < node.getCatches().size(); i++) {
       CatchTree catchClause = node.getCatches().get(i);
       trailingClauses = i < node.getCatches().size() - 1 || node.getFinallyBlock() != null;
@@ -2147,10 +2146,10 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       token("finally");
       builder.space();
       visitBlock(
-          node.getFinallyBlock(),
-          CollapseEmptyOrNot.NO,
-          AllowLeadingBlankLine.YES,
-          AllowTrailingBlankLine.NO);
+              node.getFinallyBlock(),
+              CollapseEmptyOrNot.NO,
+              AllowLeadingBlankLine.YES,
+              AllowTrailingBlankLine.NO);
     }
     builder.close();
     return null;
