@@ -67,6 +67,13 @@ final class JavaCommentsHelper implements CommentsHelper {
         lines.add(CharMatcher.whitespace().trimTrailingFrom(it.next()));
       }
     }
+
+    // Crude but works. Don't touch markdown-like line comments, even if they're
+    // somewhere in the code (and are not markdown).
+    if (lines.stream().allMatch(line -> line.startsWith("///"))) {
+      return preserveIndentation(lines, column0);
+    }
+
     if (tok.isSlashSlashComment()) {
       return indentLineComments(tok, lines, column0);
     }
