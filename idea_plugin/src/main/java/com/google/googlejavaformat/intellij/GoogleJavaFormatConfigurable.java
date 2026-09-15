@@ -40,6 +40,7 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
   private final Project project;
   private JPanel panel;
   private JCheckBox enable;
+  private JCheckBox optimizeImports;
   private JComboBox styleComboBox;
 
   public GoogleJavaFormatConfigurable(Project project) {
@@ -80,6 +81,7 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
   public void apply() throws ConfigurationException {
     GoogleJavaFormatSettings settings = GoogleJavaFormatSettings.getInstance(project);
     settings.setEnabled(enable.isSelected() ? EnabledState.ENABLED : getDisabledState());
+    settings.setOptimizeImports(optimizeImports.isSelected());
     settings.setStyle(((UiFormatterStyle) styleComboBox.getSelectedItem()).convert());
   }
 
@@ -94,6 +96,7 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
   public void reset() {
     GoogleJavaFormatSettings settings = GoogleJavaFormatSettings.getInstance(project);
     enable.setSelected(settings.isEnabled());
+    optimizeImports.setSelected(settings.shouldOptimizeImports());
     styleComboBox.setSelectedItem(UiFormatterStyle.convert(settings.getStyle()));
   }
 
@@ -101,6 +104,7 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
   public boolean isModified() {
     GoogleJavaFormatSettings settings = GoogleJavaFormatSettings.getInstance(project);
     return enable.isSelected() != settings.isEnabled()
+        || optimizeImports.isSelected() != settings.shouldOptimizeImports()
         || !styleComboBox.getSelectedItem().equals(UiFormatterStyle.convert(settings.getStyle()));
   }
 
