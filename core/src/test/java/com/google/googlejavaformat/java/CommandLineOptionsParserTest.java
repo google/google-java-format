@@ -78,6 +78,20 @@ public class CommandLineOptionsParserTest {
   }
 
   @Test
+  public void googleStyle() {
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--google-style")).aosp()).isFalse();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("-google-style")).aosp()).isFalse();
+  }
+
+  @Test
+  public void lastStyleWins() {
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--aosp", "--google-style")).aosp())
+        .isFalse();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--google-style", "--aosp")).aosp())
+        .isTrue();
+  }
+
+  @Test
   public void help() {
     assertThat(CommandLineOptionsParser.parse(Arrays.asList("-help")).help()).isTrue();
   }
