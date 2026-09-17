@@ -64,12 +64,12 @@
     <dependency>
       <groupId>org.commonmark</groupId>
       <artifactId>commonmark</artifactId>
-      <version>0.29.0</version>
+      <version>0.30.0</version>
     </dependency>
     <dependency>
       <groupId>org.commonmark</groupId>
       <artifactId>commonmark-ext-gfm-tables</artifactId>
-      <version>0.29.0</version>
+      <version>0.30.0</version>
     </dependency>
 
     <!-- Test dependencies -->
@@ -231,7 +231,7 @@
           <plugin>
             <groupId>org.graalvm.buildtools</groupId>
             <artifactId>native-maven-plugin</artifactId>
-            <version>1.1.7</version>
+            <version>1.1.12</version>
             <extensions>true</extensions>
             <dependencies>
               <dependency>
