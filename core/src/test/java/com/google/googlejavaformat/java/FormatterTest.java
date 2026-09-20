@@ -648,6 +648,55 @@ class T {
 """);
   }
 
+  // https://github.com/google/google-java-format/issues/1369
+  @Test
+  public void wrapTripleSlashLineCommentPreservesPrefix() throws Exception {
+    assertThat(
+            new Formatter()
+                .formatSource(
+"""
+class T {
+  void m() {
+    /// one long incredibly unbroken sentence moving from topic to topic so that no-one had a chance to interrupt the speaker at all;
+  }
+}
+"""))
+        .isEqualTo(
+"""
+class T {
+  void m() {
+    /// one long incredibly unbroken sentence moving from topic to topic so that no-one had a chance
+    /// to interrupt the speaker at all;
+  }
+}
+""");
+  }
+
+  // https://github.com/google/google-java-format/issues/1369
+  @Test
+  public void doNotBreakLongUnbreakableTripleSlashLink() throws Exception {
+    assertThat(
+            new Formatter()
+                .formatSource(
+"""
+class T {
+  void m() {
+    /// [Design-doc](8901234567890123456789012345678901234567890123456789012345678901234567890123456789)
+    /// [Design-doc](89012345678901234567890123456789012345678901234567890123456789012345678901234567890)
+  }
+}
+"""))
+        .isEqualTo(
+"""
+class T {
+  void m() {
+    /// [Design-doc](8901234567890123456789012345678901234567890123456789012345678901234567890123456789)
+    /// [Design-doc](89012345678901234567890123456789012345678901234567890123456789012345678901234567890)
+  }
+}
+""");
+  }
+
   @Test
   public void removeTrailingTabsInComments() throws Exception {
     assertThat(
