@@ -1,0 +1,5 @@
+exports_files(
+    ["google-java-format-diff.py"],
+    visibility = ["//visibility:public"],
+)
+
