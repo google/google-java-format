@@ -2503,6 +2503,22 @@ package com.example;
     doFormatTest(input, expected);
   }
 
+  @Test
+  public void markdownNoFormatJavadoc() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// A very long line of text, long enough that it would be wrapped if javadoc formatting were enabled.
+        class Test {
+          /// Another very long line of text, also long enough that it would be wrapped if javadoc formatting were enabled.
+          void method() {}
+        }
+        """;
+    Formatter noJavadocFormatter =
+        new Formatter(JavaFormatterOptions.builder().formatJavadoc(false).build());
+    assertThat(noJavadocFormatter.formatSource(input)).isEqualTo(input);
+  }
+
   // TODO: b/346668798 - Test the following Markdown constructs, and make the tests work as needed.
   // We can assume that the CommonMark parser correctly handles Markdown, so the question is whether
   // they are subsequently mishandled by our formatting logic. So for example the CommonMark parser

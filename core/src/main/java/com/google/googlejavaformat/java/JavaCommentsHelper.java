@@ -15,7 +15,6 @@
 package com.google.googlejavaformat.java;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.googlejavaformat.CommentsHelper;
 import com.google.googlejavaformat.Input.Tok;
@@ -97,7 +96,7 @@ final class JavaCommentsHelper implements CommentsHelper {
 
     // output all trailing lines with plausible indentation
     for (int i = 1; i < lines.size(); ++i) {
-      builder.append(lineSeparator).append(Strings.repeat(" ", column0));
+      builder.append(lineSeparator).repeat(" ", column0);
       // check that startCol is valid index, e.g. for blank lines
       if (lines.get(i).length() >= startCol) {
         builder.append(lines.get(i).substring(startCol));
@@ -113,32 +112,34 @@ final class JavaCommentsHelper implements CommentsHelper {
     lines = wrapLineComments(tok, lines, column0);
     StringBuilder builder = new StringBuilder();
     builder.append(lines.get(0).trim());
-    String indentString = Strings.repeat(" ", column0);
+    String indentString = " ".repeat(column0);
     for (int i = 1; i < lines.size(); ++i) {
       builder.append(lineSeparator).append(indentString).append(lines.get(i).trim());
     }
     return builder.toString();
   }
 
+  private static final Pattern LINE_COMMENT_MISSING_SPACE_PREFIX = Pattern.compile("^(//+)[^\\s/]");
+
   // Preserve special `//noinspection` and `//$NON-NLS-x$` comments used by IDEs, which cannot
   // contain leading spaces.
-  private static final Pattern LINE_COMMENT_MISSING_SPACE_PREFIX =
-      Pattern.compile("^(//+)(?!noinspection|\\$NON-NLS-\\d+\\$)[^\\s/]");
+  private static final Pattern LINE_COMMENT_NO_SPACE_PREFIX =
+      Pattern.compile("^//+(noinspection|\\$NON-NLS-\\d+\\$)");
 
   private List<String> wrapLineComments(Tok tok, List<String> lines, int column0) {
+    if (markdownJavadocPositions.contains(tok.getPosition())) {
+      // Don't wrap Markdown Javadoc comments as plain line comments, which would mangle them with
+      // `// ` on continuation lines. Normally, Markdown Javadoc comments don't reach here, but they
+      // do if we're running with `--skip-javadoc-formatting`.
+      return lines;
+    }
     List<String> result = new ArrayList<>();
     for (String line : lines) {
-      if (markdownJavadocPositions.contains(tok.getPosition())) {
-        // Don't wrap markdown comments. Eventually we will format them properly, but for now at
-        // least don't mangle them by wrapping with `// ` on the continuation lines.
-        result.add(line);
-        continue;
-      }
       // Add missing leading spaces to line comments: `//foo` -> `// foo`.
       Matcher matcher = LINE_COMMENT_MISSING_SPACE_PREFIX.matcher(line);
-      if (matcher.find()) {
+      if (matcher.find() && !LINE_COMMENT_NO_SPACE_PREFIX.matcher(line).find()) {
         int length = matcher.group(1).length();
-        line = Strings.repeat("/", length) + " " + line.substring(length);
+        line = "/".repeat(length) + " " + line.substring(length);
       }
       if (line.startsWith("// MOE:")) {
         // don't wrap comments for https://github.com/google/MOE
@@ -168,7 +169,7 @@ final class JavaCommentsHelper implements CommentsHelper {
     StringBuilder builder = new StringBuilder();
     builder.append(lines.get(0).trim());
     int indent = column0 + 1;
-    String indentString = Strings.repeat(" ", indent);
+    String indentString = " ".repeat(indent);
     for (int i = 1; i < lines.size(); ++i) {
       builder.append(lineSeparator).append(indentString);
       String line = lines.get(i).trim();
