@@ -1929,11 +1929,32 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     sync(node);
     token("return");
     if (node.getExpression() != null) {
-      builder.space();
-      scan(node.getExpression(), null);
+      ExpressionTree expression = node.getExpression();
+      // Text blocks after return must start on their own line so the opening delimiter
+      // is indented like other expression contexts (Google Java Style 4.8.9;
+      // https://github.com/google/google-java-format/issues/1258). A fill-mode break is
+      // not enough: return plus the delimiter fits on one line and stays attached.
+      if (isTextBlockLiteral(expression)) {
+        builder.open(plusFour);
+        builder.breakOp(FillMode.FORCED, " ", ZERO);
+        scan(expression, null);
+        builder.close();
+      } else {
+        builder.space();
+        scan(expression, null);
+      }
     }
     token(";");
     return null;
+  }
+
+  /** True when {@code expression} is a text block literal. */
+  private boolean isTextBlockLiteral(ExpressionTree expression) {
+    if (expression.getKind() != STRING_LITERAL) {
+      return false;
+    }
+    String source = getSourceForNode(expression, getCurrentPath());
+    return source.startsWith("\"\"\"");
   }
 
   // TODO(cushon): is this worth special-casing?
