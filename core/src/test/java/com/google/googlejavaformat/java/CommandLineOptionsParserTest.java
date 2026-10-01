@@ -56,6 +56,7 @@ public class CommandLineOptionsParserTest {
     assertThat(options.formatJavadoc()).isTrue();
     assertThat(options.reorderModifiers()).isTrue();
     assertThat(options.maxLineLength()).isEqualTo(100);
+    assertThat(options.style().useTabs()).isFalse();
   }
 
   @Test
@@ -261,6 +262,39 @@ public class CommandLineOptionsParserTest {
             IllegalArgumentException.class,
             () -> CommandLineOptionsParser.parse(Arrays.asList("--max-line-length=-1")));
     assertThat(e).hasMessageThat().contains("invalid max-line-length: -1 (must be positive)");
+  }
+
+  @Test
+  public void useTabs() {
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--use-tabs")).style().useTabs())
+        .isTrue();
+  }
+
+  @Test
+  public void useTabsStyleFlagOrder() {
+    for (String style :
+        ImmutableList.of("--aosp", "--google-style", "--style=aosp", "--style=google")) {
+      for (ImmutableList<String> args :
+          ImmutableList.of(
+              ImmutableList.of("--use-tabs", "--max-line-length=80", style),
+              ImmutableList.of(style, "--max-line-length=80", "--use-tabs"))) {
+        CommandLineOptions options = CommandLineOptionsParser.parse(args);
+        assertThat(options.style().useTabs()).isTrue();
+        assertThat(options.aosp()).isEqualTo(style.endsWith("aosp"));
+        assertThat(options.maxLineLength()).isEqualTo(80);
+      }
+    }
+  }
+
+  @Test
+  public void useTabsParamsFile() throws IOException {
+    Path params = testFolder.newFile("tabs.params").toPath();
+    Files.writeString(params, "--use-tabs\n--style=aosp\n--max-line-length=80\nTest.java\n", UTF_8);
+    CommandLineOptions options = CommandLineOptionsParser.parse(ImmutableList.of("@" + params));
+    assertThat(options.style().useTabs()).isTrue();
+    assertThat(options.aosp()).isTrue();
+    assertThat(options.maxLineLength()).isEqualTo(80);
+    assertThat(options.files()).containsExactly("Test.java");
   }
 
   @Test

@@ -77,6 +77,8 @@ public class MainTest {
       // Sanity check that a flag and description is in included.
       assertThat(usage).contains("--length");
       assertThat(usage).contains("Character length to format.");
+      assertThat(usage).contains("--use-tabs");
+      assertThat(usage).contains("Use tabs for indentation instead of spaces.");
 
       // Check that some of the additional text is included.
       assertThat(usage).contains("the result is sent to stdout");
@@ -742,5 +744,184 @@ class T {
             in);
     assertThat(main.format("--max-line-length=30", "-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expected);
+  }
+
+  @Test
+  public void useTabsGoogleStyle() throws Exception {
+    String input =
+        """
+        class T {
+          /**
+           * Multi-line javadoc
+           * comment.
+           */
+          void f(int a, int b) {
+            // multi-line
+            // comment
+            int x = aaaaaaaaaa + bbbbbbbbbb + cccccccccc;
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+        \t/**
+        \t * Multi-line javadoc
+        \t * comment.
+        \t */
+        \tvoid f(int a, int b) {
+        \t\t// multi-line
+        \t\t// comment
+        \t\tint x =
+        \t\t\t\taaaaaaaaaa
+        \t\t\t\t\t\t+ bbbbbbbbbb
+        \t\t\t\t\t\t+ cccccccccc;
+        \t}
+        }
+        """;
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(err, true),
+            new ByteArrayInputStream(input.getBytes(UTF_8)));
+    assertThat(main.format("--use-tabs", "--max-line-length=30", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expected);
+    assertThat(err.toString()).isEmpty();
+  }
+
+  @Test
+  public void useTabsAospStyle() throws Exception {
+    String input =
+        """
+        class T {
+          void f() {
+            int x = aaaaaaaaaa + bbbbbbbbbb;
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+        \tvoid f() {
+        \t\tint x =
+        \t\t\t\taaaaaaaaaa
+        \t\t\t\t\t\t+ bbbbbbbbbb;
+        \t}
+        }
+        """;
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(err, true),
+            new ByteArrayInputStream(input.getBytes(UTF_8)));
+    assertThat(main.format("--use-tabs", "--style=aosp", "--max-line-length=38", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expected);
+    assertThat(err.toString()).isEmpty();
+  }
+
+  @Test
+  public void useTabsReflowLongStrings() throws Exception {
+    String input =
+        """
+        class T {
+          String s = "one two three four five six seven eight";
+        }
+        """;
+    String expected =
+        """
+        class T {
+        \tString s =
+        \t\t\t"one two three four five six"
+        \t\t\t\t\t+ " seven eight";
+        }
+        """;
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(err, true),
+            new ByteArrayInputStream(input.getBytes(UTF_8)));
+    assertThat(main.format("--max-line-length=35", "--use-tabs", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expected);
+    assertThat(err.toString()).isEmpty();
+  }
+
+  @Test
+  public void useTabsFiles() throws Exception {
+    Path path = testFolder.newFile("Test.java").toPath();
+    String input =
+        """
+        class Test {
+          void f() {
+            System.out.println("hello");
+          }
+        }
+        """;
+    String expected =
+        """
+        class Test {
+        \tvoid f() {
+        \t\tSystem.out.println("hello");
+        \t}
+        }
+        """;
+    Files.writeString(path, input, UTF_8);
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
+
+    assertThat(main.format("--use-tabs", "--dry-run", "--set-exit-if-changed", path.toString()))
+        .isEqualTo(1);
+    assertThat(out.toString()).isEqualTo(path + System.lineSeparator());
+    assertThat(Files.readString(path, UTF_8)).isEqualTo(input);
+
+    out.getBuffer().setLength(0);
+    assertThat(main.format("--use-tabs", "--replace", path.toString())).isEqualTo(0);
+    assertThat(Files.readString(path, UTF_8)).isEqualTo(expected);
+    assertThat(out.toString()).isEmpty();
+
+    assertThat(main.format("--use-tabs", "--dry-run", "--set-exit-if-changed", path.toString()))
+        .isEqualTo(0);
+    assertThat(out.toString()).isEmpty();
+
+    assertThat(main.format("--dry-run", "--set-exit-if-changed", path.toString())).isEqualTo(1);
+    assertThat(out.toString()).isEqualTo(path + System.lineSeparator());
+    assertThat(err.toString()).isEmpty();
+  }
+
+  @Test
+  public void useTabsFixImportsOnly() throws Exception {
+    String input =
+        """
+        import java.util.List;
+        import java.util.ArrayList;
+        class Test {
+          List<String>   values = new ArrayList<>();
+        }
+        """;
+    String expected =
+        """
+        import java.util.ArrayList;
+        import java.util.List;
+
+        class Test {
+          List<String>   values = new ArrayList<>();
+        }
+        """;
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(err, true),
+            new ByteArrayInputStream(input.getBytes(UTF_8)));
+    assertThat(main.format("--use-tabs", "--fix-imports-only", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expected);
+    assertThat(err.toString()).isEmpty();
   }
 }

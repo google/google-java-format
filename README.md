@@ -34,6 +34,10 @@ about other flags, such as `--aosp`, `--fix-imports-only`,
 `--skip-reflowing-long-strings`, `--skip-javadoc-formatting`, or the `--dry-run`
 and `--set-exit-if-changed`.
 
+Use `--use-tabs` to indent with tabs instead of spaces. Tab stops are 2 columns
+for Google Style and 4 columns for AOSP; alignment may still use spaces. This
+option can be combined with `--style` and `--max-line-length`.
+
 Using `@<filename>` reads options and filenames from a file, instead of
 arguments.
 

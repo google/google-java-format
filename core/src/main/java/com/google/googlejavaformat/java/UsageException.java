@@ -44,6 +44,9 @@ Options:
     --google-style and --aosp, respectively. If multiple style options are given, the last one wins.
   --max-line-length
     Maximum line length (default is 100).
+  --use-tabs
+    Use tabs for indentation instead of spaces. Tab stops are 2 columns for
+    Google Style and 4 columns for AOSP. Alignment may still use spaces.
   --fix-imports-only
     Fix import order and remove any unused imports, but do no other formatting.
   --skip-sorting-imports

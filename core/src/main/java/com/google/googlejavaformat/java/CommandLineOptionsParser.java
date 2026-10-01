@@ -91,6 +91,7 @@ final class CommandLineOptionsParser {
         case "--skip-reflowing-long-strings" -> optionsBuilder.reflowLongStrings(false);
         case "--skip-javadoc-formatting" -> optionsBuilder.formatJavadoc(false);
         case "--skip-reordering-modifiers" -> optionsBuilder.reorderModifiers(false);
+        case "--use-tabs" -> styleBuilder.useTabs(true);
         case "--max-line-length" -> {
           int length = parseInteger(it, flag, value);
           if (length <= 0) {
