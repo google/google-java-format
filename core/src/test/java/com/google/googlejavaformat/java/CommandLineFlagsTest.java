@@ -151,12 +151,21 @@ public class CommandLineFlagsTest {
   @Test
   public void inPlaceDryRun() {
     try {
+      Main.processArgs("--replace", "--dry-run", "A.java");
+      fail();
+    } catch (UsageException e) {
+      assertThat(e)
+          .hasMessageThat()
+          .contains("cannot use --dry-run and --replace at the same time");
+    }
+
+    try {
       Main.processArgs("-i", "-n", "A.java");
       fail();
     } catch (UsageException e) {
       assertThat(e)
           .hasMessageThat()
-          .contains("cannot use --dry-run and --in-place at the same time");
+          .contains("cannot use --dry-run and --replace at the same time");
     }
   }
 
