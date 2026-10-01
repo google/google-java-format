@@ -1,0 +1,14 @@
+class I1260 {
+  void block() {
+    { /* trailing on open brace */ int x = 1; }
+  }
+
+  void switchCase() {
+    switch (0) {
+      case 1: { /* Break so we don't hit fall-through warning: */ break;/* ignore STRING */
+      }
+    }
+  }
+
+  int[] array = { /* trailing on array brace */ 1, 2 };
+}
