@@ -564,7 +564,8 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       boolean allowFilledElementsOnOwnLine = shortItems || !inMemberValuePair;
 
       builder.open(plusTwo);
-      tokenBreakTrailingComment("{", plusTwo);
+      // Same as visitBlock (#1260): avoid double plusTwo when elements are present.
+      tokenBreakTrailingComment("{", expressions.isEmpty() ? plusTwo : ZERO);
       boolean hasTrailingComma = hasTrailingToken(builder.getInput(), expressions, ",");
       builder.breakOp(hasTrailingComma ? FillMode.FORCED : FillMode.UNIFIED, "", ZERO);
       if (allowFilledElementsOnOwnLine) {
@@ -2317,7 +2318,12 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     } else {
       builder.open(ZERO);
       builder.open(plusTwo);
-      tokenBreakTrailingComment("{", plusTwo);
+      // Inside plusTwo already. Empty blocks still need plusTwo so a trailing comment on "{"
+      // lands inside the braces; non-empty blocks use ZERO so the comment lines up with
+      // statements (otherwise the first format over-indents and a second pass corrects it —
+      // #1260).
+      tokenBreakTrailingComment(
+          "{", node.getStatements().isEmpty() ? plusTwo : ZERO);
       if (allowLeadingBlankLine == AllowLeadingBlankLine.NO) {
         builder.blankLineWanted(BlankLineWanted.NO);
       } else {

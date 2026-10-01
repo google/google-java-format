@@ -669,4 +669,40 @@ class T {
             }
             """);
   }
+
+  @Test
+  public void trailingCommentAfterOpenBraceIsIdempotent() throws Exception {
+    // Regression for #1260: trailing block comments on "{" were indented an extra
+    // plusTwo when the opener was already inside an open(plusTwo) level.
+    String input =
+        """
+        class T {
+          void f() {
+            { /* c */ int x = 1; }
+          }
+
+          int[] a = { /* c */ 1 };
+        }
+        """;
+    String once = new Formatter().formatSource(input);
+    String twice = new Formatter().formatSource(once);
+    assertThat(once).isEqualTo(twice);
+    assertThat(once)
+        .isEqualTo(
+            """
+            class T {
+              void f() {
+                {
+                  /* c */
+                  int x = 1;
+                }
+              }
+
+              int[] a = {
+                /* c */
+                1
+              };
+            }
+            """);
+  }
 }
