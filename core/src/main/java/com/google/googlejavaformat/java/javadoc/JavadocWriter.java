@@ -64,6 +64,7 @@ final class JavadocWriter {
 
   private final int blockIndent;
   private final boolean classicJavadoc;
+  private final int maxLineLength;
   private final StringBuilder output = new StringBuilder();
 
   /**
@@ -83,9 +84,10 @@ final class JavadocWriter {
   private String indentForMoeEndStripComment = "";
   private boolean wroteAnythingSignificant;
 
-  JavadocWriter(int blockIndent, boolean classicJavadoc) {
+  JavadocWriter(int blockIndent, boolean classicJavadoc, int maxLineLength) {
     this.blockIndent = blockIndent;
     this.classicJavadoc = classicJavadoc;
+    this.maxLineLength = maxLineLength;
   }
 
   /**
@@ -133,7 +135,7 @@ final class JavadocWriter {
       writeNewline();
     } else {
       output.append("/// ");
-      remainingOnLine = JavadocFormatter.MAX_LINE_LENGTH - blockIndent - 4;
+      remainingOnLine = maxLineLength - blockIndent - 4;
     }
   }
 
@@ -545,7 +547,7 @@ final class JavadocWriter {
   private void writeNewline(AutoIndent autoIndent) {
     writeNewlineStart();
     appendSpaces(1);
-    remainingOnLine = JavadocFormatter.MAX_LINE_LENGTH - blockIndent - (classicJavadoc ? 3 : 4);
+    remainingOnLine = maxLineLength - blockIndent - (classicJavadoc ? 3 : 4);
     if (autoIndent == AUTO_INDENT) {
       String indent = innerIndentString();
       output.append(indent);

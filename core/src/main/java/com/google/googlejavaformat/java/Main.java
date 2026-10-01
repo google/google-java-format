@@ -20,7 +20,6 @@ import static java.util.Comparator.comparing;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
@@ -118,7 +117,7 @@ public final class Main {
 
     JavaFormatterOptions options =
         JavaFormatterOptions.builder()
-            .style(parameters.aosp() ? Style.AOSP : Style.GOOGLE)
+            .style(parameters.style())
             .formatJavadoc(parameters.formatJavadoc())
             .reorderModifiers(parameters.reorderModifiers())
             .build();
@@ -278,6 +277,9 @@ public final class Main {
     }
     if (parameters.dryRun() && parameters.inPlace()) {
       throw new UsageException("cannot use --dry-run and --in-place at the same time");
+    }
+    if (parameters.maxLineLength() <= 0) {
+      throw new UsageException("--max-line-length must be positive");
     }
     return parameters;
   }

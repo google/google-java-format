@@ -19,7 +19,6 @@ import static java.util.Comparator.comparing;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Strings;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
@@ -35,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntFunction;
 
 /*
  * Throughout this file, {@code i} is an index for input lines, {@code j} is an index for output
@@ -50,6 +50,7 @@ public final class JavaOutput extends Output {
   private final String lineSeparator;
   private final Input javaInput; // Used to follow along while emitting the output.
   private final CommentsHelper commentsHelper; // Used to re-flow comments.
+  private final IntFunction<String> indentFunction;
   private final Map<Integer, BlankLineWanted> blankLines = new HashMap<>(); // Info on blank lines.
   private final RangeSet<Integer> partialFormatRanges = TreeRangeSet.create();
 
@@ -68,9 +69,25 @@ public final class JavaOutput extends Output {
    * @param commentsHelper the {@link CommentsHelper}, used to rewrite comments
    */
   public JavaOutput(String lineSeparator, Input javaInput, CommentsHelper commentsHelper) {
+    this(lineSeparator, javaInput, commentsHelper, indent -> " ".repeat(Math.max(0, indent)));
+  }
+
+  /**
+   * {@code JavaOutput} constructor.
+   *
+   * @param javaInput the {@link Input}, used to match up blank lines in the output
+   * @param commentsHelper the {@link CommentsHelper}, used to rewrite comments
+   * @param indentFunction function mapping a visual column indent to an indentation string
+   */
+  public JavaOutput(
+      String lineSeparator,
+      Input javaInput,
+      CommentsHelper commentsHelper,
+      IntFunction<String> indentFunction) {
     this.lineSeparator = lineSeparator;
     this.javaInput = javaInput;
     this.commentsHelper = commentsHelper;
+    this.indentFunction = indentFunction;
     kN = javaInput.getkN();
   }
 
@@ -179,7 +196,7 @@ public final class JavaOutput extends Output {
 
   @Override
   public void indent(int indent) {
-    spacesPending.append(Strings.repeat(" ", indent));
+    spacesPending.append(indentFunction.apply(indent));
   }
 
   /** Flush any incomplete last line, then add the EOF token into our data structures. */

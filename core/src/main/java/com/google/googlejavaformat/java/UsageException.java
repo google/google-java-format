@@ -39,6 +39,11 @@ Options:
     --google-style are given, the last one wins.
   --aosp, -aosp, -a
     Use AOSP style instead of Google Style (4-space indentation).
+  --style
+    Use the given style, either "google" or "aosp". This is equivalent to
+    --google-style and --aosp, respectively. If multiple style options are given, the last one wins.
+  --max-line-length
+    Maximum line length (default is 100).
   --fix-imports-only
     Fix import order and remove any unused imports, but do no other formatting.
   --skip-sorting-imports

@@ -17,6 +17,7 @@ package com.google.googlejavaformat.java;
 import static java.util.Objects.requireNonNull;
 
 import com.google.auto.value.AutoBuilder;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.Immutable;
 
 /**
@@ -37,27 +38,141 @@ public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifie
     requireNonNull(style, "style");
   }
 
-  public enum Style {
+  /** Code style configuration for layout and imports. */
+  @Immutable
+  public record Style(
+      int indentationMultiplier, int maxLineLength, boolean useTabs, ImportOrder importOrder) {
+    public Style {
+      if (maxLineLength <= 0) {
+        throw new IllegalArgumentException(
+            String.format("maxLineLength must be positive, was: %d", maxLineLength));
+      }
+      requireNonNull(importOrder, "importOrder");
+    }
+
     /** The default Google Java Style configuration. */
-    GOOGLE(1),
+    public static final Style GOOGLE = builder().google().build();
 
     /** The AOSP-compliant configuration. */
-    AOSP(2);
+    public static final Style AOSP = builder().aosp().build();
 
-    private final int indentationMultiplier;
-
-    Style(int indentationMultiplier) {
-      this.indentationMultiplier = indentationMultiplier;
+    /**
+     * Returns the visual column width of a tab stop.
+     *
+     * <p>This matches the standard block indentation width for the style: 2 columns for Google
+     * Style and 4 columns for AOSP.
+     */
+    public int tabWidth() {
+      return 2 * indentationMultiplier();
     }
 
-    int indentationMultiplier() {
-      return indentationMultiplier;
+    /** Returns the indentation string for the given visual column width. */
+    public String indentString(int indent) {
+      if (!useTabs()) {
+        return " ".repeat(indent);
+      }
+      int tabWidth = tabWidth();
+      return "\t".repeat(indent / tabWidth) + " ".repeat(indent % tabWidth);
     }
+
+    /** Returns the visual column width of the given character sequence. */
+    public int visualLength(CharSequence input) {
+      return visualLength(input, 0, input.length());
+    }
+
+    /** Returns the visual column width of the given subsequence. */
+    public int visualLength(CharSequence input, int start, int end) {
+      if (!useTabs()) {
+        return end - start;
+      }
+      int tabWidth = tabWidth();
+      int column = 0;
+      for (int i = start; i < end; i++) {
+        if (input.charAt(i) == '\t') {
+          column += tabWidth - (column % tabWidth);
+        } else {
+          column++;
+        }
+      }
+      return column;
+    }
+
+    public boolean isAosp() {
+      return importOrder() == ImportOrder.AOSP;
+    }
+
+    public static Builder builder() {
+      return new AutoBuilder_JavaFormatterOptions_Style_Builder()
+          .maxLineLength(100)
+          .useTabs(false)
+          .google();
+    }
+
+    public Builder toBuilder() {
+      return new AutoBuilder_JavaFormatterOptions_Style_Builder()
+          .indentationMultiplier(indentationMultiplier())
+          .maxLineLength(maxLineLength())
+          .useTabs(useTabs())
+          .importOrder(importOrder());
+    }
+
+    /** A builder for {@link Style}. */
+    @AutoBuilder
+    public abstract static class Builder {
+      public abstract Builder indentationMultiplier(int indentationMultiplier);
+
+      public abstract Builder maxLineLength(int maxLineLength);
+
+      public abstract Builder useTabs(boolean useTabs);
+
+      public abstract Builder importOrder(ImportOrder importOrder);
+
+      @CanIgnoreReturnValue
+      public Builder aosp() {
+        return indentationMultiplier(2).importOrder(ImportOrder.AOSP);
+      }
+
+      @CanIgnoreReturnValue
+      public Builder google() {
+        return indentationMultiplier(1).importOrder(ImportOrder.GOOGLE);
+      }
+
+      public abstract Style build();
+    }
+  }
+
+  /** The import order to use. */
+  public enum ImportOrder {
+    GOOGLE,
+    AOSP,
   }
 
   /** Returns the multiplier for the unit of indent. */
   public int indentationMultiplier() {
     return style().indentationMultiplier();
+  }
+
+  public int maxLineLength() {
+    return style().maxLineLength();
+  }
+
+  public boolean useTabs() {
+    return style().useTabs();
+  }
+
+  /** Returns the indentation string for the given visual column width. */
+  public String indentString(int indent) {
+    return style().indentString(indent);
+  }
+
+  /** Returns the visual column width of the given character sequence. */
+  public int visualLength(CharSequence input) {
+    return style().visualLength(input);
+  }
+
+  /** Returns the visual column width of the given subsequence. */
+  public int visualLength(CharSequence input, int start, int end) {
+    return style().visualLength(input, start, end);
   }
 
   /** Returns the default formatting options. */

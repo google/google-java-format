@@ -42,6 +42,7 @@ final class CommandLineOptionsParser {
   /** Parses {@link CommandLineOptions}. */
   static CommandLineOptions parse(Iterable<String> options) {
     CommandLineOptions.Builder optionsBuilder = CommandLineOptions.builder();
+    JavaFormatterOptions.Style.Builder styleBuilder = JavaFormatterOptions.Style.GOOGLE.toBuilder();
     List<String> expandedOptions = new ArrayList<>();
     expandParamsFiles(options, expandedOptions);
     Iterator<String> it = expandedOptions.iterator();
@@ -71,8 +72,17 @@ final class CommandLineOptionsParser {
             parseRangeSet(linesBuilder, getValue(flag, it, value));
         case "--offset", "-offset" -> optionsBuilder.addOffset(parseInteger(it, flag, value));
         case "--length", "-length" -> optionsBuilder.addLength(parseInteger(it, flag, value));
-        case "--google-style", "-google-style" -> optionsBuilder.aosp(false);
-        case "--aosp", "-aosp", "-a" -> optionsBuilder.aosp(true);
+        case "--google-style", "-google-style" -> styleBuilder.google();
+        case "--aosp", "-aosp", "-a" -> styleBuilder.aosp();
+        case "--style" -> {
+          String style = getValue(flag, it, value);
+          switch (style) {
+            case "google" -> styleBuilder.google();
+            case "aosp" -> styleBuilder.aosp();
+            default ->
+                throw new IllegalArgumentException(String.format("invalid style value: %s", style));
+          }
+        }
         case "--version", "-version", "-v" -> optionsBuilder.version(true);
         case "--help", "-help", "-h" -> optionsBuilder.help(true);
         case "--fix-imports-only" -> optionsBuilder.fixImportsOnly(true);
@@ -81,6 +91,14 @@ final class CommandLineOptionsParser {
         case "--skip-reflowing-long-strings" -> optionsBuilder.reflowLongStrings(false);
         case "--skip-javadoc-formatting" -> optionsBuilder.formatJavadoc(false);
         case "--skip-reordering-modifiers" -> optionsBuilder.reorderModifiers(false);
+        case "--max-line-length" -> {
+          int length = parseInteger(it, flag, value);
+          if (length <= 0) {
+            throw new IllegalArgumentException(
+                String.format("invalid max-line-length: %d (must be positive)", length));
+          }
+          styleBuilder.maxLineLength(length);
+        }
         case "-" -> optionsBuilder.stdin(true);
         case "-n", "--dry-run" -> optionsBuilder.dryRun(true);
         case "--set-exit-if-changed" -> optionsBuilder.setExitIfChanged(true);
@@ -89,6 +107,7 @@ final class CommandLineOptionsParser {
         default -> throw new IllegalArgumentException("unexpected flag: " + flag);
       }
     }
+    optionsBuilder.style(styleBuilder.build());
     optionsBuilder.lines(ImmutableRangeSet.copyOf(linesBuilder));
     return optionsBuilder.build();
   }

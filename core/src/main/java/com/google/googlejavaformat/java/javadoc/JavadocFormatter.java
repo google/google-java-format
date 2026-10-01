@@ -76,15 +76,13 @@ import java.util.regex.Pattern;
  */
 public final class JavadocFormatter {
 
-  static final int MAX_LINE_LENGTH = 100;
-
   /**
    * Formats the given Javadoc comment. A classic Javadoc comment must start with ∕✱✱ and end with
    * ✱∕, and the output will start and end with the same characters. A Markdown Javadoc comment
    * consists of lines each of which starts with ///, and the output will also consist of such
    * lines.
    */
-  public static String formatJavadoc(String input, int blockIndent) {
+  public static String formatJavadoc(String input, int blockIndent, int maxLineLength) {
     boolean classicJavadoc =
         switch (input) {
           case String s when s.startsWith("/**") -> true;
@@ -99,15 +97,16 @@ public final class JavadocFormatter {
     } catch (LexException e) {
       return input;
     }
-    String result = render(tokens, blockIndent, classicJavadoc);
+    String result = render(tokens, blockIndent, classicJavadoc, maxLineLength);
     if (classicJavadoc) {
-      result = makeSingleLineIfPossible(blockIndent, result);
+      result = makeSingleLineIfPossible(blockIndent, result, maxLineLength);
     }
     return result;
   }
 
-  private static String render(List<Token> input, int blockIndent, boolean classicJavadoc) {
-    JavadocWriter output = new JavadocWriter(blockIndent, classicJavadoc);
+  private static String render(
+      List<Token> input, int blockIndent, boolean classicJavadoc, int maxLineLength) {
+    JavadocWriter output = new JavadocWriter(blockIndent, classicJavadoc, maxLineLength);
     for (Token token : input) {
       switch (token) {
         case BeginJavadoc unused -> output.writeBeginJavadoc();
@@ -182,21 +181,21 @@ public final class JavadocFormatter {
    * Returns the given string or a one-line version of it (e.g., "∕✱✱ Tests for foos. ✱∕") if it
    * fits on one line.
    */
-  private static String makeSingleLineIfPossible(int blockIndent, String input) {
+  private static String makeSingleLineIfPossible(int blockIndent, String input, int maxLineLength) {
     Matcher matcher = ONE_CONTENT_LINE_PATTERN.matcher(input);
     if (matcher.matches()) {
       String line = matcher.group(1);
       if (line.isEmpty()) {
         return "/** */";
-      } else if (oneLineJavadoc(line, blockIndent)) {
+      } else if (oneLineJavadoc(line, blockIndent, maxLineLength)) {
         return "/** " + line + " */";
       }
     }
     return input;
   }
 
-  private static boolean oneLineJavadoc(String line, int blockIndent) {
-    int oneLinerContentLength = MAX_LINE_LENGTH - "/**  */".length() - blockIndent;
+  private static boolean oneLineJavadoc(String line, int blockIndent, int maxLineLength) {
+    int oneLinerContentLength = maxLineLength - "/**  */".length() - blockIndent;
     if (line.length() > oneLinerContentLength) {
       return false;
     }

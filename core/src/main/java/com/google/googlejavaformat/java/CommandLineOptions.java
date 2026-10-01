@@ -28,7 +28,7 @@ import java.util.Optional;
  * @param lines Line ranges to format.
  * @param offsets Character offsets for partial formatting, paired with {@code lengths}.
  * @param lengths Partial formatting region lengths, paired with {@code offsets}.
- * @param aosp Use AOSP style instead of Google Style (4-space indentation).
+ * @param style Code style configuration.
  * @param version Print the version.
  * @param help Print usage information.
  * @param stdin Format input from stdin.
@@ -47,7 +47,7 @@ record CommandLineOptions(
     ImmutableRangeSet<Integer> lines,
     ImmutableList<Integer> offsets,
     ImmutableList<Integer> lengths,
-    boolean aosp,
+    JavaFormatterOptions.Style style,
     boolean version,
     boolean help,
     boolean stdin,
@@ -61,6 +61,14 @@ record CommandLineOptions(
     boolean formatJavadoc,
     boolean reorderModifiers) {
 
+  boolean aosp() {
+    return style().isAosp();
+  }
+
+  int maxLineLength() {
+    return style().maxLineLength();
+  }
+
   /** Returns true if partial formatting was selected. */
   boolean isSelection() {
     return !lines().isEmpty() || !offsets().isEmpty() || !lengths().isEmpty();
@@ -68,12 +76,12 @@ record CommandLineOptions(
 
   static Builder builder() {
     return new AutoBuilder_CommandLineOptions_Builder()
+        .style(JavaFormatterOptions.Style.GOOGLE)
         .sortImports(true)
         .removeUnusedImports(true)
         .reflowLongStrings(true)
         .formatJavadoc(true)
         .reorderModifiers(true)
-        .aosp(false)
         .version(false)
         .help(false)
         .stdin(false)
@@ -108,7 +116,7 @@ record CommandLineOptions(
       return this;
     }
 
-    Builder aosp(boolean aosp);
+    Builder style(JavaFormatterOptions.Style style);
 
     Builder version(boolean version);
 

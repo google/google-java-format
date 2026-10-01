@@ -51,10 +51,10 @@ final class JavaCommentsHelper implements CommentsHelper {
     if (tok.isJavadocComment() && options.formatJavadoc()) {
       if (text.startsWith("///")) {
         if (markdownJavadocPositions.contains(tok.getPosition())) {
-          return JavadocFormatter.formatJavadoc(text, column0);
+          return JavadocFormatter.formatJavadoc(text, column0, options.maxLineLength());
         }
       } else {
-        text = JavadocFormatter.formatJavadoc(text, column0);
+        text = JavadocFormatter.formatJavadoc(text, column0, options.maxLineLength());
       }
     }
     List<String> lines = new ArrayList<>();
@@ -95,8 +95,9 @@ final class JavaCommentsHelper implements CommentsHelper {
     builder.append(lines.get(0));
 
     // output all trailing lines with plausible indentation
+    String indentString = options.indentString(column0);
     for (int i = 1; i < lines.size(); ++i) {
-      builder.append(lineSeparator).repeat(" ", column0);
+      builder.append(lineSeparator).append(indentString);
       // check that startCol is valid index, e.g. for blank lines
       if (lines.get(i).length() >= startCol) {
         builder.append(lines.get(i).substring(startCol));
@@ -112,7 +113,7 @@ final class JavaCommentsHelper implements CommentsHelper {
     lines = wrapLineComments(tok, lines, column0);
     StringBuilder builder = new StringBuilder();
     builder.append(lines.get(0).trim());
-    String indentString = " ".repeat(column0);
+    String indentString = options.indentString(column0);
     for (int i = 1; i < lines.size(); ++i) {
       builder.append(lineSeparator).append(indentString).append(lines.get(i).trim());
     }
@@ -146,8 +147,8 @@ final class JavaCommentsHelper implements CommentsHelper {
         result.add(line);
         continue;
       }
-      while (line.length() + column0 > Formatter.MAX_LINE_LENGTH) {
-        int idx = Formatter.MAX_LINE_LENGTH - column0;
+      while (line.length() + column0 > options.maxLineLength()) {
+        int idx = options.maxLineLength() - column0;
         // only break on whitespace characters, and ignore the leading `// `
         while (idx >= 2 && !CharMatcher.whitespace().matches(line.charAt(idx))) {
           idx--;
@@ -169,7 +170,7 @@ final class JavaCommentsHelper implements CommentsHelper {
     StringBuilder builder = new StringBuilder();
     builder.append(lines.get(0).trim());
     int indent = column0 + 1;
-    String indentString = " ".repeat(indent);
+    String indentString = options.indentString(indent);
     for (int i = 1; i < lines.size(); ++i) {
       builder.append(lineSeparator).append(indentString);
       String line = lines.get(i).trim();

@@ -17,6 +17,7 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assume.assumeTrue;
 
+import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -208,5 +209,39 @@ public class ReproBug {
         """;
     String actual = StringWrapper.wrap(100, input, new Formatter());
     assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void wrapWithMaxLineLengthAndTabs() throws Exception {
+    String input =
+        """
+        class T {
+          String s = "one two three four five six seven eight";
+          String tb =
+              \"""
+              hello
+              world
+              \""";
+        }
+        """;
+    Formatter formatter =
+        new Formatter(
+            JavaFormatterOptions.builder()
+                .style(Style.GOOGLE.toBuilder().maxLineLength(35).useTabs(true).build())
+                .build());
+    assertThat(formatter.formatSourceAndFixImports(input))
+        .isEqualTo(
+            """
+            class T {
+            \tString s =
+            \t\t\t"one two three four five six"
+            \t\t\t\t\t+ " seven eight";
+            \tString tb =
+            \t\t\t\"""
+            \t\t\thello
+            \t\t\tworld
+            \t\t\t\""";
+            }
+            """);
   }
 }
