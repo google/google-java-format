@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.CharMatcher;
@@ -93,10 +94,11 @@ final class CommandLineOptionsParser {
         case "--skip-reordering-modifiers" -> optionsBuilder.reorderModifiers(false);
         case "--max-line-length" -> {
           int length = parseInteger(it, flag, value);
-          if (length <= 0) {
-            throw new IllegalArgumentException(
-                String.format("invalid max-line-length: %d (must be positive)", length));
-          }
+          checkArgument(
+              length > 0 && length <= JavaFormatterOptions.Style.MAX_LINE_LENGTH_LIMIT,
+              "invalid max-line-length: %s (must be between 1 and %s)",
+              length,
+              JavaFormatterOptions.Style.MAX_LINE_LENGTH_LIMIT);
           styleBuilder.maxLineLength(length);
         }
         case "-" -> optionsBuilder.stdin(true);

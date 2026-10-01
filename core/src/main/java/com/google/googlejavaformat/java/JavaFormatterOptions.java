@@ -14,11 +14,13 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import com.google.auto.value.AutoBuilder;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.Immutable;
+import com.google.googlejavaformat.Doc;
 
 /**
  * Options for a google-java-format invocation.
@@ -43,12 +45,20 @@ public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifie
   public record Style(
       int indentationMultiplier, int maxLineLength, boolean useTabs, ImportOrder importOrder) {
     public Style {
-      if (maxLineLength <= 0) {
-        throw new IllegalArgumentException(
-            String.format("maxLineLength must be positive, was: %d", maxLineLength));
-      }
+      checkArgument(
+          maxLineLength > 0 && maxLineLength <= MAX_LINE_LENGTH_LIMIT,
+          "maxLineLength must be between 1 and %s, was: %s",
+          MAX_LINE_LENGTH_LIMIT,
+          maxLineLength);
       requireNonNull(importOrder, "importOrder");
     }
+
+    /**
+     * The largest supported {@link #maxLineLength}. Layout widths saturate at {@link
+     * Doc#MAX_LINE_WIDTH}, which is also how forced breaks are represented, so the line length must
+     * be smaller than that.
+     */
+    static final int MAX_LINE_LENGTH_LIMIT = Doc.MAX_LINE_WIDTH - 1;
 
     /** The default Google Java Style configuration. */
     public static final Style GOOGLE = builder().google().build();

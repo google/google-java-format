@@ -249,18 +249,34 @@ public class CommandLineOptionsParserTest {
   }
 
   @Test
-  public void maxLineLengthNonPositive() {
+  public void maxLineLengthOutOfRange() {
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class,
             () -> CommandLineOptionsParser.parse(Arrays.asList("--max-line-length=0")));
-    assertThat(e).hasMessageThat().contains("invalid max-line-length: 0 (must be positive)");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("invalid max-line-length: 0 (must be between 1 and 999)");
 
     e =
         assertThrows(
             IllegalArgumentException.class,
             () -> CommandLineOptionsParser.parse(Arrays.asList("--max-line-length=-1")));
-    assertThat(e).hasMessageThat().contains("invalid max-line-length: -1 (must be positive)");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("invalid max-line-length: -1 (must be between 1 and 999)");
+
+    e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> CommandLineOptionsParser.parse(Arrays.asList("--max-line-length=1000")));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("invalid max-line-length: 1000 (must be between 1 and 999)");
+
+    assertThat(
+            CommandLineOptionsParser.parse(Arrays.asList("--max-line-length=999")).maxLineLength())
+        .isEqualTo(999);
   }
 
   @Test

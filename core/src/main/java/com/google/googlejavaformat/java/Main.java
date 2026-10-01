@@ -278,9 +278,6 @@ public final class Main {
     if (parameters.dryRun() && parameters.inPlace()) {
       throw new UsageException("cannot use --dry-run and --in-place at the same time");
     }
-    if (parameters.maxLineLength() <= 0) {
-      throw new UsageException("--max-line-length must be positive");
-    }
     return parameters;
   }
 }

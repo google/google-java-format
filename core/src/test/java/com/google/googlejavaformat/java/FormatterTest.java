@@ -851,15 +851,22 @@ class T {
   }
 
   @Test
-  public void maxLineLengthNonPositive() {
+  public void maxLineLengthOutOfRange() {
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class, () -> Style.builder().maxLineLength(0).build());
-    assertThat(e).hasMessageThat().contains("maxLineLength must be positive, was: 0");
+    assertThat(e).hasMessageThat().contains("maxLineLength must be between 1 and 999, was: 0");
 
     e =
         assertThrows(
             IllegalArgumentException.class, () -> Style.builder().maxLineLength(-1).build());
-    assertThat(e).hasMessageThat().contains("maxLineLength must be positive, was: -1");
+    assertThat(e).hasMessageThat().contains("maxLineLength must be between 1 and 999, was: -1");
+
+    e =
+        assertThrows(
+            IllegalArgumentException.class, () -> Style.builder().maxLineLength(1000).build());
+    assertThat(e).hasMessageThat().contains("maxLineLength must be between 1 and 999, was: 1000");
+
+    assertThat(Style.builder().maxLineLength(999).build().maxLineLength()).isEqualTo(999);
   }
 }
