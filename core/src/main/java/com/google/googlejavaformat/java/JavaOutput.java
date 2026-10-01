@@ -62,6 +62,24 @@ public final class JavaOutput extends Output {
   private StringBuilder lineBuilder = new StringBuilder();
   private StringBuilder spacesPending = new StringBuilder();
 
+  private static final int MAX_CACHED_SPACES = 100;
+  private static final String[] spaces = new String[MAX_CACHED_SPACES + 1];
+
+  /** Returns an indentation string of the given number of spaces. */
+  static String spaces(int indent) {
+    if (indent <= 0) {
+      return "";
+    }
+    if (indent <= MAX_CACHED_SPACES) {
+      String result = spaces[indent];
+      if (result == null) {
+        result = spaces[indent] = " ".repeat(indent);
+      }
+      return result;
+    }
+    return " ".repeat(indent);
+  }
+
   /**
    * {@code JavaOutput} constructor.
    *
@@ -69,7 +87,7 @@ public final class JavaOutput extends Output {
    * @param commentsHelper the {@link CommentsHelper}, used to rewrite comments
    */
   public JavaOutput(String lineSeparator, Input javaInput, CommentsHelper commentsHelper) {
-    this(lineSeparator, javaInput, commentsHelper, indent -> " ".repeat(Math.max(0, indent)));
+    this(lineSeparator, javaInput, commentsHelper, JavaOutput::spaces);
   }
 
   /**

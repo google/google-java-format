@@ -829,6 +829,12 @@ class T {
     assertThat(google.indentString(0)).isEmpty();
     assertThat(googleTabs.indentString(0)).isEmpty();
     assertThat(aospTabs.indentString(0)).isEmpty();
+    assertThat(google.indentString(4)).isSameInstanceAs(google.indentString(4));
+    assertThat(google.indentString(104)).isEqualTo(" ".repeat(104));
+    assertThat(googleTabs.indentString(104)).isEqualTo("\t".repeat(52));
+    assertThat(JavaOutput.spaces(4)).isSameInstanceAs(JavaOutput.spaces(4));
+    assertThat(JavaOutput.spaces(0)).isEmpty();
+    assertThat(JavaOutput.spaces(104)).isEqualTo(" ".repeat(104));
   }
 
   @Test

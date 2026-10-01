@@ -69,7 +69,7 @@ public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifie
     /** Returns the indentation string for the given visual column width. */
     public String indentString(int indent) {
       if (!useTabs()) {
-        return " ".repeat(indent);
+        return JavaOutput.spaces(indent);
       }
       int tabWidth = tabWidth();
       return "\t".repeat(indent / tabWidth) + " ".repeat(indent % tabWidth);
