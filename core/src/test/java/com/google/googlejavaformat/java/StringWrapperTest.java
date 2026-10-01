@@ -209,4 +209,28 @@ public class ReproBug {
     String actual = StringWrapper.wrap(100, input, new Formatter());
     assertThat(actual).isEqualTo(expected);
   }
+
+  /**
+   * Wrapping a long string that does not start at the beginning of its statement (e.g. after
+   * {@code return}) must produce output that is stable under a subsequent {@link
+   * Formatter#formatSource} pass. See https://github.com/google/google-java-format/issues/935.
+   */
+  @Test
+  public void wrapThenFormatIsIdempotentForPrefixedString() throws Exception {
+    String input =
+        """
+        public class JavaFormatterExample {
+
+          public static String veryLongString() {
+            return "Very, very, very, very, very, very, very, very, very, very, very long string that will need to be split";
+          }
+        }
+        """;
+    Formatter formatter = new Formatter();
+    String wrapped = StringWrapper.wrap(100, formatter.formatSource(input), formatter);
+    String reformatted = formatter.formatSource(wrapped);
+    assertThat(reformatted).isEqualTo(wrapped);
+    // And a second wrap+format round trip must not change anything either.
+    assertThat(StringWrapper.wrap(100, reformatted, formatter)).isEqualTo(wrapped);
+  }
 }

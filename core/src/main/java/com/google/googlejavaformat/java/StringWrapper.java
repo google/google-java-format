@@ -97,6 +97,14 @@ public final class StringWrapper {
       }
     }
 
+    // applyReplacements chooses continuation indents from the string literal's start column.
+    // The pretty-printer may break the '+' at a different column (for example relative to
+    // `return`), so format once more. Without this, a second format pass changes indentation
+    // and wrapping is not idempotent (https://github.com/google/google-java-format/issues/935).
+    if (!result.equals(input)) {
+      result = formatter.formatSource(result);
+    }
+
     return result;
   }
 
