@@ -711,4 +711,36 @@ class T {
             .replace("\n", System.lineSeparator());
     assertThat(err.toString()).isEqualTo(expected);
   }
+
+  @Test
+  public void maxLineLength() throws Exception {
+    String input =
+        """
+        class Test {
+          void f() {
+            int x = aaaaaaaaaa + bbbbbbbbbb + cccccccccc;
+          }
+        }
+        """;
+    String expected =
+        """
+        class Test {
+          void f() {
+            int x =
+                aaaaaaaaaa
+                    + bbbbbbbbbb
+                    + cccccccccc;
+          }
+        }
+        """;
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
+    assertThat(main.format("--max-line-length=30", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expected);
+  }
 }
