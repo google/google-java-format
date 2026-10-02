@@ -2103,17 +2103,17 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         }
         if (resource instanceof VariableTree variableTree) {
           declareOne(
-                  DeclarationKind.PARAMETER,
-                  fieldAnnotationDirection(variableTree.getModifiers()),
-                  Optional.of(variableTree.getModifiers()),
-                  variableTree.getType(),
-                  /* name= */ variableTree.getName(),
-                  "",
-                  "=",
-                  Optional.ofNullable(variableTree.getInitializer()),
-                  /* trailing= */ Optional.empty(),
-                  /* receiverExpression= */ Optional.empty(),
-                  /* typeWithDims= */ Optional.empty());
+              DeclarationKind.PARAMETER,
+              fieldAnnotationDirection(variableTree.getModifiers()),
+              Optional.of(variableTree.getModifiers()),
+              variableTree.getType(),
+              /* name= */ variableTree.getName(),
+              "",
+              "=",
+              Optional.ofNullable(variableTree.getInitializer()),
+              /* trailing= */ Optional.empty(),
+              /* receiverExpression= */ Optional.empty(),
+              /* typeWithDims= */ Optional.empty());
         } else {
           scan(resource, null);
         }
@@ -2130,12 +2130,14 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       token(")");
       builder.space();
     }
+    // An empty try-with-resources body can collapse to "{}" if there are no trailing catch or
+    // finally blocks.
     boolean trailingClauses = !node.getCatches().isEmpty() || node.getFinallyBlock() != null;
     visitBlock(
-            node.getBlock(),
-            CollapseEmptyOrNot.valueOf(!trailingClauses),
-            AllowLeadingBlankLine.YES,
-            AllowTrailingBlankLine.valueOf(trailingClauses));
+        node.getBlock(),
+        CollapseEmptyOrNot.valueOf(!trailingClauses),
+        AllowLeadingBlankLine.YES,
+        AllowTrailingBlankLine.valueOf(trailingClauses));
     for (int i = 0; i < node.getCatches().size(); i++) {
       CatchTree catchClause = node.getCatches().get(i);
       trailingClauses = i < node.getCatches().size() - 1 || node.getFinallyBlock() != null;
@@ -2146,10 +2148,10 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       token("finally");
       builder.space();
       visitBlock(
-              node.getFinallyBlock(),
-              CollapseEmptyOrNot.NO,
-              AllowLeadingBlankLine.YES,
-              AllowTrailingBlankLine.NO);
+          node.getFinallyBlock(),
+          CollapseEmptyOrNot.NO,
+          AllowLeadingBlankLine.YES,
+          AllowTrailingBlankLine.NO);
     }
     builder.close();
     return null;
