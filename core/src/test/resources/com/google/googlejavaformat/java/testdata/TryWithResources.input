@@ -1,4 +1,4 @@
-class TryWtihResources {
+class TryWithResources {
   {
     try (@A C c = c(); ) {}
     try (final @A C c = c(); ) {}

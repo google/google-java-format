@@ -671,6 +671,34 @@ class T {
   }
 
   @Test
+  public void multivariableTryWithResources() throws Exception {
+    String input =
+            "class Test {\n"
+                    + "  void m() {\n"
+                    + "    try (var input = Files.newInputStream(Path.of(\"./input\"));\n"
+                    + "        var output = Files.newOutputStream(Path.of(\"./output\"));) {\n"
+                    + "      output.write(input.read());\n"
+                    + "    } catch (IOException _) {\n"
+                    + "    }\n"
+                    + "  }\n"
+                    + "}\n";
+    String expected =
+            "class Test {\n"
+                    + "  void m() {\n"
+                    + "    try (\n"
+                    + "        var input = Files.newInputStream(Path.of(\"./input\"));\n"
+                    + "        var output = Files.newOutputStream(Path.of(\"./output\"));\n"
+                    + "    ) {\n"
+                    + "      output.write(input.read());\n"
+                    + "    } catch (IOException _) {\n"
+                    + "    }\n"
+                    + "  }\n"
+                    + "}\n";
+
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
   public void testI1205() throws Exception {
     String input =
         """
