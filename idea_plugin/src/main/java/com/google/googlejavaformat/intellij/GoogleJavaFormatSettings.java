@@ -72,11 +72,20 @@ class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFor
   }
 
   JavaFormatterOptions.Style getStyle() {
-    return state.style;
+    return state.style.convert().toBuilder().maxLineLength(state.maxLineLength).build();
   }
 
   void setStyle(JavaFormatterOptions.Style style) {
-    state.style = style;
+    state.style = UiFormatterStyle.convert(style);
+    state.maxLineLength = style.maxLineLength();
+  }
+
+  int getMaxLineLength() {
+    return state.maxLineLength;
+  }
+
+  void setMaxLineLength(int maxLineLength) {
+    state.maxLineLength = maxLineLength;
   }
 
   enum EnabledState {
@@ -88,7 +97,8 @@ class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFor
   static class State {
 
     private EnabledState enabled = EnabledState.UNKNOWN;
-    public JavaFormatterOptions.Style style = JavaFormatterOptions.Style.GOOGLE;
+    public UiFormatterStyle style = UiFormatterStyle.GOOGLE;
+    public int maxLineLength = JavaFormatterOptions.Style.GOOGLE.maxLineLength();
 
     // enabled used to be a boolean so we use bean property methods for backwards compatibility
     public void setEnabled(@Nullable String enabledStr) {
