@@ -265,6 +265,73 @@ public class RemoveUnusedImportsTest {
         interface Test { private static void foo() {} }
         """,
       },
+      // #1436: unused import between package and class Javadoc must not leave a double blank line
+      {
+        """
+        package com.example;
+
+        import static io.grpc.MethodDescriptor.generateFullMethodName;
+
+        /**
+         * Javadoc for class.
+         */
+        public class TestBug {}
+        """,
+        """
+        package com.example;
+
+        /**
+         * Javadoc for class.
+         */
+        public class TestBug {}
+        """,
+      },
+      {
+        """
+        package com.example;
+
+        import com.foo.Unused1;
+        import com.foo.Unused2;
+
+        public class TestBug {}
+        """,
+        """
+        package com.example;
+
+        public class TestBug {}
+        """,
+      },
+      {
+        """
+        import com.foo.Unused;
+
+        public class TestBug {}
+        """,
+        """
+        public class TestBug {}
+        """,
+      },
+      {
+        """
+        package com.example;
+
+        import java.util.List;
+        import com.foo.Unused;
+
+        public class TestBug {
+          List<String> xs;
+        }
+        """,
+        """
+        package com.example;
+
+        import java.util.List;
+
+        public class TestBug {
+          List<String> xs;
+        }
+        """,
+      },
     };
     ImmutableList.Builder<Object[]> builder = ImmutableList.builder();
     for (String[] inputAndOutput : inputsOutputs) {
