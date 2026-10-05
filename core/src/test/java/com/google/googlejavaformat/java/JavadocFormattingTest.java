@@ -2571,6 +2571,58 @@ package com.example;
     doFormatTest(input, expected);
   }
 
+  @Test
+  public void hyphenatedLineBreakJoined() {
+    String input =
+        """
+        /**
+         * This calculation requires an infinite-
+         * precision number.
+         */
+        class Test {}
+        """;
+    String expected =
+        """
+        /** This calculation requires an infinite-precision number. */
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void suspendedHyphenPreserved() {
+    String input =
+        """
+        /**
+         * Both pre-
+         * and post-processing steps.
+         */
+        class Test {}
+        """;
+    String expected =
+        """
+        /** Both pre- and post-processing steps. */
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownHyphenatedLineBreakJoined() {
+    String input =
+        """
+        /// This calculation requires an infinite-
+        /// precision number.
+        class Test {}
+        """;
+    String expected =
+        """
+        /// This calculation requires an infinite-precision number.
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
   // TODO: b/346668798 - Test the following Markdown constructs, and make the tests work as needed.
   // We can assume that the CommonMark parser correctly handles Markdown, so the question is whether
   // they are subsequently mishandled by our formatting logic. So for example the CommonMark parser
