@@ -669,4 +669,204 @@ class T {
             }
             """);
   }
+
+  @Test
+  public void testI1205() throws Exception {
+    String input =
+        """
+        public interface Foo {
+
+          private static String foo =
+              \"\"\"
+               foo\\
+               bar \"\"\";
+        }
+        """;
+    String formatted = new Formatter().formatSource(input);
+    assertThat(formatted).isEqualTo(input);
+  }
+
+  @Test
+  public void maxLineLength() throws Exception {
+    String input =
+        """
+        class T {
+          /** A javadoc comment that is longer than forty columns. */
+          void f(int aaaaaaaaaa, int bbbbbbbbbb, int cccccccccc) {
+            // A line comment that is longer than forty columns.
+            int x = aaaaaaaaaa + bbbbbbbbbb + cccccccccc;
+          }
+        }
+        """;
+    Formatter formatter =
+        new Formatter(
+            JavaFormatterOptions.builder()
+                .style(Style.GOOGLE.toBuilder().maxLineLength(40).build())
+                .build());
+    assertThat(formatter.formatSource(input))
+        .isEqualTo(
+            """
+            class T {
+              /**
+               * A javadoc comment that is longer
+               * than forty columns.
+               */
+              void f(
+                  int aaaaaaaaaa,
+                  int bbbbbbbbbb,
+                  int cccccccccc) {
+                // A line comment that is longer
+                // than forty columns.
+                int x =
+                    aaaaaaaaaa
+                        + bbbbbbbbbb
+                        + cccccccccc;
+              }
+            }
+            """);
+  }
+
+  @Test
+  public void useTabsGoogleStyle() throws Exception {
+    String input =
+        """
+        class T {
+          /**
+           * Multi-line javadoc
+           * comment.
+           */
+          void f(int a, int b) {
+            // multi-line
+            // comment
+            int x = aaaaaaaaaa + bbbbbbbbbb + cccccccccc;
+          }
+        }
+        """;
+    Formatter formatter =
+        new Formatter(
+            JavaFormatterOptions.builder()
+                .style(Style.GOOGLE.toBuilder().useTabs(true).maxLineLength(30).build())
+                .build());
+    assertThat(formatter.formatSource(input))
+        .isEqualTo(
+            """
+            class T {
+            \t/**
+            \t * Multi-line javadoc
+            \t * comment.
+            \t */
+            \tvoid f(int a, int b) {
+            \t\t// multi-line
+            \t\t// comment
+            \t\tint x =
+            \t\t\t\taaaaaaaaaa
+            \t\t\t\t\t\t+ bbbbbbbbbb
+            \t\t\t\t\t\t+ cccccccccc;
+            \t}
+            }
+            """);
+  }
+
+  @Test
+  public void useTabsAospStyle() throws Exception {
+    String input =
+        """
+        class T {
+          /**
+           * Multi-line javadoc
+           * comment.
+           */
+          void f(int a, int b) {
+            int x = aaaaaaaaaa + bbbbbbbbbb + cccccccccc;
+          }
+        }
+        """;
+    Formatter formatter =
+        new Formatter(
+            JavaFormatterOptions.builder()
+                .style(Style.AOSP.toBuilder().useTabs(true).maxLineLength(30).build())
+                .build());
+    assertThat(formatter.formatSource(input))
+        .isEqualTo(
+            """
+            class T {
+            \t/**
+            \t * Multi-line javadoc
+            \t * comment.
+            \t */
+            \tvoid f(int a, int b) {
+            \t\tint x =
+            \t\t\t\taaaaaaaaaa
+            \t\t\t\t\t\t+ bbbbbbbbbb
+            \t\t\t\t\t\t+ cccccccccc;
+            \t}
+            }
+            """);
+  }
+
+  @Test
+  public void styleVisualLengthAndIndentString() {
+    Style google = Style.GOOGLE;
+    assertThat(google.tabWidth()).isEqualTo(2);
+    assertThat(google.visualLength("abcd")).isEqualTo(4);
+    assertThat(google.visualLength("\tab")).isEqualTo(3);
+
+    Style googleTabs = Style.GOOGLE.toBuilder().useTabs(true).build();
+    assertThat(googleTabs.tabWidth()).isEqualTo(2);
+    assertThat(googleTabs.indentString(5)).isEqualTo("\t\t ");
+    assertThat(googleTabs.visualLength(googleTabs.indentString(5))).isEqualTo(5);
+    assertThat(googleTabs.visualLength("\t")).isEqualTo(2);
+    assertThat(googleTabs.visualLength("\t\t")).isEqualTo(4);
+    assertThat(googleTabs.visualLength(" \t")).isEqualTo(2);
+    assertThat(googleTabs.visualLength("\tab")).isEqualTo(4);
+
+    Style aospTabs = Style.AOSP.toBuilder().useTabs(true).build();
+    assertThat(aospTabs.tabWidth()).isEqualTo(4);
+    assertThat(aospTabs.indentString(10)).isEqualTo("\t\t  ");
+    assertThat(aospTabs.visualLength(aospTabs.indentString(10))).isEqualTo(10);
+    assertThat(aospTabs.visualLength("\t")).isEqualTo(4);
+    assertThat(aospTabs.visualLength("  \t")).isEqualTo(4);
+    assertThat(google.indentString(0)).isEmpty();
+    assertThat(googleTabs.indentString(0)).isEmpty();
+    assertThat(aospTabs.indentString(0)).isEmpty();
+    assertThat(google.indentString(4)).isSameInstanceAs(google.indentString(4));
+    assertThat(google.indentString(104)).isEqualTo(" ".repeat(104));
+    assertThat(googleTabs.indentString(104)).isEqualTo("\t".repeat(52));
+    assertThat(JavaOutput.spaces(4)).isSameInstanceAs(JavaOutput.spaces(4));
+    assertThat(JavaOutput.spaces(0)).isEmpty();
+    assertThat(JavaOutput.spaces(104)).isEqualTo(" ".repeat(104));
+  }
+
+  @Test
+  public void maxLineLengthExactBoundary() throws Exception {
+    // "class T extends S {}" is exactly 20 characters. At column 0 it fits within maxLineLength=20.
+    // If Doc.State column was initialized > 0, it would break before 'extends'.
+    String input = "class T extends S {}\n";
+    Formatter formatter =
+        new Formatter(
+            JavaFormatterOptions.builder()
+                .style(Style.GOOGLE.toBuilder().maxLineLength(20).build())
+                .build());
+    assertThat(formatter.formatSource(input)).isEqualTo("class T extends S {}\n");
+  }
+
+  @Test
+  public void maxLineLengthOutOfRange() {
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class, () -> Style.builder().maxLineLength(0).build());
+    assertThat(e).hasMessageThat().contains("maxLineLength must be between 1 and 999, was: 0");
+
+    e =
+        assertThrows(
+            IllegalArgumentException.class, () -> Style.builder().maxLineLength(-1).build());
+    assertThat(e).hasMessageThat().contains("maxLineLength must be between 1 and 999, was: -1");
+
+    e =
+        assertThrows(
+            IllegalArgumentException.class, () -> Style.builder().maxLineLength(1000).build());
+    assertThat(e).hasMessageThat().contains("maxLineLength must be between 1 and 999, was: 1000");
+
+    assertThat(Style.builder().maxLineLength(999).build().maxLineLength()).isEqualTo(999);
+  }
 }

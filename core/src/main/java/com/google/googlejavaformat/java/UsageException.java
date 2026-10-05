@@ -34,8 +34,16 @@ Options:
     Format stdin -> stdout
   --assume-filename, -assume-filename
     File name to use for diagnostics when formatting standard input (default is <stdin>).
+  --google-style, -google-style
+    Use Google Style (2-space indentation). This is the default; if both --aosp and
+    --google-style are given, the last one wins.
   --aosp, -aosp, -a
     Use AOSP style instead of Google Style (4-space indentation).
+  --style
+    Use the given style, either "google" or "aosp". This is equivalent to
+    --google-style and --aosp, respectively. If multiple style options are given, the last one wins.
+  --max-line-length
+    Maximum line length (default is 100).
   --fix-imports-only
     Fix import order and remove any unused imports, but do no other formatting.
   --skip-sorting-imports

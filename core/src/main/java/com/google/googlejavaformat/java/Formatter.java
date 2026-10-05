@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
@@ -90,6 +89,10 @@ public final class Formatter {
     this.options = options;
   }
 
+  JavaFormatterOptions options() {
+    return options;
+  }
+
   /**
    * Construct a {@code Formatter} given a Java compilation unit. Parses the code; builds a {@link
    * JavaInput} and the corresponding {@link JavaOutput}.
@@ -124,7 +127,7 @@ public final class Formatter {
             Newlines.guessLineSeparator(javaInput.getText()),
             options,
             markdownJavadocPositions.build());
-    doc.computeBreaks(commentsHelper, MAX_LINE_LENGTH, new Doc.State(+0, 0));
+    doc.computeBreaks(commentsHelper, options.maxLineLength(), new Doc.State(+0, 0));
     doc.write(javaOutput);
     javaOutput.flush();
   }
@@ -221,7 +224,8 @@ public final class Formatter {
         new JavaOutput(
             lineSeparator,
             javaInput,
-            new JavaCommentsHelper(lineSeparator, options, ImmutableSet.of()));
+            new JavaCommentsHelper(lineSeparator, options, ImmutableSet.of()),
+            options::indentString);
     try {
       format(javaInput, javaOutput, options);
     } catch (FormattingError e) {

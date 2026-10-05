@@ -22,7 +22,6 @@ import static java.lang.Math.min;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Strings;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
@@ -55,7 +54,7 @@ public final class StringWrapper {
 
   /** Reflows long string literals in the given Java source code. */
   public static String wrap(String input, Formatter formatter) throws FormatterException {
-    return StringWrapper.wrap(Formatter.MAX_LINE_LENGTH, input, formatter);
+    return StringWrapper.wrap(formatter.options().maxLineLength(), input, formatter);
   }
 
   /**
@@ -63,19 +62,20 @@ public final class StringWrapper {
    */
   static String wrap(final int columnLimit, String input, Formatter formatter)
       throws FormatterException {
-    if (!needWrapping(columnLimit, input)) {
+    JavaFormatterOptions options = formatter.options();
+    if (!needWrapping(columnLimit, input, options)) {
       // fast path
       return input;
     }
 
-    TreeRangeMap<Integer, String> replacements = getReflowReplacements(columnLimit, input);
+    TreeRangeMap<Integer, String> replacements = getReflowReplacements(columnLimit, input, options);
     String firstPass = formatter.formatSource(input, replacements.asMapOfRanges().keySet());
 
     if (!firstPass.equals(input)) {
       // If formatting the replacement ranges resulted in a change, recalculate the replacements on
       // the updated input.
       input = firstPass;
-      replacements = getReflowReplacements(columnLimit, input);
+      replacements = getReflowReplacements(columnLimit, input, options);
     }
 
     String result = applyReplacements(input, replacements);
@@ -101,24 +101,32 @@ public final class StringWrapper {
   }
 
   private static TreeRangeMap<Integer, String> getReflowReplacements(
-      int columnLimit, final String input) throws FormatterException {
-    return new Reflower(columnLimit, input).getReflowReplacements();
+      int columnLimit, final String input, JavaFormatterOptions options) throws FormatterException {
+    return new Reflower(columnLimit, input, options).getReflowReplacements();
   }
 
   private static class Reflower {
 
     private final String input;
     private final int columnLimit;
+    private final JavaFormatterOptions options;
     private final String separator;
     private final JCTree.JCCompilationUnit unit;
     private final Position.LineMap lineMap;
 
-    Reflower(int columnLimit, String input) throws FormatterException {
+    Reflower(int columnLimit, String input, JavaFormatterOptions options)
+        throws FormatterException {
       this.columnLimit = columnLimit;
       this.input = input;
+      this.options = options;
       this.separator = Newlines.guessLineSeparator(input);
       this.unit = parse(input, /* allowStringFolding= */ false);
       this.lineMap = unit.getLineMap();
+    }
+
+    private int visualColumn(int position) {
+      int lineStart = lineMap.getStartPosition(lineMap.getLineNumber(position));
+      return options.visualLength(input, lineStart, position);
     }
 
     TreeRangeMap<Integer, String> getReflowReplacements() {
@@ -164,7 +172,7 @@ public final class StringWrapper {
         while (Newlines.hasNewlineAt(input, lineEnd) == -1) {
           lineEnd++;
         }
-        if (lineMap.getColumnNumber(lineEnd) - 1 <= columnLimit) {
+        if (visualColumn(lineEnd) <= columnLimit) {
           return null;
         }
         longStringLiterals.add(getCurrentPath());
@@ -190,7 +198,8 @@ public final class StringWrapper {
             getLast(initialLines).stripTrailing().length()
                 == getLast(lines).stripTrailing().length();
 
-        String prefix = deindent ? "" : " ".repeat(leadingWhitespace);
+        String prefix =
+            deindent ? "" : options.indentString(visualColumn(startPosition + leadingWhitespace));
 
         StringBuilder output = new StringBuilder(prefix).append(initialLines.get(0).stripLeading());
         for (int i = 0; i < lines.size(); i++) {
@@ -238,7 +247,7 @@ public final class StringWrapper {
         // to be wrapped.
         List<Tree> flat = flatten(input, unit, path, enclosing, first);
         // Zero-indexed start column
-        int startColumn = lineMap.getColumnNumber(getStartPosition(flat.get(0))) - 1;
+        int startColumn = visualColumn(getStartPosition(flat.get(0)));
 
         // Handling leaving trailing non-string tokens at the end of the literal,
         // e.g. the trailing `);` in `foo("...");`.
@@ -253,7 +262,8 @@ public final class StringWrapper {
         ImmutableList<String> components = stringComponents(input, unit, flat);
         replacements.put(
             Range.closedOpen(getStartPosition(flat.get(0)), getEndPosition(getLast(flat), unit)),
-            reflow(separator, columnLimit, startColumn, trailing, components, first.get()));
+            reflow(
+                separator, columnLimit, startColumn, trailing, components, first.get(), options));
       }
     }
   }
@@ -337,7 +347,8 @@ public final class StringWrapper {
       int startColumn,
       int trailing,
       ImmutableList<String> components,
-      boolean first0) {
+      boolean first0,
+      JavaFormatterOptions options) {
     // We have space between the start column and the limit to output the first line.
     // Reserve two spaces for the start and end quotes.
     int width = columnLimit - startColumn - 2;
@@ -375,7 +386,7 @@ public final class StringWrapper {
     return lines.stream()
         .collect(
             joining(
-                "\"" + separator + Strings.repeat(" ", startColumn + (first0 ? 4 : -2)) + "+ \"",
+                "\"" + separator + options.indentString(startColumn + (first0 ? 4 : -2)) + "+ \"",
                 "\"",
                 "\""));
   }
@@ -451,12 +462,12 @@ public final class StringWrapper {
    * Returns true if any lines in the given Java source exceed the column limit, or contain a {@code
    * """} that could indicate a text block.
    */
-  private static boolean needWrapping(int columnLimit, String input) {
+  private static boolean needWrapping(int columnLimit, String input, JavaFormatterOptions options) {
     // TODO(cushon): consider adding Newlines.lineIterable?
     Iterator<String> it = Newlines.lineIterator(input);
     while (it.hasNext()) {
       String line = it.next();
-      if (line.length() > columnLimit || line.contains(TEXT_BLOCK_DELIMITER)) {
+      if (options.visualLength(line) > columnLimit || line.contains(TEXT_BLOCK_DELIMITER)) {
         return true;
       }
     }
