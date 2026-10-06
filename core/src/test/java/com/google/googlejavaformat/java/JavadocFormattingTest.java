@@ -2534,6 +2534,43 @@ package com.example;
     doFormatTest(input, expected);
   }
 
+  @Test
+  public void preCodeWithoutLeadingStarPreservesIndent() {
+    String input =
+        """
+        /**
+         * <pre>{@code
+        class Demo {
+          // Comment
+          static final int X = 1;
+
+          public static void example() {
+            int y = 2;
+          }
+        }
+         * }</pre>
+         */
+        class Test {}
+        """;
+    String expected =
+        """
+        /**
+         * <pre>{@code
+         * class Demo {
+         *   // Comment
+         *   static final int X = 1;
+         *
+         *   public static void example() {
+         *     int y = 2;
+         *   }
+         * }
+         * }</pre>
+         */
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
   // TODO: b/346668798 - Test the following Markdown constructs, and make the tests work as needed.
   // We can assume that the CommonMark parser correctly handles Markdown, so the question is whether
   // they are subsequently mishandled by our formatting logic. So for example the CommonMark parser

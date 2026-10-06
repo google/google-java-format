@@ -236,15 +236,29 @@ public final class JavadocFormatter {
     // The end result should not strip the `*` from `* foo`.
     List<String> processedLines = new ArrayList<>();
     processedLines.add(lines.get(0));
-    for (String line : lines.subList(1, lines.size())) {
+    List<String> continuations = lines.subList(1, lines.size());
+    int starPrefixLength =
+        continuations.stream()
+            .map(CLASSIC_PREFIX_PATTERN::matcher)
+            .filter(Matcher::find)
+            .mapToInt(Matcher::end)
+            .min()
+            .orElse(0);
+    int nonStarMinLeading =
+        continuations.stream()
+            .filter(line -> !CLASSIC_PREFIX_PATTERN.matcher(line).find())
+            .filter(line -> NOT_SPACE_OR_TAB.matchesAnyOf(line))
+            .mapToInt(NOT_SPACE_OR_TAB::indexIn)
+            .min()
+            .orElse(0);
+    int nonStarStripCount = Math.min(starPrefixLength, nonStarMinLeading);
+    for (String line : continuations) {
       Matcher m = CLASSIC_PREFIX_PATTERN.matcher(line);
       if (m.find()) {
         processedLines.add(m.replaceFirst(""));
       } else {
-        // Input line did not have leading `*`. In that case, it's hard to know what is supposed to
-        // be indentation of the comment as a whole and what is supposed to be indentation of the
-        // content. We just strip all leading whitespace.
-        processedLines.add(line.stripLeading());
+        processedLines.add(
+            line.length() >= nonStarStripCount ? line.substring(nonStarStripCount) : "");
       }
     }
     // Unlike Markdown comments, stripping common leading whitespace is not mandated by any
