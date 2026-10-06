@@ -2519,6 +2519,21 @@ package com.example;
     assertThat(noJavadocFormatter.formatSource(input)).isEqualTo(input);
   }
 
+  @Test
+  public void trailingAsterisksBeforeClose() {
+    String input =
+        """
+        /** Version information for all the QuotaKeys that we have data for **/
+        class Test {}
+        """;
+    String expected =
+        """
+        /** Version information for all the QuotaKeys that we have data for */
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
   // TODO: b/346668798 - Test the following Markdown constructs, and make the tests work as needed.
   // We can assume that the CommonMark parser correctly handles Markdown, so the question is whether
   // they are subsequently mishandled by our formatting logic. So for example the CommonMark parser

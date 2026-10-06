@@ -214,7 +214,11 @@ public final class JavadocFormatter {
   private static String stripJavadocBeginAndEnd(String input) {
     checkArgument(input.startsWith("/**"), "Missing /**: %s", input);
     checkArgument(input.endsWith("*/") && input.length() > 4, "Missing */: %s", input);
-    return input.substring("/**".length(), input.length() - "*/".length());
+    int end = input.length() - "*/".length();
+    while (end > "/**".length() && input.charAt(end - 1) == '*') {
+      end--;
+    }
+    return input.substring("/**".length(), end);
   }
 
   /**
