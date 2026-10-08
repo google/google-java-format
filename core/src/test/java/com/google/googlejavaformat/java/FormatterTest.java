@@ -869,4 +869,50 @@ class T {
 
     assertThat(Style.builder().maxLineLength(999).build().maxLineLength()).isEqualTo(999);
   }
+
+  @Test
+  public void returnTextBlockStartsOnOwnLine() throws Exception {
+    // https://github.com/google/google-java-format/issues/1258
+    // CLI applies StringWrapper after formatSource; match that pipeline.
+    Formatter formatter = new Formatter();
+    String input =
+        """
+        class T {
+          String f() {
+            return \"""
+            this is sample text
+            \""";
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          String f() {
+            return
+                \"""
+                this is sample text
+                \""";
+          }
+        }
+        """;
+    String formatted = StringWrapper.wrap(formatter.formatSource(input), formatter);
+    assertThat(formatted).isEqualTo(expected);
+    assertThat(StringWrapper.wrap(formatter.formatSource(formatted), formatter))
+        .isEqualTo(expected);
+  }
+
+  @Test
+  public void returnOrdinaryStringUnchanged() throws Exception {
+    String input =
+        """
+        class T {
+          String f() {
+            return "hello";
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(input);
+  }
+
 }
