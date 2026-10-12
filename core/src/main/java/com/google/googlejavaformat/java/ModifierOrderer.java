@@ -19,7 +19,6 @@ package com.google.googlejavaformat.java;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.getLast;
 
-import com.google.common.base.Enums;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
@@ -185,7 +184,7 @@ final class ModifierOrderer {
     if (modifier == null) {
       return null;
     }
-    return Enums.getIfPresent(Modifier.class, "NON_" + modifier.name()).orNull();
+    return Modifier.valueOf("NON_" + modifier.name());
   }
 
   /**
@@ -214,7 +213,6 @@ final class ModifierOrderer {
       default ->
           switch (token.getTok().getText()) {
             case "sealed" -> Modifier.SEALED;
-            case "value" -> Enums.getIfPresent(Modifier.class, "VALUE").orNull();
             default -> null;
           };
     };
