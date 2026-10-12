@@ -2643,7 +2643,8 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           "default",
           "sealed",
           "non",
-          "-" ->
+          "-",
+          "value" ->
           true;
       default -> false;
     };
