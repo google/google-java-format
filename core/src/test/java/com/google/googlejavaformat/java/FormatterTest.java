@@ -16,9 +16,11 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.common.truth.TruthJUnit.assume;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
+import com.google.common.base.Enums;
 import com.google.common.io.CharStreams;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import java.io.ByteArrayInputStream;
@@ -29,6 +31,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import javax.lang.model.element.Modifier;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -868,5 +871,54 @@ class T {
     assertThat(e).hasMessageThat().contains("maxLineLength must be between 1 and 999, was: 1000");
 
     assertThat(Style.builder().maxLineLength(999).build().maxLineLength()).isEqualTo(999);
+  }
+
+  @Test
+  public void valueClassAndRecord() throws Exception {
+    assume().that(Enums.getIfPresent(Modifier.class, "VALUE").isPresent()).isTrue();
+    String input =
+        """
+        value final public class PointValueClass {
+          final int x;
+          final int y;
+
+          PointValueClass(int x, int y) {
+            this.x = x;
+            this.y = y;
+          }
+        }
+
+        value public record PointValueRecord(int x, int y) {}
+        """;
+    String expected =
+        """
+        public final value class PointValueClass {
+          final int x;
+          final int y;
+
+          PointValueClass(int x, int y) {
+            this.x = x;
+            this.y = y;
+          }
+        }
+
+        public value record PointValueRecord(int x, int y) {}
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void valueLambdaParameter() throws Exception {
+    String input =
+        """
+        import java.util.Map;
+
+        class T {
+          void f(Map<String, String> map) {
+            map.forEach((key, value) -> System.err.println(key + value));
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(input);
   }
 }

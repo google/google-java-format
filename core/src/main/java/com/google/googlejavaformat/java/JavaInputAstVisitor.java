@@ -49,6 +49,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import com.google.auto.value.AutoOneOf;
+import com.google.common.base.Enums;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
@@ -174,6 +175,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import org.jspecify.annotations.Nullable;
 
@@ -2562,7 +2564,8 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    */
   private DeclarationModifiersAndTypeAnnotations splitModifiers(
       ModifiersTree modifiersTree, List<? extends AnnotationTree> annotations) {
-    if (annotations.isEmpty() && !isModifier(builder.peekToken().get())) {
+    Set<Modifier> flags = modifiersTree.getFlags();
+    if (annotations.isEmpty() && !isModifier(builder.peekToken().get(), flags)) {
       return DeclarationModifiersAndTypeAnnotations.empty();
     }
     RangeSet<Integer> annotationRanges = TreeRangeSet.create();
@@ -2577,7 +2580,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             (Input.Tok tok) ->
                 // ModifiersTree end position information isn't reliable, so scan tokens as long as
                 // we're seeing annotations or modifiers
-                annotationRanges.contains(tok.getPosition()) || isModifier(tok.getText()));
+                annotationRanges.contains(tok.getPosition()) || isModifier(tok.getText(), flags));
     ImmutableList<AnnotationOrModifier> modifiers =
         ImmutableList.copyOf(
             Streams.concat(
@@ -2627,24 +2630,29 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     };
   }
 
-  private static boolean isModifier(String token) {
+  private static final @Nullable Modifier VALUE_MODIFIER =
+      Enums.getIfPresent(Modifier.class, "VALUE").orNull();
+
+  private static boolean isModifier(String token, Set<Modifier> flags) {
+    if (flags.isEmpty()) {
+      return false;
+    }
     return switch (token) {
-      case "public",
-          "protected",
-          "private",
-          "abstract",
-          "static",
-          "final",
-          "transient",
-          "volatile",
-          "synchronized",
-          "native",
-          "strictfp",
-          "default",
-          "sealed",
-          "non",
-          "-" ->
-          true;
+      case "public" -> flags.contains(Modifier.PUBLIC);
+      case "protected" -> flags.contains(Modifier.PROTECTED);
+      case "private" -> flags.contains(Modifier.PRIVATE);
+      case "abstract" -> flags.contains(Modifier.ABSTRACT);
+      case "static" -> flags.contains(Modifier.STATIC);
+      case "final" -> flags.contains(Modifier.FINAL);
+      case "transient" -> flags.contains(Modifier.TRANSIENT);
+      case "volatile" -> flags.contains(Modifier.VOLATILE);
+      case "synchronized" -> flags.contains(Modifier.SYNCHRONIZED);
+      case "native" -> flags.contains(Modifier.NATIVE);
+      case "strictfp" -> flags.contains(Modifier.STRICTFP);
+      case "default" -> flags.contains(Modifier.DEFAULT);
+      case "sealed" -> flags.contains(Modifier.SEALED) || flags.contains(Modifier.NON_SEALED);
+      case "non", "-" -> flags.contains(Modifier.NON_SEALED);
+      case "value" -> VALUE_MODIFIER != null && flags.contains(VALUE_MODIFIER);
       default -> false;
     };
   }
