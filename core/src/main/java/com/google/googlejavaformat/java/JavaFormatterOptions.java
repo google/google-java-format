@@ -67,6 +67,47 @@ public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifie
     public static final Style AOSP = builder().aosp().build();
 
     /**
+     * Returns the predefined styles, in the order they were declared when {@code Style} was an
+     * enum.
+     *
+     * <p>Retained for compatibility with callers compiled against the enum version of {@code
+     * Style}.
+     */
+    public static Style[] values() {
+      return new Style[] {GOOGLE, AOSP};
+    }
+
+    /**
+     * Returns the predefined style with the given name ({@code "GOOGLE"} or {@code "AOSP"}).
+     *
+     * <p>Retained for compatibility with callers compiled against the enum version of {@code
+     * Style}.
+     *
+     * @throws IllegalArgumentException if there is no predefined style with the given name
+     * @throws NullPointerException if {@code name} is null
+     */
+    public static Style valueOf(String name) {
+      return switch (requireNonNull(name, "Name is null")) {
+        case "GOOGLE" -> GOOGLE;
+        case "AOSP" -> AOSP;
+        default ->
+            throw new IllegalArgumentException(
+                "No enum constant " + Style.class.getCanonicalName() + "." + name);
+      };
+    }
+
+    /**
+     * Returns the name of the predefined style this style is based on ({@code "GOOGLE"} or {@code
+     * "AOSP"}), such that {@code valueOf(GOOGLE.name()) == GOOGLE}.
+     *
+     * <p>Retained for compatibility with callers compiled against the enum version of {@code
+     * Style}.
+     */
+    public String name() {
+      return importOrder().name();
+    }
+
+    /**
      * Returns the visual column width of a tab stop.
      *
      * <p>This matches the standard block indentation width for the style: 2 columns for Google
