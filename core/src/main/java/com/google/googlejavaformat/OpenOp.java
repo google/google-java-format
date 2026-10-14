@@ -44,6 +44,10 @@ public final class OpenOp implements Op {
     builder.open(plusIndent);
   }
 
+  public Indent plusIndent() {
+    return plusIndent;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("plusIndent", plusIndent).toString();

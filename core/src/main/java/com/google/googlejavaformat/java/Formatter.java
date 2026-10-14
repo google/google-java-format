@@ -25,11 +25,11 @@ import com.google.common.io.CharSource;
 import com.google.errorprone.annotations.Immutable;
 import com.google.googlejavaformat.CommentsHelper;
 import com.google.googlejavaformat.Doc;
-import com.google.googlejavaformat.DocBuilder;
 import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
-import com.google.googlejavaformat.OpsBuilder;
+import com.google.googlejavaformat.layout.LayoutBuilder;
+import com.google.googlejavaformat.layout.LayoutSolver;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 import java.io.IOException;
@@ -113,7 +113,7 @@ public final class Formatter {
     if (!errorDiagnostics.isEmpty()) {
       throw FormatterException.fromJavacDiagnostics(errorDiagnostics);
     }
-    OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
+    LayoutBuilder builder = new LayoutBuilder(javaInput, javaOutput);
     ImmutableSet.Builder<Integer> markdownJavadocPositions = ImmutableSet.builder();
     // Output the compilation unit.
     JavaInputAstVisitor visitor =
@@ -121,14 +121,13 @@ public final class Formatter {
     visitor.scan(unit, null);
     builder.sync(javaInput.getText().length());
     builder.drain();
-    Doc doc = new DocBuilder().withOps(builder.build()).build();
+    var doc = builder.build();
     CommentsHelper commentsHelper =
         new JavaCommentsHelper(
             Newlines.guessLineSeparator(javaInput.getText()),
             options,
             markdownJavadocPositions.build());
-    doc.computeBreaks(commentsHelper, options.maxLineLength(), new Doc.State(+0, 0));
-    doc.write(javaOutput);
+    LayoutSolver.format(doc, options.maxLineLength(), javaOutput, commentsHelper);
     javaOutput.flush();
   }
 

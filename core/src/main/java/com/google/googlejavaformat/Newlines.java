@@ -35,6 +35,21 @@ public class Newlines {
     return it.hasNext() ? it.next() : -1;
   }
 
+  /**
+   * Returns the offset of the start of the last line in the input, or {@code 0} if the input
+   * contains no line breaks. Unlike iterating over {@link #lineOffsetIterator}, this only scans the
+   * last line.
+   */
+  public static int lastLineStart(String input) {
+    for (int i = input.length() - 1; i >= 0; i--) {
+      char c = input.charAt(i);
+      if (c == '\n' || c == '\r') {
+        return i + 1;
+      }
+    }
+    return 0;
+  }
+
   private static final ImmutableSet<String> BREAKS = ImmutableSet.of("\r\n", "\n", "\r");
 
   /** Returns true if the entire input string is a recognized line break. */

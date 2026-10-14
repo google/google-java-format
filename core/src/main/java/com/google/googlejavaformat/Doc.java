@@ -365,7 +365,7 @@ public abstract class Doc {
       REAL,
       IMAGINARY;
 
-      boolean isReal() {
+      public boolean isReal() {
         return this == REAL;
       }
     }
@@ -395,12 +395,12 @@ public abstract class Doc {
      *
      * @return the extra indent
      */
-    Indent getPlusIndentCommentsBefore() {
+    public Indent getPlusIndentCommentsBefore() {
       return plusIndentCommentsBefore;
     }
 
     /** Force a line break and indent trailing javadoc or block comments. */
-    Optional<Indent> breakAndIndentTrailingComment() {
+    public Optional<Indent> breakAndIndentTrailingComment() {
       return breakAndIndentTrailingComment;
     }
 
@@ -427,7 +427,7 @@ public abstract class Doc {
      *
      * @return the {@link Input.Token}
      */
-    Input.Token getToken() {
+    public Input.Token getToken() {
       return token;
     }
 
@@ -436,7 +436,7 @@ public abstract class Doc {
      *
      * @return whether the @code Token} is good
      */
-    RealOrImaginary realOrImaginary() {
+    public RealOrImaginary realOrImaginary() {
       return realOrImaginary;
     }
 
@@ -483,7 +483,7 @@ public abstract class Doc {
   }
 
   /** A Leaf node in a {@link Doc} for a non-breaking space. */
-  static final class Space extends Doc implements Op {
+  public static final class Space extends Doc implements Op {
     private static final Space SPACE = new Space();
 
     private Space() {}
@@ -598,6 +598,22 @@ public abstract class Doc {
      */
     boolean isForced() {
       return fillMode == FillMode.FORCED;
+    }
+
+    public FillMode fillMode() {
+      return fillMode;
+    }
+
+    public String flat() {
+      return flat;
+    }
+
+    public Indent plusIndent() {
+      return plusIndent;
+    }
+
+    public Optional<BreakTag> optTag() {
+      return optTag;
     }
 
     @Override

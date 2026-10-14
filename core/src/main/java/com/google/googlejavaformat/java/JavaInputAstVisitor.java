@@ -78,11 +78,11 @@ import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpenOp;
-import com.google.googlejavaformat.OpsBuilder;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import com.google.googlejavaformat.Output.BreakTag;
 import com.google.googlejavaformat.java.DimensionHelpers.SortedDims;
 import com.google.googlejavaformat.java.DimensionHelpers.TypeWithDims;
+import com.google.googlejavaformat.layout.LayoutBuilder;
 import com.sun.source.tree.AnnotatedTypeTree;
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.ArrayAccessTree;
@@ -272,7 +272,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return result.build();
   }
 
-  private final OpsBuilder builder;
+  private final LayoutBuilder builder;
   private final ImmutableSet.Builder<Integer> markdownJavadocPositions;
 
   private static final Indent.Const ZERO = Indent.Const.ZERO;
@@ -308,10 +308,10 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   /**
    * The {@code Visitor} constructor.
    *
-   * @param builder the {@link OpsBuilder}
+   * @param builder the {@link LayoutBuilder}
    */
   JavaInputAstVisitor(
-      OpsBuilder builder,
+      LayoutBuilder builder,
       int indentMultiplier,
       ImmutableSet.Builder<Integer> markdownJavadocPositions) {
     this.builder = builder;

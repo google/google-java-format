@@ -1,0 +1,135 @@
+/*
+ * Copyright 2026 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+package com.google.googlejavaformat.layout;
+
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.googlejavaformat.layout.Docs.fill;
+import static com.google.googlejavaformat.layout.Docs.group;
+import static com.google.googlejavaformat.layout.Docs.hardline;
+import static com.google.googlejavaformat.layout.Docs.line;
+import static com.google.googlejavaformat.layout.Docs.softline;
+import static com.google.googlejavaformat.layout.Docs.space;
+import static com.google.googlejavaformat.layout.Docs.taggedLine;
+import static com.google.googlejavaformat.layout.Docs.text;
+import static org.junit.Assert.assertThrows;
+
+import com.google.googlejavaformat.Output.BreakTag;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+/// Unit tests for the Layout IR and [LayoutSolver].
+@RunWith(JUnit4.class)
+public class LayoutSolverTest {
+
+  private static Doc call() {
+    return group(2, text("foo("), softline(), text("a,"), line(), text("b)"));
+  }
+
+  @Test
+  public void singleText() {
+    assertThat(LayoutSolver.format(text("hello"), 80)).isEqualTo("hello");
+  }
+
+  @Test
+  public void groupFitsFlat() {
+    assertThat(LayoutSolver.format(call(), 20)).isEqualTo("foo(a, b)");
+  }
+
+  @Test
+  public void groupBreaksWithIndent() {
+    assertThat(LayoutSolver.format(call(), 5)).isEqualTo("foo(\n  a,\n  b)");
+  }
+
+  @Test
+  public void unifiedBreaksAllBreakTogether() {
+    // "b c" would fit on the second line, but unified breaks in a broken group all break.
+    Doc doc = group(text("a"), line(), text("b"), line(), text("c"));
+    assertThat(LayoutSolver.format(doc, 3)).isEqualTo("a\nb\nc");
+  }
+
+  @Test
+  public void fillBreaksMeasureWholeSegment() {
+    Doc doc =
+        group(
+            text("one,"),
+            fill(" "),
+            text("two,"),
+            fill(" "),
+            text("three,"),
+            fill(" "),
+            text("four"));
+    assertThat(LayoutSolver.format(doc, 11)).isEqualTo("one, two,\nthree, four");
+    assertThat(LayoutSolver.format(doc, 10)).isEqualTo("one, two,\nthree,\nfour");
+  }
+
+  @Test
+  public void fillBreakAfterSegmentThatDoesNotFit() {
+    // After breaking before the inner group, the group still doesn't fit on its own line, so the
+    // following fill break is taken too even though "y" would fit after "b)".
+    Doc doc =
+        group(
+            text("x"),
+            fill(" "),
+            group(4, text("ffff("), softline(), text("aaaa,"), line(), text("b)")),
+            fill(" "),
+            text("y"));
+    assertThat(LayoutSolver.format(doc, 10)).isEqualTo("x\nffff(\n    aaaa,\n    b)\ny");
+  }
+
+  @Test
+  public void nestedGroupStaysFlatInsideBrokenGroup() {
+    Doc doc = group(text("xxxx"), line(), call());
+    assertThat(LayoutSolver.format(doc, 10)).isEqualTo("xxxx\nfoo(a, b)");
+  }
+
+  @Test
+  public void hardlineForcesEnclosingBreaks() {
+    Doc doc = group(text("a"), line(), text("b"), hardline(), text("c"));
+    assertThat(LayoutSolver.format(doc, 100)).isEqualTo("a\nb\nc");
+  }
+
+  @Test
+  public void maxWidthTooLarge() {
+    // Widths saturate at Doc.MAX_LINE_WIDTH, so a larger maxWidth would lay out forced breaks flat.
+    Doc doc = group(text("a"), hardline(), text("b"));
+    assertThat(LayoutSolver.format(doc, Doc.MAX_LINE_WIDTH - 1)).isEqualTo("a\nb");
+    assertThrows(
+        IllegalArgumentException.class, () -> LayoutSolver.format(doc, Doc.MAX_LINE_WIDTH));
+  }
+
+  @Test
+  public void breakTagRecordsFlat() {
+    BreakTag tag = new BreakTag();
+    Doc doc = group(text("a"), taggedLine(" ", tag), text("b"));
+    assertThat(LayoutSolver.format(doc, 10)).isEqualTo("a b");
+    // Breaks inside a group that fits are not visited.
+    assertThat(tag.wasBreakTaken()).isFalse();
+  }
+
+  @Test
+  public void breakTagRecordsBroken() {
+    BreakTag tag = new BreakTag();
+    Doc doc = group(text("a"), taggedLine(" ", tag), text("b"));
+    assertThat(LayoutSolver.format(doc, 2)).isEqualTo("a\nb");
+    assertThat(tag.wasBreakTaken()).isTrue();
+  }
+
+  @Test
+  public void spacesDoNotBreak() {
+    Doc doc = group(text("a"), space(), text("b"), space(), text("c"));
+    assertThat(LayoutSolver.format(doc, 3)).isEqualTo("a b c");
+  }
+}
