@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/** A parser for {@link CommandLineOptions}. */
+/// A parser for [CommandLineOptions].
 final class CommandLineOptionsParser {
 
   private static final Splitter COMMA_SPLITTER = Splitter.on(',');
@@ -40,7 +40,7 @@ final class CommandLineOptionsParser {
   private static final Splitter ARG_SPLITTER =
       Splitter.on(CharMatcher.breakingWhitespace()).omitEmptyStrings().trimResults();
 
-  /** Parses {@link CommandLineOptions}. */
+  /// Parses [CommandLineOptions].
   static CommandLineOptions parse(Iterable<String> options) {
     CommandLineOptions.Builder optionsBuilder = CommandLineOptions.builder();
     JavaFormatterOptions.Style.Builder styleBuilder = JavaFormatterOptions.Style.GOOGLE.toBuilder();
@@ -133,22 +133,18 @@ final class CommandLineOptionsParser {
     return it.next();
   }
 
-  /**
-   * Parse multiple --lines flags, like {"1:12,14,20:36", "40:45,50"}. Multiple ranges can be given
-   * with multiple --lines flags or separated by commas. A single line can be set by a single
-   * number. Line numbers are {@code 1}-based, but are converted to the {@code 0}-based numbering
-   * used internally by google-java-format.
-   */
+  /// Parse multiple --lines flags, like {"1:12,14,20:36", "40:45,50"}. Multiple ranges can be given
+  /// with multiple --lines flags or separated by commas. A single line can be set by a single
+  /// number. Line numbers are `1`-based, but are converted to the `0`-based numbering used
+  /// internally by google-java-format.
   private static void parseRangeSet(RangeSet<Integer> result, String ranges) {
     for (String range : COMMA_SPLITTER.split(ranges)) {
       result.add(parseRange(range));
     }
   }
 
-  /**
-   * Parse a range, as in "1:12" or "42". Line numbers provided are {@code 1}-based, but are
-   * converted here to {@code 0}-based.
-   */
+  /// Parse a range, as in "1:12" or "42". Line numbers provided are `1`-based, but are converted
+  /// here to `0`-based.
   private static Range<Integer> parseRange(String arg) {
     List<String> args = COLON_SPLITTER.splitToList(arg);
     return switch (args.size()) {
@@ -165,10 +161,8 @@ final class CommandLineOptionsParser {
     };
   }
 
-  /**
-   * Pre-processes an argument list, expanding arguments of the form {@code @filename} by reading
-   * the content of the file and appending whitespace-delimited options to {@code arguments}.
-   */
+  /// Pre-processes an argument list, expanding arguments of the form `@filename` by reading the
+  /// content of the file and appending whitespace-delimited options to `arguments`.
   private static void expandParamsFiles(Iterable<String> args, List<String> expanded) {
     for (String arg : args) {
       if (arg.isEmpty()) {

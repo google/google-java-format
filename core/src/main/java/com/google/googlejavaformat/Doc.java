@@ -29,51 +29,36 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * {@link com.google.googlejavaformat.java.JavaInputAstVisitor JavaInputAstVisitor} outputs a
- * sequence of {@link Op}s using {@link OpsBuilder}. This linear sequence is then transformed by
- * {@link DocBuilder} into a tree-structured {@code Doc}. The top-level {@code Doc} is a {@link
- * Level}, which contains a sequence of {@code Doc}s, including other {@link Level}s. Leaf {@code
- * Doc}s are {@link Token}s, representing language-level tokens; {@link Tok}s, which may also
- * represent non-token {@link Input.Tok}s, including comments and other white-space; {@link Space}s,
- * representing single spaces; and {@link Break}s, which represent optional line-breaks.
- */
+/// [`JavaInputAstVisitor`][com.google.googlejavaformat.java.JavaInputAstVisitor] outputs a sequence
+/// of [Op]s using [OpsBuilder]. This linear sequence is then transformed by [DocBuilder] into a
+/// tree-structured `Doc`. The top-level `Doc` is a [Level], which contains a sequence of `Doc`s,
+/// including other [Level]s. Leaf `Doc`s are [Token]s, representing language-level tokens; [Tok]s,
+/// which may also represent non-token [Input.Tok]s, including comments and other white-space;
+/// [Space]s, representing single spaces; and [Break]s, which represent optional line-breaks.
 public abstract class Doc {
-  /**
-   * Each {@link Break} in a {@link Level} is either {@link FillMode#UNIFIED} or {@link
-   * FillMode#INDEPENDENT}.
-   */
+  /// Each [Break] in a [Level] is either [FillMode#UNIFIED] or [FillMode#INDEPENDENT].
   public enum FillMode {
-    /**
-     * If a {@link Level} will not fit on one line, all of its {@code UNIFIED} {@link Break}s will
-     * be broken.
-     */
+    /// If a [Level] will not fit on one line, all of its `UNIFIED` [Break]s will be broken.
     UNIFIED,
 
-    /**
-     * If a {@link Level} will not fit on one line, its {@code INDEPENDENT} {@link Break}s will be
-     * broken independently of each other, to fill in the {@link Level}.
-     */
+    /// If a [Level] will not fit on one line, its `INDEPENDENT` [Break]s will be broken
+    /// independently of each other, to fill in the [Level].
     INDEPENDENT,
 
-    /**
-     * A {@code FORCED} {@link Break} will always be broken, and a {@link Level} it appears in will
-     * not fit on one line.
-     */
+    /// A `FORCED` [Break] will always be broken, and a [Level] it appears in will not fit on one
+    /// line.
     FORCED
   }
 
-  /**
-   * The maximum supported line width.
-   *
-   * <p>This can be used as a sentinel/threshold for {@code Doc}s that break unconditionally.
-   *
-   * <p>The value was selected to be obviously too large for any practical line, but small enough to
-   * prevent accidental overflow.
-   */
+  /// The maximum supported line width.
+  ///
+  /// This can be used as a sentinel/threshold for `Doc`s that break unconditionally.
+  ///
+  /// The value was selected to be obviously too large for any practical line, but small enough to
+  /// prevent accidental overflow.
   public static final int MAX_LINE_WIDTH = 1000;
 
-  /** State for writing. */
+  /// State for writing.
   public record State(int lastIndent, int indent, int column, boolean mustBreak) {
     public State(int indent0, int column0) {
       this(indent0, indent0, column0, false);
@@ -99,68 +84,54 @@ public abstract class Doc {
   // Memoized Range.
   private final Supplier<Range<Integer>> range = Suppliers.memoize(this::computeRange);
 
-  /**
-   * Return the width of a {@code Doc}.
-   *
-   * @return the width
-   */
+  /// Return the width of a `Doc`.
+  ///
+  /// @return the width
   final int getWidth() {
     return width.get();
   }
 
-  /**
-   * Return a {@code Doc}'s flat-string value; not defined (and never called) if the {@code Doc}
-   * contains forced breaks.
-   *
-   * @return the flat-string value
-   */
+  /// Return a `Doc`'s flat-string value; not defined (and never called) if the `Doc` contains
+  /// forced breaks.
+  ///
+  /// @return the flat-string value
   final String getFlat() {
     return flat.get();
   }
 
-  /**
-   * Return the {@link Range} of a {@code Doc}.
-   *
-   * @return the {@code Doc}'s {@link Range}
-   */
+  /// Return the [Range] of a `Doc`.
+  ///
+  /// @return the `Doc`'s [Range]
   final Range<Integer> range() {
     return range.get();
   }
 
-  /**
-   * Compute the {@code Doc}'s width.
-   *
-   * @return the width
-   */
+  /// Compute the `Doc`'s width.
+  ///
+  /// @return the width
   abstract int computeWidth();
 
-  /**
-   * Compute the {@code Doc}'s flat value. Not defined (and never called) if contains forced breaks.
-   *
-   * @return the flat value
-   */
+  /// Compute the `Doc`'s flat value. Not defined (and never called) if contains forced breaks.
+  ///
+  /// @return the flat value
   abstract String computeFlat();
 
-  /**
-   * Compute the {@code Doc}'s {@link Range} of {@link Input.Token}s.
-   *
-   * @return the {@link Range}
-   */
+  /// Compute the `Doc`'s [Range] of [Input.Token]s.
+  ///
+  /// @return the [Range]
   abstract Range<Integer> computeRange();
 
-  /**
-   * Make breaking decisions for a {@code Doc}.
-   *
-   * @param maxWidth the maximum line width
-   * @param state the current output state
-   * @return the new output state
-   */
+  /// Make breaking decisions for a `Doc`.
+  ///
+  /// @param maxWidth the maximum line width
+  /// @param state the current output state
+  /// @return the new output state
   public abstract State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state);
 
-  /** Write a {@code Doc} to an {@link Output}, after breaking decisions have been made. */
+  /// Write a `Doc` to an [Output], after breaking decisions have been made.
   public abstract void write(Output output);
 
-  /** A {@code Level} inside a {@link Doc}. */
+  /// A `Level` inside a [Doc].
   static final class Level extends Doc {
     private final Indent plusIndent; // The extra indent following breaks.
     private final List<Doc> docs = new ArrayList<>(); // The elements of the level.
@@ -169,21 +140,17 @@ public abstract class Doc {
       this.plusIndent = plusIndent;
     }
 
-    /**
-     * Factory method for {@code Level}s.
-     *
-     * @param plusIndent the extra indent inside the {@code Level}
-     * @return the new {@code Level}
-     */
+    /// Factory method for `Level`s.
+    ///
+    /// @param plusIndent the extra indent inside the `Level`
+    /// @return the new `Level`
     static Level make(Indent plusIndent) {
       return new Level(plusIndent);
     }
 
-    /**
-     * Add a {@link Doc} to the {@code Level}.
-     *
-     * @param doc the {@link Doc} to add
-     */
+    /// Add a [Doc] to the `Level`.
+    ///
+    /// @param doc the [Doc] to add
     void add(Doc doc) {
       docs.add(doc);
     }
@@ -215,16 +182,13 @@ public abstract class Doc {
     // writing output.
     // TODO(cushon): represent phases as separate immutable data.
 
-    /** True if the entire {@link Level} fits on one line. */
+    /// True if the entire [Level] fits on one line.
     boolean oneLine = false;
 
-    /**
-     * Groups of {@link Doc}s that are children of the current {@link Level}, separated by {@link
-     * Break}s.
-     */
+    /// Groups of [Doc]s that are children of the current [Level], separated by [Break]s.
     List<List<Doc>> splits = new ArrayList<>();
 
-    /** {@link Break}s between {@link Doc}s in the current {@link Level}. */
+    /// [Break]s between [Doc]s in the current [Level].
     List<Break> breaks = new ArrayList<>();
 
     @Override
@@ -254,7 +218,7 @@ public abstract class Doc {
       }
     }
 
-    /** Compute breaks for a {@link Level} that spans multiple lines. */
+    /// Compute breaks for a [Level] that spans multiple lines.
     private State computeBroken(CommentsHelper commentsHelper, int maxWidth, State state) {
       splitByBreaks(docs, splits, breaks);
 
@@ -271,7 +235,7 @@ public abstract class Doc {
       return state;
     }
 
-    /** Lay out a Break-separated group of Docs in the current Level. */
+    /// Lay out a Break-separated group of Docs in the current Level.
     private static State computeBreakAndSplit(
         CommentsHelper commentsHelper,
         int maxWidth,
@@ -327,12 +291,10 @@ public abstract class Doc {
       }
     }
 
-    /**
-     * Get the width of a sequence of {@link Doc}s.
-     *
-     * @param docs the {@link Doc}s
-     * @return the width
-     */
+    /// Get the width of a sequence of [Doc]s.
+    ///
+    /// @param docs the [Doc]s
+    /// @return the width
     static int getWidth(List<Doc> docs) {
       int width = 0;
       for (Doc doc : docs) {
@@ -358,9 +320,9 @@ public abstract class Doc {
     }
   }
 
-  /** A leaf {@link Doc} for a token. */
+  /// A leaf [Doc] for a token.
   public static final class Token extends Doc implements Op {
-    /** Is a Token a real token, or imaginary (e.g., a token generated incorrectly, or an EOF)? */
+    /// Is a Token a real token, or imaginary (e.g., a token generated incorrectly, or an EOF)?
     public enum RealOrImaginary {
       REAL,
       IMAGINARY;
@@ -390,29 +352,25 @@ public abstract class Doc {
       this.breakAndIndentTrailingComment = breakAndIndentTrailingComment;
     }
 
-    /**
-     * How much extra to indent comments before the {@code Token}.
-     *
-     * @return the extra indent
-     */
+    /// How much extra to indent comments before the `Token`.
+    ///
+    /// @return the extra indent
     public Indent getPlusIndentCommentsBefore() {
       return plusIndentCommentsBefore;
     }
 
-    /** Force a line break and indent trailing javadoc or block comments. */
+    /// Force a line break and indent trailing javadoc or block comments.
     public Optional<Indent> breakAndIndentTrailingComment() {
       return breakAndIndentTrailingComment;
     }
 
-    /**
-     * Make a {@code Token}.
-     *
-     * @param token the {@link Input.Token} to wrap
-     * @param realOrImaginary did this {@link Input.Token} appear in the input, or was it generated
-     *     incorrectly?
-     * @param plusIndentCommentsBefore extra {@code plusIndent} for comments just before this token
-     * @return the new {@code Token}
-     */
+    /// Make a `Token`.
+    ///
+    /// @param token the [Input.Token] to wrap
+    /// @param realOrImaginary did this [Input.Token] appear in the input, or was it generated
+    ///   incorrectly?
+    /// @param plusIndentCommentsBefore extra `plusIndent` for comments just before this token
+    /// @return the new `Token`
     static Op make(
         Input.Token token,
         Doc.Token.RealOrImaginary realOrImaginary,
@@ -422,20 +380,16 @@ public abstract class Doc {
           token, realOrImaginary, plusIndentCommentsBefore, breakAndIndentTrailingComment);
     }
 
-    /**
-     * Return the wrapped {@link Input.Token}.
-     *
-     * @return the {@link Input.Token}
-     */
+    /// Return the wrapped [Input.Token].
+    ///
+    /// @return the [Input.Token]
     public Input.Token getToken() {
       return token;
     }
 
-    /**
-     * Is the token good? That is, does it match an {@link Input.Token}?
-     *
-     * @return whether the @code Token} is good
-     */
+    /// Is the token good? That is, does it match an [Input.Token]?
+    ///
+    /// @return whether the `Token` is good
     public RealOrImaginary realOrImaginary() {
       return realOrImaginary;
     }
@@ -482,17 +436,15 @@ public abstract class Doc {
     }
   }
 
-  /** A Leaf node in a {@link Doc} for a non-breaking space. */
+  /// A Leaf node in a [Doc] for a non-breaking space.
   public static final class Space extends Doc implements Op {
     private static final Space SPACE = new Space();
 
     private Space() {}
 
-    /**
-     * Factor method for {@code Space}.
-     *
-     * @return the new {@code Space}
-     */
+    /// Factor method for `Space`.
+    ///
+    /// @return the new `Space`
     static Space make() {
       return SPACE;
     }
@@ -533,7 +485,7 @@ public abstract class Doc {
     }
   }
 
-  /** A leaf node in a {@link Doc} for an optional break. */
+  /// A leaf node in a [Doc] for an optional break.
   public static final class Break extends Doc implements Op {
     private final FillMode fillMode;
     private final String flat;
@@ -547,55 +499,45 @@ public abstract class Doc {
       this.optTag = optTag;
     }
 
-    /**
-     * Make a {@code Break}.
-     *
-     * @param fillMode the {@link FillMode}
-     * @param flat the text when not broken
-     * @param plusIndent extra indent if taken
-     * @return the new {@code Break}
-     */
+    /// Make a `Break`.
+    ///
+    /// @param fillMode the [FillMode]
+    /// @param flat the text when not broken
+    /// @param plusIndent extra indent if taken
+    /// @return the new `Break`
     public static Break make(FillMode fillMode, String flat, Indent plusIndent) {
       return new Break(fillMode, flat, plusIndent, /* optTag= */ Optional.empty());
     }
 
-    /**
-     * Make a {@code Break}.
-     *
-     * @param fillMode the {@link FillMode}
-     * @param flat the text when not broken
-     * @param plusIndent extra indent if taken
-     * @param optTag an optional tag for remembering whether the break was taken
-     * @return the new {@code Break}
-     */
+    /// Make a `Break`.
+    ///
+    /// @param fillMode the [FillMode]
+    /// @param flat the text when not broken
+    /// @param plusIndent extra indent if taken
+    /// @param optTag an optional tag for remembering whether the break was taken
+    /// @return the new `Break`
     public static Break make(
         FillMode fillMode, String flat, Indent plusIndent, Optional<BreakTag> optTag) {
       return new Break(fillMode, flat, plusIndent, optTag);
     }
 
-    /**
-     * Make a forced {@code Break}.
-     *
-     * @return the new forced {@code Break}
-     */
+    /// Make a forced `Break`.
+    ///
+    /// @return the new forced `Break`
     public static Break makeForced() {
       return make(FillMode.FORCED, "", Indent.Const.ZERO);
     }
 
-    /**
-     * Return the {@code Break}'s extra indent.
-     *
-     * @return the extra indent
-     */
+    /// Return the `Break`'s extra indent.
+    ///
+    /// @return the extra indent
     int getPlusIndent() {
       return plusIndent.eval();
     }
 
-    /**
-     * Is the {@code Break} forced?
-     *
-     * @return whether the {@code Break} is forced
-     */
+    /// Is the `Break` forced?
+    ///
+    /// @return whether the `Break` is forced
     boolean isForced() {
       return fillMode == FillMode.FORCED;
     }
@@ -636,10 +578,10 @@ public abstract class Doc {
       return EMPTY_RANGE;
     }
 
-    /** Was this break taken? */
+    /// Was this break taken?
     boolean broken;
 
-    /** New indent after this break. */
+    /// New indent after this break.
     int newIndent;
 
     public State computeBreaks(State state, int lastIndent, boolean broken) {
@@ -688,7 +630,7 @@ public abstract class Doc {
     }
   }
 
-  /** A leaf node in a {@link Doc} for a non-token. */
+  /// A leaf node in a [Doc] for a non-token.
   static final class Tok extends Doc implements Op {
     private final Input.Tok tok;
 
@@ -696,12 +638,10 @@ public abstract class Doc {
       this.tok = tok;
     }
 
-    /**
-     * Factory method for a {@code Tok}.
-     *
-     * @param tok the {@link Input.Tok} to wrap
-     * @return the new {@code Tok}
-     */
+    /// Factory method for a `Tok`.
+    ///
+    /// @param tok the [Input.Tok] to wrap
+    /// @return the new `Tok`
     static Tok make(Input.Tok tok) {
       return new Tok(tok);
     }

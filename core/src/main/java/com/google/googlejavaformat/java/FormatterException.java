@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
-/** Checked exception class for formatter errors. */
+/// Checked exception class for formatter errors.
 public final class FormatterException extends Exception {
 
   private final ImmutableList<FormatterDiagnostic> diagnostics;

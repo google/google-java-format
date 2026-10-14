@@ -179,13 +179,10 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import org.jspecify.annotations.Nullable;
 
-/**
- * An AST visitor that builds a stream of {@link Op}s to format from the given {@link
- * CompilationUnitTree}.
- */
+/// An AST visitor that builds a stream of [Op]s to format from the given [CompilationUnitTree].
 class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
-  /** Direction for Annotations (usually VERTICAL). */
+  /// Direction for Annotations (usually VERTICAL).
   private enum Direction {
     VERTICAL,
     HORIZONTAL;
@@ -195,7 +192,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /** Whether to break or not. */
+  /// Whether to break or not.
   private enum BreakOrNot {
     YES,
     NO;
@@ -205,7 +202,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /** Whether to collapse empty blocks. */
+  /// Whether to collapse empty blocks.
   private enum CollapseEmptyOrNot {
     YES,
     NO;
@@ -219,13 +216,13 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /** Whether to allow leading blank lines in blocks. */
+  /// Whether to allow leading blank lines in blocks.
   private enum AllowLeadingBlankLine {
     YES,
     NO;
   }
 
-  /** Whether to allow trailing blank lines in blocks. */
+  /// Whether to allow trailing blank lines in blocks.
   private enum AllowTrailingBlankLine {
     YES,
     NO;
@@ -235,7 +232,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /** Whether to include braces. */
+  /// Whether to include braces.
   private enum BracesOrNot {
     YES,
     NO;
@@ -245,7 +242,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /** Whether these declarations are the first in the block. */
+  /// Whether these declarations are the first in the block.
   private enum FirstDeclarationsOrNot {
     YES,
     NO;
@@ -299,17 +296,13 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return ImmutableList.of(Doc.Break.make(FillMode.FORCED, "", Indent.Const.ZERO, breakTag));
   }
 
-  /**
-   * Allow multi-line filling (of array initializers, argument lists, and boolean expressions) for
-   * items with length less than or equal to this threshold.
-   */
+  /// Allow multi-line filling (of array initializers, argument lists, and boolean expressions) for
+  /// items with length less than or equal to this threshold.
   private static final int MAX_ITEM_LENGTH_FOR_FILLING = 10;
 
-  /**
-   * The {@code Visitor} constructor.
-   *
-   * @param builder the {@link LayoutBuilder}
-   */
+  /// The `Visitor` constructor.
+  ///
+  /// @param builder the [LayoutBuilder]
   JavaInputAstVisitor(
       LayoutBuilder builder,
       int indentMultiplier,
@@ -323,7 +316,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     plusFour = Indent.Const.make(+4, indentMultiplier);
   }
 
-  /** A record of whether we have visited into an expression. */
+  /// A record of whether we have visited into an expression.
   private final Deque<Boolean> inExpression = new ArrayDeque<>(ImmutableList.of(false));
 
   private boolean inExpression() {
@@ -405,7 +398,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /** Skips over extra semicolons at the top-level, or in a class member declaration lists. */
+  /// Skips over extra semicolons at the top-level, or in a class member declaration lists.
   private void dropEmptyDeclarations() {
     if (builder.peekToken().equals(Optional.of(";"))) {
       while (builder.peekToken().equals(Optional.of(";"))) {
@@ -1675,23 +1668,21 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return null;
   }
 
-  /**
-   * Special-cases log statements, to output:
-   *
-   * <pre>{@code
-   * logger.atInfo().log(
-   *     "Number of foos: %d, foos.size());
-   * }</pre>
-   *
-   * <p>Instead of:
-   *
-   * <pre>{@code
-   * logger
-   *     .atInfo()
-   *     .log(
-   *         "Number of foos: %d, foos.size());
-   * }</pre>
-   */
+  /// Special-cases log statements, to output:
+  ///
+  /// ```
+  /// logger.atInfo().log(
+  ///     "Number of foos: %d, foos.size());
+  /// ```
+  ///
+  /// Instead of:
+  ///
+  /// ```
+  /// logger
+  ///     .atInfo()
+  ///     .log(
+  ///         "Number of foos: %d, foos.size());
+  /// ```
   private boolean handleLogStatement(MethodInvocationTree node) {
     Name methodName = getMethodName(node);
     if (!methodName.contentEquals("log") && !methodName.contentEquals("logVarargs")) {
@@ -2267,7 +2258,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   // Helper methods.
 
-  /** Helper method for annotations. */
+  /// Helper method for annotations.
   private void visitAnnotations(
       List<? extends AnnotationTree> annotations, BreakOrNot breakBefore, BreakOrNot breakAfter) {
     if (!annotations.isEmpty()) {
@@ -2296,7 +2287,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /** Helper method for blocks. */
+  /// Helper method for blocks.
   private void visitBlock(
       BlockTree node,
       CollapseEmptyOrNot collapseEmptyOrNot,
@@ -2339,7 +2330,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /** Helper method for statements. */
+  /// Helper method for statements.
   private void visitStatement(
       StatementTree node,
       CollapseEmptyOrNot collapseEmptyOrNot,
@@ -2391,7 +2382,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     verticalAnnotations(typeAnnotations);
   }
 
-  /** Output combined modifiers and annotations and the trailing break. */
+  /// Output combined modifiers and annotations and the trailing break.
   private void visitAndBreakModifiers(
       ModifiersTree modifiers,
       Direction annotationDirection,
@@ -2406,7 +2397,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     throw new IllegalStateException("expected manual descent into modifiers");
   }
 
-  /** Output combined modifiers and annotations and returns the trailing break. */
+  /// Output combined modifiers and annotations and returns the trailing break.
   @CheckReturnValue
   private ImmutableList<AnnotationTree> visitModifiers(
       ModifiersTree modifiersTree,
@@ -2481,7 +2472,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return splitModifiers.typeAnnotations();
   }
 
-  /** Represents an annotation or a modifier in a {@link ModifiersTree}. */
+  /// Represents an annotation or a modifier in a [ModifiersTree].
   @AutoOneOf(AnnotationOrModifier.Kind.class)
   abstract static class AnnotationOrModifier implements Comparable<AnnotationOrModifier> {
     enum Kind {
@@ -2527,14 +2518,12 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /**
-   * The modifiers annotations for a declaration, grouped in to a prefix that contains all of the
-   * declaration annotations and modifiers, and a suffix of type annotations.
-   *
-   * <p>For examples like {@code @Deprecated public @Nullable Foo foo();}, this allows us to format
-   * {@code @Deprecated public} as declaration modifiers, and {@code @Nullable} as a type annotation
-   * on the return type.
-   */
+  /// The modifiers annotations for a declaration, grouped in to a prefix that contains all of the
+  /// declaration annotations and modifiers, and a suffix of type annotations.
+  ///
+  /// For examples like `@Deprecated public @Nullable Foo foo();`, this allows us to format
+  /// `@Deprecated public` as declaration modifiers, and `@Nullable` as a type annotation on the
+  /// return type.
   private record DeclarationModifiersAndTypeAnnotations(
       ImmutableList<AnnotationOrModifier> declarationModifiers,
       ImmutableList<AnnotationTree> typeAnnotations) {
@@ -2558,10 +2547,8 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /**
-   * Examines the token stream to convert the modifiers for a declaration into a {@link
-   * DeclarationModifiersAndTypeAnnotations}.
-   */
+  /// Examines the token stream to convert the modifiers for a declaration into a
+  /// [DeclarationModifiersAndTypeAnnotations].
   private DeclarationModifiersAndTypeAnnotations splitModifiers(
       ModifiersTree modifiersTree, List<? extends AnnotationTree> annotations) {
     Set<Modifier> flags = modifiersTree.getFlags();
@@ -2662,7 +2649,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     throw new IllegalStateException("expected manual descent into catch trees");
   }
 
-  /** Helper method for {@link CatchTree}s. */
+  /// Helper method for [CatchTree]s.
   private void visitCatchClause(CatchTree node, AllowTrailingBlankLine allowTrailingBlankLine) {
     sync(node);
     builder.space();
@@ -2689,7 +2676,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         node.getBlock(), CollapseEmptyOrNot.NO, AllowLeadingBlankLine.YES, allowTrailingBlankLine);
   }
 
-  /** Formats a union type declaration in a catch clause. */
+  /// Formats a union type declaration in a catch clause.
   private void visitUnionType(VariableTree declaration) {
     UnionTypeTree type = (UnionTypeTree) declaration.getType();
     builder.open(ZERO);
@@ -2729,7 +2716,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.close();
   }
 
-  /** Accumulate the operands and operators. */
+  /// Accumulate the operands and operators.
   private static void walkInfix(
       int precedence,
       ExpressionTree expression,
@@ -2928,7 +2915,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return null;
   }
 
-  /** Helper method for import declarations, names, and qualified names. */
+  /// Helper method for import declarations, names, and qualified names.
   private void visitName(Tree node) {
     Deque<Name> stack = new ArrayDeque<>();
     while (node instanceof MemberSelectTree memberSelectTree) {
@@ -2978,7 +2965,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         typeWithDims);
   }
 
-  /** Does not omit the leading {@code "<"}, which should be associated with the type name. */
+  /// Does not omit the leading `"<"`, which should be associated with the type name.
   private void typeParametersRest(
       List<? extends TypeParameterTree> typeParameters, Indent plusIndent) {
     builder.open(plusIndent);
@@ -3000,11 +2987,9 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   /** Collapse chains of {@code .} operators, across multiple {@link ASTNode} types. */
 
-  /**
-   * Output a "." node.
-   *
-   * @param node0 the "." node
-   */
+  /// Output a "." node.
+  ///
+  /// @param node0 the "." node
   private void visitDot(ExpressionTree node0) {
     ExpressionTree node = node0;
 
@@ -3124,12 +3109,10 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /**
-   * Output a "regular" chain of dereferences, possibly in builder-style. Break before every dot.
-   *
-   * @param items in the chain
-   * @param needDot whether a leading dot is needed
-   */
+  /// Output a "regular" chain of dereferences, possibly in builder-style. Break before every dot.
+  ///
+  /// @param items in the chain
+  /// @param needDot whether a leading dot is needed
   private void visitRegularDot(List<ExpressionTree> items, boolean needDot) {
     boolean trailingDereferences = items.size() > 1;
     boolean needDot0 = needDot;
@@ -3199,16 +3182,14 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return true;
   }
 
-  /**
-   * Output a chain of dereferences where some prefix should be treated as a single syntactic unit,
-   * either because it looks like a type name or because there is only a single method invocation in
-   * the chain.
-   *
-   * @param items in the chain
-   * @param needDot whether a leading dot is needed
-   * @param prefixes the terminal indices of 'prefixes' of the expression that should be treated as
-   *     a syntactic unit
-   */
+  /// Output a chain of dereferences where some prefix should be treated as a single syntactic unit,
+  /// either because it looks like a type name or because there is only a single method invocation
+  /// in the chain.
+  ///
+  /// @param items in the chain
+  /// @param needDot whether a leading dot is needed
+  /// @param prefixes the terminal indices of 'prefixes' of the expression that should be treated as
+  ///   a syntactic unit
   private void visitDotWithPrefix(
       List<ExpressionTree> items,
       boolean needDot,
@@ -3254,7 +3235,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.close();
   }
 
-  /** Returns the simple names of expressions in a "." chain. */
+  /// Returns the simple names of expressions in a "." chain.
   private static ImmutableList<String> simpleNames(Deque<ExpressionTree> stack) {
     ImmutableList.Builder<String> simpleNames = ImmutableList.builder();
     OUTER:
@@ -3303,10 +3284,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /**
-   * Returns the base expression of an array access, e.g. given {@code foo[0][0]} returns {@code
-   * foo}.
-   */
+  /// Returns the base expression of an array access, e.g. given `foo[0][0]` returns `foo`.
   private static ExpressionTree getArrayBase(ExpressionTree node) {
     while (node instanceof ArrayAccessTree arrayAccessTree) {
       node = arrayAccessTree.getExpression();
@@ -3337,7 +3315,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     formatArrayIndices(indices);
   }
 
-  /** Lays out one or more array indices. Does not output the expression for the array itself. */
+  /// Lays out one or more array indices. Does not output the expression for the array itself.
   private void formatArrayIndices(Deque<ExpressionTree> indices) {
     if (indices.isEmpty()) {
       return;
@@ -3352,10 +3330,8 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.close();
   }
 
-  /**
-   * Returns all array indices for the given expression, e.g. given {@code foo[0][0]} returns the
-   * expressions for {@code [0][0]}.
-   */
+  /// Returns all array indices for the given expression, e.g. given `foo[0][0]` returns the
+  /// expressions for `[0][0]`.
   private static Deque<ExpressionTree> getArrayIndices(ExpressionTree expression) {
     Deque<ExpressionTree> indices = new ArrayDeque<>();
     while (expression instanceof ArrayAccessTree array) {
@@ -3365,7 +3341,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return indices;
   }
 
-  /** Helper methods for method invocations. */
+  /// Helper methods for method invocations.
   private void addTypeArguments(List<? extends Tree> typeArguments, Indent plusIndent) {
     if (typeArguments == null || typeArguments.isEmpty()) {
       return;
@@ -3385,14 +3361,12 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token(">");
   }
 
-  /**
-   * Add arguments to a method invocation, etc. The arguments indented {@code plusFour}, filled,
-   * from the current indent. The arguments may be output two at a time if they seem to be arguments
-   * to a map constructor, etc.
-   *
-   * @param arguments the arguments
-   * @param plusIndent the extra indent for the arguments
-   */
+  /// Add arguments to a method invocation, etc. The arguments indented `plusFour`, filled, from the
+  /// current indent. The arguments may be output two at a time if they seem to be arguments to a
+  /// map constructor, etc.
+  ///
+  /// @param arguments the arguments
+  /// @param plusIndent the extra indent for the arguments
   private void addArguments(List<? extends ExpressionTree> arguments, Indent plusIndent) {
     builder.open(plusIndent);
     token("(");
@@ -3451,25 +3425,23 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.close();
   }
 
-  /**
-   * Identifies String formatting methods like {@link String#format} which we prefer to format as:
-   *
-   * <pre>{@code
-   * String.format(
-   *     "the format string: %s %s %s",
-   *     arg, arg, arg);
-   * }</pre>
-   *
-   * <p>And not:
-   *
-   * <pre>{@code
-   * String.format(
-   *     "the format string: %s %s %s",
-   *     arg,
-   *     arg,
-   *     arg);
-   * }</pre>
-   */
+  /// Identifies String formatting methods like [String#format] which we prefer to format as:
+  ///
+  /// ```
+  /// String.format(
+  ///     "the format string: %s %s %s",
+  ///     arg, arg, arg);
+  /// ```
+  ///
+  /// And not:
+  ///
+  /// ```
+  /// String.format(
+  ///     "the format string: %s %s %s",
+  ///     arg,
+  ///     arg,
+  ///     arg);
+  /// ```
   private boolean isFormatMethod(List<? extends ExpressionTree> arguments) {
     if (arguments.size() < 2) {
       return false;
@@ -3504,7 +3476,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return stringLiteral[0] && formatString[0];
   }
 
-  /** Returns the number of columns if the arguments arg laid out in a grid, or else {@code -1}. */
+  /// Returns the number of columns if the arguments arg laid out in a grid, or else `-1`.
   private int argumentsAreTabular(List<? extends ExpressionTree> arguments) {
     if (arguments.isEmpty()) {
       return -1;
@@ -3588,7 +3560,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return positionToColumnMap.get(builder.actualStartColumn(getStartPosition(expression)));
   }
 
-  /** Returns true if {@code atLeastM} of the expressions in the given column are the same kind. */
+  /// Returns true if `atLeastM` of the expressions in the given column are the same kind.
   private static boolean expressionsAreParallel(
       List<List<ExpressionTree>> rows, int column, int atLeastM) {
     Multiset<Tree.Kind> nodeTypes = HashMultiset.create();
@@ -3613,14 +3585,14 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   // General helper functions.
 
-  /** Kind of declaration. */
+  /// Kind of declaration.
   private enum DeclarationKind {
     NONE,
     FIELD,
     PARAMETER
   }
 
-  /** Declare one variable or variable-like thing. */
+  /// Declare one variable or variable-like thing.
   private int declareOne(
       DeclarationKind kind,
       Direction annotationsDirection,
@@ -3757,18 +3729,15 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     maybeAddDims(new ArrayDeque<>(), annotations);
   }
 
-  /**
-   * The compiler does not always preserve the concrete syntax of annotated array dimensions, and
-   * mixed-notation array dimensions. Use look-ahead to preserve the original syntax.
-   *
-   * <p>It is assumed that any number of regular dimension specifiers ({@code []} with no
-   * annotations) may be present in the input.
-   *
-   * @param dimExpressions an ordered list of dimension expressions (e.g. the {@code 0} in {@code
-   *     new int[0]}
-   * @param annotations an ordered list of type annotations grouped by dimension (e.g. {@code
-   *     [[@A, @B], [@C]]} for {@code int @A [] @B @C []}
-   */
+  /// The compiler does not always preserve the concrete syntax of annotated array dimensions, and
+  /// mixed-notation array dimensions. Use look-ahead to preserve the original syntax.
+  ///
+  /// It is assumed that any number of regular dimension specifiers (`[]` with no annotations) may
+  /// be present in the input.
+  ///
+  /// @param dimExpressions an ordered list of dimension expressions (e.g. the `0` in `new int[0]`)
+  /// @param annotations an ordered list of type annotations grouped by dimension (e.g. `[[@A, @B],
+  ///   [@C]]` for `int @A [] @B @C []`)
   private void maybeAddDims(
       Deque<ExpressionTree> dimExpressions, Deque<List<? extends AnnotationTree>> annotations) {
     boolean lastWasAnnotation = false;
@@ -3867,7 +3836,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.close();
   }
 
-  /** Add a list of declarations. */
+  /// Add a list of declarations.
   private void addBodyDeclarations(
       List<? extends Tree> bodyDeclarations, BracesOrNot braces, FirstDeclarationsOrNot first0) {
     if (bodyDeclarations.isEmpty()) {
@@ -3952,13 +3921,11 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.close();
   }
 
-  /**
-   * The parser expands multi-variable declarations into separate single-variable declarations. All
-   * of the fragments in the original declaration have the same start position, so we use that as a
-   * signal to collect them and preserve the multi-variable declaration in the output.
-   *
-   * <p>e.g. {@code int x, y;} is parsed as {@code int x; int y;}.
-   */
+  /// The parser expands multi-variable declarations into separate single-variable declarations. All
+  /// of the fragments in the original declaration have the same start position, so we use that as a
+  /// signal to collect them and preserve the multi-variable declaration in the output.
+  ///
+  /// e.g. `int x, y;` is parsed as `int x; int y;`.
   private static List<VariableTree> variableFragments(
       PeekingIterator<? extends Tree> it, Tree first) {
     List<VariableTree> fragments = new ArrayList<>();
@@ -3999,7 +3966,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return OptionalInt.empty();
   }
 
-  /** Does this declaration have javadoc preceding it? */
+  /// Does this declaration have javadoc preceding it?
   private boolean hasJavaDoc(Tree bodyDeclaration) {
     return javadocPosition(bodyDeclaration).isPresent();
   }
@@ -4008,7 +3975,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return Optional.ofNullable(input.getPositionTokenMap().get(position));
   }
 
-  /** Does this list of trees end with the specified token? */
+  /// Does this list of trees end with the specified token?
   private boolean hasTrailingToken(Input input, List<? extends Tree> nodes, String token) {
     if (nodes.isEmpty()) {
       return false;
@@ -4019,13 +3986,11 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return nextToken.isPresent() && nextToken.get().getTok().getText().equals(token);
   }
 
-  /**
-   * Can a local with a set of modifiers be declared with horizontal annotations? This is currently
-   * true if there is at most one parameterless annotation, and no others.
-   *
-   * @param modifiers the list of {@link ModifiersTree}s
-   * @return whether the local can be declared with horizontal annotations
-   */
+  /// Can a local with a set of modifiers be declared with horizontal annotations? This is currently
+  /// true if there is at most one parameterless annotation, and no others.
+  ///
+  /// @param modifiers the list of [ModifiersTree]s
+  /// @return whether the local can be declared with horizontal annotations
   private static Direction canLocalHaveHorizontalAnnotations(ModifiersTree modifiers) {
     int parameterlessAnnotations = 0;
     for (AnnotationTree annotation : modifiers.getAnnotations()) {
@@ -4039,10 +4004,8 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         : Direction.VERTICAL;
   }
 
-  /**
-   * Should a field with a set of modifiers be declared with horizontal annotations? This is
-   * currently true if all annotations are parameterless annotations.
-   */
+  /// Should a field with a set of modifiers be declared with horizontal annotations? This is
+  /// currently true if all annotations are parameterless annotations.
   private static Direction fieldAnnotationDirection(ModifiersTree modifiers) {
     for (AnnotationTree annotation : modifiers.getAnnotations()) {
       if (!annotation.getArguments().isEmpty()) {
@@ -4052,11 +4015,9 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     return Direction.HORIZONTAL;
   }
 
-  /**
-   * Emit a {@link Doc.Token}.
-   *
-   * @param token the {@link String} to wrap in a {@link Doc.Token}
-   */
+  /// Emit a [Doc.Token].
+  ///
+  /// @param token the [String] to wrap in a [Doc.Token]
   private void token(String token) {
     builder.token(
         token,
@@ -4065,12 +4026,10 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         /* breakAndIndentTrailingComment= */ Optional.empty());
   }
 
-  /**
-   * Emit a {@link Doc.Token}.
-   *
-   * @param token the {@link String} to wrap in a {@link Doc.Token}
-   * @param plusIndentCommentsBefore extra indent for comments before this token
-   */
+  /// Emit a [Doc.Token].
+  ///
+  /// @param token the [String] to wrap in a [Doc.Token]
+  /// @param plusIndentCommentsBefore extra indent for comments before this token
   private void token(String token, Indent plusIndentCommentsBefore) {
     builder.token(
         token,
@@ -4079,7 +4038,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         /* breakAndIndentTrailingComment= */ Optional.empty());
   }
 
-  /** Emit a {@link Doc.Token}, and breaks and indents trailing javadoc or block comments. */
+  /// Emit a [Doc.Token], and breaks and indents trailing javadoc or block comments.
   final void tokenBreakTrailingComment(String token, Indent breakAndIndentTrailingComment) {
     builder.token(
         token, Doc.Token.RealOrImaginary.REAL, ZERO, Optional.of(breakAndIndentTrailingComment));
@@ -4091,12 +4050,10 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /**
-   * Sync to position in the input. If we've skipped outputting any tokens that were present in the
-   * input tokens, output them here and complain.
-   *
-   * @param node the ASTNode holding the input position
-   */
+  /// Sync to position in the input. If we've skipped outputting any tokens that were present in the
+  /// input tokens, output them here and complain.
+  ///
+  /// @param node the ASTNode holding the input position
   private void sync(Tree node) {
     builder.sync(((JCTree) node).getStartPosition());
   }

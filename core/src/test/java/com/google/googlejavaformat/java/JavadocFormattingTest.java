@@ -24,17 +24,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Tests formatting javadoc. */
+/// Tests formatting javadoc.
 @RunWith(JUnit4.class)
 public final class JavadocFormattingTest {
   private static final boolean MARKDOWN_JAVADOC_SUPPORTED = Runtime.version().feature() >= 23;
 
   private final Formatter formatter = new Formatter();
 
-  /**
-   * Tests that the formatter formats the given input string to the given expected string. Also
-   * tests that the formatter is idempotent when formatting an already formatted string.
-   */
+  /// Tests that the formatter formats the given input string to the given expected string. Also
+  /// tests that the formatter is idempotent when formatting an already formatted string.
   private void doFormatTest(String input, String expected) {
     try {
       String actual = formatter.formatSource(input);

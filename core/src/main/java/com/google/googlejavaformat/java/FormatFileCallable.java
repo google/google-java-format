@@ -23,10 +23,8 @@ import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Encapsulates information about a file to be formatted, including which parts of the file to
- * format.
- */
+/// Encapsulates information about a file to be formatted, including which parts of the file to
+/// format.
 class FormatFileCallable implements Callable<FormatFileCallable.Result> {
 
   record Result(

@@ -20,27 +20,25 @@ import com.google.common.collect.ImmutableRangeSet;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Optional;
 
-/**
- * Command line options for google-java-format.
- *
- * @param files The files to format.
- * @param inPlace Format files in place.
- * @param lines Line ranges to format.
- * @param offsets Character offsets for partial formatting, paired with {@code lengths}.
- * @param lengths Partial formatting region lengths, paired with {@code offsets}.
- * @param style Code style configuration.
- * @param version Print the version.
- * @param help Print usage information.
- * @param stdin Format input from stdin.
- * @param fixImportsOnly Fix imports, but do no formatting.
- * @param sortImports Sort imports.
- * @param removeUnusedImports Remove unused imports.
- * @param dryRun Print the paths of the files whose contents would change if the formatter were run
- *     normally.
- * @param setExitIfChanged Return exit code 1 if there are any formatting changes.
- * @param assumeFilename Return the name to use for diagnostics when formatting standard input.
- * @param reorderModifiers Reorder modifiers into the JLS-recommended order.
- */
+/// Command line options for google-java-format.
+///
+/// @param files The files to format.
+/// @param inPlace Format files in place.
+/// @param lines Line ranges to format.
+/// @param offsets Character offsets for partial formatting, paired with `lengths`.
+/// @param lengths Partial formatting region lengths, paired with `offsets`.
+/// @param style Code style configuration.
+/// @param version Print the version.
+/// @param help Print usage information.
+/// @param stdin Format input from stdin.
+/// @param fixImportsOnly Fix imports, but do no formatting.
+/// @param sortImports Sort imports.
+/// @param removeUnusedImports Remove unused imports.
+/// @param dryRun Print the paths of the files whose contents would change if the formatter were run
+///   normally.
+/// @param setExitIfChanged Return exit code 1 if there are any formatting changes.
+/// @param assumeFilename Return the name to use for diagnostics when formatting standard input.
+/// @param reorderModifiers Reorder modifiers into the JLS-recommended order.
 record CommandLineOptions(
     ImmutableList<String> files,
     boolean inPlace,
@@ -69,7 +67,7 @@ record CommandLineOptions(
     return style().maxLineLength();
   }
 
-  /** Returns true if partial formatting was selected. */
+  /// Returns true if partial formatting was selected.
   boolean isSelection() {
     return !lines().isEmpty() || !offsets().isEmpty() || !lengths().isEmpty();
   }

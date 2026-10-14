@@ -20,12 +20,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.collect.Range;
 import com.google.errorprone.annotations.InlineMe;
 
-/**
- * Represents a range in the original source and replacement text for that range.
- *
- * @param replaceRange The range of characters in the original source to replace.
- * @param replacementString The string to replace the range of characters with.
- */
+/// Represents a range in the original source and replacement text for that range.
+///
+/// @param replaceRange The range of characters in the original source to replace.
+/// @param replacementString The string to replace the range of characters with.
 public record Replacement(Range<Integer> replaceRange, String replacementString) {
 
   public static Replacement create(int startPosition, int endPosition, String replaceWith) {

@@ -14,17 +14,12 @@
 
 package com.google.googlejavaformat;
 
-/**
- * An {@code Op} is a member of the sequence of formatting operations emitted by {@link OpsBuilder}
- * and transformed by {@link DocBuilder} into a {@link Doc}. Leaf subclasses of {@link Doc}
- * implement {@code Op}; {@link Doc.Level} is the only non-leaf, and is represented by paired {@link
- * OpenOp}-{@link CloseOp} {@code Op}s.
- */
+/// An `Op` is a member of the sequence of formatting operations emitted by [OpsBuilder] and
+/// transformed by [DocBuilder] into a [Doc]. Leaf subclasses of [Doc] implement `Op`; [Doc.Level]
+/// is the only non-leaf, and is represented by paired [OpenOp]-[CloseOp] `Op`s.
 public interface Op {
-  /**
-   * Add an {@code Op} to a {@link DocBuilder}.
-   *
-   * @param builder the {@link DocBuilder}
-   */
+  /// Add an `Op` to a [DocBuilder].
+  ///
+  /// @param builder the [DocBuilder]
   void add(DocBuilder builder);
 }

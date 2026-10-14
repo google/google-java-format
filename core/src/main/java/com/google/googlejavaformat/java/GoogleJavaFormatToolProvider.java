@@ -18,7 +18,7 @@ import com.google.auto.service.AutoService;
 import java.io.PrintWriter;
 import java.util.spi.ToolProvider;
 
-/** Provide a way to be invoked without necessarily starting a new VM. */
+/// Provide a way to be invoked without necessarily starting a new VM.
 @AutoService(ToolProvider.class)
 public class GoogleJavaFormatToolProvider implements ToolProvider {
   @Override

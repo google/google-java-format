@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/** Tests formatting parts of files. */
+/// Tests formatting parts of files.
 @RunWith(Parameterized.class)
 public final class PartialFormattingTest {
 

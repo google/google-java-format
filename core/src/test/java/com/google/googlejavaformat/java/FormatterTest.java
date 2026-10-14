@@ -38,7 +38,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Integration test for google-java-format. */
+/// Integration test for google-java-format.
 @RunWith(JUnit4.class)
 public final class FormatterTest {
 

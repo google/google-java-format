@@ -39,7 +39,7 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** The main class for the Java formatter CLI. */
+/// The main class for the Java formatter CLI.
 public final class Main {
   private static final int MAX_THREADS = 20;
   private static final String STDIN_FILENAME = "<stdin>";
@@ -58,32 +58,26 @@ public final class Main {
     this.inStream = inStream;
   }
 
-  /**
-   * The main method for the formatter, with some number of file names to format. We process them in
-   * parallel, but we must be careful; if multiple file names refer to the same file (which is hard
-   * to determine), we must serialize their updates.
-   *
-   * @param args the command-line arguments
-   */
+  /// The main method for the formatter, with some number of file names to format. We process them
+  /// in parallel, but we must be careful; if multiple file names refer to the same file (which is
+  /// hard to determine), we must serialize their updates.
+  ///
+  /// @param args the command-line arguments
   public static void main(String... args) {
     int result = main(System.in, System.out, System.err, args);
     System.exit(result);
   }
 
-  /**
-   * Package-private main entry point used by the {@link javax.tools.Tool Tool} implementation in
-   * the same package as this Main class.
-   */
+  /// Package-private main entry point used by the [`Tool`][javax.tools.Tool] implementation in the
+  /// same package as this Main class.
   static int main(InputStream in, PrintStream out, PrintStream err, String... args) {
     PrintWriter outWriter = new PrintWriter(new OutputStreamWriter(out, UTF_8));
     PrintWriter errWriter = new PrintWriter(new OutputStreamWriter(err, UTF_8));
     return main(in, outWriter, errWriter, args);
   }
 
-  /**
-   * Package-private main entry point used by the {@link java.util.spi.ToolProvider ToolProvider}
-   * implementation in the same package as this Main class.
-   */
+  /// Package-private main entry point used by the [`ToolProvider`][java.util.spi.ToolProvider]
+  /// implementation in the same package as this Main class.
   static int main(InputStream in, PrintWriter out, PrintWriter err, String... args) {
     try {
       Main formatter = new Main(out, err, in);
@@ -98,13 +92,11 @@ public final class Main {
     }
   }
 
-  /**
-   * The main entry point for the formatter, with some number of file names to format. We process
-   * them in parallel, but we must be careful; if multiple file names refer to the same file (which
-   * is hard to determine), we must serialize their update.
-   *
-   * @param args the command-line arguments
-   */
+  /// The main entry point for the formatter, with some number of file names to format. We process
+  /// them in parallel, but we must be careful; if multiple file names refer to the same file (which
+  /// is hard to determine), we must serialize their update.
+  ///
+  /// @param args the command-line arguments
   public int format(String... args) throws UsageException {
     CommandLineOptions parameters = processArgs(args);
     if (parameters.version()) {
@@ -240,7 +232,7 @@ public final class Main {
     return ok ? 0 : 1;
   }
 
-  /** Parses and validates command-line flags. */
+  /// Parses and validates command-line flags.
   static CommandLineOptions processArgs(String... args) throws UsageException {
     CommandLineOptions parameters;
     try {

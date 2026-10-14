@@ -17,16 +17,13 @@ package com.google.googlejavaformat;
 import com.google.common.base.MoreObjects;
 import com.google.googlejavaformat.Output.BreakTag;
 
-/**
- * An indent for a {@link Doc.Level} or {@link Doc.Break}. The indent is either a constant {@code
- * int}, or a conditional expression whose value depends on whether or not a {@link Doc.Break} has
- * been broken.
- */
+/// An indent for a [Doc.Level] or [Doc.Break]. The indent is either a constant `int`, or a
+/// conditional expression whose value depends on whether or not a [Doc.Break] has been broken.
 public abstract class Indent {
 
   public abstract int eval();
 
-  /** A constant function, returning a constant indent. */
+  /// A constant function, returning a constant indent.
   public static final class Const extends Indent {
     private final int n;
 
@@ -51,7 +48,7 @@ public abstract class Indent {
     }
   }
 
-  /** A conditional function, whose value depends on whether a break was taken. */
+  /// A conditional function, whose value depends on whether a break was taken.
   public static final class If extends Indent {
     private final BreakTag condition;
     private final Indent thenIndent;

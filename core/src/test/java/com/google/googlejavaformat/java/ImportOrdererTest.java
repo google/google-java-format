@@ -28,11 +28,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/** Tests for {@link ImportOrderer}. */
+/// Tests for [ImportOrderer].
 @RunWith(Enclosed.class)
 public class ImportOrdererTest {
 
-  /** Tests for import ordering in Google style. */
+  /// Tests for import ordering in Google style.
   @RunWith(Parameterized.class)
   public static class GoogleStyle {
 
@@ -573,7 +573,7 @@ public class ImportOrdererTest {
     }
   }
 
-  /** Tests for import ordering in AOSP style. */
+  /// Tests for import ordering in AOSP style.
   @RunWith(Parameterized.class)
   public static class AospStyle {
 

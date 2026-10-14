@@ -37,20 +37,18 @@ import java.util.Map.Entry;
 import javax.lang.model.element.Modifier;
 import org.jspecify.annotations.Nullable;
 
-/** Fixes sequences of modifiers to be in JLS order. */
+/// Fixes sequences of modifiers to be in JLS order.
 final class ModifierOrderer {
 
-  /** Reorders all modifiers in the given text to be in JLS order. */
+  /// Reorders all modifiers in the given text to be in JLS order.
   static JavaInput reorderModifiers(String text) throws FormatterException {
     return reorderModifiers(
         new JavaInput(text), ImmutableList.of(Range.closedOpen(0, text.length())));
   }
 
-  /**
-   * A class that contains the tokens corresponding to a modifier. This is usually a single token
-   * (e.g. for {@code public}), but may be multiple tokens for modifiers containing {@code -} (e.g.
-   * {@code non-sealed}).
-   */
+  /// A class that contains the tokens corresponding to a modifier. This is usually a single token
+  /// (e.g. for `public`), but may be multiple tokens for modifiers containing `-` (e.g.
+  /// `non-sealed`).
   private record ModifierTokens(ImmutableList<Token> tokens, Modifier modifier)
       implements Comparable<ModifierTokens> {
 
@@ -97,10 +95,8 @@ final class ModifierOrderer {
     }
   }
 
-  /**
-   * Reorders all modifiers in the given text and within the given character ranges to be in JLS
-   * order.
-   */
+  /// Reorders all modifiers in the given text and within the given character ranges to be in JLS
+  /// order.
   static JavaInput reorderModifiers(JavaInput javaInput, Collection<Range<Integer>> characterRanges)
       throws FormatterException {
     if (javaInput.getTokens().isEmpty()) {
@@ -188,10 +184,7 @@ final class ModifierOrderer {
     return Enums.getIfPresent(Modifier.class, "NON_" + modifier.name()).orNull();
   }
 
-  /**
-   * Returns the given token as a {@link javax.lang.model.element.Modifier}, or {@code null} if it
-   * is not a modifier.
-   */
+  /// Returns the given token as a [Modifier], or `null` if it is not a modifier.
   private static @Nullable Modifier asModifier(Token token) {
     TokenKind kind = ((JavaInput.Tok) token.getTok()).kind();
     if (kind == null) {
@@ -220,7 +213,7 @@ final class ModifierOrderer {
     };
   }
 
-  /** Applies replacements to the given string. */
+  /// Applies replacements to the given string.
   private static JavaInput applyReplacements(
       JavaInput javaInput, TreeRangeMap<Integer, String> replacementMap) throws FormatterException {
     // process in descending order so the replacement ranges aren't perturbed if any replacements

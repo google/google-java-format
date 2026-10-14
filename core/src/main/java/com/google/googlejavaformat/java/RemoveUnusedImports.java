@@ -57,10 +57,8 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Removes unused imports from a source file. Imports that are only used in javadoc are nevertheless
- * kept.
- */
+/// Removes unused imports from a source file. Imports that are only used in javadoc are
+/// nevertheless kept.
 public class RemoveUnusedImports {
 
   // Visits an AST, recording all simple names that could refer to imported
@@ -91,7 +89,7 @@ public class RemoveUnusedImports {
       docTreeSymbolScanner = new DocTreeScanner();
     }
 
-    /** Skip the imports themselves when checking for usage. */
+    /// Skip the imports themselves when checking for usage.
     @Override
     public Void visitImport(ImportTree importTree, Void usedSymbols) {
       return null;
@@ -227,7 +225,7 @@ public class RemoveUnusedImports {
     return unit;
   }
 
-  /** Construct replacements to fix unused imports. */
+  /// Construct replacements to fix unused imports.
   private static RangeMap<Integer, String> buildReplacements(
       String contents,
       JCCompilationUnit unit,
@@ -327,7 +325,7 @@ public class RemoveUnusedImports {
     }
   }
 
-  /** Applies the replacements to the given source, and re-format any edited javadoc. */
+  /// Applies the replacements to the given source, and re-format any edited javadoc.
   private static String applyReplacements(String source, RangeMap<Integer, String> replacements) {
     // save non-empty fixed ranges for reformatting after fixes are applied
     RangeSet<Integer> fixedRanges = TreeRangeSet.create();

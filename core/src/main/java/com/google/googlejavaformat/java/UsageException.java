@@ -16,7 +16,7 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/** Checked exception class for formatter command-line usage errors. */
+/// Checked exception class for formatter command-line usage errors.
 final class UsageException extends Exception {
 
   private static final String DOCS_LINK =

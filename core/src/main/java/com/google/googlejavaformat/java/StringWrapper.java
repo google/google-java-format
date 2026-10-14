@@ -47,19 +47,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
-/** Wraps string literals that exceed the column limit. */
+/// Wraps string literals that exceed the column limit.
 public final class StringWrapper {
 
   private static final String TEXT_BLOCK_DELIMITER = "\"\"\"";
 
-  /** Reflows long string literals in the given Java source code. */
+  /// Reflows long string literals in the given Java source code.
   public static String wrap(String input, Formatter formatter) throws FormatterException {
     return StringWrapper.wrap(formatter.options().maxLineLength(), input, formatter);
   }
 
-  /**
-   * Reflows string literals in the given Java source code that extend past the given column limit.
-   */
+  /// Reflows string literals in the given Java source code that extend past the given column limit.
   static String wrap(final int columnLimit, String input, Formatter formatter)
       throws FormatterException {
     JavaFormatterOptions options = formatter.options();
@@ -268,10 +266,8 @@ public final class StringWrapper {
     }
   }
 
-  /**
-   * Returns the source text of the given string literal trees, excluding the leading and trailing
-   * double-quotes and the `+` operator.
-   */
+  /// Returns the source text of the given string literal trees, excluding the leading and trailing
+  /// double-quotes and the `+` operator.
   private static ImmutableList<String> stringComponents(
       String input, JCTree.JCCompilationUnit unit, List<Tree> flat) {
     ImmutableList.Builder<String> result = ImmutableList.builder();
@@ -330,17 +326,15 @@ public final class StringWrapper {
     return offset > 0 ? offset : -1;
   }
 
-  /**
-   * Reflows the given source text, trying to split on word boundaries.
-   *
-   * @param separator the line separator
-   * @param columnLimit the number of columns to wrap at
-   * @param startColumn the column position of the beginning of the original text
-   * @param trailing extra space to leave after the last line, to accommodate a ; or )
-   * @param components the text to reflow. This is a list of “words” of a single literal. Its first
-   *     and last quotes have been stripped
-   * @param first0 true if the text includes the beginning of its enclosing concat chain
-   */
+  /// Reflows the given source text, trying to split on word boundaries.
+  ///
+  /// @param separator the line separator
+  /// @param columnLimit the number of columns to wrap at
+  /// @param startColumn the column position of the beginning of the original text
+  /// @param trailing extra space to leave after the last line, to accommodate a ; or )
+  /// @param components the text to reflow. This is a list of “words” of a single literal. Its first
+  ///   and last quotes have been stripped
+  /// @param first0 true if the text includes the beginning of its enclosing concat chain
   private static String reflow(
       String separator,
       int columnLimit,
@@ -402,10 +396,8 @@ public final class StringWrapper {
     return true;
   }
 
-  /**
-   * Flattens the given binary expression tree, and extracts the subset that contains the given path
-   * and any adjacent nodes that are also string literals.
-   */
+  /// Flattens the given binary expression tree, and extracts the subset that contains the given
+  /// path and any adjacent nodes that are also string literals.
   private static List<Tree> flatten(
       String input,
       JCTree.JCCompilationUnit unit,
@@ -458,10 +450,8 @@ public final class StringWrapper {
   private static final CharMatcher STRING_CONCAT_DELIMITER =
       CharMatcher.whitespace().or(CharMatcher.anyOf("\"+"));
 
-  /**
-   * Returns true if any lines in the given Java source exceed the column limit, or contain a {@code
-   * """} that could indicate a text block.
-   */
+  /// Returns true if any lines in the given Java source exceed the column limit, or contain a `"""`
+  /// that could indicate a text block.
   private static boolean needWrapping(int columnLimit, String input, JavaFormatterOptions options) {
     // TODO(cushon): consider adding Newlines.lineIterable?
     Iterator<String> it = Newlines.lineIterator(input);
@@ -474,7 +464,7 @@ public final class StringWrapper {
     return false;
   }
 
-  /** Parses the given Java source. */
+  /// Parses the given Java source.
   private static JCTree.JCCompilationUnit parse(String source, boolean allowStringFolding)
       throws FormatterException {
     List<Diagnostic<? extends JavaFileObject>> errorDiagnostics = new ArrayList<>();
@@ -488,7 +478,7 @@ public final class StringWrapper {
     return unit;
   }
 
-  /** Applies replacements to the given string. */
+  /// Applies replacements to the given string.
   private static String applyReplacements(
       String javaInput, TreeRangeMap<Integer, String> replacementMap) throws FormatterException {
     // process in descending order so the replacement ranges aren't perturbed if any replacements

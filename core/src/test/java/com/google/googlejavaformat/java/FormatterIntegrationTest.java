@@ -42,7 +42,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/** Integration test for google-java-format. */
+/// Integration test for google-java-format.
 @RunWith(Parameterized.class)
 public class FormatterIntegrationTest {
 

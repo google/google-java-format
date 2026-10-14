@@ -24,7 +24,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/** {@link RemoveUnusedImports}Test */
+/// [RemoveUnusedImports]Test
 @RunWith(Parameterized.class)
 public class RemoveUnusedImportsTest {
   @Parameters(name = "{index}: {0}")

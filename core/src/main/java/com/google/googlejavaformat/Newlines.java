@@ -20,15 +20,15 @@ import com.google.common.collect.Iterators;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-/** Platform-independent newline handling. */
+/// Platform-independent newline handling.
 public class Newlines {
 
-  /** Returns the number of line breaks in the input. */
+  /// Returns the number of line breaks in the input.
   public static int count(String input) {
     return Iterators.size(lineOffsetIterator(input)) - 1;
   }
 
-  /** Returns the index of the first break in the input, or {@code -1}. */
+  /// Returns the index of the first break in the input, or `-1`.
   public static int firstBreak(String input) {
     Iterator<Integer> it = lineOffsetIterator(input);
     it.next();
@@ -52,12 +52,12 @@ public class Newlines {
 
   private static final ImmutableSet<String> BREAKS = ImmutableSet.of("\r\n", "\n", "\r");
 
-  /** Returns true if the entire input string is a recognized line break. */
+  /// Returns true if the entire input string is a recognized line break.
   public static boolean isNewline(String input) {
     return BREAKS.contains(input);
   }
 
-  /** Returns the length of the newline sequence at the current offset, or {@code -1}. */
+  /// Returns the length of the newline sequence at the current offset, or `-1`.
   public static int hasNewlineAt(String input, int idx) {
     for (String b : BREAKS) {
       if (input.startsWith(b, idx)) {
@@ -67,10 +67,8 @@ public class Newlines {
     return -1;
   }
 
-  /**
-   * Returns the terminating line break in the input, or {@code null} if the input does not end in a
-   * break.
-   */
+  /// Returns the terminating line break in the input, or `null` if the input does not end in a
+  /// break.
   public static String getLineEnding(String input) {
     for (String b : BREAKS) {
       if (input.endsWith(b)) {
@@ -80,10 +78,8 @@ public class Newlines {
     return null;
   }
 
-  /**
-   * Returns the first line separator in the text, or {@code "\n"} if the text does not contain a
-   * single line separator.
-   */
+  /// Returns the first line separator in the text, or `"\n"` if the text does not contain a single
+  /// line separator.
   public static String guessLineSeparator(String text) {
     for (int i = 0; i < text.length(); i++) {
       char c = text.charAt(i);
@@ -103,17 +99,17 @@ public class Newlines {
     return "\n";
   }
 
-  /** Returns true if the input contains any line breaks. */
+  /// Returns true if the input contains any line breaks.
   public static boolean containsBreaks(String text) {
     return CharMatcher.anyOf("\n\r").matchesAnyOf(text);
   }
 
-  /** Returns an iterator over the start offsets of lines in the input. */
+  /// Returns an iterator over the start offsets of lines in the input.
   public static Iterator<Integer> lineOffsetIterator(String input) {
     return new LineOffsetIterator(input);
   }
 
-  /** Returns an iterator over lines in the input, including trailing whitespace. */
+  /// Returns an iterator over lines in the input, including trailing whitespace.
   public static Iterator<String> lineIterator(String input) {
     return new LineIterator(input);
   }

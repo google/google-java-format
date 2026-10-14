@@ -42,10 +42,8 @@ import java.util.function.IntFunction;
  * toks.
  */
 
-/**
- * {@code JavaOutput} extends {@link Output Output} to represent a Java output document. It includes
- * methods to emit the output document.
- */
+/// `JavaOutput` extends [Output] to represent a Java output document. It includes methods to emit
+/// the output document.
 public final class JavaOutput extends Output {
   private final String lineSeparator;
   private final Input javaInput; // Used to follow along while emitting the output.
@@ -65,7 +63,7 @@ public final class JavaOutput extends Output {
   private static final int MAX_CACHED_SPACES = 100;
   private static final String[] spaces = new String[MAX_CACHED_SPACES + 1];
 
-  /** Returns an indentation string of the given number of spaces. */
+  /// Returns an indentation string of the given number of spaces.
   static String spaces(int indent) {
     if (indent <= 0) {
       return "";
@@ -80,23 +78,19 @@ public final class JavaOutput extends Output {
     return " ".repeat(indent);
   }
 
-  /**
-   * {@code JavaOutput} constructor.
-   *
-   * @param javaInput the {@link Input}, used to match up blank lines in the output
-   * @param commentsHelper the {@link CommentsHelper}, used to rewrite comments
-   */
+  /// `JavaOutput` constructor.
+  ///
+  /// @param javaInput the [Input], used to match up blank lines in the output
+  /// @param commentsHelper the [CommentsHelper], used to rewrite comments
   public JavaOutput(String lineSeparator, Input javaInput, CommentsHelper commentsHelper) {
     this(lineSeparator, javaInput, commentsHelper, JavaOutput::spaces);
   }
 
-  /**
-   * {@code JavaOutput} constructor.
-   *
-   * @param javaInput the {@link Input}, used to match up blank lines in the output
-   * @param commentsHelper the {@link CommentsHelper}, used to rewrite comments
-   * @param indentFunction function mapping a visual column indent to an indentation string
-   */
+  /// `JavaOutput` constructor.
+  ///
+  /// @param javaInput the [Input], used to match up blank lines in the output
+  /// @param commentsHelper the [CommentsHelper], used to rewrite comments
+  /// @param indentFunction function mapping a visual column indent to an indentation string
   public JavaOutput(
       String lineSeparator,
       Input javaInput,
@@ -217,7 +211,7 @@ public final class JavaOutput extends Output {
     spacesPending.append(indentFunction.apply(indent));
   }
 
-  /** Flush any incomplete last line, then add the EOF token into our data structures. */
+  /// Flush any incomplete last line, then add the EOF token into our data structures.
   public void flush() {
     String lastLine = lineBuilder.toString();
     if (!CharMatcher.whitespace().matchesAllOf(lastLine)) {
@@ -239,11 +233,9 @@ public final class JavaOutput extends Output {
     return commentsHelper;
   }
 
-  /**
-   * Emit a list of {@link Replacement}s to convert from input to output.
-   *
-   * @return a list of {@link Replacement}s, sorted by start index, without overlaps
-   */
+  /// Emit a list of [Replacement]s to convert from input to output.
+  ///
+  /// @return a list of [Replacement]s, sorted by start index, without overlaps
   public ImmutableList<Replacement> getFormatReplacements(RangeSet<Integer> iRangeSet0) {
     ImmutableList.Builder<Replacement> result = ImmutableList.builder();
     Map<Integer, Range<Integer>> kToJ = JavaOutput.makeKToIJ(this);
@@ -350,12 +342,10 @@ public final class JavaOutput extends Output {
     return result.build();
   }
 
-  /**
-   * Expand a token range to start and end on acceptable boundaries for re-formatting.
-   *
-   * @param iRange the {@link Range} of tokens
-   * @return the expanded token range
-   */
+  /// Expand a token range to start and end on acceptable boundaries for re-formatting.
+  ///
+  /// @param iRange the [Range] of tokens
+  /// @return the expanded token range
   private Range<Integer> expandToBreakableRegions(Range<Integer> iRange) {
     // The original line range.
     int loTok = iRange.lowerEndpoint();
@@ -383,7 +373,7 @@ public final class JavaOutput extends Output {
     return writer.toString();
   }
 
-  /** The earliest non-whitespace Tok in the Token. */
+  /// The earliest non-whitespace Tok in the Token.
   public static Input.Tok startTok(Token token) {
     for (Input.Tok tok : token.getToksBefore()) {
       if (tok.getIndex() >= 0) {
@@ -393,7 +383,7 @@ public final class JavaOutput extends Output {
     return token.getTok();
   }
 
-  /** The last non-whitespace Tok in the Token. */
+  /// The last non-whitespace Tok in the Token.
   public static Input.Tok endTok(Token token) {
     for (int i = token.getToksAfter().size() - 1; i >= 0; i--) {
       Input.Tok tok = token.getToksAfter().get(i);
