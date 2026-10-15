@@ -1,0 +1,162 @@
+class LambdaHug {
+  void statements() {
+    executor.submit(
+        () -> {
+          run();
+        });
+    executor.submit(
+        () -> {
+          runSomethingThatIsLong();
+          runSomethingElseThatIsAlsoLong();
+          run();
+        });
+    listenableFuture.addListener(
+        () -> {
+          System.err.println("done");
+        },
+        MoreExecutors.directExecutor());
+    Futures.addCallback(
+        future,
+        new FutureCallback<Object>() {
+          public void onSuccess(Object o) {}
+        });
+    foo.bar(
+        firstArgument,
+        secondArgument,
+        (param1, param2) -> {
+          return expr(param1, param2);
+        });
+    foo.bar(
+        firstArgument,
+        secondArgument,
+        (param1, param2) -> param1.someLongMethodName(param2).another());
+    foo.bar(
+        someVeryLongFirstArgumentExpressionThatIsReallyLong,
+        anotherVeryLongArgument,
+        x -> {
+          run();
+        });
+    foo.bar(
+        x -> {},
+        y -> {
+          run();
+          runSomethingElseThatIsAlsoLong();
+          runSomethingElseThatIsAlsoLong();
+        });
+    foo.bar(
+        new Object[] {aaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb},
+        x -> {
+          run();
+          run();
+          run();
+        });
+    foo.bar(
+        (param1, param2) ->
+            param1.someLongMethodName(param2).anotherLongMethodName().andAnotherOne());
+  }
+
+  int returns() {
+    return computeSomething(
+        input,
+        (a, b) -> {
+          return a.combineWith(b).withSomethingElse(c);
+        });
+  }
+
+  void assignments() {
+    Runnable r =
+        executor.submit(
+            () -> {
+              runSomethingThatIsLong();
+              runSomethingElseThatIsAlsoLong();
+            });
+    x =
+        list.stream()
+            .map(element -> element.transformWithSomethingLong().andSomethingElse())
+            .collect(toList());
+    Runnable r =
+        () -> {
+          runSomethingThatIsLong();
+          runSomethingElseThatIsAlsoLong();
+          run();
+        };
+    Comparator<String> c =
+        new Comparator<String>() {
+          public int compare(String a, String b) {
+            return 0;
+          }
+        };
+    listener =
+        new Listener(someArgument, anotherArgument, yetAnotherArgumentThatIsLong) {
+          void f() {}
+        };
+    callbacks +=
+        register(
+            event -> {
+              handle(event);
+              handleAgain(event);
+              handleOnceMore(event);
+            });
+    x =
+        someObject
+            .withSomeMethod(argument)
+            .andAnotherMethod(argument)
+            .thenAccept(
+                y -> {
+                  consume(y);
+                });
+    ImmutableMap<String, SomeVeryLongTypeName<AnotherLongTypeName>> someLongVariableName =
+        compute(
+            k -> {
+              return k;
+            });
+  }
+
+  private final Runnable field =
+      () -> {
+        runSomethingThatIsLong();
+        runSomethingElseThatIsAlsoLong();
+      };
+
+  void chains() {
+    list.stream()
+        .filter(x -> x.isSomethingThatIsLong() && x.isSomethingElseThatIsLong() && x.isThirdThing())
+        .map(
+            x -> {
+              Object y = x.transform();
+              return y.transformAgainWithSomethingLonger();
+            })
+        .forEach(System.out::println);
+    CompletableFuture.supplyAsync(() -> computeSomethingExpensive(input, parameters))
+        .thenAccept(
+            result -> {
+              consume(result);
+              consumeAgain(result);
+            });
+    someObject.someModerateLengthFunctionName(
+        foo -> doOtherModerateLengthName(foo, bar, baz, qux, quux));
+  }
+
+  void nested() {
+    outer(
+        a ->
+            inner(
+                b ->
+                    innermost(
+                        c -> {
+                          doSomethingWith(a, b, c);
+                          doSomethingElseWith(a, b, c);
+                        })));
+  }
+
+  void comments() {
+    f(
+        // comment
+        x ->
+            System.err.println("hello, world, this is a long string that doesn't fit on the line"));
+    f(
+        x -> { // trailing comment
+          run();
+        });
+  }
+}
