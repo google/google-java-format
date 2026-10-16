@@ -256,6 +256,42 @@ class Test {
     assertThat(out.toString()).isEqualTo(expected);
   }
 
+  // https://github.com/google/google-java-format/issues/1436
+  @Test
+  public void unusedImportRemovalDoesNotLeaveDoubleBlankBeforeJavadoc() throws Exception {
+    String input =
+        """
+        package com.example;
+
+        import static io.grpc.MethodDescriptor.generateFullMethodName;
+
+        /**
+         * Javadoc for class.
+         */
+        public class TestBug {
+        }
+        """;
+    String expected =
+        """
+        package com.example;
+
+        /** Javadoc for class. */
+        public class TestBug {}
+        """;
+
+    assertThat(new Formatter().formatSourceAndFixImports(input)).isEqualTo(expected);
+
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
+    assertThat(main.format("-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expected);
+  }
+
   // test that -lines handling works with import removal
   @Test
   public void importRemovalLines() throws Exception {
