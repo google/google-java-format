@@ -23,7 +23,9 @@ import com.google.googlejavaformat.CommentsHelper;
 import com.google.googlejavaformat.Indent;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Output;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 /// Lays out a [Doc].
@@ -105,6 +107,33 @@ public final class LayoutSolver {
     private final CommentsHelper commentsHelper;
     private final List<Action> actions = new ArrayList<>();
 
+    /// Whether the innermost trial layout has reached the end of its first line.
+    private boolean firstLineEnded = false;
+
+    /// The column at which the innermost trial's first line ended, if [#firstLineEnded].
+    private int firstLineEndColumn;
+
+    /// The indent of the current line.
+    private int lineIndent = 0;
+
+    /// The state of a break tag before it was modified during a trial layout.
+    ///
+    /// @param tag the break tag
+    /// @param wasBroken the tag's [Output.BreakTag#wasBreakTaken] value before it was modified
+    private record SavedBreakTag(Output.BreakTag tag, boolean wasBroken) {
+      void restore() {
+        tag.recordBroken(wasBroken);
+      }
+    }
+
+    /// A stack of active trial layouts (see [#firstLineEnd]). While non-empty, ending the current
+    /// line stops the innermost trial: [#endLine] sets [#firstLineEnded], and layout methods return
+    /// as soon as they see it set.
+    ///
+    /// Each entry records the previous state of every [Output.BreakTag] modified during that trial,
+    /// so that the tags can be restored when the trial ends.
+    private final Deque<List<SavedBreakTag>> trialTagsStack = new ArrayDeque<>();
+
     Solver(int maxWidth, CommentsHelper commentsHelper) {
       this.maxWidth = maxWidth;
       this.commentsHelper = commentsHelper;
@@ -132,6 +161,9 @@ public final class LayoutSolver {
         if (doc instanceof Doc.Break b) {
           SegmentResult result = segment(before, segment, previousFits, state);
           state = result.state();
+          if (firstLineEnded) {
+            return state;
+          }
           previousFits = result.fits();
           before = b;
           segment = new ArrayList<>();
@@ -163,18 +195,30 @@ public final class LayoutSolver {
                   !previousFits || state.column() + before.width() + segmentWidth > maxWidth;
             };
         state = breakOp(before, taken, state);
+        if (firstLineEnded) {
+          // The trial is over, so whether the segment fits doesn't matter.
+          return new SegmentResult(state, true);
+        }
       }
       boolean fits = state.column() + segmentWidth <= maxWidth;
       for (Doc doc : segment) {
         state = leaf(doc, state);
+        if (firstLineEnded) {
+          return new SegmentResult(state, fits);
+        }
       }
       return new SegmentResult(state, fits);
     }
 
     private State breakOp(Doc.Break b, boolean taken, State state) {
-      b.tag().ifPresent(t -> t.recordBroken(taken));
+      b.tag().ifPresent(t -> recordTag(t, taken));
       if (taken) {
+        endLine(state.column());
+        if (firstLineEnded) {
+          return state;
+        }
         int indent = max(state.indent() + b.plusIndent().eval(), 0);
+        lineIndent = indent;
         actions.add(new Newline());
         actions.add(new IndentTo(indent));
         return state.withColumn(indent);
@@ -186,7 +230,12 @@ public final class LayoutSolver {
     private State leaf(Doc doc, State state) {
       return switch (doc) {
         case Doc.Group g -> group(g, state);
+        case Doc.Choice c -> choice(c, state);
         case Doc.Text t -> {
+          int newline = Newlines.firstBreak(t.text());
+          if (newline >= 0) {
+            endLine(state.column() + newline);
+          }
           actions.add(new Append(t.text(), t.range()));
           yield state.withColumn(state.column() + t.width());
         }
@@ -199,12 +248,122 @@ public final class LayoutSolver {
               commentsHelper != null
                   ? commentsHelper.rewrite(c.tok(), maxWidth, state.column())
                   : c.flat();
+          int newline = Newlines.firstBreak(text);
+          if (newline >= 0) {
+            endLine(state.column() + newline);
+          }
           actions.add(new Append(text, c.range()));
           int lastLineLength = text.length() - Newlines.lastLineStart(text);
           yield state.withColumn(state.column() + lastLineLength);
         }
         case Doc.Break b -> throw new AssertionError(b);
       };
+    }
+
+    /// Lays out a choice. If it doesn't fit flat, the fallback is used if breaking at its direct
+    /// break allows the rest of it to fit flat on the next line (e.g. `f(\n x -> g(x))` rather than
+    /// breaking inside the lambda). Otherwise, the preferred layout is used when its prefix fits
+    /// flat on the current line, its first line fits, and that line contains the whole prefix (e.g.
+    /// a hugged lambda isn't preceded by a line comment); otherwise the fallback is used.
+    ///
+    /// The preferred layout is indented relative to the indent of the current line, rather than the
+    /// indent of the enclosing groups. It starts partway along a line, so enclosing groups whose
+    /// breaks weren't taken shouldn't contribute to its indentation. For example, a hugged lambda
+    /// body is indented relative to the line containing the call.
+    private State choice(Doc.Choice choice, State state) {
+      int width = choice.width();
+      if (state.column() + width <= maxWidth) {
+        actions.add(new Append(choice.flat(), choice.range()));
+        return state.withColumn(state.column() + width);
+      }
+      if (fallbackFitsOnNextLine(choice.fallback(), state)) {
+        return group(choice.fallback(), state);
+      }
+      State preferredState = new State(lineIndent, state.column());
+      int prefixEnd = state.column() + choice.prefixWidth();
+      if (prefixEnd <= maxWidth) {
+        Trial trial = firstLineEnd(choice.preferred(), preferredState);
+        int firstLineEnd = trial.column();
+        if (prefixEnd <= firstLineEnd && firstLineEnd <= maxWidth) {
+          if (!trialTagsStack.isEmpty() && trial.lineEnded()) {
+            // The enclosing trial ends on the line the preferred layout's trial just ended, so
+            // laying out the preferred layout again would only rediscover that column. Skipping it
+            // keeps the cost of nested choices linear, instead of doubling it at each level.
+            endLine(firstLineEnd);
+            return state;
+          }
+          return state.withColumn(group(choice.preferred(), preferredState).column());
+        }
+      }
+      return group(choice.fallback(), state);
+    }
+
+    /// Returns whether `fallback` can be laid out by taking a single direct break and fitting
+    /// everything after that break flat on the next line.
+    private boolean fallbackFitsOnNextLine(Doc.Group fallback, State state) {
+      ImmutableList<Doc> docs = fallback.docs();
+      int breakIndex = -1;
+      for (int i = 0; i < docs.size(); i++) {
+        if (docs.get(i) instanceof Doc.Break) {
+          if (breakIndex != -1) {
+            return false;
+          }
+          breakIndex = i;
+        }
+      }
+      if (breakIndex == -1
+          || state.column() + Doc.Group.totalWidth(docs.subList(0, breakIndex)) > maxWidth) {
+        return false;
+      }
+      Doc.Break theBreak = (Doc.Break) docs.get(breakIndex);
+      int indent =
+          max(state.indent() + fallback.plusIndent().eval() + theBreak.plusIndent().eval(), 0);
+      return indent + Doc.Group.totalWidth(docs.subList(breakIndex + 1, docs.size())) <= maxWidth;
+    }
+
+    /// The result of a trial layout.
+    ///
+    /// @param column the column at which the first line ended, or at which the layout ended if it
+    ///   fit on one line
+    /// @param lineEnded whether the first line ended before the end of the layout
+    private record Trial(int column, boolean lineEnded) {}
+
+    /// Lays out `group` provisionally, up to the end of its first line, and returns the column at
+    /// which that line ends. The layout's output and break tags are discarded.
+    ///
+    /// Only the first line is laid out, so the cost of a trial is bounded by the line width rather
+    /// than by the size of `group`. A nested trial consumes [#firstLineEnded] before returning, so
+    /// the enclosing trial continues.
+    private Trial firstLineEnd(Doc.Group group, State state) {
+      int mark = actions.size();
+      int savedLineIndent = lineIndent;
+      trialTagsStack.push(new ArrayList<>());
+      State end = group(group, state);
+      Trial trial =
+          firstLineEnded ? new Trial(firstLineEndColumn, true) : new Trial(end.column(), false);
+      firstLineEnded = false;
+      lineIndent = savedLineIndent;
+      actions.subList(mark, actions.size()).clear();
+      for (SavedBreakTag saved : trialTagsStack.pop().reversed()) {
+        saved.restore();
+      }
+      return trial;
+    }
+
+    /// Records that the current line ends at `column`. In a trial layout, this ends the trial;
+    /// callers must check [#firstLineEnded] and return.
+    private void endLine(int column) {
+      if (!trialTagsStack.isEmpty()) {
+        firstLineEnded = true;
+        firstLineEndColumn = column;
+      }
+    }
+
+    private void recordTag(Output.BreakTag tag, boolean taken) {
+      if (!trialTagsStack.isEmpty()) {
+        trialTagsStack.peek().add(new SavedBreakTag(tag, tag.wasBreakTaken()));
+      }
+      tag.recordBroken(taken);
     }
   }
 }

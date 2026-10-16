@@ -167,6 +167,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -1356,6 +1357,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.close();
     builder.space();
     builder.op("->");
+    markHugPoint(node);
     builder.open(statementBody ? ZERO : plusFour);
     if (statementBody) {
       builder.space();
@@ -3368,10 +3370,16 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   /// @param arguments the arguments
   /// @param plusIndent the extra indent for the arguments
   private void addArguments(List<? extends ExpressionTree> arguments, Indent plusIndent) {
-    builder.open(plusIndent);
+    boolean tabular = arguments.size() % 2 == 0 && argumentsAreTabular(arguments) == 2;
+    boolean hug = canHugOnlyArgument(arguments);
+    if (hug) {
+      builder.openHuggable(plusIndent, hugPoint(getOnlyElement(arguments)));
+    } else {
+      builder.open(plusIndent);
+    }
     token("(");
     if (!arguments.isEmpty()) {
-      if (arguments.size() % 2 == 0 && argumentsAreTabular(arguments) == 2) {
+      if (tabular) {
         builder.forcedBreak();
         builder.open(ZERO);
         boolean afterFirstToken = false;
@@ -3403,15 +3411,65 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         builder.close();
       } else {
         builder.breakOp();
-        argList(arguments);
+        argList(arguments, hug);
       }
     }
     token(")");
     builder.close();
   }
 
+  /**
+   * The {@link LayoutBuilder.HugPoint}s of constructs that may be hugged, keyed by the construct.
+   * They are marked when the construct is visited.
+   */
+  private final IdentityHashMap<Tree, LayoutBuilder.HugPoint> hugPoints = new IdentityHashMap<>();
+
+  /** Returns the hug point for {@code tree}, which is marked when {@code tree} is visited. */
+  private LayoutBuilder.HugPoint hugPoint(Tree tree) {
+    return hugPoints.computeIfAbsent(tree, t -> LayoutBuilder.newHugPoint());
+  }
+
+  /** Marks the hug point of {@code tree}, if it may be hugged. */
+  private void markHugPoint(Tree tree) {
+    LayoutBuilder.HugPoint hugPoint = hugPoints.remove(tree);
+    if (hugPoint != null) {
+      builder.hugPoint(hugPoint);
+    }
+  }
+
+  /**
+   * Returns true for constructs that may be hugged, i.e. laid out starting on the line of the
+   * preceding content: lambdas.
+   */
+  private static boolean isHuggable(ExpressionTree tree) {
+    return tree instanceof LambdaExpressionTree;
+  }
+
+  /**
+   * Returns true if the argument list is a single argument that may be hugged, e.g. {@code f(x -> {
+   * ... })}. Lambdas preceded by other arguments aren't hugged: the preceding arguments would share
+   * a line with the lambda's head, and wouldn't line up with the lambda's body.
+   */
+  private static boolean canHugOnlyArgument(List<? extends ExpressionTree> arguments) {
+    return arguments.size() == 1 && isHuggable(getOnlyElement(arguments));
+  }
+
   private void argList(List<? extends ExpressionTree> arguments) {
-    builder.open(ZERO);
+    argList(arguments, /* hug= */ false);
+  }
+
+  /**
+   * Adds an argument list.
+   *
+   * @param hug whether the only argument may be hugged, i.e. laid out starting on the line of the
+   *     call; see {@link LayoutBuilder#openHuggable}
+   */
+  private void argList(List<? extends ExpressionTree> arguments, boolean hug) {
+    if (hug) {
+      builder.openHuggedArguments();
+    } else {
+      builder.open(ZERO);
+    }
     boolean afterFirstToken = false;
     FillMode fillMode = hasOnlyShortItems(arguments) ? FillMode.INDEPENDENT : FillMode.UNIFIED;
     for (ExpressionTree argument : arguments) {

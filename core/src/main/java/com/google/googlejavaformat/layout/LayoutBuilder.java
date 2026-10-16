@@ -127,8 +127,47 @@ public final class LayoutBuilder {
   }
 
   public void open(Indent plusIndent) {
+    open(plusIndent, HugRole.NONE, null);
+  }
+
+  private void open(Indent plusIndent, HugRole hugRole, HugPoint hugPoint) {
     depth++;
-    events.add(new Open(plusIndent));
+    events.add(new Open(plusIndent, hugRole, hugPoint));
+  }
+
+  /// The start of the body of a construct that can be hugged, i.e. laid out starting on the same
+  /// line as preceding content, e.g. the body of a lambda. See [#openHuggable].
+  public static final class HugPoint {
+    /// A zero-width marker for this point in the [Doc].
+    private final Doc marker = new Doc.Text("");
+
+    private HugPoint() {}
+  }
+
+  /// Returns a new [HugPoint], to be passed to [#hugPoint] and an enclosing level.
+  public static HugPoint newHugPoint() {
+    return new HugPoint();
+  }
+
+  /// Marks the position of `hugPoint`.
+  public void hugPoint(HugPoint hugPoint) {
+    events.add(new HugPointOp(hugPoint));
+  }
+
+  /// Opens a level for an argument list whose argument may be hugged, e.g. `f(x -> { ... })`. The
+  /// level's direct breaks, and the direct breaks of a nested level opened with
+  /// [#openHuggedArguments], are the ones that are not taken when hugging, and everything up to
+  /// `hugPoint` must then fit on the current line.
+  ///
+  /// When hugged, the hugged content is indented relative to the line containing the call, instead
+  /// of by the level's extra indent.
+  public void openHuggable(Indent plusIndent, HugPoint hugPoint) {
+    open(plusIndent, HugRole.HUGGABLE, hugPoint);
+  }
+
+  /// Opens the level holding the arguments of an enclosing [#openHuggable] level.
+  public void openHuggedArguments() {
+    open(ZERO, HugRole.ARGUMENTS, null);
   }
 
   public void close() {
@@ -493,8 +532,9 @@ public final class LayoutBuilder {
         continue;
       }
       result.add(ev);
-      // An `Open` doesn't output anything, so it doesn't end the run that follows a forced break.
-      if (!(ev instanceof Open)) {
+      // An `Open` or hug point doesn't output anything, so it doesn't end the run that follows a
+      // forced break.
+      if (!(ev instanceof Open || ev instanceof HugPointOp)) {
         afterForcedBreak = isForcedBreak(ev);
       }
     }
@@ -534,13 +574,14 @@ public final class LayoutBuilder {
   /// closed group) into the preceding group, so it's accounted for when deciding whether that group
   /// fits on the line.
   private static Doc buildTree(List<Event> events) {
-    LevelBuilder base = new LevelBuilder(ZERO);
+    LevelBuilder base = new LevelBuilder(ZERO, HugRole.NONE, null);
     ArrayDeque<LevelBuilder> stack = new ArrayDeque<>();
     stack.addLast(base);
     LevelBuilder appendLevel = base;
     for (Event ev : events) {
       switch (ev) {
-        case Open open -> stack.addLast(new LevelBuilder(open.plusIndent()));
+        case Open open ->
+            stack.addLast(new LevelBuilder(open.plusIndent(), open.hugRole(), open.hugPoint()));
         case Close close -> {
           LevelBuilder top = stack.removeLast();
           stack.getLast().add(top);
@@ -556,6 +597,7 @@ public final class LayoutBuilder {
                   tok.getOriginalText(), Range.singleton(tok.getIndex()).canonical(INTEGERS)));
         }
         case TokOp tokOp -> appendLevel.add(new Doc.Tok(tokOp.tok()));
+        case HugPointOp hugPointOp -> appendLevel.add(hugPointOp.hugPoint().marker);
         case SpaceOp spaceOp -> appendLevel.add(Doc.Space.INSTANCE);
       }
     }
@@ -577,28 +619,127 @@ public final class LayoutBuilder {
   /// A mutable group under construction; see [#buildTree].
   private static final class LevelBuilder {
     final Indent plusIndent;
+    final HugRole hugRole;
+    final HugPoint hugPoint;
     final List<Object> items = new ArrayList<>();
 
-    LevelBuilder(Indent plusIndent) {
+    LevelBuilder(Indent plusIndent, HugRole hugRole, HugPoint hugPoint) {
       this.plusIndent = plusIndent;
+      this.hugRole = hugRole;
+      this.hugPoint = hugPoint;
     }
 
     void add(Object item) {
       items.add(item);
     }
 
-    Doc.Group build() {
+    Doc build() {
+      return hugRole == HugRole.HUGGABLE
+          ? buildHuggable()
+          : new Doc.Group(plusIndent, buildItems());
+    }
+
+    ImmutableList<Doc> buildItems() {
       ImmutableList.Builder<Doc> docs = ImmutableList.builder();
       for (Object item : items) {
         docs.add(item instanceof LevelBuilder lb ? lb.build() : (Doc) item);
       }
-      return new Doc.Group(plusIndent, docs.build());
+      return docs.build();
+    }
+
+    /// Builds a choice between hugging and the regular layout.
+    ///
+    /// The hugged layout has the same content as the regular one, but the breaks of this level and
+    /// of its [HugRole#ARGUMENTS] level (if any) are replaced by their flat text, and this level's
+    /// extra indent is dropped. Everything up to the hug point must fit on the current line.
+    private Doc buildHuggable() {
+      ImmutableList.Builder<Doc> fallback = ImmutableList.builder();
+      ImmutableList.Builder<Doc> preferred = ImmutableList.builder();
+      boolean canHug = true;
+      for (Object item : items) {
+        ImmutableList<Doc> flattened;
+        Doc fallbackDoc;
+        switch (item) {
+          case LevelBuilder lb when lb.hugRole == HugRole.ARGUMENTS -> {
+            flattened = lb.buildItems();
+            fallbackDoc = new Doc.Group(lb.plusIndent, flattened);
+          }
+          case LevelBuilder lb -> {
+            fallbackDoc = lb.build();
+            flattened = ImmutableList.of(fallbackDoc);
+          }
+          case Doc doc -> {
+            fallbackDoc = doc;
+            flattened = ImmutableList.of(doc);
+          }
+          default -> throw new AssertionError(item);
+        }
+        fallback.add(fallbackDoc);
+        for (Doc doc : flattened) {
+          if (doc instanceof Doc.Break b) {
+            canHug &= canFlatten(b);
+            preferred.add(new Doc.Text(b.flatText()));
+          } else {
+            preferred.add(doc);
+          }
+        }
+      }
+      Doc.Group fallbackGroup = new Doc.Group(plusIndent, fallback.build());
+      Doc.Group preferredGroup = new Doc.Group(ZERO, preferred.build());
+      int prefixWidth = canHug ? widthBefore(preferredGroup, hugPoint.marker) : -1;
+      if (prefixWidth < 0) {
+        return fallbackGroup;
+      }
+      return new Doc.Choice(preferredGroup, prefixWidth, fallbackGroup);
+    }
+
+    /// Forced breaks (e.g. after line comments) and tagged breaks must not be flattened.
+    private static boolean canFlatten(Doc.Break b) {
+      return b.mode() != Doc.BreakMode.FORCED && b.tag().isEmpty();
+    }
+
+    /// Returns the flat width of the content of `doc` before `marker`, or -1 if `doc` doesn't
+    /// contain `marker` within fewer than [Doc#MAX_LINE_WIDTH] columns.
+    // Hug point markers are equal to any other empty Text, so they must be found by identity.
+    @SuppressWarnings("ReferenceEquality")
+    private static int widthBefore(Doc doc, Doc marker) {
+      if (doc == marker) {
+        return 0;
+      }
+      return switch (doc) {
+        case Doc.Group g -> {
+          int width = 0;
+          for (Doc child : g.docs()) {
+            int before = widthBefore(child, marker);
+            if (before >= 0) {
+              yield min(width + before, Doc.MAX_LINE_WIDTH);
+            }
+            width += child.width();
+            if (width >= Doc.MAX_LINE_WIDTH) {
+              yield -1;
+            }
+          }
+          yield -1;
+        }
+        case Doc.Choice c -> widthBefore(c.fallback(), marker);
+        default -> -1;
+      };
     }
   }
 
-  private sealed interface Event permits Open, Close, LineBreak, TokenOp, TokOp, SpaceOp {}
+  private sealed interface Event
+      permits Open, Close, LineBreak, TokenOp, TokOp, SpaceOp, HugPointOp {}
 
-  private record Open(Indent plusIndent) implements Event {}
+  private record Open(Indent plusIndent, HugRole hugRole, HugPoint hugPoint) implements Event {}
+
+  private record HugPointOp(HugPoint hugPoint) implements Event {}
+
+  /// The role of a level in a huggable argument list; see [#openHuggable].
+  private enum HugRole {
+    NONE,
+    HUGGABLE,
+    ARGUMENTS
+  }
 
   private record Close() implements Event {}
 

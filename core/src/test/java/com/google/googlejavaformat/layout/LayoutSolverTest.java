@@ -132,4 +132,126 @@ public class LayoutSolverTest {
     Doc doc = group(text("a"), space(), text("b"), space(), text("c"));
     assertThat(LayoutSolver.format(doc, 3)).isEqualTo("a b c");
   }
+
+  /// `f(a, x -> body)`, with a preferred layout that hugs the lambda.
+  private static Doc hugChoice(String body) {
+    Doc.Group lambdaBody = (Doc.Group) group(4, line(), text(body));
+    Doc.Group fallback =
+        (Doc.Group)
+            group(
+                4,
+                text("f("),
+                softline(),
+                group(text("a,"), line(), text("x ->"), lambdaBody),
+                text(")"));
+    Doc.Group preferred =
+        (Doc.Group) group(text("f("), text("a,"), text(" "), text("x ->"), lambdaBody, text(")"));
+    return new Doc.Choice(preferred, "f(a, ".length(), fallback);
+  }
+
+  @Test
+  public void choiceFlat() {
+    assertThat(LayoutSolver.format(hugChoice("y"), 20)).isEqualTo("f(a, x -> y)");
+    // Also exercise a Choice that fits flat inside an enclosing broken Group, where Solver.choice
+    // is reached directly instead of the root Group being flattened up front.
+    Doc inBrokenGroup = group(text("prefix"), line(), hugChoice("y"));
+    assertThat(LayoutSolver.format(inBrokenGroup, 15)).isEqualTo("prefix\nf(a, x -> y)");
+  }
+
+  @Test
+  public void choicePreferred() {
+    // The body is indented relative to the line, not the fallback's +4 argument indent.
+    assertThat(LayoutSolver.format(hugChoice("longBody"), 13))
+        .isEqualTo("f(a, x ->\n    longBody)");
+  }
+
+  @Test
+  public void choiceFallbackWhenFirstLineDoesNotFit() {
+    assertThat(LayoutSolver.format(hugChoice("longBody"), 8))
+        .isEqualTo("f(\n    a,\n    x ->\n        longBody)");
+  }
+
+  @Test
+  public void choiceFallbackWhenRestFitsOnNextLine() {
+    Doc.Group lambdaBody = (Doc.Group) group(4, line(), text("body"));
+    Doc.Group fallback =
+        (Doc.Group)
+            group(
+                4, text("someLongMethod("), softline(), group(text("x ->"), lambdaBody), text(")"));
+    Doc.Group preferred =
+        (Doc.Group) group(text("someLongMethod("), text("x ->"), lambdaBody, text(")"));
+    Doc choice = new Doc.Choice(preferred, "someLongMethod(x ->".length(), fallback);
+    assertThat(LayoutSolver.format(choice, 20)).isEqualTo("someLongMethod(\n    x -> body)");
+  }
+
+  @Test
+  public void choicePreferredWhenFallbackCannotFitOnSingleNextLine() {
+    Doc.Group lambdaBody = (Doc.Group) group(4, line(), text("body"));
+    Doc.Group preferred = (Doc.Group) group(text("f("), text("x ->"), lambdaBody, text(")"));
+
+    // Multiple direct breaks in fallback: fallbackFitsOnNextLine returns false, so preferred hugs.
+    Doc.Group multiBreakFallback =
+        (Doc.Group)
+            group(
+                4, text("f("), softline(), text("x ->"), softline(), group(lambdaBody), text(")"));
+    assertThat(
+            LayoutSolver.format(
+                new Doc.Choice(preferred, "f(x ->".length(), multiBreakFallback), 8))
+        .isEqualTo("f(x ->\n    body)");
+
+    // No direct breaks in fallback: fallbackFitsOnNextLine returns false, so preferred hugs.
+    Doc.Group noBreakFallback =
+        (Doc.Group) group(4, text("f("), group(text("x ->"), lambdaBody), text(")"));
+    assertThat(
+            LayoutSolver.format(new Doc.Choice(preferred, "f(x ->".length(), noBreakFallback), 8))
+        .isEqualTo("f(x ->\n    body)");
+
+    // Prefix before the single break in fallback is wider than maxWidth: fallbackFitsOnNextLine
+    // returns false, and the choice falls back to breaking the group.
+    Doc.Group widePrefixFallback =
+        (Doc.Group)
+            group(
+                4, text("someLongMethod("), softline(), group(text("x ->"), lambdaBody), text(")"));
+    Doc.Group widePrefixPreferred =
+        (Doc.Group) group(text("someLongMethod("), text("x ->"), lambdaBody, text(")"));
+    assertThat(
+            LayoutSolver.format(
+                new Doc.Choice(
+                    widePrefixPreferred, "someLongMethod(x ->".length(), widePrefixFallback),
+                10))
+        .isEqualTo("someLongMethod(\n    x ->\n        body)");
+  }
+
+  @Test
+  public void choicePreferredIndentIsRelativeToLine() {
+    // The enclosing group's +8 indent doesn't apply, since its break wasn't taken.
+    Doc doc = group(8, text("g("), hugChoice("longBody"));
+    assertThat(LayoutSolver.format(doc, 14)).isEqualTo("g(f(a, x ->\n    longBody)");
+  }
+
+  @Test
+  public void choiceTrialDoesNotLeakBreakTags() {
+    BreakTag tag = new BreakTag();
+    Doc.Group preferred = (Doc.Group) group(text("aaaa"), taggedLine("", tag), text("bbbbbbbbbb"));
+    Doc.Group fallback = (Doc.Group) group(text("aaaa"), line(""), text("bbbbbbbbbb"));
+    // The preferred layout's first line ends before its prefix, so it's rejected. The tag recorded
+    // while trying it is reset.
+    assertThat(LayoutSolver.format(new Doc.Choice(preferred, 5, fallback), 8))
+        .isEqualTo("aaaa\nbbbbbbbbbb");
+    assertThat(tag.wasBreakTaken()).isFalse();
+  }
+
+  @Test
+  public void nestedChoicesAreLinear() {
+    // Each choice prefers to keep its contents on the current line, so every trial reaches the
+    // innermost choice. Re-laying out each accepted preferred layout would take 2^depth steps.
+    int depth = 100;
+    Doc doc = group(text("{"), hardline(), text("}"));
+    for (int i = 0; i < depth; i++) {
+      Doc.Group preferred = (Doc.Group) group(text("a"), doc);
+      Doc.Group fallback = (Doc.Group) group(4, text("a"), softline(), doc);
+      doc = new Doc.Choice(preferred, 1, fallback);
+    }
+    assertThat(LayoutSolver.format(doc, 999)).isEqualTo("a".repeat(depth) + "{\n}");
+  }
 }

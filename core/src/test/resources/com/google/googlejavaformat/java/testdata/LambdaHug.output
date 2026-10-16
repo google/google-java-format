@@ -1,15 +1,13 @@
 class LambdaHug {
   void statements() {
-    executor.submit(
-        () -> {
-          run();
-        });
-    executor.submit(
-        () -> {
-          runSomethingThatIsLong();
-          runSomethingElseThatIsAlsoLong();
-          run();
-        });
+    executor.submit(() -> {
+      run();
+    });
+    executor.submit(() -> {
+      runSomethingThatIsLong();
+      runSomethingElseThatIsAlsoLong();
+      run();
+    });
     listenableFuture.addListener(
         () -> {
           System.err.println("done");
@@ -50,9 +48,8 @@ class LambdaHug {
           run();
           run();
         });
-    foo.bar(
-        (param1, param2) ->
-            param1.someLongMethodName(param2).anotherLongMethodName().andAnotherOne());
+    foo.bar((param1, param2) ->
+        param1.someLongMethodName(param2).anotherLongMethodName().andAnotherOne());
   }
 
   int returns() {
@@ -65,11 +62,10 @@ class LambdaHug {
 
   void assignments() {
     Runnable r =
-        executor.submit(
-            () -> {
-              runSomethingThatIsLong();
-              runSomethingElseThatIsAlsoLong();
-            });
+        executor.submit(() -> {
+          runSomethingThatIsLong();
+          runSomethingElseThatIsAlsoLong();
+        });
     x =
         list.stream()
             .map(element -> element.transformWithSomethingLong().andSomethingElse())
@@ -91,25 +87,22 @@ class LambdaHug {
           void f() {}
         };
     callbacks +=
-        register(
-            event -> {
-              handle(event);
-              handleAgain(event);
-              handleOnceMore(event);
-            });
+        register(event -> {
+          handle(event);
+          handleAgain(event);
+          handleOnceMore(event);
+        });
     x =
         someObject
             .withSomeMethod(argument)
             .andAnotherMethod(argument)
-            .thenAccept(
-                y -> {
-                  consume(y);
-                });
-    ImmutableMap<String, SomeVeryLongTypeName<AnotherLongTypeName>> someLongVariableName =
-        compute(
-            k -> {
-              return k;
+            .thenAccept(y -> {
+              consume(y);
             });
+    ImmutableMap<String, SomeVeryLongTypeName<AnotherLongTypeName>> someLongVariableName =
+        compute(k -> {
+          return k;
+        });
   }
 
   private final Runnable field =
@@ -121,32 +114,27 @@ class LambdaHug {
   void chains() {
     list.stream()
         .filter(x -> x.isSomethingThatIsLong() && x.isSomethingElseThatIsLong() && x.isThirdThing())
-        .map(
-            x -> {
-              Object y = x.transform();
-              return y.transformAgainWithSomethingLonger();
-            })
+        .map(x -> {
+          Object y = x.transform();
+          return y.transformAgainWithSomethingLonger();
+        })
         .forEach(System.out::println);
     CompletableFuture.supplyAsync(() -> computeSomethingExpensive(input, parameters))
-        .thenAccept(
-            result -> {
-              consume(result);
-              consumeAgain(result);
-            });
+        .thenAccept(result -> {
+          consume(result);
+          consumeAgain(result);
+        });
     someObject.someModerateLengthFunctionName(
         foo -> doOtherModerateLengthName(foo, bar, baz, qux, quux));
   }
 
   void nested() {
-    outer(
-        a ->
-            inner(
-                b ->
-                    innermost(
-                        c -> {
-                          doSomethingWith(a, b, c);
-                          doSomethingElseWith(a, b, c);
-                        })));
+    outer(a ->
+        inner(b ->
+            innermost(c -> {
+              doSomethingWith(a, b, c);
+              doSomethingElseWith(a, b, c);
+            })));
   }
 
   void comments() {
@@ -154,9 +142,8 @@ class LambdaHug {
         // comment
         x ->
             System.err.println("hello, world, this is a long string that doesn't fit on the line"));
-    f(
-        x -> { // trailing comment
-          run();
-        });
+    f(x -> { // trailing comment
+      run();
+    });
   }
 }

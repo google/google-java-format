@@ -175,4 +175,16 @@ public class DocTest {
     assertThat(doc.range()).isEqualTo(Range.closedOpen(3, 7));
     assertThat(group(text("a"), line(), text("b")).range()).isEqualTo(Doc.EMPTY_RANGE);
   }
+
+  @Test
+  public void choiceWidthFlatAndRange() {
+    Doc.Group preferred =
+        (Doc.Group) group(text("a"), text(" "), new Doc.Text("b", Range.closedOpen(2, 3)));
+    Doc.Group fallback =
+        (Doc.Group) group(text("a"), line(), new Doc.Text("b", Range.closedOpen(2, 3)));
+    Doc choice = new Doc.Choice(preferred, 1, fallback);
+    assertThat(choice.width()).isEqualTo(3);
+    assertThat(choice.flat()).isEqualTo("a b");
+    assertThat(choice.range()).isEqualTo(Range.closedOpen(2, 3));
+  }
 }
