@@ -16,12 +16,14 @@
 
 package com.google.googlejavaformat.intellij;
 
+import com.google.googlejavaformat.Doc;
 import com.google.googlejavaformat.intellij.GoogleJavaFormatSettings.EnabledState;
 import com.intellij.openapi.options.BaseConfigurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.ui.components.JBTextField;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -41,6 +43,7 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
   private JPanel panel;
   private JCheckBox enable;
   private JComboBox styleComboBox;
+  private JBTextField maxLineLengthField;
 
   public GoogleJavaFormatConfigurable(Project project) {
     this.project = project;
@@ -81,6 +84,17 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
     GoogleJavaFormatSettings settings = GoogleJavaFormatSettings.getInstance(project);
     settings.setEnabled(enable.isSelected() ? EnabledState.ENABLED : getDisabledState());
     settings.setStyle(((UiFormatterStyle) styleComboBox.getSelectedItem()).convert());
+    int maxLineLength;
+    try {
+      maxLineLength = Integer.parseInt(maxLineLengthField.getText().trim());
+    } catch (NumberFormatException e) {
+      throw new ConfigurationException("Max line length must be a valid integer");
+    }
+    if (maxLineLength <= 0 || maxLineLength >= Doc.MAX_LINE_WIDTH) {
+      throw new ConfigurationException(
+          String.format("Max line length must be between 1 and %d", Doc.MAX_LINE_WIDTH - 1));
+    }
+    settings.setMaxLineLength(maxLineLength);
   }
 
   private EnabledState getDisabledState() {
@@ -95,13 +109,15 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
     GoogleJavaFormatSettings settings = GoogleJavaFormatSettings.getInstance(project);
     enable.setSelected(settings.isEnabled());
     styleComboBox.setSelectedItem(UiFormatterStyle.convert(settings.getStyle()));
+    maxLineLengthField.setText(String.valueOf(settings.getMaxLineLength()));
   }
 
   @Override
   public boolean isModified() {
     GoogleJavaFormatSettings settings = GoogleJavaFormatSettings.getInstance(project);
     return enable.isSelected() != settings.isEnabled()
-        || !styleComboBox.getSelectedItem().equals(UiFormatterStyle.convert(settings.getStyle()));
+        || !styleComboBox.getSelectedItem().equals(UiFormatterStyle.convert(settings.getStyle()))
+        || !maxLineLengthField.getText().trim().equals(String.valueOf(settings.getMaxLineLength()));
   }
 
   @Override
@@ -109,6 +125,8 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
 
   private void createUIComponents() {
     styleComboBox = new ComboBox<>(UiFormatterStyle.values());
+    maxLineLengthField = new JBTextField();
+    maxLineLengthField.setColumns(4);
   }
 
   {
@@ -127,7 +145,7 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
   private void $$$setupUI$$$() {
     createUIComponents();
     panel = new JPanel();
-    panel.setLayout(new GridLayoutManager(3, 2, new Insets(0, 0, 0, 0), -1, -1));
+    panel.setLayout(new GridLayoutManager(4, 2, new Insets(0, 0, 0, 0), -1, -1));
     enable = new JCheckBox();
     enable.setText("Enable google-java-format");
     panel.add(
@@ -150,7 +168,7 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
     panel.add(
         spacer1,
         new GridConstraints(
-            2,
+            3,
             0,
             1,
             2,
@@ -191,6 +209,40 @@ class GoogleJavaFormatConfigurable extends BaseConfigurable implements Searchabl
             GridConstraints.ANCHOR_WEST,
             GridConstraints.FILL_HORIZONTAL,
             GridConstraints.SIZEPOLICY_CAN_GROW,
+            GridConstraints.SIZEPOLICY_FIXED,
+            null,
+            null,
+            null,
+            1,
+            false));
+    final JLabel label2 = new JLabel();
+    label2.setText("Max line length");
+    panel.add(
+        label2,
+        new GridConstraints(
+            2,
+            0,
+            1,
+            1,
+            GridConstraints.ANCHOR_WEST,
+            GridConstraints.FILL_NONE,
+            GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED,
+            null,
+            null,
+            null,
+            0,
+            false));
+    panel.add(
+        maxLineLengthField,
+        new GridConstraints(
+            2,
+            1,
+            1,
+            1,
+            GridConstraints.ANCHOR_WEST,
+            GridConstraints.FILL_NONE,
+            GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED,
             null,
             null,
