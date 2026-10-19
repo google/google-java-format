@@ -680,13 +680,200 @@ class T {
         public interface Foo {
 
           private static String foo =
-              \"\"\"
+              \"""
                foo\\
-               bar \"\"\";
+               bar \""";
+        }
+        """;
+    String expected =
+        """
+        public interface Foo {
+
+          private static String foo =
+              \"""
+              foo\\
+              bar\\
+              \""";
         }
         """;
     String formatted = new Formatter().formatSource(input);
-    assertThat(formatted).isEqualTo(input);
+    assertThat(formatted).isEqualTo(expected);
+  }
+
+  // Test that whitespace handling on text block lines only removes spaces, not other control
+  // characters.
+  @Test
+  public void textBlockControlCharacter() throws Exception {
+    // We want an actual control character in the Java source being formatted, not a unicode escape,
+    // i.e. the escape below doesn't need to be double-escaped.
+    String input =
+        """
+        package p;
+
+        public class T {
+          String s =
+              \"""
+              \u0007lorem
+              \u0007
+              ipsum
+              \""";
+        }
+        """;
+    String actual = new Formatter().formatSource(input);
+    assertThat(actual).isEqualTo(input);
+  }
+
+  @Test
+  public void textBlockTrailingWhitespace() throws Exception {
+    String input =
+        """
+        public class T {
+          String s =
+              \"""
+              lorem   \s
+              ipsum
+              \""";
+        }
+        """;
+    String expected =
+        """
+        public class T {
+          String s =
+              \"""
+              lorem
+              ipsum
+              \""";
+        }
+        """;
+    String actual = new Formatter().formatSource(input);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  // It would be neat if the formatter could remove the trailing whitespace here, but in general
+  // it preserves unicode escapes from the original text.
+  @Test
+  public void textBlockTrailingWhitespaceUnicodeEscape() throws Exception {
+    // We want a unicode escape in the Java source being formatted, so it needs to be escaped
+    // in the string literal in this test.
+    String input =
+        """
+        public class T {
+          String s =
+              \"""
+              lorem\\u0020
+              ipsum
+              \""";
+        }
+        """;
+    String expected =
+        """
+        public class T {
+          String s =
+              \"""
+              lorem\\u0020
+              ipsum
+              \""";
+        }
+        """;
+    String actual = new Formatter().formatSource(input);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void textBlockSpaceTabMix() throws Exception {
+    String input =
+        """
+        public class T {
+          String s =
+              \"""
+              lorem
+             \tipsum
+              \""";
+        }
+        """;
+    String expected =
+        """
+        public class T {
+          String s =
+              \"""
+              lorem
+              ipsum
+              \""";
+        }
+        """;
+    String actual = new Formatter().formatSource(input);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void textBlockLeadingBlankLine() throws Exception {
+    String input =
+        """
+        public class T {
+          String s =
+              \"""
+
+              lorem
+              ipsum
+              \""";
+        }
+        """;
+    String expected =
+        """
+        public class T {
+          String s =
+              \"""
+
+              lorem
+              ipsum
+              \""";
+        }
+        """;
+    String actual = new Formatter().formatSource(input);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void textBlockInHuggedLambda() throws Exception {
+    String input =
+        """
+        class T {
+          void f() {
+            foo(
+                tree,
+                "The following matches unexpectedly occurred in method `%s`".formatted(tree.getName()),
+                unexpectedMatchesByLineNumber.entries().stream()
+                    .map(
+                        e ->
+                            \"""
+                            Rule `%s` matches on line %s, while it should match in a method named \\
+                            `test%s`.\"""
+                                .formatted(e.getValue(), e.getKey(), e.getValue()))
+                    .collect(toImmutableSet()),
+                state);
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f() {
+            foo(
+                tree,
+                "The following matches unexpectedly occurred in method `%s`".formatted(tree.getName()),
+                unexpectedMatchesByLineNumber.entries().stream()
+                    .map(e ->
+                        \"""
+                        Rule `%s` matches on line %s, while it should match in a method named \\
+                        `test%s`.\\
+                        \"""
+                            .formatted(e.getValue(), e.getKey(), e.getValue()))
+                    .collect(toImmutableSet()),
+                state);
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
   }
 
   @Test

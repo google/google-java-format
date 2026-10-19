@@ -25,6 +25,7 @@ import static com.google.googlejavaformat.layout.Docs.taggedLine;
 import static com.google.googlejavaformat.layout.Docs.text;
 import static org.junit.Assert.assertThrows;
 
+import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.Output.BreakTag;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -253,5 +254,30 @@ public class LayoutSolverTest {
       doc = new Doc.Choice(preferred, 1, fallback);
     }
     assertThat(LayoutSolver.format(doc, 999)).isEqualTo("a".repeat(depth) + "{\n}");
+  }
+
+  @Test
+  public void linesIndentedToLineIndent() {
+    Doc doc =
+        group(
+            4,
+            text("String s ="),
+            line(),
+            lines("\"\"\"", "hello", "", "world", "\"\"\""),
+            text(";"));
+    assertThat(LayoutSolver.format(doc, 80))
+        .isEqualTo(
+            """
+            String s =
+                \"""
+                hello
+
+                world
+                \""";\
+            """);
+  }
+
+  private static Doc lines(String... lines) {
+    return new Doc.Lines(ImmutableList.copyOf(lines), Doc.EMPTY_RANGE);
   }
 }

@@ -56,7 +56,8 @@ import java.util.Optional;
 ///
 /// A [Choice] offers a preferred alternative layout for a group, used when the group doesn't fit
 /// flat but the preferred layout's first line does.
-public sealed interface Doc permits Doc.Text, Doc.Tok, Doc.Space, Doc.Break, Doc.Group, Doc.Choice {
+public sealed interface Doc
+    permits Doc.Text, Doc.Lines, Doc.Tok, Doc.Space, Doc.Break, Doc.Group, Doc.Choice {
 
   /// Width used for documents that cannot be laid out on a single line.
   int MAX_LINE_WIDTH = 1000;
@@ -117,12 +118,26 @@ public sealed interface Doc permits Doc.Text, Doc.Tok, Doc.Space, Doc.Break, Doc
 
     @Override
     public int width() {
-      return Newlines.firstBreak(text) >= 0 ? MAX_LINE_WIDTH : text.length();
+      return text.length();
     }
 
     @Override
     public void appendFlat(StringBuilder sb) {
       sb.append(text);
+    }
+  }
+
+  /// A multi-line input token whose non-empty lines after the first are indented to the column
+  /// where the token starts, for example text blocks.
+  record Lines(ImmutableList<String> lines, Range<Integer> range) implements Doc {
+    @Override
+    public int width() {
+      return MAX_LINE_WIDTH;
+    }
+
+    @Override
+    public void appendFlat(StringBuilder sb) {
+      throw new UnsupportedOperationException();
     }
   }
 

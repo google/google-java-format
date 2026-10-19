@@ -75,7 +75,6 @@ import com.google.googlejavaformat.Doc.FillMode;
 import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Indent;
 import com.google.googlejavaformat.Input;
-import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.Op;
 import com.google.googlejavaformat.OpenOp;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
@@ -1756,21 +1755,8 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   public Void visitLiteral(LiteralTree node, Void unused) {
     sync(node);
     String sourceForNode = getSourceForNode(node, getCurrentPath());
-    if (sourceForNode.startsWith("\"\"\"")) {
-      String separator = Newlines.guessLineSeparator(sourceForNode);
-      ImmutableList<String> initialLines = sourceForNode.lines().collect(toImmutableList());
-      String stripped = initialLines.stream().skip(1).collect(joining(separator)).stripIndent();
-      // Use the last line of the text block to determine if it is deindented to column 0, by
-      // comparing the length of the line in the input source with the length after processing
-      // the text block contents with stripIndent().
-      boolean deindent =
-          getLast(initialLines).stripTrailing().length()
-              == Streams.findLast(stripped.lines()).orElseThrow().stripTrailing().length();
-      if (deindent) {
-        Indent indent = Indent.Const.make(Integer.MIN_VALUE / indentMultiplier, indentMultiplier);
-        builder.breakOp(indent);
-      }
-      token(sourceForNode);
+    if (sourceForNode.startsWith(TEXT_BLOCK_DELIMITER)) {
+      visitTextBlock(sourceForNode);
       return null;
     }
     if (isUnaryMinusLiteral(sourceForNode)) {
@@ -1779,6 +1765,39 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
     token(sourceForNode);
     return null;
+  }
+
+  private static final String TEXT_BLOCK_DELIMITER = "\"\"\"";
+
+  private void visitTextBlock(String sourceForNode) {
+    // Find the source code of the text block with incidental whitespace removed.
+    // The first line of the text block is always """, and it does not affect incidental
+    // whitespace.
+    ImmutableList<String> initialLines = sourceForNode.lines().collect(toImmutableList());
+    String stripped = initialLines.stream().skip(1).collect(joining("\n")).stripIndent();
+    ImmutableList<String> strippedLines = stripped.lines().collect(toImmutableList());
+    String lastLine = getLast(strippedLines);
+    // Use the last line of the text block to determine if it is deindented to column 0, by
+    // comparing the length of the line in the input source with the length after processing
+    // the text block contents with stripIndent().
+    boolean deindent = getLast(initialLines).stripTrailing().length() == lastLine.length();
+    if (deindent) {
+      Indent indent = Indent.Const.make(Integer.MIN_VALUE / indentMultiplier, indentMultiplier);
+      builder.breakOp(indent);
+    }
+    ImmutableList.Builder<String> lines = ImmutableList.builder();
+    lines.add(initialLines.get(0).stripTrailing());
+    lines.addAll(strippedLines.subList(0, strippedLines.size() - 1));
+    String withoutDelimiter =
+        lastLine.substring(0, lastLine.length() - TEXT_BLOCK_DELIMITER.length()).stripTrailing();
+    if (!withoutDelimiter.isEmpty()) {
+      lines.add(withoutDelimiter + '\\');
+    }
+    // If the trailing line is just """, indenting it more than the prefix of incidental
+    // whitespace has no effect, and results in a javac text-blocks warning that 'trailing
+    // white space will be removed'.
+    lines.add(TEXT_BLOCK_DELIMITER);
+    builder.multilineToken(sourceForNode, lines.build());
   }
 
   // A negative numeric literal -n is usually represented as unary minus on n,

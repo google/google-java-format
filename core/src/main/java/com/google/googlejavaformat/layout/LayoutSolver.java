@@ -51,7 +51,7 @@ public final class LayoutSolver {
     for (Action action : solve(doc, maxWidth, /* commentsHelper= */ null)) {
       switch (action) {
         case Append a -> sb.append(a.text());
-        case Newline n -> sb.append('\n');
+        case Newline n -> sb.repeat("\n", n.count());
         case IndentTo i -> sb.repeat(" ", i.spaces());
       }
     }
@@ -63,7 +63,7 @@ public final class LayoutSolver {
     for (Action action : solve(doc, maxWidth, commentsHelper)) {
       switch (action) {
         case Append a -> output.append(a.text(), a.range());
-        case Newline n -> output.append("\n", Doc.EMPTY_RANGE);
+        case Newline n -> output.append("\n".repeat(n.count()), Doc.EMPTY_RANGE);
         case IndentTo i -> output.indent(i.spaces());
       }
     }
@@ -73,7 +73,12 @@ public final class LayoutSolver {
 
   private record Append(String text, Range<Integer> range) implements Action {}
 
-  private record Newline() implements Action {}
+  /// Emits `count` line breaks; `count` is more than 1 when a [Doc.Lines] contains blank lines.
+  private record Newline(int count) implements Action {
+    Newline() {
+      this(1);
+    }
+  }
 
   private record IndentTo(int spaces) implements Action {}
 
@@ -232,12 +237,34 @@ public final class LayoutSolver {
         case Doc.Group g -> group(g, state);
         case Doc.Choice c -> choice(c, state);
         case Doc.Text t -> {
-          int newline = Newlines.firstBreak(t.text());
-          if (newline >= 0) {
-            endLine(state.column() + newline);
-          }
           actions.add(new Append(t.text(), t.range()));
           yield state.withColumn(state.column() + t.width());
+        }
+        case Doc.Lines l -> {
+          ImmutableList<String> lines = l.lines();
+          endLine(state.column() + lines.get(0).length());
+          if (firstLineEnded) {
+            yield state;
+          }
+          int indent = lineIndent;
+          actions.add(new Append(lines.get(0), l.range()));
+          int newlines = 0;
+          for (String line : lines.subList(1, lines.size())) {
+            newlines++;
+            if (line.isEmpty()) {
+              continue;
+            }
+            actions.add(new Newline(newlines));
+            newlines = 0;
+            if (indent > 0) {
+              actions.add(new IndentTo(indent));
+            }
+            actions.add(new Append(line, l.range()));
+          }
+          if (newlines > 0) {
+            actions.add(new Newline(newlines));
+          }
+          yield state.withColumn(state.column() + l.width());
         }
         case Doc.Space s -> {
           actions.add(new Append(" ", Doc.EMPTY_RANGE));

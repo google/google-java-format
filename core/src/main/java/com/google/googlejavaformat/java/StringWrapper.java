@@ -14,11 +14,9 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getLast;
 import static com.google.googlejavaformat.java.Trees.getEndPosition;
 import static com.google.googlejavaformat.java.Trees.getStartPosition;
-import static java.lang.Math.min;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.CharMatcher;
@@ -130,24 +128,18 @@ public final class StringWrapper {
     TreeRangeMap<Integer, String> getReflowReplacements() {
       // Paths to string literals that extend past the column limit.
       List<TreePath> longStringLiterals = new ArrayList<>();
-      // Paths to text blocks to be re-indented.
-      List<Tree> textBlocks = new ArrayList<>();
-      new LongStringsAndTextBlockScanner(longStringLiterals, textBlocks)
-          .scan(new TreePath(unit), null);
+      new LongStringsScanner(longStringLiterals).scan(new TreePath(unit), null);
       TreeRangeMap<Integer, String> replacements = TreeRangeMap.create();
-      indentTextBlocks(replacements, textBlocks);
       wrapLongStrings(replacements, longStringLiterals);
       return replacements;
     }
 
-    private class LongStringsAndTextBlockScanner extends TreePathScanner<Void, Void> {
+    private class LongStringsScanner extends TreePathScanner<Void, Void> {
 
       private final List<TreePath> longStringLiterals;
-      private final List<Tree> textBlocks;
 
-      LongStringsAndTextBlockScanner(List<TreePath> longStringLiterals, List<Tree> textBlocks) {
+      LongStringsScanner(List<TreePath> longStringLiterals) {
         this.longStringLiterals = longStringLiterals;
-        this.textBlocks = textBlocks;
       }
 
       @Override
@@ -155,9 +147,7 @@ public final class StringWrapper {
         if (literalTree.getKind() != Kind.STRING_LITERAL) {
           return null;
         }
-        int pos = getStartPosition(literalTree);
-        if (input.substring(pos, min(input.length(), pos + 3)).equals(TEXT_BLOCK_DELIMITER)) {
-          textBlocks.add(literalTree);
+        if (input.startsWith(TEXT_BLOCK_DELIMITER, getStartPosition(literalTree))) {
           return null;
         }
         Tree parent = getCurrentPath().getParentPath().getLeaf();
@@ -175,56 +165,6 @@ public final class StringWrapper {
         }
         longStringLiterals.add(getCurrentPath());
         return null;
-      }
-    }
-
-    private void indentTextBlocks(
-        TreeRangeMap<Integer, String> replacements, List<Tree> textBlocks) {
-      for (Tree tree : textBlocks) {
-        int startPosition = lineMap.getStartPosition(lineMap.getLineNumber(getStartPosition(tree)));
-        int endPosition = getEndPosition(tree, unit);
-        String text = input.substring(startPosition, endPosition);
-        int leadingWhitespace = CharMatcher.whitespace().negate().indexIn(text);
-
-        // Find the source code of the text block with incidental whitespace removed.
-        // The first line of the text block is always """, and it does not affect incidental
-        // whitespace.
-        ImmutableList<String> initialLines = text.lines().collect(toImmutableList());
-        String stripped = initialLines.stream().skip(1).collect(joining(separator)).stripIndent();
-        ImmutableList<String> lines = stripped.lines().collect(toImmutableList());
-        boolean deindent =
-            getLast(initialLines).stripTrailing().length()
-                == getLast(lines).stripTrailing().length();
-
-        String prefix =
-            deindent ? "" : options.indentString(visualColumn(startPosition + leadingWhitespace));
-
-        StringBuilder output = new StringBuilder(prefix).append(initialLines.get(0).stripLeading());
-        for (int i = 0; i < lines.size(); i++) {
-          String line = lines.get(i);
-          String trimmed = line.stripTrailing();
-          output.append(separator);
-          if (!trimmed.isEmpty()) {
-            // Don't add incidental leading whitespace to empty lines
-            output.append(prefix);
-          }
-          if (i == lines.size() - 1) {
-            String withoutDelimiter =
-                trimmed
-                    .substring(0, trimmed.length() - TEXT_BLOCK_DELIMITER.length())
-                    .stripTrailing();
-            if (!withoutDelimiter.stripLeading().isEmpty()) {
-              output.append(withoutDelimiter).append('\\').append(separator).append(prefix);
-            }
-            // If the trailing line is just """, indenting it more than the prefix of incidental
-            // whitespace has no effect, and results in a javac text-blocks warning that 'trailing
-            // white space will be removed'.
-            output.append(TEXT_BLOCK_DELIMITER);
-          } else {
-            output.append(line);
-          }
-        }
-        replacements.put(Range.closedOpen(startPosition, endPosition), output.toString());
       }
     }
 
@@ -450,14 +390,13 @@ public final class StringWrapper {
   private static final CharMatcher STRING_CONCAT_DELIMITER =
       CharMatcher.whitespace().or(CharMatcher.anyOf("\"+"));
 
-  /// Returns true if any lines in the given Java source exceed the column limit, or contain a `"""`
-  /// that could indicate a text block.
+  /// Returns true if any lines in the given Java source exceed the column limit.
   private static boolean needWrapping(int columnLimit, String input, JavaFormatterOptions options) {
     // TODO(cushon): consider adding Newlines.lineIterable?
     Iterator<String> it = Newlines.lineIterator(input);
     while (it.hasNext()) {
       String line = it.next();
-      if (options.visualLength(line) > columnLimit || line.contains(TEXT_BLOCK_DELIMITER)) {
+      if (options.visualLength(line) > columnLimit) {
         return true;
       }
     }

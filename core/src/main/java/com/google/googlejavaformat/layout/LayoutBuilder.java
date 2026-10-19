@@ -119,7 +119,8 @@ public final class LayoutBuilder {
                 token,
                 RealOrImaginary.IMAGINARY,
                 ZERO,
-                /* breakAndIndentTrailingComment= */ Optional.empty()));
+                /* breakAndIndentTrailingComment= */ Optional.empty(),
+                /* linesIndentedToTokenStart= */ Optional.empty()));
       }
     }
     this.inputPosition = endPosition;
@@ -257,6 +258,20 @@ public final class LayoutBuilder {
       RealOrImaginary realOrImaginary,
       Indent plusIndentCommentsBefore,
       Optional<Indent> breakAndIndentTrailingComment) {
+    token(
+        token,
+        realOrImaginary,
+        plusIndentCommentsBefore,
+        breakAndIndentTrailingComment,
+        Optional.empty());
+  }
+
+  private void token(
+      String token,
+      RealOrImaginary realOrImaginary,
+      Indent plusIndentCommentsBefore,
+      Optional<Indent> breakAndIndentTrailingComment,
+      Optional<ImmutableList<String>> linesIndentedToTokenStart) {
     ImmutableList<? extends Input.Token> tokens = input.getTokens();
     if (peekToken().filter(token::equals).isPresent()) {
       events.add(
@@ -264,7 +279,8 @@ public final class LayoutBuilder {
               tokens.get(tokenI++),
               RealOrImaginary.REAL,
               plusIndentCommentsBefore,
-              breakAndIndentTrailingComment));
+              breakAndIndentTrailingComment,
+              linesIndentedToTokenStart));
     } else if (realOrImaginary.isReal()) {
       // Generated a "bad" token, which doesn't exist on the input. Complain, unless (for example)
       // we're guessing at an optional token, in which case it's dropped.
@@ -273,6 +289,12 @@ public final class LayoutBuilder {
               String.format(
                   "expected token: '%s'; generated %s instead", peekToken().orElse(null), token)));
     }
+  }
+
+  /// Emits a real multi-line token whose non-empty lines after the first are indented to the column
+  /// where the token starts, for example a text block.
+  public void multilineToken(String token, ImmutableList<String> lines) {
+    token(token, RealOrImaginary.REAL, ZERO, Optional.empty(), Optional.of(lines));
   }
 
   public void op(String op) {
@@ -592,9 +614,11 @@ public final class LayoutBuilder {
         }
         case TokenOp tokenOp -> {
           Input.Tok tok = tokenOp.token().getTok();
+          Range<Integer> range = Range.singleton(tok.getIndex()).canonical(INTEGERS);
           appendLevel.add(
-              new Doc.Text(
-                  tok.getOriginalText(), Range.singleton(tok.getIndex()).canonical(INTEGERS)));
+              tokenOp.linesIndentedToTokenStart().isPresent()
+                  ? new Doc.Lines(tokenOp.linesIndentedToTokenStart().get(), range)
+                  : new Doc.Text(tok.getOriginalText(), range));
         }
         case TokOp tokOp -> appendLevel.add(new Doc.Tok(tokOp.tok()));
         case HugPointOp hugPointOp -> appendLevel.add(hugPointOp.hugPoint().marker);
@@ -751,7 +775,8 @@ public final class LayoutBuilder {
       Input.Token token,
       RealOrImaginary realOrImaginary,
       Indent plusIndentCommentsBefore,
-      Optional<Indent> breakAndIndentTrailingComment)
+      Optional<Indent> breakAndIndentTrailingComment,
+      Optional<ImmutableList<String>> linesIndentedToTokenStart)
       implements Event {}
 
   private record TokOp(Input.Tok tok) implements Event {}

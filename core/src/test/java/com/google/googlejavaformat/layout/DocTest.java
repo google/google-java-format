@@ -21,6 +21,7 @@ import static com.google.googlejavaformat.layout.Docs.line;
 import static com.google.googlejavaformat.layout.Docs.space;
 import static com.google.googlejavaformat.layout.Docs.text;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.Input;
 import org.junit.Test;
@@ -93,10 +94,14 @@ public class DocTest {
     return new Doc.Tok(new FakeTok(0, text));
   }
 
+  private static Doc lines(String... lines) {
+    return new Doc.Lines(ImmutableList.copyOf(lines), Doc.EMPTY_RANGE);
+  }
+
   @Test
-  public void textWidth() {
+  public void textAndLinesWidth() {
     assertThat(text("hello").width()).isEqualTo(5);
-    assertThat(text("a\nb").width()).isEqualTo(Doc.MAX_LINE_WIDTH);
+    assertThat(lines("a", "b").width()).isEqualTo(Doc.MAX_LINE_WIDTH);
   }
 
   @Test
