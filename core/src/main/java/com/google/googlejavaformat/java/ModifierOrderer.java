@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeMap;
 import com.google.googlejavaformat.Input.Tok;
 import com.google.googlejavaformat.Input.Token;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
@@ -32,19 +31,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import javax.lang.model.element.Modifier;
 import org.jspecify.annotations.Nullable;
 
 /// Fixes sequences of modifiers to be in JLS order.
 final class ModifierOrderer {
-
-  /// Reorders all modifiers in the given text to be in JLS order.
-  static JavaInput reorderModifiers(String text) throws FormatterException {
-    return reorderModifiers(
-        new JavaInput(text), ImmutableList.of(Range.closedOpen(0, text.length())));
-  }
 
   /// A class that contains the tokens corresponding to a modifier. This is usually a single token
   /// (e.g. for `public`), but may be multiple tokens for modifiers containing `-` (e.g.
@@ -95,6 +86,12 @@ final class ModifierOrderer {
     }
   }
 
+  /// Reorders all modifiers in the given text to be in JLS order.
+  static JavaInput reorderModifiers(String text) throws FormatterException {
+    return reorderModifiers(
+        new JavaInput(text), ImmutableList.of(Range.closedOpen(0, text.length())));
+  }
+
   /// Reorders all modifiers in the given text and within the given character ranges to be in JLS
   /// order.
   static JavaInput reorderModifiers(JavaInput javaInput, Collection<Range<Integer>> characterRanges)
@@ -104,9 +101,17 @@ final class ModifierOrderer {
       // Errors about invalid input will be reported later after parsing.
       return javaInput;
     }
+    return applyReplacements(javaInput, findModifierReplacements(javaInput, characterRanges));
+  }
+
+  static ImmutableList<Replacement> findModifierReplacements(
+      JavaInput javaInput, Collection<Range<Integer>> characterRanges) throws FormatterException {
+    ImmutableList.Builder<Replacement> replacements = ImmutableList.builder();
+    if (javaInput.getTokens().isEmpty()) {
+      return replacements.build();
+    }
     RangeSet<Integer> tokenRanges = javaInput.characterRangesToTokenRanges(characterRanges);
     Iterator<? extends Token> it = javaInput.getTokens().iterator();
-    TreeRangeMap<Integer, String> replacements = TreeRangeMap.create();
     while (it.hasNext()) {
       ModifierTokens tokens = getModifierTokens(it);
       if (tokens.isEmpty()
@@ -142,10 +147,10 @@ final class ModifierOrderer {
             addTrivia(replacement, modifierTokens.get(i).getToksAfter());
           }
         }
-        replacements.put(Range.closedOpen(begin, end), replacement.toString());
+        replacements.add(Replacement.create(begin, end, replacement.toString()));
       }
     }
-    return applyReplacements(javaInput, replacements);
+    return replacements.build();
   }
 
   private static void addTrivia(StringBuilder replacement, ImmutableList<? extends Tok> toks) {
@@ -214,18 +219,15 @@ final class ModifierOrderer {
   }
 
   /// Applies replacements to the given string.
-  private static JavaInput applyReplacements(
-      JavaInput javaInput, TreeRangeMap<Integer, String> replacementMap) throws FormatterException {
-    // process in descending order so the replacement ranges aren't perturbed if any replacements
-    // differ in size from the input
-    Map<Range<Integer>, String> ranges = replacementMap.asDescendingMapOfRanges();
-    if (ranges.isEmpty()) {
+  private static JavaInput applyReplacements(JavaInput javaInput, List<Replacement> replacements)
+      throws FormatterException {
+    if (replacements.isEmpty()) {
       return javaInput;
     }
     StringBuilder sb = new StringBuilder(javaInput.getText());
-    for (Entry<Range<Integer>, String> entry : ranges.entrySet()) {
-      Range<Integer> range = entry.getKey();
-      sb.replace(range.lowerEndpoint(), range.upperEndpoint(), entry.getValue());
+    for (Replacement replacement : replacements.reversed()) {
+      Range<Integer> range = replacement.replaceRange();
+      sb.replace(range.lowerEndpoint(), range.upperEndpoint(), replacement.replacementString());
     }
     return new JavaInput(sb.toString());
   }

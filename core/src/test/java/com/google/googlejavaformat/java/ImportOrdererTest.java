@@ -878,4 +878,33 @@ public class ImportOrdererTest {
     row[0] = ((String) row[0]).replace("\\\n", "");
     return row;
   }
+
+  /// Tests for [ImportOrderer#findReplacements].
+  public static class FindReplacements {
+
+    @Test
+    public void alreadySorted_noReplacement() throws FormatterException {
+      String input =
+          """
+          import a.A;
+          import b.B;
+
+          class C {}
+          """;
+      assertThat(ImportOrderer.findReplacements(input, Style.GOOGLE)).isEmpty();
+    }
+
+    @Test
+    public void manyBlankLinesAfterImports() throws FormatterException {
+      String input = "import b.B;\nimport a.A;" + "\n".repeat(12) + "class C{}\n";
+      assertThat(ImportOrderer.reorderImports(input, Style.GOOGLE))
+          .isEqualTo(
+              """
+              import a.A;
+              import b.B;
+
+              class C{}
+              """);
+    }
+  }
 }

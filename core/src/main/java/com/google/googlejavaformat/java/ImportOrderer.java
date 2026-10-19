@@ -13,7 +13,6 @@
  */
 package com.google.googlejavaformat.java;
 
-import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.primitives.Booleans.trueFirst;
 
 import com.google.common.base.CharMatcher;
@@ -22,13 +21,13 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Range;
+import com.google.errorprone.annotations.InlineMe;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import com.google.googlejavaformat.java.JavaInput.Tok;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -43,8 +42,15 @@ public class ImportOrderer {
   ///
   /// @throws FormatterException if the input could not be parsed.
   public static String reorderImports(String text, Style style) throws FormatterException {
-    ImmutableList<Tok> toks = JavaInput.buildToks(text, CLASS_START);
-    return new ImportOrderer(text, toks, style).reorderImports();
+    ImmutableList<Replacement> replacements = findReplacements(text, style);
+    if (replacements.isEmpty()) {
+      return text;
+    }
+    Replacement replacement = replacements.get(0);
+    Range<Integer> range = replacement.replaceRange();
+    return text.substring(0, range.lowerEndpoint())
+        + replacement.replacementString()
+        + text.substring(range.upperEndpoint());
   }
 
   /// Reorder the inputs in `text`, a complete Java program, in Google style. On success, another
@@ -54,15 +60,30 @@ public class ImportOrderer {
   /// @deprecated Use [#reorderImports(String, Style)] instead
   /// @throws FormatterException if the input could not be parsed.
   @Deprecated
+  @InlineMe(
+      replacement = "ImportOrderer.reorderImports(text, Style.GOOGLE)",
+      imports = {
+        "com.google.googlejavaformat.java.ImportOrderer",
+        "com.google.googlejavaformat.java.JavaFormatterOptions.Style"
+      })
   public static String reorderImports(String text) throws FormatterException {
     return reorderImports(text, Style.GOOGLE);
   }
 
-  private String reorderImports() throws FormatterException {
+  /// Returns a replacement that rewrites the import block, from the start of the first import's
+  /// line through the whitespace after the last import, or an empty list if the imports are already
+  /// in order.
+  static ImmutableList<Replacement> findReplacements(String text, Style style)
+      throws FormatterException {
+    ImmutableList<Tok> toks = JavaInput.buildToks(text, CLASS_START);
+    return new ImportOrderer(text, toks, style).findReplacements();
+  }
+
+  private ImmutableList<Replacement> findReplacements() throws FormatterException {
     Optional<Integer> maybeFirstImport = findIdentifier(0, IMPORT_OR_CLASS_START);
     if (!maybeFirstImport.isPresent() || !tokenAt(maybeFirstImport.get()).equals("import")) {
       // No imports, so nothing to do.
-      return text;
+      return ImmutableList.of();
     }
     int firstImportStart = maybeFirstImport.get();
     int unindentedFirstImportStart = unindent(firstImportStart);
@@ -76,27 +97,31 @@ public class ImportOrderer {
       throw new FormatterException("Imports not contiguous (perhaps a comment separates them?)");
     }
 
-    StringBuilder result = new StringBuilder();
-    String prefix = tokString(0, unindentedFirstImportStart);
-    result.append(prefix);
+    int start = toks.get(unindentedFirstImportStart).getPosition();
+
+    StringBuilder replacement = new StringBuilder();
+    String prefix = text.substring(0, start);
     if (!prefix.isEmpty() && Newlines.getLineEnding(prefix) == null) {
-      result.append(lineSeparator).append(lineSeparator);
+      replacement.append(lineSeparator).append(lineSeparator);
     }
-    result.append(reorderedImportsString(imports.imports));
+    replacement.append(reorderedImportsString(imports.imports));
 
-    List<String> tail = new ArrayList<>();
-    tail.add(CharMatcher.whitespace().trimLeadingFrom(tokString(afterLastImport, toks.size())));
-    if (!toks.isEmpty()) {
-      Tok lastTok = getLast(toks);
-      int tailStart = lastTok.getPosition() + lastTok.length();
-      tail.add(text.substring(tailStart));
-    }
-    if (tail.stream().anyMatch(s -> !s.isEmpty())) {
-      result.append(lineSeparator);
-      tail.forEach(result::append);
+    int afterLastImportPos =
+        afterLastImport < toks.size() ? toks.get(afterLastImport).getPosition() : text.length();
+    String afterText = text.substring(afterLastImportPos);
+    String trimmedAfterText = CharMatcher.whitespace().trimLeadingFrom(afterText);
+    int numTrimmed = afterText.length() - trimmedAfterText.length();
+    int end = afterLastImportPos + numTrimmed;
+
+    if (end < text.length()) {
+      replacement.append(lineSeparator);
     }
 
-    return result.toString();
+    String replacementString = replacement.toString();
+    if (replacementString.equals(text.substring(start, end))) {
+      return ImmutableList.of();
+    }
+    return ImmutableList.of(Replacement.create(start, end, replacementString));
   }
 
   /// [TokenKind]s that indicate the start of a type definition. We use this to avoid scanning the
@@ -234,14 +259,6 @@ public class ImportOrderer {
       }
       return sb.toString();
     }
-  }
-
-  private String tokString(int start, int end) {
-    StringBuilder sb = new StringBuilder();
-    for (int i = start; i < end; i++) {
-      sb.append(toks.get(i).getOriginalText());
-    }
-    return sb.toString();
   }
 
   private record ImportsAndIndex(ImmutableSortedSet<Import> imports, int index) {}

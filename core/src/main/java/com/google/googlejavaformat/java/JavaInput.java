@@ -41,7 +41,6 @@ import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 import com.sun.tools.javac.util.Options;
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -243,13 +242,10 @@ final class JavaInput extends Input {
   private final String text; // The input.
   private int kN; // The number of numbered toks (tokens or comments), excluding the EOF.
 
-  /*
-   * The following lists record the sequential indices of the {@code Tok}s on each input line. (Only
-   * tokens and comments have sequential indices.) Tokens and {@code //} comments lie on just one
-   * line; {@code /*} comments can lie on multiple lines. These data structures (along with
-   * equivalent ones for the formatted output) let us compute correspondences between the input and
-   * output.
-   */
+  // The following lists record the sequential indices of the `Tok`s on each input line. (Only
+  // tokens and comments have sequential indices.) Tokens and `//` comments lie on just one line;
+  // `/*` comments can lie on multiple lines. These data structures (along with equivalent ones for
+  // the formatted output) let us compute correspondences between the input and output.
 
   private final ImmutableMap<Integer, Integer> positionToColumnMap; // Map Tok position to column.
   private final ImmutableList<Token> tokens; // The Tokens for this input.
@@ -345,7 +341,7 @@ final class JavaInput extends Input {
     log.useSource(
         new SimpleJavaFileObject(URI.create("Source.java"), Kind.SOURCE) {
           @Override
-          public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+          public String getCharContent(boolean ignoreEncodingErrors) {
             return text;
           }
         });
@@ -353,6 +349,8 @@ final class JavaInput extends Input {
     ImmutableList<RawTok> rawToks = JavacTokens.getTokens(text, context, stopTokens);
     Collection<JCDiagnostic> ds;
     try {
+      // GET_DIAGNOSTICS is DeferredDiagnosticHandler#getDiagnostics, which returns a
+      // Collection<JCDiagnostic> on all supported JDK versions
       @SuppressWarnings("unchecked")
       var extraLocalForSuppression = (Collection<JCDiagnostic>) GET_DIAGNOSTICS.invoke(diagnostics);
       ds = extraLocalForSuppression;
@@ -584,6 +582,32 @@ final class JavaInput extends Input {
         && tok.getText().matches("\\/\\*[A-Za-z0-9\\s_\\-]+=\\s*\\*\\/");
   }
 
+  /// Checks that `characterRange` ends within a text of length `textLength`.
+  ///
+  /// @throws FormatterException if the upper endpoint of the range is outside the text
+  static void validateRange(Range<Integer> characterRange, int textLength)
+      throws FormatterException {
+    if (characterRange.upperEndpoint() > textLength) {
+      throw new FormatterException(
+          String.format(
+              "error: invalid offset (%d) or length (%d); offset + length (%d) > file length (%d)",
+              characterRange.lowerEndpoint(),
+              characterRange.upperEndpoint() - characterRange.lowerEndpoint(),
+              characterRange.upperEndpoint(),
+              textLength));
+    }
+  }
+
+  /// Checks that every range in `characterRanges` ends within a text of length `textLength`.
+  ///
+  /// @throws FormatterException if the upper endpoint of any range is outside the text
+  static void validateRanges(Collection<Range<Integer>> characterRanges, int textLength)
+      throws FormatterException {
+    for (Range<Integer> characterRange : characterRanges) {
+      validateRange(characterRange, textLength);
+    }
+  }
+
   /// Convert from a character range to a token range.
   ///
   /// @param characterRange the `0`-based [Range] of characters
@@ -591,15 +615,8 @@ final class JavaInput extends Input {
   /// @throws FormatterException if the upper endpoint of the range is outside the file
   private Range<Integer> characterRangeToTokenRange(Range<Integer> characterRange)
       throws FormatterException {
-    if (characterRange.upperEndpoint() > text.length()) {
-      throw new FormatterException(
-          String.format(
-              "error: invalid offset (%d) or length (%d); offset + length (%d) > file length (%d)",
-              characterRange.lowerEndpoint(),
-              characterRange.upperEndpoint() - characterRange.lowerEndpoint(),
-              characterRange.upperEndpoint(),
-              text.length()));
-    }
+    validateRange(characterRange, text.length());
+
     // empty range stands for "format the line under the cursor"
     Range<Integer> nonEmptyRange =
         characterRange.isEmpty()
