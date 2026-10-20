@@ -687,6 +687,10 @@ final class JavaInput extends Input {
     return unit.getLineMap().getColumnNumber(inputPosition);
   }
 
+  @Nullable JCCompilationUnit getCompilationUnit() {
+    return unit;
+  }
+
   // TODO(cushon): refactor JavaInput so the CompilationUnit can be passed into
   // the constructor.
   void setCompilationUnit(JCCompilationUnit unit) {

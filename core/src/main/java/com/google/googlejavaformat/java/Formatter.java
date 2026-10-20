@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.List;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
+import org.jspecify.annotations.Nullable;
 
 /// This is google-java-format, a new Java formatter that follows the Google Java Style Guide quite
 /// precisely---to the letter and to the spirit.
@@ -99,15 +100,17 @@ public final class Formatter {
   /// @param options the [JavaFormatterOptions]
   static void format(final JavaInput javaInput, JavaOutput javaOutput, JavaFormatterOptions options)
       throws FormatterException {
-    Context context = new Context();
-    List<Diagnostic<? extends JavaFileObject>> errorDiagnostics = new ArrayList<>();
-    JCCompilationUnit unit =
-        Trees.parse(
-            context, errorDiagnostics, /* allowStringFolding= */ false, javaInput.getText());
-
-    javaInput.setCompilationUnit(unit);
-    if (!errorDiagnostics.isEmpty()) {
-      throw FormatterException.fromJavacDiagnostics(errorDiagnostics);
+    JCCompilationUnit unit = javaInput.getCompilationUnit();
+    if (unit == null) {
+      Context context = new Context();
+      List<Diagnostic<? extends JavaFileObject>> errorDiagnostics = new ArrayList<>();
+      unit =
+          Trees.parse(
+              context, errorDiagnostics, /* allowStringFolding= */ false, javaInput.getText());
+      if (!errorDiagnostics.isEmpty()) {
+        throw FormatterException.fromJavacDiagnostics(errorDiagnostics);
+      }
+      javaInput.setCompilationUnit(unit);
     }
     LayoutBuilder builder = new LayoutBuilder(javaInput, javaOutput);
     ImmutableSet.Builder<Integer> markdownJavadocPositions = ImmutableSet.builder();
@@ -157,6 +160,43 @@ public final class Formatter {
     return formatSource(input, ImmutableList.of(Range.closedOpen(0, input.length())));
   }
 
+  /// Format an input string (a Java compilation unit), for only the specified character ranges.
+  /// These ranges are extended as necessary (e.g., to encompass whole lines).
+  ///
+  /// @param input the input string
+  /// @param characterRanges the character ranges to be reformatted
+  /// @return the output string
+  /// @throws FormatterException if the input string cannot be parsed
+  public String formatSource(String input, Collection<Range<Integer>> characterRanges)
+      throws FormatterException {
+    return formatSource(
+        input,
+        characterRanges,
+        /* removeUnusedImports= */ false,
+        /* sortImports= */ false,
+        /* reflowLongStrings= */ false);
+  }
+
+  String formatSource(
+      String input,
+      Collection<Range<Integer>> characterRanges,
+      boolean removeUnusedImports,
+      boolean sortImports,
+      boolean reflowLongStrings)
+      throws FormatterException {
+    ImmutableSet<CleanupPass> passes =
+        Cleanups.enabledPasses(removeUnusedImports, options.reorderModifiers(), sortImports);
+    Cleanups.Result cleaned = Cleanups.apply(input, characterRanges, options.style(), passes);
+    String formatted =
+        JavaOutput.applyReplacements(
+            cleaned.contents(),
+            getFormatReplacements(cleaned.contents(), cleaned.characterRanges(), cleaned.unit()));
+    if (reflowLongStrings) {
+      formatted = StringWrapper.wrap(options.maxLineLength(), formatted, this);
+    }
+    return formatted;
+  }
+
   /// Formats an input string (a Java compilation unit) and fixes imports.
   ///
   /// Fixing imports includes ordering, spacing, and removal of unused import statements.
@@ -168,26 +208,41 @@ public final class Formatter {
   ///   href="https://google.github.io/styleguide/javaguide.html#s3.3.3-import-ordering-and-spacing">
   ///   Google Java Style Guide - 3.3.3 Import ordering and spacing</a>
   public String formatSourceAndFixImports(String input) throws FormatterException {
-    input = ImportOrderer.reorderImports(input, options.style());
-    input = RemoveUnusedImports.removeUnusedImports(input);
-    String formatted = formatSource(input);
-    formatted = StringWrapper.wrap(formatted, this);
-    return formatted;
+    return formatSource(
+        input,
+        ImmutableList.of(Range.closedOpen(0, input.length())),
+        /* removeUnusedImports= */ true,
+        /* sortImports= */ true,
+        /* reflowLongStrings= */ true);
   }
 
-  /// Format an input string (a Java compilation unit), for only the specified character ranges.
-  /// These ranges are extended as necessary (e.g., to encompass whole lines).
+  /// Fixes imports in the given Java source string without performing general code formatting.
   ///
   /// @param input the input string
-  /// @param characterRanges the character ranges to be reformatted
-  /// @return the output string
+  /// @param style the code style controlling import ordering
+  /// @param removeUnusedImports whether to remove unused imports
+  /// @param sortImports whether to sort imports
+  /// @return the output string with imports fixed
   /// @throws FormatterException if the input string cannot be parsed
-  public String formatSource(String input, Collection<Range<Integer>> characterRanges)
+  public static String fixImports(
+      String input,
+      JavaFormatterOptions.Style style,
+      boolean removeUnusedImports,
+      boolean sortImports)
       throws FormatterException {
-    return JavaOutput.applyReplacements(input, getFormatReplacements(input, characterRanges));
+    ImmutableSet<CleanupPass> passes =
+        Cleanups.enabledPasses(removeUnusedImports, /* reorderModifiers= */ false, sortImports);
+    Cleanups.Result result =
+        Cleanups.apply(input, ImmutableList.of(Range.closedOpen(0, input.length())), style, passes);
+    return result.contents();
   }
 
   /// Emit a list of [Replacement]s to convert from input to output.
+  ///
+  /// This is a whitespace-only API that performs core layout and whitespace formatting on the
+  /// requested ranges. It does not perform AST-based cleanups (such as brace insertion or modifier
+  /// cleanup), nor does it modify unformatted code outside the requested ranges (such as file-wide
+  /// blank line or trailing whitespace cleanup).
   ///
   /// @param input the input compilation unit
   /// @param characterRanges the character ranges to reformat
@@ -195,13 +250,15 @@ public final class Formatter {
   /// @throws FormatterException if the input string cannot be parsed
   public ImmutableList<Replacement> getFormatReplacements(
       String input, Collection<Range<Integer>> characterRanges) throws FormatterException {
-    JavaInput javaInput = new JavaInput(input);
+    return getFormatReplacements(input, characterRanges, /* unit= */ null);
+  }
 
-    // TODO(cushon): this is only safe because the modifier ordering doesn't affect whitespace,
-    // and doesn't change the replacements that are output. This is not true in general for
-    // 'de-linting' changes (e.g. import ordering).
-    if (options.reorderModifiers()) {
-      javaInput = ModifierOrderer.reorderModifiers(javaInput, characterRanges);
+  ImmutableList<Replacement> getFormatReplacements(
+      String input, Collection<Range<Integer>> characterRanges, @Nullable JCCompilationUnit unit)
+      throws FormatterException {
+    JavaInput javaInput = new JavaInput(input);
+    if (unit != null) {
+      javaInput.setCompilationUnit(unit);
     }
 
     String lineSeparator = Newlines.guessLineSeparator(input);

@@ -16,10 +16,9 @@
 
 package com.google.googlejavaformat.intellij;
 
+import com.google.googlejavaformat.java.Formatter;
 import com.google.googlejavaformat.java.FormatterException;
-import com.google.googlejavaformat.java.ImportOrderer;
 import com.google.googlejavaformat.java.JavaFormatterOptions;
-import com.google.googlejavaformat.java.RemoveUnusedImports;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.lang.ImportOptimizer;
 import com.intellij.openapi.editor.Document;
@@ -57,7 +56,9 @@ public class GoogleJavaFormatImportOptimizer implements ImportOptimizer {
     final String origText = document.getText();
     String text;
     try {
-      text = ImportOrderer.reorderImports(RemoveUnusedImports.removeUnusedImports(origText), style);
+      text =
+          Formatter.fixImports(
+              origText, style, /* removeUnusedImports= */ true, /* sortImports= */ true);
     } catch (FormatterException e) {
       Notifications.displayParsingErrorNotification(project, file.getName());
       return () -> {};
