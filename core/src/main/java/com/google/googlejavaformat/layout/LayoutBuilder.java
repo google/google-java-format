@@ -128,12 +128,13 @@ public final class LayoutBuilder {
   }
 
   public void open(Indent plusIndent) {
-    open(plusIndent, HugRole.NONE, null);
+    open(plusIndent, ZERO, HugRole.NONE, null);
   }
 
-  private void open(Indent plusIndent, HugRole hugRole, HugPoint hugPoint) {
+  private void open(
+      Indent plusIndent, Indent huggedPlusIndent, HugRole hugRole, HugPoint hugPoint) {
     depth++;
-    events.add(new Open(plusIndent, hugRole, hugPoint));
+    events.add(new Open(plusIndent, huggedPlusIndent, hugRole, hugPoint));
   }
 
   /// The start of the body of a construct that can be hugged, i.e. laid out starting on the same
@@ -160,15 +161,15 @@ public final class LayoutBuilder {
   /// [#openHuggedArguments], are the ones that are not taken when hugging, and everything up to
   /// `hugPoint` must then fit on the current line.
   ///
-  /// When hugged, the hugged content is indented relative to the line containing the call, instead
-  /// of by the level's extra indent.
-  public void openHuggable(Indent plusIndent, HugPoint hugPoint) {
-    open(plusIndent, HugRole.HUGGABLE, hugPoint);
+  /// When hugged, the hugged content is indented relative to the line containing the call plus
+  /// `huggedPlusIndent`, instead of by the enclosing levels' extra indents plus `plusIndent`.
+  public void openHuggable(Indent plusIndent, Indent huggedPlusIndent, HugPoint hugPoint) {
+    open(plusIndent, huggedPlusIndent, HugRole.HUGGABLE, hugPoint);
   }
 
   /// Opens the level holding the arguments of an enclosing [#openHuggable] level.
   public void openHuggedArguments() {
-    open(ZERO, HugRole.ARGUMENTS, null);
+    open(ZERO, ZERO, HugRole.ARGUMENTS, null);
   }
 
   public void close() {
@@ -596,14 +597,16 @@ public final class LayoutBuilder {
   /// closed group) into the preceding group, so it's accounted for when deciding whether that group
   /// fits on the line.
   private static Doc buildTree(List<Event> events) {
-    LevelBuilder base = new LevelBuilder(ZERO, HugRole.NONE, null);
+    LevelBuilder base = new LevelBuilder(ZERO, ZERO, HugRole.NONE, null);
     ArrayDeque<LevelBuilder> stack = new ArrayDeque<>();
     stack.addLast(base);
     LevelBuilder appendLevel = base;
     for (Event ev : events) {
       switch (ev) {
         case Open open ->
-            stack.addLast(new LevelBuilder(open.plusIndent(), open.hugRole(), open.hugPoint()));
+            stack.addLast(
+                new LevelBuilder(
+                    open.plusIndent(), open.huggedPlusIndent(), open.hugRole(), open.hugPoint()));
         case Close close -> {
           LevelBuilder top = stack.removeLast();
           stack.getLast().add(top);
@@ -643,12 +646,14 @@ public final class LayoutBuilder {
   /// A mutable group under construction; see [#buildTree].
   private static final class LevelBuilder {
     final Indent plusIndent;
+    final Indent huggedPlusIndent;
     final HugRole hugRole;
     final HugPoint hugPoint;
     final List<Object> items = new ArrayList<>();
 
-    LevelBuilder(Indent plusIndent, HugRole hugRole, HugPoint hugPoint) {
+    LevelBuilder(Indent plusIndent, Indent huggedPlusIndent, HugRole hugRole, HugPoint hugPoint) {
       this.plusIndent = plusIndent;
+      this.huggedPlusIndent = huggedPlusIndent;
       this.hugRole = hugRole;
       this.hugPoint = hugPoint;
     }
@@ -675,7 +680,8 @@ public final class LayoutBuilder {
     ///
     /// The hugged layout has the same content as the regular one, but the breaks of this level and
     /// of its [HugRole#ARGUMENTS] level (if any) are replaced by their flat text, and this level's
-    /// extra indent is dropped. Everything up to the hug point must fit on the current line.
+    /// extra indent is replaced by [#huggedPlusIndent]. Everything up to the hug point must fit on
+    /// the current line.
     private Doc buildHuggable() {
       ImmutableList.Builder<Doc> fallback = ImmutableList.builder();
       ImmutableList.Builder<Doc> preferred = ImmutableList.builder();
@@ -709,7 +715,7 @@ public final class LayoutBuilder {
         }
       }
       Doc.Group fallbackGroup = new Doc.Group(plusIndent, fallback.build());
-      Doc.Group preferredGroup = new Doc.Group(ZERO, preferred.build());
+      Doc.Group preferredGroup = new Doc.Group(huggedPlusIndent, preferred.build());
       int prefixWidth = canHug ? widthBefore(preferredGroup, hugPoint.marker) : -1;
       if (prefixWidth < 0) {
         return fallbackGroup;
@@ -754,7 +760,9 @@ public final class LayoutBuilder {
   private sealed interface Event
       permits Open, Close, LineBreak, TokenOp, TokOp, SpaceOp, HugPointOp {}
 
-  private record Open(Indent plusIndent, HugRole hugRole, HugPoint hugPoint) implements Event {}
+  private record Open(
+      Indent plusIndent, Indent huggedPlusIndent, HugRole hugRole, HugPoint hugPoint)
+      implements Event {}
 
   private record HugPointOp(HugPoint hugPoint) implements Event {}
 

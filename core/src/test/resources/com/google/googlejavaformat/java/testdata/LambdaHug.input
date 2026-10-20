@@ -36,6 +36,7 @@ class LambdaHug {
         .forEach(System.out::println);
     CompletableFuture.supplyAsync(() -> computeSomethingExpensive(input, parameters)).thenAccept(result -> { consume(result); consumeAgain(result); });
     someObject.someModerateLengthFunctionName(foo -> doOtherModerateLengthName(foo, bar, baz, qux, quux));
+    SpliteratorTester.of(() -> Streams.concat(Stream.of("a"), Stream.of("b"), Stream.empty(), Stream.of("c", "d")).spliterator()).expect("a", "b", "c", "d");
   }
 
   void nested() {

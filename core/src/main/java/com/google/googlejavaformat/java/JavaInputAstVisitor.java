@@ -3157,7 +3157,10 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         dotExpressionUpToArgs(e, Optional.of(tyargTag));
         Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
         dotExpressionArgsAndParen(
-            e, tyargIndent, (trailingDereferences || needDot) ? plusFour : ZERO);
+            e,
+            tyargIndent,
+            (trailingDereferences || needDot) ? plusFour : ZERO,
+            (trailingDereferences && !needDot) ? plusFour : ZERO);
       }
       length += getLength(e, getCurrentPath());
       needDot = true;
@@ -3248,7 +3251,9 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
       Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
       Indent argsIndent = Indent.If.make(nameTag, plusFour, trailingDereferences ? plusFour : ZERO);
-      dotExpressionArgsAndParen(e, tyargIndent, argsIndent);
+      Indent huggedArgsIndent =
+          Indent.If.make(nameTag, ZERO, trailingDereferences ? plusFour : ZERO);
+      dotExpressionArgsAndParen(e, tyargIndent, argsIndent, huggedArgsIndent);
 
       needDot = true;
     }
@@ -3321,14 +3326,14 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   }
 
   private void dotExpressionArgsAndParen(
-      ExpressionTree expression, Indent tyargIndent, Indent indent) {
+      ExpressionTree expression, Indent tyargIndent, Indent indent, Indent huggedIndent) {
     Deque<ExpressionTree> indices = getArrayIndices(expression);
     expression = getArrayBase(expression);
     switch (expression.getKind()) {
       case METHOD_INVOCATION -> {
         builder.open(tyargIndent);
         MethodInvocationTree methodInvocation = (MethodInvocationTree) expression;
-        addArguments(methodInvocation.getArguments(), indent);
+        addArguments(methodInvocation.getArguments(), indent, huggedIndent);
         builder.close();
       }
       default -> {}
@@ -3382,17 +3387,27 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token(">");
   }
 
+  private void addArguments(List<? extends ExpressionTree> arguments, Indent plusIndent) {
+    addArguments(arguments, plusIndent, ZERO);
+  }
+
   /// Add arguments to a method invocation, etc. The arguments indented `plusFour`, filled, from the
   /// current indent. The arguments may be output two at a time if they seem to be arguments to a
   /// map constructor, etc.
   ///
   /// @param arguments the arguments
   /// @param plusIndent the extra indent for the arguments
-  private void addArguments(List<? extends ExpressionTree> arguments, Indent plusIndent) {
+  /// @param huggedPlusIndent the extra indent when a single expression lambda argument is hugged
+  private void addArguments(
+      List<? extends ExpressionTree> arguments, Indent plusIndent, Indent huggedPlusIndent) {
     boolean tabular = arguments.size() % 2 == 0 && argumentsAreTabular(arguments) == 2;
     boolean hug = canHugOnlyArgument(arguments);
     if (hug) {
-      builder.openHuggable(plusIndent, hugPoint(getOnlyElement(arguments)));
+      ExpressionTree argument = getOnlyElement(arguments);
+      builder.openHuggable(
+          plusIndent,
+          hasHuggedBlockLambda(arguments) ? ZERO : huggedPlusIndent,
+          hugPoint(argument));
     } else {
       builder.open(plusIndent);
     }
@@ -3471,6 +3486,12 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    */
   private static boolean canHugOnlyArgument(List<? extends ExpressionTree> arguments) {
     return arguments.size() == 1 && isHuggable(getOnlyElement(arguments));
+  }
+
+  private static boolean hasHuggedBlockLambda(List<? extends ExpressionTree> arguments) {
+    return arguments.size() == 1
+        && getOnlyElement(arguments) instanceof LambdaExpressionTree lambda
+        && lambda.getBodyKind() == LambdaExpressionTree.BodyKind.STATEMENT;
   }
 
   private void argList(List<? extends ExpressionTree> arguments) {
