@@ -92,6 +92,17 @@ final class CommandLineOptionsParser {
         case "--skip-reflowing-long-strings" -> optionsBuilder.reflowLongStrings(false);
         case "--skip-javadoc-formatting" -> optionsBuilder.formatJavadoc(false);
         case "--skip-reordering-modifiers" -> optionsBuilder.reorderModifiers(false);
+        case "--cleanup" -> {
+          if (value == null) {
+            optionsBuilder.cleanup(true);
+          } else {
+            switch (value) {
+              case "true" -> optionsBuilder.cleanup(true);
+              case "false" -> optionsBuilder.cleanup(false);
+              default -> throw new IllegalArgumentException("unexpected --cleanup value: " + value);
+            }
+          }
+        }
         case "--max-line-length" -> {
           int length = parseInteger(it, flag, value);
           checkArgument(

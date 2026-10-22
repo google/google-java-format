@@ -426,7 +426,8 @@ class T {
         .collect(toImmutableList());
   }
 
-  private final Formatter formatter = new Formatter();
+  private final Formatter formatter =
+      new Formatter(JavaFormatterOptions.builder().cleanup(false).build());
 
   private final String input;
   private final String output;

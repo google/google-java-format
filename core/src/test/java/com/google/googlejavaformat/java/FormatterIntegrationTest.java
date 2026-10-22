@@ -19,10 +19,12 @@ import static com.google.common.io.Files.getFileExtension;
 import static com.google.common.io.Files.getNameWithoutExtension;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ResourceInfo;
@@ -60,6 +62,12 @@ public class FormatterIntegrationTest {
               "I1020",
               "I1037")
           .putAll(25, "ModuleImport", "InstanceMain")
+          .build();
+
+  private static final ImmutableSet<String> GOLDENS_CHANGED_BY_CLEANUP =
+      ImmutableSet.<String>builder()
+          // Braces around single-statement control flow (b/20569245)
+          .add("B", "B20569245", "C")
           .build();
 
   @Parameters(name = "{index}: {0}")
@@ -116,13 +124,41 @@ public class FormatterIntegrationTest {
     this.separator = Newlines.getLineEnding(expected);
   }
 
+  private static final Formatter FORMATTER =
+      new Formatter(JavaFormatterOptions.builder().cleanup(false).build());
+
   @Test
   public void format() {
     try {
-      Formatter formatter = new Formatter();
-      String output = formatter.formatSource(input);
-      output = StringWrapper.wrap(output, formatter);
+      String output = FORMATTER.formatSource(input);
+      output = StringWrapper.wrap(output, FORMATTER);
       assertEquals("bad output for " + name, expected, output);
+    } catch (FormatterException e) {
+      fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
+    }
+  }
+
+  @Test
+  public void cleanupOutputIsFixedPoint() {
+    try {
+      Formatter defaultFormatter = new Formatter();
+      String output = defaultFormatter.formatSource(expected);
+      if (GOLDENS_CHANGED_BY_CLEANUP.contains(name)) {
+        assertNotEquals(
+            "Golden "
+                + name
+                + " is expected to change under cleanup=true, but remained identical. "
+                + "Remove it from GOLDENS_CHANGED_BY_CLEANUP.",
+            expected,
+            output);
+        String cleanedFixedPoint = defaultFormatter.formatSource(output);
+        assertEquals(
+            "Cleaned output for " + name + " should be a fixed point under cleanup",
+            output,
+            cleanedFixedPoint);
+      } else {
+        assertEquals("fixed point under cleanup for " + name, expected, output);
+      }
     } catch (FormatterException e) {
       fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
     }
@@ -131,10 +167,9 @@ public class FormatterIntegrationTest {
   @Test
   public void idempotent() {
     try {
-      Formatter formatter = new Formatter();
-      String formatted = formatter.formatSource(input);
-      formatted = StringWrapper.wrap(formatted, formatter);
-      String reformatted = formatter.formatSource(formatted);
+      String formatted = FORMATTER.formatSource(input);
+      formatted = StringWrapper.wrap(formatted, FORMATTER);
+      String reformatted = FORMATTER.formatSource(formatted);
       assertEquals("bad output for " + name, formatted, reformatted);
     } catch (FormatterException e) {
       fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
@@ -145,7 +180,7 @@ public class FormatterIntegrationTest {
   public void idempotentLF() {
     try {
       String mangled = expected.replace(separator, "\n");
-      String output = new Formatter().formatSource(mangled);
+      String output = FORMATTER.formatSource(mangled);
       assertEquals("bad output for " + name, mangled, output);
     } catch (FormatterException e) {
       fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
@@ -156,7 +191,7 @@ public class FormatterIntegrationTest {
   public void idempotentCR() throws IOException {
     try {
       String mangled = expected.replace(separator, "\r");
-      String output = new Formatter().formatSource(mangled);
+      String output = FORMATTER.formatSource(mangled);
       assertEquals("bad output for " + name, mangled, output);
     } catch (FormatterException e) {
       fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));
@@ -167,7 +202,7 @@ public class FormatterIntegrationTest {
   public void idempotentCRLF() {
     try {
       String mangled = expected.replace(separator, "\r\n");
-      String output = new Formatter().formatSource(mangled);
+      String output = FORMATTER.formatSource(mangled);
       assertEquals("bad output for " + name, mangled, output);
     } catch (FormatterException e) {
       fail(String.format("Formatter crashed on %s: %s", name, e.getMessage()));

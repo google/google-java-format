@@ -185,7 +185,8 @@ public final class Formatter {
       boolean reflowLongStrings)
       throws FormatterException {
     ImmutableSet<CleanupPass> passes =
-        Cleanups.enabledPasses(removeUnusedImports, options.reorderModifiers(), sortImports);
+        Cleanups.enabledPasses(
+            options.cleanup(), removeUnusedImports, options.reorderModifiers(), sortImports);
     Cleanups.Result cleaned = Cleanups.apply(input, characterRanges, options.style(), passes);
     String formatted =
         JavaOutput.applyReplacements(
@@ -231,7 +232,8 @@ public final class Formatter {
       boolean sortImports)
       throws FormatterException {
     ImmutableSet<CleanupPass> passes =
-        Cleanups.enabledPasses(removeUnusedImports, /* reorderModifiers= */ false, sortImports);
+        Cleanups.enabledPasses(
+            /* cleanup= */ false, removeUnusedImports, /* reorderModifiers= */ false, sortImports);
     Cleanups.Result result =
         Cleanups.apply(input, ImmutableList.of(Range.closedOpen(0, input.length())), style, passes);
     return result.contents();

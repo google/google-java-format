@@ -55,6 +55,7 @@ public class CommandLineOptionsParserTest {
     assertThat(options.reflowLongStrings()).isTrue();
     assertThat(options.formatJavadoc()).isTrue();
     assertThat(options.reorderModifiers()).isTrue();
+    assertThat(options.cleanup()).isTrue();
     assertThat(options.maxLineLength()).isEqualTo(100);
   }
 
@@ -235,6 +236,35 @@ public class CommandLineOptionsParserTest {
             CommandLineOptionsParser.parse(Arrays.asList("--skip-reordering-modifiers"))
                 .reorderModifiers())
         .isFalse();
+  }
+
+  @Test
+  public void cleanup() {
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--cleanup")).cleanup()).isTrue();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--cleanup=true")).cleanup()).isTrue();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--cleanup=false")).cleanup())
+        .isFalse();
+  }
+
+  @Test
+  public void cleanupAndSkipFlagsOrderIndependent() {
+    CommandLineOptions opt1 =
+        CommandLineOptionsParser.parse(Arrays.asList("--skip-reordering-modifiers", "--cleanup"));
+    CommandLineOptions opt2 =
+        CommandLineOptionsParser.parse(Arrays.asList("--cleanup", "--skip-reordering-modifiers"));
+    assertThat(opt1.reorderModifiers()).isFalse();
+    assertThat(opt1.cleanup()).isTrue();
+    assertThat(opt2.reorderModifiers()).isFalse();
+    assertThat(opt2.cleanup()).isTrue();
+
+    CommandLineOptions opt3 =
+        CommandLineOptionsParser.parse(Arrays.asList("--skip-javadoc-formatting", "--cleanup"));
+    CommandLineOptions opt4 =
+        CommandLineOptionsParser.parse(Arrays.asList("--cleanup", "--skip-javadoc-formatting"));
+    assertThat(opt3.formatJavadoc()).isFalse();
+    assertThat(opt3.cleanup()).isTrue();
+    assertThat(opt4.formatJavadoc()).isFalse();
+    assertThat(opt4.cleanup()).isTrue();
   }
 
   @Test

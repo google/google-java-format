@@ -15,15 +15,52 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Arrays;
 import org.junit.Test;
 
 /// Tests for [Cleanups].
 public class CleanupsTest {
+
+  private static String formatWithCleanups(String input) throws Exception {
+    Formatter formatter = new Formatter(JavaFormatterOptions.builder().cleanup(true).build());
+    String output = formatter.formatSourceAndFixImports(input);
+    assertThat(formatter.formatSourceAndFixImports(output)).isEqualTo(output);
+    return output;
+  }
+
+  private static String formatWithCleanupsAosp(String input) throws Exception {
+    Formatter formatter =
+        new Formatter(JavaFormatterOptions.builder().style(Style.AOSP).cleanup(true).build());
+    String output = formatter.formatSourceAndFixImports(input);
+    assertThat(formatter.formatSourceAndFixImports(output)).isEqualTo(output);
+    return output;
+  }
+
+  private static String runCli(String input, String... args) throws Exception {
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
+    String[] allArgs = Arrays.copyOf(args, args.length + 1);
+    allArgs[args.length] = "-";
+    assertThat(main.format(allArgs)).isEqualTo(0);
+    return out.toString();
+  }
 
   @Test
   public void formatSource_rangePastEndOfInput_throwsFormatterException() {
@@ -198,6 +235,214 @@ public class CleanupsTest {
   }
 
   @Test
+  public void cleanupFlagAndOptions() throws Exception {
+    String input =
+        """
+        class T {
+          void f(boolean cond) {
+            if (cond) doA();
+          }
+        }
+        """;
+    String uncleaned =
+        """
+        class T {
+          void f(boolean cond) {
+            if (cond) doA();
+          }
+        }
+        """;
+    String cleaned =
+        """
+        class T {
+          void f(boolean cond) {
+            if (cond) {
+              doA();
+            }
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSourceAndFixImports(input)).isEqualTo(cleaned);
+    assertThat(runCli(input)).isEqualTo(cleaned);
+    assertThat(runCli(input, "--cleanup")).isEqualTo(cleaned);
+    assertThat(runCli(input, "--cleanup=true")).isEqualTo(cleaned);
+    assertThat(
+            new Formatter(JavaFormatterOptions.builder().cleanup(false).build())
+                .formatSourceAndFixImports(input))
+        .isEqualTo(uncleaned);
+    assertThat(runCli(input, "--cleanup=false")).isEqualTo(uncleaned);
+  }
+
+  @Test
+  public void controlFlowBraces() throws Exception {
+    String input =
+        """
+        class T {
+          void f(boolean a, boolean b, Iterable<String> xs) {
+            if (a)
+              doA();
+            else if (b)
+              doB();
+            else
+              doC();
+            for (int i = 0; i < 10; i++)
+              doA();
+            for (String x : xs)
+              doA();
+            while (a)
+              doA();
+            while (a);
+            do
+              doA();
+            while (a);
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f(boolean a, boolean b, Iterable<String> xs) {
+            if (a) {
+              doA();
+            } else if (b) {
+              doB();
+            } else {
+              doC();
+            }
+            for (int i = 0; i < 10; i++) {
+              doA();
+            }
+            for (String x : xs) {
+              doA();
+            }
+            while (a) {
+              doA();
+            }
+            while (a) {}
+            do {
+              doA();
+            } while (a);
+          }
+        }
+        """;
+    assertThat(formatWithCleanups(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void nestedIfElseBraces() throws Exception {
+    String input =
+        """
+        class T {
+          void f(boolean a, boolean b) {
+            if (a)
+              if (b)
+                doA();
+              else
+                doB();
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f(boolean a, boolean b) {
+            if (a) {
+              if (b) {
+                doA();
+              } else {
+                doB();
+              }
+            }
+          }
+        }
+        """;
+    assertThat(formatWithCleanups(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void controlFlowBracesWithComments() throws Exception {
+    String input =
+        """
+        class T {
+          void f(boolean a) {
+            if (a) // trailing comment
+              doA(); // body comment
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f(boolean a) {
+            if (a) { // trailing comment
+              doA(); // body comment
+            }
+          }
+        }
+        """;
+    assertThat(formatWithCleanups(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void aospStyleCleanups() throws Exception {
+    String input =
+        """
+        class T {
+            void f(boolean a) {
+                if (a)
+                    doA();
+            }
+        }
+        """;
+    String expected =
+        """
+        class T {
+            void f(boolean a) {
+                if (a) {
+                    doA();
+                }
+            }
+        }
+        """;
+    assertThat(formatWithCleanupsAosp(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void braceInsertionWhenRangeTouchesDeepInsideBracelessIf() throws Exception {
+    String input =
+        """
+        class T {
+          void f(boolean a, boolean b) {
+            if (a)
+              if (b)
+                doSomething();
+          }
+        }
+        """;
+    int offset = input.indexOf("doSomething();");
+    String result =
+        runCli(
+            input,
+            "--offset",
+            Integer.toString(offset),
+            "--length",
+            Integer.toString("doSomething();".length()));
+    String expected =
+        """
+        class T {
+          void f(boolean a, boolean b) {
+            if (a) {
+              if (b) {
+                doSomething();
+              }
+            }
+          }
+        }
+        """;
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
   public void parseReuseWhenNoEdits() throws Exception {
     String input =
         """
@@ -211,6 +456,7 @@ public class CleanupsTest {
             ImmutableList.of(Range.closedOpen(0, input.length())),
             Style.GOOGLE,
             Cleanups.enabledPasses(
+                /* cleanup= */ false,
                 /* removeUnusedImports= */ true,
                 /* reorderModifiers= */ false,
                 /* sortImports= */ false));
@@ -232,6 +478,7 @@ public class CleanupsTest {
             ImmutableList.of(Range.closedOpen(0, input.length())),
             Style.GOOGLE,
             Cleanups.enabledPasses(
+                /* cleanup= */ false,
                 /* removeUnusedImports= */ true,
                 /* reorderModifiers= */ true,
                 /* sortImports= */ false));
@@ -260,6 +507,7 @@ public class CleanupsTest {
             ImmutableList.of(Range.closedOpen(start, end)),
             Style.GOOGLE,
             Cleanups.enabledPasses(
+                /* cleanup= */ false,
                 /* removeUnusedImports= */ true,
                 /* reorderModifiers= */ true,
                 /* sortImports= */ true));
@@ -269,5 +517,36 @@ public class CleanupsTest {
     int expectedStart = result.contents().indexOf("public static final int X = 1;");
     int expectedEnd = result.contents().indexOf(";", expectedStart) + 1;
     assertThat(result.characterRanges()).contains(Range.closedOpen(expectedStart, expectedEnd));
+  }
+
+  @Test
+  public void parseReusedWhenLaterPassParsesAfterEarlierEdits() throws Exception {
+    String input =
+        """
+        package test;
+
+        import java.util.ArrayList;
+
+        class Test {
+          void f(boolean a) {
+            if (a) {
+              f(false);
+            }
+          }
+        }
+        """;
+    Cleanups.Result result =
+        Cleanups.apply(
+            input,
+            ImmutableList.of(Range.closedOpen(0, input.length())),
+            Style.GOOGLE,
+            Cleanups.enabledPasses(
+                /* cleanup= */ true,
+                /* removeUnusedImports= */ true,
+                /* reorderModifiers= */ false,
+                /* sortImports= */ false));
+    assertThat(result.unit()).isNotNull();
+    assertThat(result.contents()).doesNotContain("ArrayList");
+    assertThat(result.contents()).contains("if (a) {");
   }
 }

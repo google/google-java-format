@@ -658,6 +658,78 @@ class T {
   }
 
   @Test
+  public void cleanupsOptionTest() throws Exception {
+    String input =
+        """
+        class Test {
+          void f(boolean a) {
+            if (a) f(false);
+          }
+        }
+        """;
+    String cleaned =
+        """
+        class Test {
+          void f(boolean a) {
+            if (a) {
+              f(false);
+            }
+          }
+        }
+        """;
+    assertThat(new Formatter(JavaFormatterOptions.builder().build()).formatSource(input))
+        .isEqualTo(cleaned);
+    assertThat(
+            new Formatter(JavaFormatterOptions.builder().cleanup(false).build())
+                .formatSource(input))
+        .isEqualTo(input);
+  }
+
+  @Test
+  public void cleanupFlag() throws Exception {
+    String input =
+        """
+        class Test {
+          void f(boolean a) {
+            if (a) f(false);
+          }
+        }
+        """;
+    String cleaned =
+        """
+        class Test {
+          void f(boolean a) {
+            if (a) {
+              f(false);
+            }
+          }
+        }
+        """;
+    {
+      InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
+      StringWriter out = new StringWriter();
+      Main main =
+          new Main(
+              new PrintWriter(out, true),
+              new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+              in);
+      assertThat(main.format("-")).isEqualTo(0);
+      assertThat(out.toString()).isEqualTo(cleaned);
+    }
+    {
+      InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
+      StringWriter out = new StringWriter();
+      Main main =
+          new Main(
+              new PrintWriter(out, true),
+              new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+              in);
+      assertThat(main.format("--cleanup=false", "-")).isEqualTo(0);
+      assertThat(out.toString()).isEqualTo(input);
+    }
+  }
+
+  @Test
   public void syntaxError() throws Exception {
     Path path = testFolder.newFile("Test.java").toPath();
     String input =

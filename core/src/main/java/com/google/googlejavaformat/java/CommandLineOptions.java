@@ -39,6 +39,7 @@ import java.util.Optional;
 /// @param setExitIfChanged Return exit code 1 if there are any formatting changes.
 /// @param assumeFilename Return the name to use for diagnostics when formatting standard input.
 /// @param reorderModifiers Reorder modifiers into the JLS-recommended order.
+/// @param cleanup Enables non-whitespace cleanups.
 record CommandLineOptions(
     ImmutableList<String> files,
     boolean inPlace,
@@ -57,7 +58,8 @@ record CommandLineOptions(
     Optional<String> assumeFilename,
     boolean reflowLongStrings,
     boolean formatJavadoc,
-    boolean reorderModifiers) {
+    boolean reorderModifiers,
+    boolean cleanup) {
 
   boolean aosp() {
     return style().isAosp();
@@ -80,6 +82,7 @@ record CommandLineOptions(
         .reflowLongStrings(true)
         .formatJavadoc(true)
         .reorderModifiers(true)
+        .cleanup(true)
         .version(false)
         .help(false)
         .stdin(false)
@@ -139,6 +142,8 @@ record CommandLineOptions(
     Builder formatJavadoc(boolean formatJavadoc);
 
     Builder reorderModifiers(boolean reorderModifiers);
+
+    Builder cleanup(boolean cleanup);
 
     CommandLineOptions build();
   }

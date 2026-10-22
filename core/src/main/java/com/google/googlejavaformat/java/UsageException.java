@@ -56,6 +56,8 @@ Options:
     Do not reformat javadoc.
   --skip-reordering-modifiers
     Do not reorder modifiers into the JLS-recommended order.
+  --cleanup[=(true|false)]
+    Enables non-whitespace cleanups, such as inserting missing braces (default is true).
   --dry-run, -n
     Prints the paths of the files whose contents would change if the formatter were run normally.
   --set-exit-if-changed

@@ -26,6 +26,13 @@ enum CleanupPass {
           cleanups.context(), cleanups.unit(), cleanups.contents());
     }
   },
+  /// AST cleanups: missing control-flow braces.
+  AST_CLEANUPS {
+    @Override
+    ImmutableList<Replacement> findReplacements(Cleanups cleanups) throws FormatterException {
+      return CleanupScanner.scan(cleanups.unit(), cleanups.contents(), cleanups.ranges());
+    }
+  },
   /// Reorders modifiers into JLS order.
   REORDER_MODIFIERS {
     @Override

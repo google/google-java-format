@@ -112,6 +112,7 @@ public final class Main {
             .style(parameters.style())
             .formatJavadoc(parameters.formatJavadoc())
             .reorderModifiers(parameters.reorderModifiers())
+            .cleanup(parameters.cleanup())
             .build();
 
     if (parameters.stdin()) {

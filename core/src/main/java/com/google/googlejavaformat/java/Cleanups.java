@@ -104,10 +104,13 @@ final class Cleanups {
 
   /// Returns the enabled passes for formatting or fixing imports.
   static ImmutableSet<CleanupPass> enabledPasses(
-      boolean removeUnusedImports, boolean reorderModifiers, boolean sortImports) {
+      boolean cleanup, boolean removeUnusedImports, boolean reorderModifiers, boolean sortImports) {
     EnumSet<CleanupPass> passes = EnumSet.noneOf(CleanupPass.class);
     if (removeUnusedImports) {
       passes.add(CleanupPass.REMOVE_UNUSED_IMPORTS);
+    }
+    if (cleanup) {
+      passes.add(CleanupPass.AST_CLEANUPS);
     }
     if (reorderModifiers) {
       passes.add(CleanupPass.REORDER_MODIFIERS);

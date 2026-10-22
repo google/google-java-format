@@ -24,15 +24,18 @@ import com.google.googlejavaformat.Doc;
 
 /// Options for a google-java-format invocation.
 ///
-/// Like gofmt, the google-java-format CLI exposes *no* configuration options (aside from `--aosp`).
+/// The google-java-format CLI exposes very few configuration options.
 ///
 /// The goal of google-java-format is to provide consistent formatting, and to free developers from
 /// arguments over style choices. It is an explicit non-goal to support developers' individual
 /// preferences, and in fact it would work directly against our primary goals.
 ///
+/// @param cleanup Whether to enable non-whitespace cleanups (applies to formatSource* and the CLI
+///   only).
 /// @param style Returns the code style.
 @Immutable
-public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifiers, Style style) {
+public record JavaFormatterOptions(
+    boolean formatJavadoc, boolean reorderModifiers, boolean cleanup, Style style) {
   public JavaFormatterOptions {
     requireNonNull(style, "style");
   }
@@ -229,7 +232,8 @@ public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifie
     return new AutoBuilder_JavaFormatterOptions_Builder()
         .style(Style.GOOGLE)
         .formatJavadoc(true)
-        .reorderModifiers(true);
+        .reorderModifiers(true)
+        .cleanup(true);
   }
 
   /// A builder for [JavaFormatterOptions].
@@ -241,6 +245,9 @@ public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifie
     public abstract Builder formatJavadoc(boolean formatJavadoc);
 
     public abstract Builder reorderModifiers(boolean reorderModifiers);
+
+    /// Sets whether to enable non-whitespace cleanups (applies to formatSource* and the CLI only).
+    public abstract Builder cleanup(boolean cleanup);
 
     public abstract JavaFormatterOptions build();
   }
