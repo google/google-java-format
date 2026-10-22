@@ -24,10 +24,9 @@ import com.google.common.io.CharSink;
 import com.google.common.io.CharSource;
 import com.google.errorprone.annotations.Immutable;
 import com.google.googlejavaformat.CommentsHelper;
-import com.google.googlejavaformat.Doc;
 import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Newlines;
-import com.google.googlejavaformat.Op;
+import com.google.googlejavaformat.layout.Doc;
 import com.google.googlejavaformat.layout.LayoutBuilder;
 import com.google.googlejavaformat.layout.LayoutSolver;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
@@ -40,7 +39,7 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import org.jspecify.annotations.Nullable;
 
-/// This is google-java-format, a new Java formatter that follows the Google Java Style Guide quite
+/// This is google-java-format, a Java formatter that follows the Google Java Style Guide quite
 /// precisely---to the letter and to the spirit.
 ///
 /// This formatter uses the javac parser to generate an AST. Because the AST loses information about
@@ -51,24 +50,26 @@ import org.jspecify.annotations.Nullable;
 /// following a token on the same line go with that token; those following go with the next token---
 /// and there is a final EOF token to hold final comments.
 ///
-/// The formatter walks the AST to generate a Greg Nelson/Derek Oppen-style list of formatting [Op]s
-/// [1--2] that then generates a structured [Doc]. Each AST node type has a visitor to emit a
-/// sequence of [Op]s for the node.
-///
-/// Some data-structure operations are easier in the list of [Op]s, while others become easier in
-/// the [Doc]. The [Op]s are walked to attach the comments. As the [Op]s are generated, missing
-/// input tokens are inserted and incorrect output tokens are dropped, ensuring that the output
-/// matches the input even in the face of formatter errors. Finally, the formatter walks the [Doc]
-/// to format it in the given width.
+/// The formatter walks the AST with [JavaInputAstVisitor] to emit formatting events to a
+/// [LayoutBuilder], which splices in comments from the token stream and builds a structured
+/// Wadler-style [Doc] \[1] using formatting rules adapted from Greg Nelson and Derek Oppen \[2--3].
+/// As the AST is walked, guessed optional tokens that are absent from the input are dropped, and
+/// any mismatch between the tokens emitted by the visitor and the input token stream fails
+/// formatting, ensuring that the output matches the input tokens. Finally, [LayoutSolver] lays out
+/// the [Doc] in the given width.
 ///
 /// This formatter also produces data structures of which tokens and comments appear where on the
 /// input, and on the output, to help output a partial reformatting of a slightly edited input.
 ///
 /// Instances of the formatter are immutable and thread-safe.
 ///
-/// [1] Nelson, Greg, and John DeTreville. Personal communication.
+/// [1] Wadler, Philip. ["A prettier
+/// printer"](https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf). The Fun of
+/// Programming, Palgrave Macmillan, 2003, pp. 223–243.
 ///
-/// [2] Oppen, Derek C. "Prettyprinting". ACM Transactions on Programming Languages and Systems,
+/// [2] Nelson, Greg, and John DeTreville. Personal communication.
+///
+/// [3] Oppen, Derek C. "Prettyprinting". ACM Transactions on Programming Languages and Systems,
 /// Volume 2 Issue 4, Oct. 1980, pp. 465–483.
 @Immutable
 public final class Formatter {
