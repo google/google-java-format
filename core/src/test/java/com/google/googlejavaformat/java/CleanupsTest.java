@@ -384,10 +384,159 @@ public class CleanupsTest {
   }
 
   @Test
+  public void redundantSemicolons() throws Exception {
+    String input =
+        """
+        package p;
+
+        import java.util.List;;
+
+        class T {
+          ;
+          int x = 1;;
+          ;
+          void f(List<String> xs) {
+            int a = 1;;
+            ;\s
+        \t;\t
+            // line comment
+            ; int b = 2;
+            switch (a) {
+              case 1:
+                ;
+                break;;
+              default:
+                ;
+            }
+            while (xs.isEmpty());
+            for (;;);
+            if (xs.isEmpty()); ;
+            label:
+            ;
+          };
+        };
+        """;
+    String expected =
+        """
+        package p;
+
+        import java.util.List;
+
+        class T {
+          int x = 1;
+
+          void f(List<String> xs) {
+            int a = 1;
+            // line comment
+            int b = 2;
+            switch (a) {
+              case 1:
+                break;
+              default:
+            }
+            while (xs.isEmpty()) {}
+            for (; ; ) {}
+            if (xs.isEmpty()) {}
+            label:
+            ;
+          }
+        }
+        """;
+    assertThat(formatWithCleanups(input)).isEqualTo(expected);
+    assertThat(formatWithCleanups("class T {}\n;")).isEqualTo("class T {}\n");
+    assertThat(formatWithCleanups("package p;;\n")).isEqualTo("package p;\n");
+  }
+
+  @Test
+  public void enumSemicolons() throws Exception {
+    String input =
+        """
+        enum E1 {
+          A;
+        }
+
+        enum E2 {
+          A;;
+        }
+
+        enum E3 {
+          A;;
+          int x;;
+        }
+
+        enum E4 {
+          A(() -> {
+            int x = 1;
+          }) {
+            ;
+          };;
+          E4(Runnable r) {}
+        }
+
+        enum E5 {
+          A;
+          enum Nested {
+            B
+          }
+        }
+
+        enum E6 {
+          A;
+          int x;
+          enum Nested {
+            B
+          }
+        }
+        """;
+    String expected =
+        """
+        enum E1 {
+          A;
+        }
+
+        enum E2 {
+          A;
+        }
+
+        enum E3 {
+          A;
+          int x;
+        }
+
+        enum E4 {
+          A(() -> {
+            int x = 1;
+          }) {};
+
+          E4(Runnable r) {}
+        }
+
+        enum E5 {
+          A;
+
+          enum Nested {
+            B
+          }
+        }
+
+        enum E6 {
+          A;
+          int x;
+
+          enum Nested {
+            B
+          }
+        }
+        """;
+    assertThat(formatWithCleanups(input)).isEqualTo(expected);
+  }
+
+  @Test
   public void aospStyleCleanups() throws Exception {
     String input =
         """
         class T {
+            int x;;
             void f(boolean a) {
                 if (a)
                     doA();
@@ -397,6 +546,8 @@ public class CleanupsTest {
     String expected =
         """
         class T {
+            int x;
+
             void f(boolean a) {
                 if (a) {
                     doA();

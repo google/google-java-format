@@ -68,6 +68,16 @@ public class FormatterIntegrationTest {
       ImmutableSet.<String>builder()
           // Braces around single-statement control flow (b/20569245)
           .add("B", "B20569245", "C")
+          // Redundant semicolons (b/22201927)
+          .add(
+              "B20128174",
+              "B21647014",
+              "B23349153",
+              "B25811323",
+              "B28786284",
+              "E",
+              "SemicolonInClass",
+              "i281")
           .build();
 
   @Parameters(name = "{index}: {0}")
