@@ -700,4 +700,13 @@ public class CleanupsTest {
     assertThat(result.contents()).doesNotContain("ArrayList");
     assertThat(result.contents()).contains("if (a) {");
   }
+
+  @Test
+  public void emptyString() throws Exception {
+    assertThat(new Formatter().formatSource("")).isEqualTo("\n");
+    assertThat(new Formatter().formatSource("", ImmutableList.of())).isEmpty();
+    assertThat(new Formatter().formatSourceAndFixImports("")).isEqualTo("\n");
+    assertThat(new Formatter().formatSourceAndFixImports("import java.util.List;\n"))
+        .isEqualTo("\n");
+  }
 }

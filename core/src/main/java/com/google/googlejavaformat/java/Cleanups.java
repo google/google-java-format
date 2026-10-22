@@ -142,7 +142,14 @@ final class Cleanups {
     for (CleanupPass pass : passes) {
       cleanups.applyReplacements(pass.findReplacements(cleanups));
     }
-    return cleanups.result();
+    // An empty range can't be represented in a RangeSet, so restore it if the passes removed all
+    // contents (or the input was empty).
+    Collection<Range<Integer>> resultRanges =
+        cleanups.contents.isEmpty() && !characterRanges.isEmpty()
+            ? ImmutableList.of(Range.closedOpen(0, 0))
+            : cleanups.ranges.asRanges();
+    return new Result(
+        cleanups.contents, resultRanges, cleanups.parsed == null ? null : cleanups.parsed.unit());
   }
 
   private String contents;
@@ -190,10 +197,6 @@ final class Cleanups {
 
   Context context() throws FormatterException {
     return parsed().context();
-  }
-
-  Result result() {
-    return new Result(contents, ranges.asRanges(), parsed == null ? null : parsed.unit());
   }
 
   /// Applies a pass's replacements to the current contents, remapping requested ranges and adding
