@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.ImmutableSet;
@@ -228,12 +229,26 @@ final class Cleanups {
 
   /// Returns the range to reformat for the given span.
   private static Range<Integer> reformatRange(Span span, String contents) {
-    int start = span.outStart();
-    int end = span.outEnd();
-    if (start == end && !contents.isEmpty()) {
-      start = max(0, start - 1);
-      end = min(contents.length(), end + 1);
+    if (span.outStart() == span.outEnd()) {
+      return deletionReformatRange(contents, span.outStart());
     }
-    return start < end ? Range.closedOpen(start, end) : Range.closedOpen(0, 0);
+    return Range.closedOpen(span.outStart(), span.outEnd());
+  }
+
+  /// Returns the range to reformat around a deletion at `pos`: the surrounding whitespace plus one
+  /// character of each adjacent token, or empty if there is no surrounding whitespace.
+  private static Range<Integer> deletionReformatRange(String contents, int pos) {
+    int start = pos;
+    while (start > 0 && CharMatcher.whitespace().matches(contents.charAt(start - 1))) {
+      start--;
+    }
+    int end = pos;
+    while (end < contents.length() && CharMatcher.whitespace().matches(contents.charAt(end))) {
+      end++;
+    }
+    if (start == end) {
+      return Range.closedOpen(0, 0);
+    }
+    return Range.closedOpen(max(0, start - 1), min(contents.length(), end + 1));
   }
 }

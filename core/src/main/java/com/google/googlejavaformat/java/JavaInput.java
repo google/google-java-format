@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getLast;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Verify;
 import com.google.common.collect.DiscreteDomain;
@@ -608,6 +609,8 @@ final class JavaInput extends Input {
     }
   }
 
+  private static final CharMatcher NOT_WHITESPACE = CharMatcher.whitespace().negate();
+
   /// Convert from a character range to a token range.
   ///
   /// @param characterRange the `0`-based [Range] of characters
@@ -624,11 +627,15 @@ final class JavaInput extends Input {
             : characterRange;
     ImmutableCollection<Token> enclosed =
         getPositionTokenMap().subRangeMap(nonEmptyRange).asMapOfRanges().values();
+    boolean touchesEof = NOT_WHITESPACE.indexIn(text, characterRange.upperEndpoint()) == -1;
     if (enclosed.isEmpty()) {
+      if (touchesEof) {
+        return Range.closedOpen(getkN(), getkN() + 1);
+      }
       return EMPTY_RANGE;
     }
-    return Range.closedOpen(
-        enclosed.iterator().next().getTok().getIndex(), getLast(enclosed).getTok().getIndex() + 1);
+    int hi = touchesEof ? getkN() + 1 : getLast(enclosed).getTok().getIndex() + 1;
+    return Range.closedOpen(enclosed.iterator().next().getTok().getIndex(), hi);
   }
 
   /// Get the number of toks.

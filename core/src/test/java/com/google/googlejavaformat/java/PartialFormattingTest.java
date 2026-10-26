@@ -1799,4 +1799,48 @@ public final class PartialFormattingTest {
     String output = runFormatter(input, new String[] {"-offset", "13", "-length", "1"});
     assertThat(output).isEqualTo(expectedOutput);
   }
+
+  // b/30464184: remove unused imports in partial formatting leaves at most one blank line
+  @Test
+  public void unusedImportDeletionNoDoubleBlankLine() throws Exception {
+    String input =
+        lines("package com.example;", "", "import java.util.List;", "", "class Test {}", "");
+    String expectedOutput = lines("package com.example;", "", "class Test {}", "");
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    input,
+                    ImmutableList.of(rangeOf(input, "import java.util.List;")),
+                    /* removeUnusedImports= */ true,
+                    /* sortImports= */ true,
+                    /* reflowLongStrings= */ false))
+        .isEqualTo(expectedOutput);
+
+    String noPackageInput = lines("import java.util.List;", "", "class Test {}", "");
+    String noPackageExpected = lines("class Test {}", "");
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    noPackageInput,
+                    ImmutableList.of(rangeOf(noPackageInput, "import java.util.List;")),
+                    /* removeUnusedImports= */ true,
+                    /* sortImports= */ true,
+                    /* reflowLongStrings= */ false))
+        .isEqualTo(noPackageExpected);
+  }
+
+  // b/150227347: trailing blank lines at EOF removed when range touches EOF
+  @Test
+  public void trailingBlankLinesAtEofRemoved() throws Exception {
+    String input = lines("class Test {", "  void f() {}", "}", "", "", "");
+    String expectedOutput = lines("class Test {", "  void f() {}", "}", "");
+    assertThat(runFormatter(input, new String[] {"-lines", "3:5"})).isEqualTo(expectedOutput);
+    assertThat(runFormatter(input, new String[] {"-lines", "4:5"})).isEqualTo(expectedOutput);
+    assertThat(runFormatter(input, new String[] {"-lines", "4:6"})).isEqualTo(expectedOutput);
+
+    String commentInput = lines("class Test {} // comment", "", "", "");
+    String commentExpected = lines("class Test {} // comment", "");
+    assertThat(runFormatter(commentInput, new String[] {"-lines", "2:3"}))
+        .isEqualTo(commentExpected);
+  }
 }
