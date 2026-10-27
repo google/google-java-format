@@ -243,9 +243,9 @@ public final class Formatter {
   /// Emit a list of [Replacement]s to convert from input to output.
   ///
   /// This is a whitespace-only API that performs core layout and whitespace formatting on the
-  /// requested ranges. It does not perform AST-based cleanups (such as brace insertion or modifier
-  /// cleanup), nor does it modify unformatted code outside the requested ranges (such as file-wide
-  /// blank line or trailing whitespace cleanup).
+  /// requested ranges. It does not perform AST-based cleanups (such as removing redundant
+  /// semicolons or reordering modifiers), nor does it modify unformatted code outside the requested
+  /// ranges (such as file-wide blank line or trailing whitespace cleanup).
   ///
   /// @param input the input compilation unit
   /// @param characterRanges the character ranges to reformat

@@ -66,8 +66,6 @@ public class FormatterIntegrationTest {
 
   private static final ImmutableSet<String> GOLDENS_CHANGED_BY_CLEANUP =
       ImmutableSet.<String>builder()
-          // Braces around single-statement control flow (b/20569245)
-          .add("B", "B20569245", "C")
           // Redundant semicolons (b/22201927)
           .add(
               "B20128174",

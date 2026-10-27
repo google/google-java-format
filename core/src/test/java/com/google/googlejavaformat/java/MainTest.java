@@ -662,19 +662,14 @@ class T {
     String input =
         """
         class Test {
-          void f(boolean a) {
-            if (a) f(false);
-          }
+          int x = 1;
+          ;
         }
         """;
     String cleaned =
         """
         class Test {
-          void f(boolean a) {
-            if (a) {
-              f(false);
-            }
-          }
+          int x = 1;
         }
         """;
     assertThat(new Formatter(JavaFormatterOptions.builder().build()).formatSource(input))
@@ -690,19 +685,14 @@ class T {
     String input =
         """
         class Test {
-          void f(boolean a) {
-            if (a) f(false);
-          }
+          int x = 1;
+          ;
         }
         """;
     String cleaned =
         """
         class Test {
-          void f(boolean a) {
-            if (a) {
-              f(false);
-            }
-          }
+          int x = 1;
         }
         """;
     {

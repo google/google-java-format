@@ -26,7 +26,7 @@ enum CleanupPass {
           cleanups.context(), cleanups.unit(), cleanups.contents());
     }
   },
-  /// AST cleanups: missing control-flow braces and redundant semicolons.
+  /// Non-whitespace AST cleanups.
   AST_CLEANUPS {
     @Override
     ImmutableList<Replacement> findReplacements(Cleanups cleanups) throws FormatterException {

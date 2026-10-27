@@ -21,7 +21,6 @@ import static com.sun.tools.javac.code.Flags.ENUM;
 import static com.sun.tools.javac.code.Flags.GENERATED_MEMBER;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static java.util.Comparator.comparingInt;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -33,17 +32,11 @@ import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.DoWhileLoopTree;
 import com.sun.source.tree.EmptyStatementTree;
-import com.sun.source.tree.EnhancedForLoopTree;
-import com.sun.source.tree.ForLoopTree;
-import com.sun.source.tree.IfTree;
 import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.NewClassTree;
-import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
-import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
@@ -51,13 +44,10 @@ import com.sun.tools.javac.tree.TreeInfo;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.TreeMap;
 import org.jspecify.annotations.Nullable;
 
-/// Scans the compilation unit for non-whitespace cleanup opportunities: inserting missing
-/// control-flow braces and removing redundant semicolons.
+/// Scans the compilation unit for non-whitespace cleanup opportunities, such as removing redundant
+/// semicolons.
 final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Void> {
 
   // Replace with Flags.IMPLICIT_CLASS once JDK 25 is the minimum supported version
@@ -69,27 +59,14 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
     RangeSet<Integer> targetRanges = TreeRangeSet.create(ranges);
     ImmutableList<Tok> toks = JavaInput.buildToks(contents, ImmutableSet.of());
     RangeSet<Integer> activeDeletions = TreeRangeSet.create();
-    NavigableMap<Integer, StringBuilder> activeInsertions = new TreeMap<>();
-    new CleanupScanner(contents, unit, toks, targetRanges, activeDeletions, activeInsertions)
-        .scan(unit, null);
-    if (activeDeletions.isEmpty() && activeInsertions.isEmpty()) {
+    new CleanupScanner(contents, unit, toks, targetRanges, activeDeletions).scan(unit, null);
+    if (activeDeletions.isEmpty()) {
       return ImmutableList.of();
     }
     List<Replacement> replacements = new ArrayList<>();
     for (Range<Integer> del : activeDeletions.asRanges()) {
-      int dStart = del.lowerEndpoint();
-      int dEnd = del.upperEndpoint();
-      var subMap =
-          activeInsertions.subMap(dStart, /* fromInclusive= */ true, dEnd, /* toInclusive= */ true);
-      String rep = String.join("", subMap.values());
-      subMap.clear();
-      replacements.add(Replacement.create(dStart, dEnd, rep));
+      replacements.add(Replacement.create(del.lowerEndpoint(), del.upperEndpoint(), ""));
     }
-    for (Map.Entry<Integer, StringBuilder> entry : activeInsertions.entrySet()) {
-      int pos = entry.getKey();
-      replacements.add(Replacement.create(pos, pos, entry.getValue().toString()));
-    }
-    replacements.sort(comparingInt(r -> r.replaceRange().lowerEndpoint()));
     verifyCommentsPreserved(toks, contents, replacements);
     return ImmutableList.copyOf(replacements);
   }
@@ -128,29 +105,22 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
   private final ImmutableList<Tok> toks;
   private final RangeSet<Integer> targetRanges;
   private final RangeSet<Integer> activeDeletions;
-  private final NavigableMap<Integer, StringBuilder> activeInsertions;
 
   CleanupScanner(
       String contents,
       JCCompilationUnit unit,
       ImmutableList<Tok> toks,
       RangeSet<Integer> targetRanges,
-      RangeSet<Integer> activeDeletions,
-      NavigableMap<Integer, StringBuilder> activeInsertions) {
+      RangeSet<Integer> activeDeletions) {
     this.contents = contents;
     this.unit = unit;
     this.toks = toks;
     this.targetRanges = targetRanges;
     this.activeDeletions = activeDeletions;
-    this.activeInsertions = activeInsertions;
   }
 
   private boolean inRange(int startPos, int endPos) {
     return targetRanges.intersects(Range.closedOpen(startPos, endPos));
-  }
-
-  private void insert(int pos, String text) {
-    activeInsertions.computeIfAbsent(pos, k -> new StringBuilder()).append(text);
   }
 
   private void deleteRedundantSemicolon(int semiPos) {
@@ -302,85 +272,6 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
   }
 
   @Override
-  public @Nullable Void visitIf(IfTree tree, @Nullable Void unused) {
-    super.visitIf(tree, null);
-    checkBraces(tree, tree.getThenStatement());
-    if (!(tree.getElseStatement() instanceof IfTree)) {
-      checkBraces(tree, tree.getElseStatement());
-    }
-    return null;
-  }
-
-  @Override
-  public @Nullable Void visitForLoop(ForLoopTree tree, @Nullable Void unused) {
-    super.visitForLoop(tree, null);
-    checkBraces(tree, tree.getStatement());
-    return null;
-  }
-
-  @Override
-  public @Nullable Void visitEnhancedForLoop(EnhancedForLoopTree tree, @Nullable Void unused) {
-    super.visitEnhancedForLoop(tree, null);
-    checkBraces(tree, tree.getStatement());
-    return null;
-  }
-
-  @Override
-  public @Nullable Void visitWhileLoop(WhileLoopTree tree, @Nullable Void unused) {
-    super.visitWhileLoop(tree, null);
-    checkBraces(tree, tree.getStatement());
-    return null;
-  }
-
-  @Override
-  public @Nullable Void visitDoWhileLoop(DoWhileLoopTree tree, @Nullable Void unused) {
-    super.visitDoWhileLoop(tree, null);
-    checkBraces(tree, tree.getStatement());
-    return null;
-  }
-
-  private void checkBraces(Tree owner, @Nullable StatementTree body) {
-    if (body == null || body instanceof BlockTree) {
-      return;
-    }
-    int rangeEnd =
-        owner instanceof DoWhileLoopTree ? getEndPosition(owner, unit) : getEndPosition(body, unit);
-    if (!inRange(getStartPosition(owner), rangeEnd)) {
-      return;
-    }
-    Tok prev = prevToken(getStartPosition(body));
-    if (prev == null) {
-      return;
-    }
-    insert(prev.getPosition() + prev.length(), "{");
-    insert(closingBraceInsertionPos(body), "}");
-    if (body instanceof EmptyStatementTree) {
-      activeDeletions.add(Range.closedOpen(getStartPosition(body), getEndPosition(body, unit)));
-    }
-  }
-
-  private int closingBraceInsertionPos(StatementTree stmt) {
-    int stmtEnd = getEndPosition(stmt, unit);
-    if (stmt instanceof EmptyStatementTree) {
-      return stmtEnd;
-    }
-    boolean sawComment = false;
-    for (int i = tokIndexAtOrAfter(stmtEnd); i < toks.size(); i++) {
-      Tok tok = toks.get(i);
-      if (tok.isToken()) {
-        return stmtEnd;
-      }
-      if (tok.isNewline()) {
-        return sawComment ? tok.getPosition() + tok.length() : stmtEnd;
-      }
-      if (tok.isComment()) {
-        sawComment = true;
-      }
-    }
-    return stmtEnd;
-  }
-
-  @Override
   public @Nullable Void visitEmptyStatement(EmptyStatementTree tree, @Nullable Void unused) {
     // Include CaseTree for empty statements in colon-style switch statement groups
     // (e.g. `switch (x) { case FOO: ; case BAR: }`).
@@ -408,16 +299,6 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
       }
     }
     return lo;
-  }
-
-  private @Nullable Tok prevToken(int pos) {
-    for (int i = tokIndexAtOrAfter(pos) - 1; i >= 0; i--) {
-      Tok tok = toks.get(i);
-      if (tok.isToken() && !tok.getText().isEmpty()) {
-        return tok;
-      }
-    }
-    return null;
   }
 
   private @Nullable Tok findTokenAtOrAfter(int startPos, int endPos, String text) {

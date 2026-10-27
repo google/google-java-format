@@ -239,26 +239,17 @@ public class CleanupsTest {
     String input =
         """
         class T {
-          void f(boolean cond) {
-            if (cond) doA();
-          }
-        }
-        """;
-    String uncleaned =
-        """
-        class T {
-          void f(boolean cond) {
-            if (cond) doA();
+          void f() {
+            int x = 1;
+            ;
           }
         }
         """;
     String cleaned =
         """
         class T {
-          void f(boolean cond) {
-            if (cond) {
-              doA();
-            }
+          void f() {
+            int x = 1;
           }
         }
         """;
@@ -269,118 +260,21 @@ public class CleanupsTest {
     assertThat(
             new Formatter(JavaFormatterOptions.builder().cleanup(false).build())
                 .formatSourceAndFixImports(input))
-        .isEqualTo(uncleaned);
-    assertThat(runCli(input, "--cleanup=false")).isEqualTo(uncleaned);
+        .isEqualTo(input);
+    assertThat(runCli(input, "--cleanup=false")).isEqualTo(input);
   }
 
   @Test
-  public void controlFlowBraces() throws Exception {
+  public void singleStatementControlFlowNotBraced() throws Exception {
     String input =
         """
         class T {
-          void f(boolean a, boolean b, Iterable<String> xs) {
-            if (a)
-              doA();
-            else if (b)
-              doB();
-            else
-              doC();
-            for (int i = 0; i < 10; i++)
-              doA();
-            for (String x : xs)
-              doA();
-            while (a)
-              doA();
-            while (a);
-            do
-              doA();
-            while (a);
+          void f(boolean cond) {
+            if (cond) doA();
           }
         }
         """;
-    String expected =
-        """
-        class T {
-          void f(boolean a, boolean b, Iterable<String> xs) {
-            if (a) {
-              doA();
-            } else if (b) {
-              doB();
-            } else {
-              doC();
-            }
-            for (int i = 0; i < 10; i++) {
-              doA();
-            }
-            for (String x : xs) {
-              doA();
-            }
-            while (a) {
-              doA();
-            }
-            while (a) {}
-            do {
-              doA();
-            } while (a);
-          }
-        }
-        """;
-    assertThat(formatWithCleanups(input)).isEqualTo(expected);
-  }
-
-  @Test
-  public void nestedIfElseBraces() throws Exception {
-    String input =
-        """
-        class T {
-          void f(boolean a, boolean b) {
-            if (a)
-              if (b)
-                doA();
-              else
-                doB();
-          }
-        }
-        """;
-    String expected =
-        """
-        class T {
-          void f(boolean a, boolean b) {
-            if (a) {
-              if (b) {
-                doA();
-              } else {
-                doB();
-              }
-            }
-          }
-        }
-        """;
-    assertThat(formatWithCleanups(input)).isEqualTo(expected);
-  }
-
-  @Test
-  public void controlFlowBracesWithComments() throws Exception {
-    String input =
-        """
-        class T {
-          void f(boolean a) {
-            if (a) // trailing comment
-              doA(); // body comment
-          }
-        }
-        """;
-    String expected =
-        """
-        class T {
-          void f(boolean a) {
-            if (a) { // trailing comment
-              doA(); // body comment
-            }
-          }
-        }
-        """;
-    assertThat(formatWithCleanups(input)).isEqualTo(expected);
+    assertThat(formatWithCleanups(input)).isEqualTo(input);
   }
 
   @Test
@@ -434,9 +328,12 @@ public class CleanupsTest {
                 break;
               default:
             }
-            while (xs.isEmpty()) {}
-            for (; ; ) {}
-            if (xs.isEmpty()) {}
+            while (xs.isEmpty())
+              ;
+            for (; ; )
+              ;
+            if (xs.isEmpty())
+              ;
             label:
             ;
           }
@@ -537,57 +434,36 @@ public class CleanupsTest {
         """
         class T {
             int x;;
-            void f(boolean a) {
-                if (a)
-                    doA();
-            }
         }
         """;
     String expected =
         """
         class T {
             int x;
-
-            void f(boolean a) {
-                if (a) {
-                    doA();
-                }
-            }
         }
         """;
     assertThat(formatWithCleanupsAosp(input)).isEqualTo(expected);
   }
 
   @Test
-  public void braceInsertionWhenRangeTouchesDeepInsideBracelessIf() throws Exception {
+  public void cleanupWithinRequestedRange() throws Exception {
     String input =
         """
         class T {
-          void f(boolean a, boolean b) {
-            if (a)
-              if (b)
-                doSomething();
-          }
+          int x = 1;
+          ;
+          int y = 2;
+          ;
         }
         """;
-    int offset = input.indexOf("doSomething();");
-    String result =
-        runCli(
-            input,
-            "--offset",
-            Integer.toString(offset),
-            "--length",
-            Integer.toString("doSomething();".length()));
+    int offset = input.indexOf(";\n  int y");
+    String result = runCli(input, "--offset", Integer.toString(offset), "--length", "1");
     String expected =
         """
         class T {
-          void f(boolean a, boolean b) {
-            if (a) {
-              if (b) {
-                doSomething();
-              }
-            }
-          }
+          int x = 1;
+          int y = 2;
+          ;
         }
         """;
     assertThat(result).isEqualTo(expected);
