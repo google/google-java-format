@@ -401,9 +401,10 @@ public class CleanupsTest {
         }
 
         enum E4 {
-          A(() -> {
-            int x = 1;
-          }) {};
+          A(
+              () -> {
+                int x = 1;
+              }) {};
 
           E4(Runnable r) {}
         }

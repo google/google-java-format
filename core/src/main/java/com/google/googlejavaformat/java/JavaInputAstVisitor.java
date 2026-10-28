@@ -66,6 +66,7 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.collect.TreeRangeSet;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -711,6 +712,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           visitModifiers(
               node.getClassBody().getModifiers(), Direction.HORIZONTAL, Optional.empty());
       visitAnnotations(annotations, BreakOrNot.NO, BreakOrNot.YES);
+      doNotHug(node);
     }
     scan(node.getIdentifier(), null);
     addArguments(node.getArguments(), plusFour);
@@ -821,6 +823,9 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.guessToken("(");
       builder.guessToken(")");
     } else {
+      if (init.getClassBody() != null) {
+        doNotHug(init);
+      }
       addArguments(init.getArguments(), plusFour);
     }
     if (init.getClassBody() != null) {
@@ -3054,6 +3059,9 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         token(".");
       } else {
         builder.open(plusFour);
+        if (!stack.isEmpty()) {
+          doNotHug(node);
+        }
         scan(getArrayBase(node), null);
         builder.breakOp();
         needDot = true;
@@ -3144,13 +3152,19 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     // chain starts with another expression
     int minLength = indentMultiplier * 4;
     int length = needDot0 ? minLength : 0;
-    for (ExpressionTree e : items) {
+    boolean hasBroken = needDot0;
+    for (int i = 0; i < items.size(); i++) {
+      ExpressionTree e = items.get(i);
       if (needDot) {
         if (length > minLength) {
           builder.breakOp(FillMode.UNIFIED, "", ZERO);
+          hasBroken = true;
         }
         token(".");
         length++;
+      }
+      if (!hasBroken && i < items.size() - 1) {
+        doNotHug(e);
       }
       if (!fillFirstArgument(e, items, trailingDereferences ? ZERO : minusFour)) {
         BreakTag tyargTag = genSym();
@@ -3228,9 +3242,15 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
 
     Deque<Integer> unconsumedPrefixes = new ArrayDeque<>(ImmutableSortedSet.copyOf(prefixes));
+    boolean needDot0 = needDot;
     BreakTag nameTag = genSym();
     for (int i = 0; i < items.size(); i++) {
       ExpressionTree e = items.get(i);
+      // Don't hug a block lambda if its call stays on the first line of the chain and has trailing
+      // dereferences.
+      if (!needDot0 && (i == 0 || prefixes.contains(i)) && i < items.size() - 1) {
+        doNotHug(e);
+      }
       if (needDot) {
         FillMode fillMode;
         if (!unconsumedPrefixes.isEmpty() && i <= unconsumedPrefixes.peekFirst()) {
@@ -3484,8 +3504,38 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    * ... })}. Lambdas preceded by other arguments aren't hugged: the preceding arguments would share
    * a line with the lambda's head, and wouldn't line up with the lambda's body.
    */
-  private static boolean canHugOnlyArgument(List<? extends ExpressionTree> arguments) {
-    return arguments.size() == 1 && isHuggable(getOnlyElement(arguments));
+  private boolean canHugOnlyArgument(List<? extends ExpressionTree> arguments) {
+    return arguments.size() == 1
+        && isHuggable(getOnlyElement(arguments))
+        && !notHuggable.contains(getOnlyElement(arguments));
+  }
+
+  /**
+   * Constructs that may not be hugged even though {@link #isHuggable} is true for them; see {@link
+   * #doNotHug}.
+   */
+  private final Set<Tree> notHuggable = Sets.newIdentityHashSet();
+
+  /**
+   * Prevents hugging a block lambda argument of {@code call}. Used in two cases:
+   *
+   * <ul>
+   *   <li>a call on the first line of a dereference chain with more dereferences after it (e.g.
+   *       {@code new Thread(() -> { ... }).start()})
+   *   <li>a constructor or enum constant call with a class body (e.g. {@code new Thread(() -> { ...
+   *       }) { ... }})
+   * </ul>
+   */
+  private void doNotHug(ExpressionTree call) {
+    List<? extends ExpressionTree> arguments =
+        switch (getArrayBase(call)) {
+          case MethodInvocationTree invocation -> invocation.getArguments();
+          case NewClassTree newClass -> newClass.getArguments();
+          default -> ImmutableList.of();
+        };
+    if (hasHuggedBlockLambda(arguments)) {
+      notHuggable.add(getOnlyElement(arguments));
+    }
   }
 
   private static boolean hasHuggedBlockLambda(List<? extends ExpressionTree> arguments) {
