@@ -430,15 +430,49 @@ public class CleanupsTest {
   }
 
   @Test
+  public void emptyAnnotationParens() throws Exception {
+    String input =
+        """
+        @Anno()
+        @pkg.Qual()
+        @WithArg(1)
+        @WithComment(/* keep */ )
+        @Outer(@Inner())
+        class T {
+          @Anno()int x;
+          @A()int y;
+          void f(String @Anno()... xs) {}
+        }
+        """;
+    String expected =
+        """
+        @Anno
+        @pkg.Qual
+        @WithArg(1)
+        @WithComment(/* keep */ )
+        @Outer(@Inner)
+        class T {
+          @Anno int x;
+          @A int y;
+
+          void f(String @Anno ... xs) {}
+        }
+        """;
+    assertThat(formatWithCleanups(input)).isEqualTo(expected);
+  }
+
+  @Test
   public void aospStyleCleanups() throws Exception {
     String input =
         """
+        @Anno()
         class T {
             int x;;
         }
         """;
     String expected =
         """
+        @Anno
         class T {
             int x;
         }

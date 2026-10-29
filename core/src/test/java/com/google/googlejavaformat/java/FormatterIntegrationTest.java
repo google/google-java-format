@@ -76,6 +76,8 @@ public class FormatterIntegrationTest {
               "E",
               "SemicolonInClass",
               "i281")
+          // Empty annotation parens (b/381242320)
+          .add("B381242320")
           .build();
 
   @Parameters(name = "{index}: {0}")

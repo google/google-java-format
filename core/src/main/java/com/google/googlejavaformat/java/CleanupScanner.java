@@ -29,6 +29,7 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavaInput.Tok;
+import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.ClassTree;
@@ -48,7 +49,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /// Scans the compilation unit for non-whitespace cleanup opportunities, such as removing redundant
-/// semicolons.
+/// semicolons and empty annotation parentheses.
 final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Void> {
 
   // Replace with Flags.IMPLICIT_CLASS once JDK 25 is the minimum supported version
@@ -66,10 +67,24 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
     }
     List<Replacement> replacements = new ArrayList<>();
     for (Range<Integer> del : activeDeletions.asRanges()) {
-      replacements.add(Replacement.create(del.lowerEndpoint(), del.upperEndpoint(), ""));
+      int dStart = del.lowerEndpoint();
+      int dEnd = del.upperEndpoint();
+      replacements.add(Replacement.create(dStart, dEnd, separator(contents, dStart, dEnd)));
     }
     verifyCommentsPreserved(toks, contents, replacements);
     return ImmutableList.copyOf(replacements);
+  }
+
+  /// Returns the text to replace a deletion of `contents[start, end)` with: a single space if
+  /// deleting it would join two identifiers into one token (e.g. `@Anno()int x` must become `@Anno
+  /// int x`, not `@Annoint x`), and otherwise the empty string.
+  private static String separator(String contents, int start, int end) {
+    return start > 0
+            && end < contents.length()
+            && Character.isJavaIdentifierPart(contents.charAt(start - 1))
+            && Character.isJavaIdentifierPart(contents.charAt(end))
+        ? " "
+        : "";
   }
 
   private static void verifyCommentsPreserved(
@@ -282,6 +297,25 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
     return null;
   }
 
+  @Override
+  public @Nullable Void visitAnnotation(AnnotationTree node, @Nullable Void unused) {
+    super.visitAnnotation(node, null);
+    if (!node.getArguments().isEmpty()) {
+      return null;
+    }
+    int typeEnd = getEndPosition(node.getAnnotationType(), unit);
+    int annoEnd = getEndPosition(node, unit);
+    // With no arguments, anything after the annotation type is `(`, `)`, whitespace and comments.
+    if (typeEnd <= 0
+        || annoEnd <= typeEnd
+        || hasCommentsInRange(typeEnd, annoEnd)
+        || !inRange(typeEnd, annoEnd)) {
+      return null;
+    }
+    activeDeletions.add(Range.closedOpen(typeEnd, annoEnd));
+    return null;
+  }
+
   // Hand-rolled lower-bound binary search to avoid allocating a dummy Tok or wrapper list for
   // Collections.binarySearch.
   private int tokIndexAtOrAfter(int pos) {
@@ -309,6 +343,19 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
       }
     }
     return null;
+  }
+
+  private boolean hasCommentsInRange(int startPos, int endPos) {
+    for (int i = tokIndexAtOrAfter(startPos); i < toks.size(); i++) {
+      Tok tok = toks.get(i);
+      if (tok.getPosition() >= endPos) {
+        break;
+      }
+      if (tok.isComment()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private List<Tok> semicolonTokensInRange(int startPos, int endPos) {
