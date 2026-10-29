@@ -1108,4 +1108,191 @@ class T {
         """;
     assertThat(new Formatter().formatSource(input)).isEqualTo(input);
   }
+
+  @Test
+  public void fenceCommentsAssert() throws Exception {
+    String input =
+        """
+        class T {
+          void f(int x) {
+            assert
+              // comment
+              x > 0 : "positive";
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f(int x) {
+            assert
+            // comment
+            x > 0 : "positive";
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void fenceCommentsEnumSemicolon() throws Exception {
+    String input =
+        """
+        enum E1 {
+          A,
+            // comment
+            ;
+        }
+
+        enum E2 {
+          A
+            // comment
+            ;
+        }
+        """;
+    String expected =
+        """
+        enum E1 {
+          A,
+        // comment
+        ;
+        }
+
+        enum E2 {
+          A
+        // comment
+        ;
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void fenceCommentsForInitializer() throws Exception {
+    String input =
+        """
+        class T {
+          void f(int n) {
+            for (
+              // comment
+              int i = 0; i < n; i++) {}
+            for (
+              /* comment */
+              int i = 0; i < n; i++) {}
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f(int n) {
+            for (
+            // comment
+            int i = 0; i < n; i++) {}
+            for (
+            /* comment */
+            int i = 0; i < n; i++) {}
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void fenceCommentsTryWithResources() throws Exception {
+    String input =
+        """
+        class T {
+          void f(AutoCloseable a, AutoCloseable b) throws Exception {
+            try (
+              // comment
+              AutoCloseable r1 = a; AutoCloseable r2 = b) {}
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f(AutoCloseable a, AutoCloseable b) throws Exception {
+            try (
+            // comment
+            AutoCloseable r1 = a;
+                AutoCloseable r2 = b) {}
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void fenceCommentsMultiCatch() throws Exception {
+    String input =
+        """
+        class T {
+          void f() {
+            try {
+            } catch (
+              // comment
+              IllegalArgumentException | IllegalStateException e) {
+            }
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f() {
+            try {
+            } catch (
+            // comment
+            IllegalArgumentException | IllegalStateException e) {
+            }
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void fenceCommentsTypeArguments() throws Exception {
+    String input =
+        """
+        class T {
+          <U> T() {}
+
+          static <U> void g() {}
+
+          void f() {
+            new <
+              // comment
+              String>T();
+            Runnable r =
+                T
+                    ::<
+                      // comment
+                      String>g;
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          <U> T() {}
+
+          static <U> void g() {}
+
+          void f() {
+            new <
+            // comment
+            String>T();
+            Runnable r =
+                T
+                    ::<
+                    // comment
+                    String>g;
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
 }
