@@ -57,6 +57,18 @@ class LambdaHug {
   void conditions() {
     if (anyMatch(c -> { return true; })) { return; }
     while (items.stream().anyMatch(item -> { return item.isSomethingThatIsLong() && item.isSomethingElse(); })) { process(); }
+    if (anyMatch(c -> { return true; }) && other) { return; }
+    if (anyMatch(c -> { return check(x -> { handle(x); handleAgain(x); }); })) { return; }
+    if (items.stream().anyMatch(item -> item.isSomethingThatIsLong() && item.isSomethingElseThatIsLong())) { return; }
+    for (String s : items(() -> { compute(); computeAgain(); })) { process(s); }
+    for (Iterator<String> it = iterator(() -> { compute(); computeAgain(); }); it.hasNext(); ) { process(it.next()); }
+    switch (compute(() -> { compute(); return 1; })) { case 1 -> process(); default -> {} }
+    int y = switch (compute(() -> { compute(); return 1; })) { case 1 -> 1; default -> 2; };
+    synchronized (lockFor(() -> { compute(); computeAgain(); })) { process(); }
+    try (Resource r = open(() -> { compute(); computeAgain(); })) { process(r); }
+    do { process(); } while (anyMatch(c -> { return true; }));
+    if (anyMatch(c -> check(x -> { handle(x); handleAgain(x); }))) { return; }
+    if (anyMatch(param -> param.someLongMethodName(argumentNumberOne, argumentNumberTwo, argumentNumberThree))) { return; }
   }
 
   void nested() {

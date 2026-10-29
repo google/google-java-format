@@ -3180,11 +3180,13 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         BreakTag tyargTag = genSym();
         dotExpressionUpToArgs(e, Optional.of(tyargTag));
         Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
+        // Calls that stay on the first line of the chain indent hugged arguments by an extra +4,
+        // to distinguish them from the trailing dereferences.
         dotExpressionArgsAndParen(
             e,
             tyargIndent,
             (trailingDereferences || needDot) ? plusFour : ZERO,
-            (trailingDereferences && !needDot) ? plusFour : ZERO);
+            (!hasBroken && i < items.size() - 1) ? plusFour : ZERO);
       }
       length += getLength(e, getCurrentPath());
       needDot = true;
@@ -3215,7 +3217,9 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     if (!(methodInvocation.getMethodSelect() instanceof IdentifierTree)
         || name.length() > 4
         || !methodInvocation.getTypeArguments().isEmpty()
-        || methodInvocation.getArguments().size() != 1) {
+        || methodInvocation.getArguments().size() != 1
+        // Huggable arguments are handled by addArguments, see canHugOnlyArgument.
+        || isHuggable(getOnlyElement(methodInvocation.getArguments()))) {
       return false;
     }
     builder.open(ZERO);
