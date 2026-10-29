@@ -36,6 +36,7 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.EmptyStatementTree;
 import com.sun.source.tree.ImportTree;
+import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
@@ -49,7 +50,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /// Scans the compilation unit for non-whitespace cleanup opportunities, such as removing redundant
-/// semicolons and empty annotation parentheses.
+/// semicolons, empty annotation parentheses, and single-parameter lambda parentheses.
 final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Void> {
 
   // Replace with Flags.IMPLICIT_CLASS once JDK 25 is the minimum supported version
@@ -316,6 +317,33 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
     return null;
   }
 
+  @Override
+  public @Nullable Void visitLambdaExpression(LambdaExpressionTree tree, @Nullable Void unused) {
+    super.visitLambdaExpression(tree, null);
+    if (tree.getParameters().size() != 1) {
+      return null;
+    }
+    int startPos = getStartPosition(tree);
+    int lparenIdx = nextTokenIndex(tokIndexAtOrAfter(startPos));
+    if (lparenIdx < 0 || !toks.get(lparenIdx).getText().equals("(")) {
+      return null;
+    }
+    int paramIdx = nextTokenIndex(lparenIdx + 1);
+    int rparenIdx = nextTokenIndex(paramIdx + 1);
+    if (rparenIdx < 0 || !toks.get(rparenIdx).getText().equals(")")) {
+      return null;
+    }
+    Tok lparen = toks.get(lparenIdx);
+    Tok rparen = toks.get(rparenIdx);
+    int lparenStart = lparen.getPosition();
+    int rparenEnd = rparen.getPosition() + rparen.length();
+    if (!hasCommentsInRange(lparenStart, rparenEnd) && inRange(lparenStart, rparenEnd)) {
+      activeDeletions.add(Range.closedOpen(lparenStart, lparenStart + lparen.length()));
+      activeDeletions.add(Range.closedOpen(rparen.getPosition(), rparenEnd));
+    }
+    return null;
+  }
+
   // Hand-rolled lower-bound binary search to avoid allocating a dummy Tok or wrapper list for
   // Collections.binarySearch.
   private int tokIndexAtOrAfter(int pos) {
@@ -330,6 +358,16 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
       }
     }
     return lo;
+  }
+
+  private int nextTokenIndex(int startIdx) {
+    for (int i = max(0, startIdx); i < toks.size(); i++) {
+      Tok tok = toks.get(i);
+      if (tok.isToken() && !tok.getText().isEmpty()) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   private @Nullable Tok findTokenAtOrAfter(int startPos, int endPos, String text) {

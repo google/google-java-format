@@ -462,19 +462,108 @@ public class CleanupsTest {
   }
 
   @Test
-  public void aospStyleCleanups() throws Exception {
+  public void singleParameterLambdaParens() throws Exception {
     String input =
         """
-        @Anno()
+        import java.util.function.Function;
+        import java.util.function.BiFunction;
+        import java.util.function.Supplier;
+
         class T {
-            int x;;
+          Function<String, String> f1 = (x) -> x;
+          Function<String, String> f2 = (_) -> "";
+          Function<String, String> f3 = (String x) -> x;
+          Function<String, String> f4 = (var x) -> x;
+          Function<String, String> f5 = (@Anno var x) -> x;
+          Function<String, String> f6 = (/* keep */ x) -> x;
+          BiFunction<String, String, String> f7 = (x, y) -> x;
+          Supplier<String> f8 = () -> "";
+          Function<String, Function<String, String>> f9 = (x) -> (y) -> y;
+
+          Function<String, String> g() {
+            return(x) -> x;
+          }
         }
         """;
     String expected =
         """
+        import java.util.function.BiFunction;
+        import java.util.function.Function;
+        import java.util.function.Supplier;
+
+        class T {
+          Function<String, String> f1 = x -> x;
+          Function<String, String> f2 = _ -> "";
+          Function<String, String> f3 = (String x) -> x;
+          Function<String, String> f4 = (var x) -> x;
+          Function<String, String> f5 = (@Anno var x) -> x;
+          Function<String, String> f6 = (/* keep */ x) -> x;
+          BiFunction<String, String, String> f7 = (x, y) -> x;
+          Supplier<String> f8 = () -> "";
+          Function<String, Function<String, String>> f9 = x -> y -> y;
+
+          Function<String, String> g() {
+            return x -> x;
+          }
+        }
+        """;
+    assertThat(formatWithCleanups(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void singleParameterLambdaParens_outsideRange() throws Exception {
+    String input =
+        """
+        class T {
+          Function<String, String> f = (x) -> {
+            return   x;
+          };
+        }
+        """;
+    // Partial formatting of a lambda body reformats the enclosing statement, but the cleanup only
+    // applies to the requested range, so the parentheses on the unrequested line are kept.
+    String expected =
+        """
+        class T {
+          Function<String, String> f =
+              (x) -> {
+                return x;
+              };
+        }
+        """;
+    int start = input.indexOf("return");
+    int end = input.indexOf(';', start) + 1;
+    assertThat(new Formatter().formatSource(input, ImmutableList.of(Range.closedOpen(start, end))))
+        .isEqualTo(expected);
+  }
+
+  @Test
+  public void aospStyleCleanups() throws Exception {
+    String input =
+        """
+        import java.util.function.Function;
+
+        @Anno()
+        class T {
+            int x;;
+            void f() {
+                Runnable r = () -> {};
+                Function<String, String> fn = (s) -> s;
+            }
+        }
+        """;
+    String expected =
+        """
+        import java.util.function.Function;
+
         @Anno
         class T {
             int x;
+
+            void f() {
+                Runnable r = () -> {};
+                Function<String, String> fn = s -> s;
+            }
         }
         """;
     assertThat(formatWithCleanupsAosp(input)).isEqualTo(expected);

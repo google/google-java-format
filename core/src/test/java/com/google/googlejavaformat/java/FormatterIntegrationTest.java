@@ -78,6 +78,8 @@ public class FormatterIntegrationTest {
               "i281")
           // Empty annotation parens (b/381242320)
           .add("B381242320")
+          // Single-parameter lambda parentheses (b/154644558)
+          .add("B21305044")
           .build();
 
   @Parameters(name = "{index}: {0}")
