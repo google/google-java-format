@@ -192,7 +192,8 @@ public final class Formatter {
     String formatted =
         JavaOutput.applyReplacements(
             cleaned.contents(),
-            getFormatReplacements(cleaned.contents(), cleaned.characterRanges(), cleaned.unit()));
+            getFormatReplacements(
+                cleaned.contents(), cleaned.characterRanges(), options.cleanup(), cleaned.unit()));
     if (reflowLongStrings) {
       formatted = StringWrapper.wrap(options.maxLineLength(), formatted, this);
     }
@@ -253,11 +254,20 @@ public final class Formatter {
   /// @throws FormatterException if the input string cannot be parsed
   public ImmutableList<Replacement> getFormatReplacements(
       String input, Collection<Range<Integer>> characterRanges) throws FormatterException {
-    return getFormatReplacements(input, characterRanges, /* unit= */ null);
+    return getFormatReplacements(input, characterRanges, /* reindent= */ false);
   }
 
   ImmutableList<Replacement> getFormatReplacements(
-      String input, Collection<Range<Integer>> characterRanges, @Nullable JCCompilationUnit unit)
+      String input, Collection<Range<Integer>> characterRanges, boolean reindent)
+      throws FormatterException {
+    return getFormatReplacements(input, characterRanges, reindent, /* unit= */ null);
+  }
+
+  ImmutableList<Replacement> getFormatReplacements(
+      String input,
+      Collection<Range<Integer>> characterRanges,
+      boolean reindent,
+      @Nullable JCCompilationUnit unit)
       throws FormatterException {
     JavaInput javaInput = new JavaInput(input);
     if (unit != null) {
@@ -270,14 +280,15 @@ public final class Formatter {
             lineSeparator,
             javaInput,
             new JavaCommentsHelper(lineSeparator, options, ImmutableSet.of()),
-            options::indentString);
+            options::indentString,
+            options::visualLength);
     try {
       format(javaInput, javaOutput, options);
     } catch (FormattingError e) {
       throw new FormatterException(e.diagnostics());
     }
     RangeSet<Integer> tokenRangeSet = javaInput.characterRangesToTokenRanges(characterRanges);
-    return javaOutput.getFormatReplacements(tokenRangeSet);
+    return javaOutput.getFormatReplacements(tokenRangeSet, reindent);
   }
 
   /// Converts zero-indexed, [closed, open) line ranges in the given source file to character

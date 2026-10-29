@@ -932,6 +932,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       addBodyDeclarations(members, BracesOrNot.NO, FirstDeclarationsOrNot.NO);
       builder.forcedBreak();
       builder.blankLineWanted(BlankLineWanted.NO);
+      markForPartialFormat();
       token("}", plusTwo);
       builder.close();
     }
@@ -2076,6 +2077,9 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.close();
     builder.forcedBreak();
     builder.blankLineWanted(BlankLineWanted.NO);
+    if (!cases.isEmpty()) {
+      markForPartialFormat();
+    }
     token("}", plusFour);
   }
 
@@ -2865,6 +2869,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       }
       builder.close();
       builder.forcedBreak();
+      markForPartialFormat();
       token("}");
     }
     return null;

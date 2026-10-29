@@ -86,6 +86,23 @@ public class NewlinesTest {
   }
 
   @Test
+  public void isLineStart() {
+    assertThat(Newlines.isLineStart("ab", 0)).isTrue();
+    assertThat(Newlines.isLineStart("ab", 1)).isFalse();
+    assertThat(Newlines.isLineStart("a\nb", 2)).isTrue();
+    assertThat(Newlines.isLineStart("a\rb", 2)).isTrue();
+    assertThat(Newlines.isLineStart("a\r\nb", 3)).isTrue();
+  }
+
+  @Test
+  public void containsBreaks_region() {
+    assertThat(Newlines.containsBreaks("ab\ncd", 0, 2)).isFalse();
+    assertThat(Newlines.containsBreaks("ab\ncd", 0, 3)).isTrue();
+    assertThat(Newlines.containsBreaks("ab\rcd", 2, 3)).isTrue();
+    assertThat(Newlines.containsBreaks("ab\ncd", 3, 5)).isFalse();
+  }
+
+  @Test
   public void terminalOffset() {
     Iterator<Integer> it = Newlines.lineOffsetIterator("foo\nbar\n");
     it.next();

@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
+import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavaInput.Tok;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.CaseTree;
@@ -129,7 +130,7 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
       start--;
     }
     int lineBegin = start;
-    while (lineBegin > 0 && !isAtLineStart(contents, lineBegin)) {
+    while (!Newlines.isLineStart(contents, lineBegin)) {
       lineBegin--;
     }
     int end = semiPos + 1;
@@ -153,10 +154,6 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
 
   private static boolean isHorizontalWhitespace(char c) {
     return c == ' ' || c == '\t';
-  }
-
-  private static boolean isAtLineStart(String contents, int pos) {
-    return pos == 0 || contents.charAt(pos - 1) == '\n' || contents.charAt(pos - 1) == '\r';
   }
 
   @Override

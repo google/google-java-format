@@ -274,7 +274,7 @@ class Test {
 
         class Test {
           ArrayList<String> a = new ArrayList<>();
-        ArrayList<String> b = new ArrayList<>();
+          ArrayList<String> b = new ArrayList<>();
         }\
         """;
     StringWriter out = new StringWriter();
@@ -285,7 +285,24 @@ class Test {
             new ByteArrayInputStream(input.getBytes(UTF_8)));
     assertThat(main.format("-", "-lines", "4")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expected);
-    // Line 4 gets rewritten because of `-lines 4`, but line 5 does not.
+
+    String expectedNoReindent =
+        """
+        import java.util.ArrayList;
+
+        class Test {
+          ArrayList<String> a = new ArrayList<>();
+        ArrayList<String> b = new ArrayList<>();
+        }\
+        """;
+    out = new StringWriter();
+    main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            new ByteArrayInputStream(input.getBytes(UTF_8)));
+    assertThat(main.format("-", "-lines", "4", "--cleanup=false")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expectedNoReindent);
   }
 
   // test that errors are reported on the right line when imports are removed

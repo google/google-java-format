@@ -50,6 +50,15 @@ public class Newlines {
     return 0;
   }
 
+  /// Returns true if `pos` is at the start of the input or immediately follows a line break.
+  public static boolean isLineStart(String input, int pos) {
+    if (pos == 0) {
+      return true;
+    }
+    char c = input.charAt(pos - 1);
+    return c == '\n' || c == '\r';
+  }
+
   private static final ImmutableSet<String> BREAKS = ImmutableSet.of("\r\n", "\n", "\r");
 
   /// Returns true if the entire input string is a recognized line break.
@@ -99,9 +108,17 @@ public class Newlines {
     return "\n";
   }
 
+  private static final CharMatcher BREAK_CHARS = CharMatcher.anyOf("\n\r");
+
   /// Returns true if the input contains any line breaks.
   public static boolean containsBreaks(String text) {
-    return CharMatcher.anyOf("\n\r").matchesAnyOf(text);
+    return BREAK_CHARS.matchesAnyOf(text);
+  }
+
+  /// Returns true if `text[start, end)` contains any line breaks.
+  public static boolean containsBreaks(String text, int start, int end) {
+    int idx = BREAK_CHARS.indexIn(text, start);
+    return idx != -1 && idx < end;
   }
 
   /// Returns an iterator over the start offsets of lines in the input.
