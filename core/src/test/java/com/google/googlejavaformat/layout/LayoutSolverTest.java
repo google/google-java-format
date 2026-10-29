@@ -147,7 +147,8 @@ public class LayoutSolverTest {
                 text(")"));
     Doc.Group preferred =
         (Doc.Group) group(text("f("), text("a,"), text(" "), text("x ->"), lambdaBody, text(")"));
-    return new Doc.Choice(preferred, "f(a, ".length(), fallback);
+    return new Doc.Choice(
+        preferred, "f(a, ".length(), fallback, /* fallbackIfFlatOnNextLine= */ true);
   }
 
   @Test
@@ -181,8 +182,29 @@ public class LayoutSolverTest {
                 4, text("someLongMethod("), softline(), group(text("x ->"), lambdaBody), text(")"));
     Doc.Group preferred =
         (Doc.Group) group(text("someLongMethod("), text("x ->"), lambdaBody, text(")"));
-    Doc choice = new Doc.Choice(preferred, "someLongMethod(x ->".length(), fallback);
+    Doc choice =
+        new Doc.Choice(
+            preferred,
+            "someLongMethod(x ->".length(),
+            fallback,
+            /* fallbackIfFlatOnNextLine= */ true);
     assertThat(LayoutSolver.format(choice, 20)).isEqualTo("someLongMethod(\n    x -> body)");
+  }
+
+  @Test
+  public void choicePreferredWhenFallbackIfFlatOnNextLineDisabled() {
+    Doc.Group lambdaBody = (Doc.Group) group(group(4, line(), text("body")), line(), text("}"));
+    Doc.Group fallback =
+        (Doc.Group) group(4, text("val g ="), line(), group(text("{"), lambdaBody));
+    Doc.Group preferred = (Doc.Group) group(text("val g = {"), lambdaBody);
+    assertThat(
+            LayoutSolver.format(
+                new Doc.Choice(preferred, "val g = {".length(), fallback, true), 12))
+        .isEqualTo("val g =\n    { body }");
+    assertThat(
+            LayoutSolver.format(
+                new Doc.Choice(preferred, "val g = {".length(), fallback, false), 12))
+        .isEqualTo("val g = {\n    body\n}");
   }
 
   @Test
@@ -197,14 +219,25 @@ public class LayoutSolverTest {
                 4, text("f("), softline(), text("x ->"), softline(), group(lambdaBody), text(")"));
     assertThat(
             LayoutSolver.format(
-                new Doc.Choice(preferred, "f(x ->".length(), multiBreakFallback), 8))
+                new Doc.Choice(
+                    preferred,
+                    "f(x ->".length(),
+                    multiBreakFallback,
+                    /* fallbackIfFlatOnNextLine= */ true),
+                8))
         .isEqualTo("f(x ->\n    body)");
 
     // No direct breaks in fallback: fallbackFitsOnNextLine returns false, so preferred hugs.
     Doc.Group noBreakFallback =
         (Doc.Group) group(4, text("f("), group(text("x ->"), lambdaBody), text(")"));
     assertThat(
-            LayoutSolver.format(new Doc.Choice(preferred, "f(x ->".length(), noBreakFallback), 8))
+            LayoutSolver.format(
+                new Doc.Choice(
+                    preferred,
+                    "f(x ->".length(),
+                    noBreakFallback,
+                    /* fallbackIfFlatOnNextLine= */ true),
+                8))
         .isEqualTo("f(x ->\n    body)");
 
     // Prefix before the single break in fallback is wider than maxWidth: fallbackFitsOnNextLine
@@ -218,7 +251,10 @@ public class LayoutSolverTest {
     assertThat(
             LayoutSolver.format(
                 new Doc.Choice(
-                    widePrefixPreferred, "someLongMethod(x ->".length(), widePrefixFallback),
+                    widePrefixPreferred,
+                    "someLongMethod(x ->".length(),
+                    widePrefixFallback,
+                    /* fallbackIfFlatOnNextLine= */ true),
                 10))
         .isEqualTo("someLongMethod(\n    x ->\n        body)");
   }
@@ -237,7 +273,9 @@ public class LayoutSolverTest {
     Doc.Group fallback = (Doc.Group) group(text("aaaa"), line(""), text("bbbbbbbbbb"));
     // The preferred layout's first line ends before its prefix, so it's rejected. The tag recorded
     // while trying it is reset.
-    assertThat(LayoutSolver.format(new Doc.Choice(preferred, 5, fallback), 8))
+    assertThat(
+            LayoutSolver.format(
+                new Doc.Choice(preferred, 5, fallback, /* fallbackIfFlatOnNextLine= */ true), 8))
         .isEqualTo("aaaa\nbbbbbbbbbb");
     assertThat(tag.wasBreakTaken()).isFalse();
   }
@@ -251,9 +289,24 @@ public class LayoutSolverTest {
     for (int i = 0; i < depth; i++) {
       Doc.Group preferred = (Doc.Group) group(text("a"), doc);
       Doc.Group fallback = (Doc.Group) group(4, text("a"), softline(), doc);
-      doc = new Doc.Choice(preferred, 1, fallback);
+      doc = new Doc.Choice(preferred, 1, fallback, /* fallbackIfFlatOnNextLine= */ true);
     }
     assertThat(LayoutSolver.format(doc, 999)).isEqualTo("a".repeat(depth) + "{\n}");
+  }
+
+  @Test
+  public void multilineTextBreaksEnclosingGroupAndEndsTrialLine() {
+    Doc doc = group(4, text("val s ="), line(), text("\"\"\"\nhello\n\"\"\""));
+    assertThat(LayoutSolver.format(doc, 80)).isEqualTo("val s =\n    \"\"\"\nhello\n\"\"\"");
+
+    Doc.Group preferred = (Doc.Group) group(text("f("), text("\"\"\"\nhello\n\"\"\""), text(")"));
+    Doc.Group fallback =
+        (Doc.Group) group(4, text("f("), softline(), text("\"\"\"\nhello\n\"\"\""), text(")"));
+    // First line of preferred is `f("""\n` (6 chars); fits at maxWidth 10, overflows at maxWidth 5.
+    assertThat(LayoutSolver.format(new Doc.Choice(preferred, 2, fallback, false), 10))
+        .isEqualTo("f(\"\"\"\nhello\n\"\"\")");
+    assertThat(LayoutSolver.format(new Doc.Choice(preferred, 2, fallback, false), 5))
+        .isEqualTo("f(\n    \"\"\"\nhello\n\"\"\")");
   }
 
   @Test

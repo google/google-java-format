@@ -101,6 +101,7 @@ public class DocTest {
   @Test
   public void textAndLinesWidth() {
     assertThat(text("hello").width()).isEqualTo(5);
+    assertThat(text("a\nb").width()).isEqualTo(Doc.MAX_LINE_WIDTH);
     assertThat(lines("a", "b").width()).isEqualTo(Doc.MAX_LINE_WIDTH);
   }
 
@@ -187,7 +188,7 @@ public class DocTest {
         (Doc.Group) group(text("a"), text(" "), new Doc.Text("b", Range.closedOpen(2, 3)));
     Doc.Group fallback =
         (Doc.Group) group(text("a"), line(), new Doc.Text("b", Range.closedOpen(2, 3)));
-    Doc choice = new Doc.Choice(preferred, 1, fallback);
+    Doc choice = new Doc.Choice(preferred, 1, fallback, /* fallbackIfFlatOnNextLine= */ true);
     assertThat(choice.width()).isEqualTo(3);
     assertThat(choice.flat()).isEqualTo("a b");
     assertThat(choice.range()).isEqualTo(Range.closedOpen(2, 3));

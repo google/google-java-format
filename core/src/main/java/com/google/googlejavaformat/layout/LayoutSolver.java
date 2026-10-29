@@ -237,6 +237,10 @@ public final class LayoutSolver {
         case Doc.Group g -> group(g, state);
         case Doc.Choice c -> choice(c, state);
         case Doc.Text t -> {
+          int newline = Newlines.firstBreak(t.text());
+          if (newline >= 0) {
+            endLine(state.column() + newline);
+          }
           actions.add(new Append(t.text(), t.range()));
           yield state.withColumn(state.column() + t.width());
         }
@@ -303,7 +307,7 @@ public final class LayoutSolver {
         actions.add(new Append(choice.flat(), choice.range()));
         return state.withColumn(state.column() + width);
       }
-      if (fallbackFitsOnNextLine(choice.fallback(), state)) {
+      if (choice.fallbackIfFlatOnNextLine() && fallbackFitsOnNextLine(choice.fallback(), state)) {
         return group(choice.fallback(), state);
       }
       State preferredState = new State(lineIndent, state.column());

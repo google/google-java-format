@@ -17,10 +17,13 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import com.google.googlejavaformat.Doc.FillMode;
 import com.google.googlejavaformat.Doc.Token.RealOrImaginary;
 import com.google.googlejavaformat.FormattingError;
 import com.google.googlejavaformat.Indent;
+import com.google.googlejavaformat.Output.BreakTag;
 import com.google.googlejavaformat.layout.LayoutBuilder;
+import com.google.googlejavaformat.layout.LayoutSolver;
 import com.sun.tools.javac.util.Context;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -48,6 +51,100 @@ public class LayoutBuilderTest {
     builder.sync(0);
     FormattingError e = assertThrows(FormattingError.class, () -> builder.sync(6));
     assertThat(e).hasMessageThat().isEqualTo("1:7: error: did not generate token \"class\"\n");
+  }
+
+  @Test
+  public void fenceComments_keepsLeadingCommentInsideOpenGroup() throws Exception {
+    assertThat(formatWithComment(/* fence= */ false))
+        .isEqualTo(
+            """
+            class T {
+            /* c */
+            int x;
+            }
+            """);
+    assertThat(formatWithComment(/* fence= */ true))
+        .isEqualTo(
+            """
+            class T {
+              /* c */
+              int x;
+            }
+            """);
+  }
+
+  private static String formatWithComment(boolean fence) throws FormatterException {
+    LayoutBuilder builder =
+        newBuilder(
+            """
+            class T {
+              /* c */
+              int x;
+            }
+            """);
+    Indent indent = Indent.Const.make(2, 1);
+    builder.token("class", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.space();
+    builder.token("T", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.space();
+    builder.token("{", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.open(indent);
+    if (fence) {
+      builder.fenceComments();
+    }
+    builder.token("int", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.space();
+    builder.token("x", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.token(";", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.close();
+    builder.forcedBreak();
+    builder.token("}", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.forcedBreak();
+    builder.drain();
+    return LayoutSolver.format(builder.build(), 100);
+  }
+
+  @Test
+  public void openHuggable_flattensTaggedBreakWhenHugging() throws Exception {
+    BreakTag huggedTag = new BreakTag();
+    assertThat(formatHuggableWithTag(huggedTag, /* maxWidth= */ 6)).isEqualTo("a.b {\n  x;\n}\n");
+    assertThat(huggedTag.wasBreakTaken()).isFalse();
+
+    BreakTag brokenTag = new BreakTag();
+    assertThat(formatHuggableWithTag(brokenTag, /* maxWidth= */ 4))
+        .isEqualTo("a\n    .b {\n      x;\n    }\n");
+    assertThat(brokenTag.wasBreakTaken()).isTrue();
+  }
+
+  private static String formatHuggableWithTag(BreakTag tag, int maxWidth)
+      throws FormatterException {
+    LayoutBuilder builder = newBuilder("a.b { x; }\n");
+    LayoutBuilder.HugPoint hugPoint = LayoutBuilder.newHugPoint();
+    builder.openHuggable(
+        Indent.Const.make(4, 1),
+        Indent.Const.ZERO,
+        hugPoint,
+        /* fallbackIfFlatOnNextLine= */ false);
+    builder.token("a", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.breakOp(FillMode.UNIFIED, "", Indent.Const.ZERO, Optional.of(tag));
+    builder.token(".", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.token("b", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.space();
+    builder.open(Indent.Const.ZERO);
+    builder.token("{", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.hugPoint(hugPoint);
+    builder.open(Indent.Const.make(2, 1));
+    builder.breakOp(FillMode.UNIFIED, " ", Indent.Const.ZERO, Optional.empty());
+    builder.token("x", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.token(";", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.close();
+    builder.breakOp(FillMode.UNIFIED, " ", Indent.Const.ZERO, Optional.empty());
+    builder.token("}", RealOrImaginary.REAL, Indent.Const.ZERO, Optional.empty());
+    builder.close();
+    builder.close();
+    builder.forcedBreak();
+    builder.drain();
+    return LayoutSolver.format(builder.build(), maxWidth);
   }
 
   private static LayoutBuilder newBuilder(String text) throws FormatterException {

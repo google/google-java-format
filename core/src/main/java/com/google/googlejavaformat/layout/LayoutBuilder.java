@@ -128,13 +128,17 @@ public final class LayoutBuilder {
   }
 
   public void open(Indent plusIndent) {
-    open(plusIndent, ZERO, HugRole.NONE, null);
+    open(plusIndent, ZERO, HugRole.NONE, null, /* fallbackIfFlatOnNextLine= */ true);
   }
 
   private void open(
-      Indent plusIndent, Indent huggedPlusIndent, HugRole hugRole, HugPoint hugPoint) {
+      Indent plusIndent,
+      Indent huggedPlusIndent,
+      HugRole hugRole,
+      HugPoint hugPoint,
+      boolean fallbackIfFlatOnNextLine) {
     depth++;
-    events.add(new Open(plusIndent, huggedPlusIndent, hugRole, hugPoint));
+    events.add(new Open(plusIndent, huggedPlusIndent, hugRole, hugPoint, fallbackIfFlatOnNextLine));
   }
 
   /// The start of the body of a construct that can be hugged, i.e. laid out starting on the same
@@ -162,14 +166,20 @@ public final class LayoutBuilder {
   /// `hugPoint` must then fit on the current line.
   ///
   /// When hugged, the hugged content is indented relative to the line containing the call plus
-  /// `huggedPlusIndent`, instead of by the enclosing levels' extra indents plus `plusIndent`.
-  public void openHuggable(Indent plusIndent, Indent huggedPlusIndent, HugPoint hugPoint) {
-    open(plusIndent, huggedPlusIndent, HugRole.HUGGABLE, hugPoint);
+  /// `huggedPlusIndent`, instead of by the enclosing levels' extra indents plus `plusIndent`. If
+  /// `fallbackIfFlatOnNextLine` is true, the fallback layout is preferred when a single direct
+  /// break lets its suffix fit flat on the next line.
+  public void openHuggable(
+      Indent plusIndent,
+      Indent huggedPlusIndent,
+      HugPoint hugPoint,
+      boolean fallbackIfFlatOnNextLine) {
+    open(plusIndent, huggedPlusIndent, HugRole.HUGGABLE, hugPoint, fallbackIfFlatOnNextLine);
   }
 
   /// Opens the level holding the arguments of an enclosing [#openHuggable] level.
   public void openHuggedArguments() {
-    open(ZERO, ZERO, HugRole.ARGUMENTS, null);
+    open(ZERO, ZERO, HugRole.ARGUMENTS, null, /* fallbackIfFlatOnNextLine= */ true);
   }
 
   public void close() {
@@ -371,6 +381,11 @@ public final class LayoutBuilder {
     output.blankLine(getI(input.getTokens().get(tokenI)), wanted);
   }
 
+  /// Prevents comments before upcoming tokens from being hoisted into enclosing groups.
+  public void fenceComments() {
+    events.add(new FenceComments());
+  }
+
   public void add(Op op) {
     switch (op) {
       case OpenOp openOp -> open(openOp.plusIndent());
@@ -555,9 +570,9 @@ public final class LayoutBuilder {
         continue;
       }
       result.add(ev);
-      // An `Open` or hug point doesn't output anything, so it doesn't end the run that follows a
-      // forced break.
-      if (!(ev instanceof Open || ev instanceof HugPointOp)) {
+      // An `Open`, hug point, or comment fence doesn't output anything, so it doesn't end the run
+      // that follows a forced break.
+      if (!(ev instanceof Open || ev instanceof HugPointOp || ev instanceof FenceComments)) {
         afterForcedBreak = isForcedBreak(ev);
       }
     }
@@ -597,16 +612,13 @@ public final class LayoutBuilder {
   /// closed group) into the preceding group, so it's accounted for when deciding whether that group
   /// fits on the line.
   private static Doc buildTree(List<Event> events) {
-    LevelBuilder base = new LevelBuilder(ZERO, ZERO, HugRole.NONE, null);
+    LevelBuilder base = new LevelBuilder(Open.BASE);
     ArrayDeque<LevelBuilder> stack = new ArrayDeque<>();
     stack.addLast(base);
     LevelBuilder appendLevel = base;
     for (Event ev : events) {
       switch (ev) {
-        case Open open ->
-            stack.addLast(
-                new LevelBuilder(
-                    open.plusIndent(), open.huggedPlusIndent(), open.hugRole(), open.hugPoint()));
+        case Open open -> stack.addLast(new LevelBuilder(open));
         case Close close -> {
           LevelBuilder top = stack.removeLast();
           stack.getLast().add(top);
@@ -625,6 +637,7 @@ public final class LayoutBuilder {
         }
         case TokOp tokOp -> appendLevel.add(new Doc.Tok(tokOp.tok()));
         case HugPointOp hugPointOp -> appendLevel.add(hugPointOp.hugPoint().marker);
+        case FenceComments unused -> {}
         case SpaceOp spaceOp -> appendLevel.add(Doc.Space.INSTANCE);
       }
     }
@@ -649,13 +662,15 @@ public final class LayoutBuilder {
     final Indent huggedPlusIndent;
     final HugRole hugRole;
     final HugPoint hugPoint;
+    final boolean fallbackIfFlatOnNextLine;
     final List<Object> items = new ArrayList<>();
 
-    LevelBuilder(Indent plusIndent, Indent huggedPlusIndent, HugRole hugRole, HugPoint hugPoint) {
-      this.plusIndent = plusIndent;
-      this.huggedPlusIndent = huggedPlusIndent;
-      this.hugRole = hugRole;
-      this.hugPoint = hugPoint;
+    LevelBuilder(Open open) {
+      this.plusIndent = open.plusIndent();
+      this.huggedPlusIndent = open.huggedPlusIndent();
+      this.hugRole = open.hugRole();
+      this.hugPoint = open.hugPoint();
+      this.fallbackIfFlatOnNextLine = open.fallbackIfFlatOnNextLine();
     }
 
     void add(Object item) {
@@ -720,12 +735,12 @@ public final class LayoutBuilder {
       if (prefixWidth < 0) {
         return fallbackGroup;
       }
-      return new Doc.Choice(preferredGroup, prefixWidth, fallbackGroup);
+      return new Doc.Choice(preferredGroup, prefixWidth, fallbackGroup, fallbackIfFlatOnNextLine);
     }
 
-    /// Forced breaks (e.g. after line comments) and tagged breaks must not be flattened.
+    /// Forced breaks (e.g. after line comments) must not be flattened.
     private static boolean canFlatten(Doc.Break b) {
-      return b.mode() != Doc.BreakMode.FORCED && b.tag().isEmpty();
+      return b.mode() != Doc.BreakMode.FORCED;
     }
 
     /// Returns the flat width of the content of `doc` before `marker`, or -1 if `doc` doesn't
@@ -758,13 +773,22 @@ public final class LayoutBuilder {
   }
 
   private sealed interface Event
-      permits Open, Close, LineBreak, TokenOp, TokOp, SpaceOp, HugPointOp {}
+      permits Open, Close, LineBreak, TokenOp, TokOp, SpaceOp, HugPointOp, FenceComments {}
 
   private record Open(
-      Indent plusIndent, Indent huggedPlusIndent, HugRole hugRole, HugPoint hugPoint)
-      implements Event {}
+      Indent plusIndent,
+      Indent huggedPlusIndent,
+      HugRole hugRole,
+      HugPoint hugPoint,
+      boolean fallbackIfFlatOnNextLine)
+      implements Event {
+    /// The implicit outermost level.
+    static final Open BASE = new Open(ZERO, ZERO, HugRole.NONE, null, true);
+  }
 
   private record HugPointOp(HugPoint hugPoint) implements Event {}
+
+  private record FenceComments() implements Event {}
 
   /// The role of a level in a huggable argument list; see [#openHuggable].
   private enum HugRole {

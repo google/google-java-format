@@ -3427,7 +3427,8 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.openHuggable(
           plusIndent,
           hasHuggedBlockLambda(arguments) ? ZERO : huggedPlusIndent,
-          hugPoint(argument));
+          hugPoint(argument),
+          /* fallbackIfFlatOnNextLine= */ true);
     } else {
       builder.open(plusIndent);
     }

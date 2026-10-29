@@ -118,7 +118,7 @@ public sealed interface Doc
 
     @Override
     public int width() {
-      return text.length();
+      return Newlines.firstBreak(text) >= 0 ? MAX_LINE_WIDTH : text.length();
     }
 
     @Override
@@ -281,11 +281,11 @@ public sealed interface Doc
 
   /// A choice between two layouts of the same content.
   ///
-  /// If the content fits flat it is laid out flat, as for a [Group]. Otherwise, `fallback` is used
-  /// if taking a single direct break in `fallback` allows the rest of it to fit flat on the next
-  /// line (e.g. `f(\n x -> g(x))` rather than breaking inside the lambda). Otherwise, `preferred`
-  /// is used if, when laid out, its first line fits and contains at least its first `prefixWidth`
-  /// columns; `fallback` is used if not.
+  /// If the content fits flat it is laid out flat, as for a [Group]. Otherwise, if
+  /// `fallbackIfFlatOnNextLine` is true, `fallback` is used if taking a single direct break in
+  /// `fallback` allows the rest of it to fit flat on the next line (e.g. `f(\n x -> g(x))` rather
+  /// than breaking inside the lambda). Otherwise, `preferred` is used if, when laid out, its first
+  /// line fits and contains at least its first `prefixWidth` columns; `fallback` is used if not.
   ///
   /// Both alternatives must have the same flat text, so the choice never affects layouts in which
   /// it is flat, or the fit decisions of enclosing groups. They usually share subtrees.
@@ -294,7 +294,10 @@ public sealed interface Doc
   /// @param prefixWidth the width of the part of `preferred` that must be on the current line, e.g.
   ///   `f(x ->` for a hugged lambda argument
   /// @param fallback the layout to use if `preferred` isn't chosen
-  record Choice(Group preferred, int prefixWidth, Group fallback) implements Doc {
+  /// @param fallbackIfFlatOnNextLine whether to prefer `fallback` when a single direct break lets
+  ///   its suffix fit flat on the next line
+  record Choice(Group preferred, int prefixWidth, Group fallback, boolean fallbackIfFlatOnNextLine)
+      implements Doc {
     public Choice {
       requireNonNull(preferred, "preferred");
       requireNonNull(fallback, "fallback");
