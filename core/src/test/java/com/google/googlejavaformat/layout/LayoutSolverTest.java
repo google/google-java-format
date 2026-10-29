@@ -51,14 +51,26 @@ public class LayoutSolverTest {
 
   @Test
   public void groupBreaksWithIndent() {
-    assertThat(LayoutSolver.format(call(), 5)).isEqualTo("foo(\n  a,\n  b)");
+    assertThat(LayoutSolver.format(call(), 5))
+        .isEqualTo(
+            """
+            foo(
+              a,
+              b)\
+            """);
   }
 
   @Test
   public void unifiedBreaksAllBreakTogether() {
     // "b c" would fit on the second line, but unified breaks in a broken group all break.
     Doc doc = group(text("a"), line(), text("b"), line(), text("c"));
-    assertThat(LayoutSolver.format(doc, 3)).isEqualTo("a\nb\nc");
+    assertThat(LayoutSolver.format(doc, 3))
+        .isEqualTo(
+            """
+            a
+            b
+            c\
+            """);
   }
 
   @Test
@@ -72,8 +84,19 @@ public class LayoutSolverTest {
             text("three,"),
             fill(" "),
             text("four"));
-    assertThat(LayoutSolver.format(doc, 11)).isEqualTo("one, two,\nthree, four");
-    assertThat(LayoutSolver.format(doc, 10)).isEqualTo("one, two,\nthree,\nfour");
+    assertThat(LayoutSolver.format(doc, 11))
+        .isEqualTo(
+            """
+            one, two,
+            three, four\
+            """);
+    assertThat(LayoutSolver.format(doc, 10))
+        .isEqualTo(
+            """
+            one, two,
+            three,
+            four\
+            """);
   }
 
   @Test
@@ -87,26 +110,50 @@ public class LayoutSolverTest {
             group(4, text("ffff("), softline(), text("aaaa,"), line(), text("b)")),
             fill(" "),
             text("y"));
-    assertThat(LayoutSolver.format(doc, 10)).isEqualTo("x\nffff(\n    aaaa,\n    b)\ny");
+    assertThat(LayoutSolver.format(doc, 10))
+        .isEqualTo(
+            """
+            x
+            ffff(
+                aaaa,
+                b)
+            y\
+            """);
   }
 
   @Test
   public void nestedGroupStaysFlatInsideBrokenGroup() {
     Doc doc = group(text("xxxx"), line(), call());
-    assertThat(LayoutSolver.format(doc, 10)).isEqualTo("xxxx\nfoo(a, b)");
+    assertThat(LayoutSolver.format(doc, 10))
+        .isEqualTo(
+            """
+            xxxx
+            foo(a, b)\
+            """);
   }
 
   @Test
   public void hardlineForcesEnclosingBreaks() {
     Doc doc = group(text("a"), line(), text("b"), hardline(), text("c"));
-    assertThat(LayoutSolver.format(doc, 100)).isEqualTo("a\nb\nc");
+    assertThat(LayoutSolver.format(doc, 100))
+        .isEqualTo(
+            """
+            a
+            b
+            c\
+            """);
   }
 
   @Test
   public void maxWidthTooLarge() {
     // Widths saturate at Doc.MAX_LINE_WIDTH, so a larger maxWidth would lay out forced breaks flat.
     Doc doc = group(text("a"), hardline(), text("b"));
-    assertThat(LayoutSolver.format(doc, Doc.MAX_LINE_WIDTH - 1)).isEqualTo("a\nb");
+    assertThat(LayoutSolver.format(doc, Doc.MAX_LINE_WIDTH - 1))
+        .isEqualTo(
+            """
+            a
+            b\
+            """);
     assertThrows(
         IllegalArgumentException.class, () -> LayoutSolver.format(doc, Doc.MAX_LINE_WIDTH));
   }
@@ -124,7 +171,12 @@ public class LayoutSolverTest {
   public void breakTagRecordsBroken() {
     BreakTag tag = new BreakTag();
     Doc doc = group(text("a"), taggedLine(" ", tag), text("b"));
-    assertThat(LayoutSolver.format(doc, 2)).isEqualTo("a\nb");
+    assertThat(LayoutSolver.format(doc, 2))
+        .isEqualTo(
+            """
+            a
+            b\
+            """);
     assertThat(tag.wasBreakTaken()).isTrue();
   }
 
@@ -157,20 +209,35 @@ public class LayoutSolverTest {
     // Also exercise a Choice that fits flat inside an enclosing broken Group, where Solver.choice
     // is reached directly instead of the root Group being flattened up front.
     Doc inBrokenGroup = group(text("prefix"), line(), hugChoice("y"));
-    assertThat(LayoutSolver.format(inBrokenGroup, 15)).isEqualTo("prefix\nf(a, x -> y)");
+    assertThat(LayoutSolver.format(inBrokenGroup, 15))
+        .isEqualTo(
+            """
+            prefix
+            f(a, x -> y)\
+            """);
   }
 
   @Test
   public void choicePreferred() {
     // The body is indented relative to the line, not the fallback's +4 argument indent.
     assertThat(LayoutSolver.format(hugChoice("longBody"), 13))
-        .isEqualTo("f(a, x ->\n    longBody)");
+        .isEqualTo(
+            """
+            f(a, x ->
+                longBody)\
+            """);
   }
 
   @Test
   public void choiceFallbackWhenFirstLineDoesNotFit() {
     assertThat(LayoutSolver.format(hugChoice("longBody"), 8))
-        .isEqualTo("f(\n    a,\n    x ->\n        longBody)");
+        .isEqualTo(
+            """
+            f(
+                a,
+                x ->
+                    longBody)\
+            """);
   }
 
   @Test
@@ -188,7 +255,12 @@ public class LayoutSolverTest {
             "someLongMethod(x ->".length(),
             fallback,
             /* fallbackIfFlatOnNextLine= */ true);
-    assertThat(LayoutSolver.format(choice, 20)).isEqualTo("someLongMethod(\n    x -> body)");
+    assertThat(LayoutSolver.format(choice, 20))
+        .isEqualTo(
+            """
+            someLongMethod(
+                x -> body)\
+            """);
   }
 
   @Test
@@ -200,11 +272,20 @@ public class LayoutSolverTest {
     assertThat(
             LayoutSolver.format(
                 new Doc.Choice(preferred, "val g = {".length(), fallback, true), 12))
-        .isEqualTo("val g =\n    { body }");
+        .isEqualTo(
+            """
+            val g =
+                { body }\
+            """);
     assertThat(
             LayoutSolver.format(
                 new Doc.Choice(preferred, "val g = {".length(), fallback, false), 12))
-        .isEqualTo("val g = {\n    body\n}");
+        .isEqualTo(
+            """
+            val g = {
+                body
+            }\
+            """);
   }
 
   @Test
@@ -225,7 +306,11 @@ public class LayoutSolverTest {
                     multiBreakFallback,
                     /* fallbackIfFlatOnNextLine= */ true),
                 8))
-        .isEqualTo("f(x ->\n    body)");
+        .isEqualTo(
+            """
+            f(x ->
+                body)\
+            """);
 
     // No direct breaks in fallback: fallbackFitsOnNextLine returns false, so preferred hugs.
     Doc.Group noBreakFallback =
@@ -238,7 +323,11 @@ public class LayoutSolverTest {
                     noBreakFallback,
                     /* fallbackIfFlatOnNextLine= */ true),
                 8))
-        .isEqualTo("f(x ->\n    body)");
+        .isEqualTo(
+            """
+            f(x ->
+                body)\
+            """);
 
     // Prefix before the single break in fallback is wider than maxWidth: fallbackFitsOnNextLine
     // returns false, and the choice falls back to breaking the group.
@@ -256,14 +345,24 @@ public class LayoutSolverTest {
                     widePrefixFallback,
                     /* fallbackIfFlatOnNextLine= */ true),
                 10))
-        .isEqualTo("someLongMethod(\n    x ->\n        body)");
+        .isEqualTo(
+            """
+            someLongMethod(
+                x ->
+                    body)\
+            """);
   }
 
   @Test
   public void choicePreferredIndentIsRelativeToLine() {
     // The enclosing group's +8 indent doesn't apply, since its break wasn't taken.
     Doc doc = group(8, text("g("), hugChoice("longBody"));
-    assertThat(LayoutSolver.format(doc, 14)).isEqualTo("g(f(a, x ->\n    longBody)");
+    assertThat(LayoutSolver.format(doc, 14))
+        .isEqualTo(
+            """
+            g(f(a, x ->
+                longBody)\
+            """);
   }
 
   @Test
@@ -308,7 +407,11 @@ public class LayoutSolverTest {
     assertThat(
             LayoutSolver.format(
                 new Doc.Choice(preferred, 5, fallback, /* fallbackIfFlatOnNextLine= */ true), 8))
-        .isEqualTo("aaaa\nbbbbbbbbbb");
+        .isEqualTo(
+            """
+            aaaa
+            bbbbbbbbbb\
+            """);
     assertThat(tag.wasBreakTaken()).isFalse();
   }
 
@@ -329,16 +432,34 @@ public class LayoutSolverTest {
   @Test
   public void multilineTextBreaksEnclosingGroupAndEndsTrialLine() {
     Doc doc = group(4, text("val s ="), line(), text("\"\"\"\nhello\n\"\"\""));
-    assertThat(LayoutSolver.format(doc, 80)).isEqualTo("val s =\n    \"\"\"\nhello\n\"\"\"");
+    assertThat(LayoutSolver.format(doc, 80))
+        .isEqualTo(
+            """
+            val s =
+                \"""
+            hello
+            \"""\
+            """);
 
     Doc.Group preferred = (Doc.Group) group(text("f("), text("\"\"\"\nhello\n\"\"\""), text(")"));
     Doc.Group fallback =
         (Doc.Group) group(4, text("f("), softline(), text("\"\"\"\nhello\n\"\"\""), text(")"));
     // First line of preferred is `f("""\n` (6 chars); fits at maxWidth 10, overflows at maxWidth 5.
     assertThat(LayoutSolver.format(new Doc.Choice(preferred, 2, fallback, false), 10))
-        .isEqualTo("f(\"\"\"\nhello\n\"\"\")");
+        .isEqualTo(
+            """
+            f(\"""
+            hello
+            \""")\
+            """);
     assertThat(LayoutSolver.format(new Doc.Choice(preferred, 2, fallback, false), 5))
-        .isEqualTo("f(\n    \"\"\"\nhello\n\"\"\")");
+        .isEqualTo(
+            """
+            f(
+                \"""
+            hello
+            \""")\
+            """);
   }
 
   @Test

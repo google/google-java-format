@@ -50,7 +50,12 @@ public class LayoutBuilderTest {
     LayoutBuilder builder = newBuilder("class T {}\n");
     builder.sync(0);
     FormattingError e = assertThrows(FormattingError.class, () -> builder.sync(6));
-    assertThat(e).hasMessageThat().isEqualTo("1:7: error: did not generate token \"class\"\n");
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            1:7: error: did not generate token "class"
+            """);
   }
 
   @Test
@@ -107,12 +112,24 @@ public class LayoutBuilderTest {
   @Test
   public void openHuggable_flattensTaggedBreakWhenHugging() throws Exception {
     BreakTag huggedTag = new BreakTag();
-    assertThat(formatHuggableWithTag(huggedTag, /* maxWidth= */ 6)).isEqualTo("a.b {\n  x;\n}\n");
+    assertThat(formatHuggableWithTag(huggedTag, /* maxWidth= */ 6))
+        .isEqualTo(
+            """
+            a.b {
+              x;
+            }
+            """);
     assertThat(huggedTag.wasBreakTaken()).isFalse();
 
     BreakTag brokenTag = new BreakTag();
     assertThat(formatHuggableWithTag(brokenTag, /* maxWidth= */ 4))
-        .isEqualTo("a\n    .b {\n      x;\n    }\n");
+        .isEqualTo(
+            """
+            a
+                .b {
+                  x;
+                }
+            """);
     assertThat(brokenTag.wasBreakTaken()).isTrue();
   }
 
