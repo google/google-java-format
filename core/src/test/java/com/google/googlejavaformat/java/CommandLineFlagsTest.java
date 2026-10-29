@@ -156,7 +156,7 @@ public class CommandLineFlagsTest {
     } catch (UsageException e) {
       assertThat(e)
           .hasMessageThat()
-          .contains("cannot use --dry-run and --in-place at the same time");
+          .contains("cannot use --dry-run and --replace at the same time");
     }
   }
 
