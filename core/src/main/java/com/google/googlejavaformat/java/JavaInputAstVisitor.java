@@ -793,6 +793,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token("for");
     builder.space();
     token("(");
+    builder.headerStart();
     builder.open(ZERO);
     visitToDeclare(
         DeclarationKind.NONE,
@@ -802,6 +803,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         ":",
         /* trailing= */ Optional.empty());
     builder.close();
+    builder.headerEnd();
     token(")");
     builder.close();
     visitStatement(
@@ -1083,6 +1085,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token("for");
     builder.space();
     token("(");
+    builder.headerStart();
     builder.open(plusFour);
     builder.fenceComments();
     builder.open(
@@ -1137,6 +1140,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.space();
     }
     builder.close();
+    builder.headerEnd();
     token(")");
     visitStatement(
         node.getStatement(),
@@ -1178,7 +1182,9 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       token("if");
       builder.space();
       token("(");
+      builder.headerStart();
       scan(skipParen(expressions.get(i)), null);
+      builder.headerEnd();
       token(")");
       // An empty block can collapse to "{}" if there are no if/else or else clauses
       boolean onlyClause = expressionsN == 1 && node.getElseStatement() == null;
@@ -2060,7 +2066,9 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token("switch");
     builder.space();
     token("(");
+    builder.headerStart();
     scan(skipParen(expression), null);
+    builder.headerEnd();
     token(")");
     builder.space();
     tokenBreakTrailingComment("{", plusTwo);
@@ -2089,10 +2097,12 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token("synchronized");
     builder.space();
     token("(");
+    builder.headerStart();
     builder.open(plusFour);
     builder.breakOp();
     scan(skipParen(node.getExpression()), null);
     builder.close();
+    builder.headerEnd();
     token(")");
     builder.space();
     scan(node.getBlock(), null);
@@ -2117,6 +2127,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.space();
     if (!node.getResources().isEmpty()) {
       token("(");
+      builder.headerStart();
       builder.open(node.getResources().size() > 1 ? plusFour : ZERO);
       builder.fenceComments();
       boolean afterFirstToken = false;
@@ -2154,6 +2165,7 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       }
       token(")");
       builder.close();
+      builder.headerEnd();
       builder.space();
     }
     // An empty try-with-resources body can collapse to "{}" if there are no trailing catch or
@@ -2263,7 +2275,9 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token("while");
     builder.space();
     token("(");
+    builder.headerStart();
     scan(skipParen(node.getCondition()), null);
+    builder.headerEnd();
     token(")");
     visitStatement(
         node.getStatement(),

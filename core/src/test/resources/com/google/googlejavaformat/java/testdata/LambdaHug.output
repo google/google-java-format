@@ -226,9 +226,10 @@ class LambdaHug {
   }
 
   void conditions() {
-    if (anyMatch(c -> {
-      return true;
-    })) {
+    if (anyMatch(
+        c -> {
+          return true;
+        })) {
       return;
     }
     while (items.stream()
@@ -237,18 +238,20 @@ class LambdaHug {
         })) {
       process();
     }
-    if (anyMatch(c -> {
-      return true;
-    })
+    if (anyMatch(
+            c -> {
+              return true;
+            })
         && other) {
       return;
     }
-    if (anyMatch(c -> {
-      return check(x -> {
-        handle(x);
-        handleAgain(x);
-      });
-    })) {
+    if (anyMatch(
+        c -> {
+          return check(x -> {
+            handle(x);
+            handleAgain(x);
+          });
+        })) {
       return;
     }
     if (items.stream()
@@ -270,18 +273,20 @@ class LambdaHug {
         it.hasNext(); ) {
       process(it.next());
     }
-    switch (compute(() -> {
-      compute();
-      return 1;
-    })) {
+    switch (compute(
+        () -> {
+          compute();
+          return 1;
+        })) {
       case 1 -> process();
       default -> {}
     }
     int y =
-        switch (compute(() -> {
-          compute();
-          return 1;
-        })) {
+        switch (compute(
+            () -> {
+              compute();
+              return 1;
+            })) {
           case 1 -> 1;
           default -> 2;
         };
@@ -304,15 +309,17 @@ class LambdaHug {
     } while (anyMatch(c -> {
       return true;
     }));
-    if (anyMatch(c ->
-        check(x -> {
-          handle(x);
-          handleAgain(x);
-        }))) {
+    if (anyMatch(
+        c ->
+            check(x -> {
+              handle(x);
+              handleAgain(x);
+            }))) {
       return;
     }
-    if (anyMatch(param ->
-        param.someLongMethodName(argumentNumberOne, argumentNumberTwo, argumentNumberThree))) {
+    if (anyMatch(
+        param ->
+            param.someLongMethodName(argumentNumberOne, argumentNumberTwo, argumentNumberThree))) {
       return;
     }
   }

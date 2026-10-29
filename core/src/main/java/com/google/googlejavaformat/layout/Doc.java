@@ -57,7 +57,14 @@ import java.util.Optional;
 /// A [Choice] offers a preferred alternative layout for a group, used when the group doesn't fit
 /// flat but the preferred layout's first line does.
 public sealed interface Doc
-    permits Doc.Text, Doc.Lines, Doc.Tok, Doc.Space, Doc.Break, Doc.Group, Doc.Choice {
+    permits Doc.Text,
+        Doc.Lines,
+        Doc.Tok,
+        Doc.Space,
+        Doc.HeaderMark,
+        Doc.Break,
+        Doc.Group,
+        Doc.Choice {
 
   /// Width used for documents that cannot be laid out on a single line.
   int MAX_LINE_WIDTH = 1000;
@@ -204,6 +211,30 @@ public sealed interface Doc
     }
   }
 
+  /// A zero-width marker for the start or end of a statement header that is followed by a body,
+  /// e.g. the condition of an `if`.
+  ///
+  /// A [Choice] doesn't use its preferred layout on the line on which the innermost enclosing
+  /// header starts. The preferred layout is indented relative to that line, so e.g. the body of a
+  /// hugged lambda would be indented the same as the body of the statement.
+  enum HeaderMark implements Doc {
+    START,
+    END;
+
+    @Override
+    public int width() {
+      return 0;
+    }
+
+    @Override
+    public void appendFlat(StringBuilder sb) {}
+
+    @Override
+    public Range<Integer> range() {
+      return EMPTY_RANGE;
+    }
+  }
+
   /// A possible line break. When not taken it is written as `flatText`; when taken the next line is
   /// indented by the enclosing group's indent plus `plusIndent`.
   record Break(BreakMode mode, String flatText, Indent plusIndent, Optional<BreakTag> tag)
@@ -285,7 +316,9 @@ public sealed interface Doc
   /// `fallbackIfFlatOnNextLine` is true, `fallback` is used if taking a single direct break in
   /// `fallback` allows the rest of it to fit flat on the next line (e.g. `f(\n x -> g(x))` rather
   /// than breaking inside the lambda). Otherwise, `preferred` is used if, when laid out, its first
-  /// line fits and contains at least its first `prefixWidth` columns; `fallback` is used if not.
+  /// line fits and contains at least its first `prefixWidth` columns, and it doesn't start on the
+  /// line on which the innermost enclosing [HeaderMark#START] was laid out; `fallback` is used if
+  /// not.
   ///
   /// Both alternatives must have the same flat text, so the choice never affects layouts in which
   /// it is flat, or the fit decisions of enclosing groups. They usually share subtrees.

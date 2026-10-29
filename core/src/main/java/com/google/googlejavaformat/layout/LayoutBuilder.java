@@ -160,6 +160,17 @@ public final class LayoutBuilder {
     events.add(new HugPointOp(hugPoint));
   }
 
+  /// Marks the start of a statement header that is followed by a body, e.g. the condition of an
+  /// `if`. Content isn't hugged on the line on which the header starts; see [Doc.HeaderMark].
+  public void headerStart() {
+    events.add(new HeaderMarkOp(Doc.HeaderMark.START));
+  }
+
+  /// Marks the end of a statement header started by [#headerStart], at the same nesting depth.
+  public void headerEnd() {
+    events.add(new HeaderMarkOp(Doc.HeaderMark.END));
+  }
+
   /// Opens a level for an argument list whose argument may be hugged, e.g. `f(x -> { ... })`. The
   /// level's direct breaks, and the direct breaks of a nested level opened with
   /// [#openHuggedArguments], are the ones that are not taken when hugging, and everything up to
@@ -570,9 +581,12 @@ public final class LayoutBuilder {
         continue;
       }
       result.add(ev);
-      // An `Open`, hug point, or comment fence doesn't output anything, so it doesn't end the run
-      // that follows a forced break.
-      if (!(ev instanceof Open || ev instanceof HugPointOp || ev instanceof FenceComments)) {
+      // An `Open`, hug point, comment fence, or header mark doesn't output anything, so it doesn't
+      // end the run that follows a forced break.
+      if (!(ev instanceof Open
+          || ev instanceof HugPointOp
+          || ev instanceof FenceComments
+          || ev instanceof HeaderMarkOp)) {
         afterForcedBreak = isForcedBreak(ev);
       }
     }
@@ -638,6 +652,10 @@ public final class LayoutBuilder {
         case TokOp tokOp -> appendLevel.add(new Doc.Tok(tokOp.tok()));
         case HugPointOp hugPointOp -> appendLevel.add(hugPointOp.hugPoint().marker);
         case FenceComments unused -> {}
+        // Header marks are added to the innermost open level rather than appendLevel, so that the
+        // start and end marks of a header end up in the same group, and are either both laid out
+        // or both skipped if the group is flat.
+        case HeaderMarkOp headerMarkOp -> stack.getLast().add(headerMarkOp.mark());
         case SpaceOp spaceOp -> appendLevel.add(Doc.Space.INSTANCE);
       }
     }
@@ -773,7 +791,15 @@ public final class LayoutBuilder {
   }
 
   private sealed interface Event
-      permits Open, Close, LineBreak, TokenOp, TokOp, SpaceOp, HugPointOp, FenceComments {}
+      permits Open,
+          Close,
+          LineBreak,
+          TokenOp,
+          TokOp,
+          SpaceOp,
+          HugPointOp,
+          FenceComments,
+          HeaderMarkOp {}
 
   private record Open(
       Indent plusIndent,
@@ -789,6 +815,8 @@ public final class LayoutBuilder {
   private record HugPointOp(HugPoint hugPoint) implements Event {}
 
   private record FenceComments() implements Event {}
+
+  private record HeaderMarkOp(Doc.HeaderMark mark) implements Event {}
 
   /// The role of a level in a huggable argument list; see [#openHuggable].
   private enum HugRole {

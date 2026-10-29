@@ -267,6 +267,38 @@ public class LayoutSolverTest {
   }
 
   @Test
+  public void choiceFallbackOnHeaderLine() {
+    // On the line where a header starts, the preferred layout would indent the body relative to
+    // the header's line, so the fallback is used.
+    Doc doc =
+        group(
+            text("if ("),
+            Doc.HeaderMark.START,
+            hugChoice("longBody"),
+            Doc.HeaderMark.END,
+            text(")"));
+    assertThat(LayoutSolver.format(doc, 17)).isEqualTo("if (f(\n    a,\n    x -> longBody))");
+    // Without the header, the preferred layout is used.
+    Doc noHeader = group(text("if ("), hugChoice("longBody"), text(")"));
+    assertThat(LayoutSolver.format(noHeader, 17)).isEqualTo("if (f(a, x ->\n    longBody))");
+  }
+
+  @Test
+  public void choicePreferredOnHeaderContinuationLine() {
+    // After a break in the header, the preferred layout is indented relative to the continuation
+    // line, so it's used.
+    Doc doc =
+        group(
+            text("if (cond &&"),
+            Doc.HeaderMark.START,
+            group(4, line(), hugChoice("longBody")),
+            Doc.HeaderMark.END,
+            text(")"));
+    assertThat(LayoutSolver.format(doc, 17))
+        .isEqualTo("if (cond &&\n    f(a, x ->\n        longBody))");
+  }
+
+  @Test
   public void choiceTrialDoesNotLeakBreakTags() {
     BreakTag tag = new BreakTag();
     Doc.Group preferred = (Doc.Group) group(text("aaaa"), taggedLine("", tag), text("bbbbbbbbbb"));

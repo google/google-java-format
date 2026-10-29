@@ -121,6 +121,10 @@ public final class LayoutSolver {
     /// The indent of the current line.
     private int lineIndent = 0;
 
+    /// The indents of the lines on which the enclosing statement headers started, innermost first;
+    /// see [Doc.HeaderMark].
+    private final Deque<Integer> headerIndents = new ArrayDeque<>();
+
     /// The state of a break tag before it was modified during a trial layout.
     ///
     /// @param tag the break tag
@@ -274,6 +278,13 @@ public final class LayoutSolver {
           actions.add(new Append(" ", Doc.EMPTY_RANGE));
           yield state.withColumn(state.column() + 1);
         }
+        case Doc.HeaderMark m -> {
+          switch (m) {
+            case START -> headerIndents.push(lineIndent);
+            case END -> headerIndents.pop();
+          }
+          yield state;
+        }
         case Doc.Tok c -> {
           String text =
               commentsHelper != null
@@ -312,7 +323,10 @@ public final class LayoutSolver {
       }
       State preferredState = new State(lineIndent, state.column());
       int prefixEnd = state.column() + choice.prefixWidth();
-      if (prefixEnd <= maxWidth) {
+      // The preferred layout is indented relative to the current line, so on the first line of a
+      // statement header its contents would be indented the same as the statement's body.
+      boolean onHeaderLine = !headerIndents.isEmpty() && headerIndents.peek() == lineIndent;
+      if (prefixEnd <= maxWidth && !onHeaderLine) {
         Trial trial = firstLineEnd(choice.preferred(), preferredState);
         int firstLineEnd = trial.column();
         if (prefixEnd <= firstLineEnd && firstLineEnd <= maxWidth) {
@@ -368,12 +382,16 @@ public final class LayoutSolver {
     private Trial firstLineEnd(Doc.Group group, State state) {
       int mark = actions.size();
       int savedLineIndent = lineIndent;
+      // A trial may stop between a header's start and end marks.
+      var savedHeaderIndents = new ArrayDeque<>(headerIndents);
       trialTagsStack.push(new ArrayList<>());
       State end = group(group, state);
       Trial trial =
           firstLineEnded ? new Trial(firstLineEndColumn, true) : new Trial(end.column(), false);
       firstLineEnded = false;
       lineIndent = savedLineIndent;
+      headerIndents.clear();
+      headerIndents.addAll(savedHeaderIndents);
       actions.subList(mark, actions.size()).clear();
       for (SavedBreakTag saved : trialTagsStack.pop().reversed()) {
         saved.restore();
