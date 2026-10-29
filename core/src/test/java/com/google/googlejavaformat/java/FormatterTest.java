@@ -1126,8 +1126,9 @@ class T {
         class T {
           void f(int x) {
             assert
-            // comment
-            x > 0 : "positive";
+                // comment
+                x > 0
+                : "positive";
           }
         }
         """;
@@ -1154,14 +1155,14 @@ class T {
         """
         enum E1 {
           A,
-        // comment
-        ;
+          // comment
+          ;
         }
 
         enum E2 {
           A
-        // comment
-        ;
+          // comment
+          ;
         }
         """;
     assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
@@ -1187,11 +1188,15 @@ class T {
         class T {
           void f(int n) {
             for (
-            // comment
-            int i = 0; i < n; i++) {}
+                // comment
+                int i = 0;
+                i < n;
+                i++) {}
             for (
-            /* comment */
-            int i = 0; i < n; i++) {}
+                /* comment */
+                int i = 0;
+                i < n;
+                i++) {}
           }
         }
         """;
@@ -1215,8 +1220,8 @@ class T {
         class T {
           void f(AutoCloseable a, AutoCloseable b) throws Exception {
             try (
-            // comment
-            AutoCloseable r1 = a;
+                // comment
+                AutoCloseable r1 = a;
                 AutoCloseable r2 = b) {}
           }
         }
@@ -1244,8 +1249,8 @@ class T {
           void f() {
             try {
             } catch (
-            // comment
-            IllegalArgumentException | IllegalStateException e) {
+                // comment
+                IllegalArgumentException | IllegalStateException e) {
             }
           }
         }
@@ -1283,13 +1288,13 @@ class T {
 
           void f() {
             new <
-            // comment
-            String>T();
+                // comment
+                String>T();
             Runnable r =
                 T
                     ::<
-                    // comment
-                    String>g;
+                        // comment
+                        String>g;
           }
         }
         """;
