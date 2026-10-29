@@ -80,20 +80,34 @@ public final class StringWrapper {
       // We really don't want bugs in this pass to change the behaviour of programs we're
       // formatting, so check that the pretty-printed AST is the same before and after reformatting.
       String expected = parse(input, /* allowStringFolding= */ true).toString();
-      String actual = parse(result, /* allowStringFolding= */ true).toString();
+      String actual;
+      try {
+        actual = parse(result, /* allowStringFolding= */ true).toString();
+      } catch (FormatterException e) {
+        // Diagnostics for the reflowed output don't correspond to positions in the original input,
+        // and the error is a bug in this pass rather than in the input, so report it as such.
+        throw somethingHasGoneTerriblyWrong(
+            "it would produce code that does not parse (" + e.getMessage() + ")", result, input);
+      }
       if (!expected.equals(actual)) {
-        throw new FormatterException(
-            String.format(
-                "Something has gone terribly wrong. We planned to make the below formatting change,"
-                    + " but have aborted because it would unexpectedly change the AST.\n"
-                    + "Please file a bug: "
-                    + "https://github.com/google/google-java-format/issues/new"
-                    + "\n\n=== Actual: ===\n%s\n=== Expected: ===\n%s\n",
-                actual, expected));
+        throw somethingHasGoneTerriblyWrong(
+            "it would unexpectedly change the AST", actual, expected);
       }
     }
 
     return result;
+  }
+
+  private static FormatterException somethingHasGoneTerriblyWrong(
+      String reason, String actual, String expected) {
+    return new FormatterException(
+        String.format(
+            "Something has gone terribly wrong. We planned to make the below formatting change,"
+                + " but have aborted because %s.\n"
+                + "Please file a bug: "
+                + "https://github.com/google/google-java-format/issues/new"
+                + "\n\n=== Actual: ===\n%s\n=== Expected: ===\n%s\n",
+            reason, actual, expected));
   }
 
   private static TreeRangeMap<Integer, String> getReflowReplacements(

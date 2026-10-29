@@ -17,6 +17,7 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.googlejavaformat.FormatterDiagnostic;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -97,6 +98,51 @@ public class DiagnosticTest {
     int result = main.format(path.toString());
     assertThat(stdout.toString()).isEmpty();
     assertThat(stderr.toString()).contains("error: illegal unicode escape");
+    assertThat(result).isEqualTo(1);
+  }
+
+  @Test
+  public void formatDiagnostics_positionOutOfRange() {
+    String input = "class T {}\n";
+    assertThat(
+            new FormatterException(new FormatterDiagnostic(5, 3, "oops"))
+                .formatDiagnostics("T.java", input))
+        .isEqualTo("T.java:5:3: error: oops" + System.lineSeparator());
+    assertThat(
+            new FormatterException(new FormatterDiagnostic(0, 3, "oops"))
+                .formatDiagnostics("T.java", input))
+        .isEqualTo("T.java:0:3: error: oops" + System.lineSeparator());
+    assertThat(
+            new FormatterException(new FormatterDiagnostic(1, 0, "oops"))
+                .formatDiagnostics("T.java", input))
+        .isEqualTo("T.java:1:0: error: oops" + System.lineSeparator());
+  }
+
+  @Test
+  public void stringWrappingProducesInvalidCode() throws Exception {
+    // Reflowing this string splits the escaped backslash in `\\t`, which produces an unterminated
+    // string literal several lines past the end of the original input.
+    String input =
+        """
+        class T {
+          String s = "%s%s\\\\tend";
+        }
+        """
+            .formatted("word ".repeat(100), "x".repeat(95));
+
+    StringWriter stdout = new StringWriter();
+    StringWriter stderr = new StringWriter();
+    Main main = new Main(new PrintWriter(stdout, true), new PrintWriter(stderr, true), System.in);
+
+    Path tmpdir = testFolder.newFolder().toPath();
+    Path path = tmpdir.resolve("T.java");
+    Files.writeString(path, input);
+
+    int result = main.format(path.toString());
+    assertThat(stdout.toString()).isEmpty();
+    assertThat(stderr.toString())
+        .contains(
+            "it would produce code that does not parse (9:13: error: unclosed string literal)");
     assertThat(result).isEqualTo(1);
   }
 

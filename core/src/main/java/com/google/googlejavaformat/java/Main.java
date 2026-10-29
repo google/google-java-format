@@ -125,7 +125,24 @@ public final class Main {
   private int formatFiles(CommandLineOptions parameters, JavaFormatterOptions options) {
     int numThreads = min(MAX_THREADS, parameters.files().size());
     ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+    boolean allOk;
+    try {
+      allOk = formatFiles(parameters, options, executorService);
+    } finally {
+      // Shut down the executor even if formatting throws, otherwise its non-daemon threads keep the
+      // JVM alive.
+      if (!MoreExecutors.shutdownAndAwaitTermination(executorService, Duration.ofSeconds(5))) {
+        errWriter.println("Failed to shut down ExecutorService");
+        allOk = false;
+      }
+    }
+    return allOk ? 0 : 1;
+  }
 
+  private boolean formatFiles(
+      CommandLineOptions parameters,
+      JavaFormatterOptions options,
+      ExecutorService executorService) {
     ExecutorCompletionService<FormatFileCallable.Result> cs =
         new ExecutorCompletionService<>(executorService);
     boolean allOk = true;
@@ -195,11 +212,7 @@ public final class Main {
         outWriter.write(formatted);
       }
     }
-    if (!MoreExecutors.shutdownAndAwaitTermination(executorService, Duration.ofSeconds(5))) {
-      errWriter.println("Failed to shut down ExecutorService");
-      allOk = false;
-    }
-    return allOk ? 0 : 1;
+    return allOk;
   }
 
   private int formatStdin(CommandLineOptions parameters, JavaFormatterOptions options) {
