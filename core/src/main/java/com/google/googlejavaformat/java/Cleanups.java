@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -49,57 +48,6 @@ final class Cleanups {
       String contents,
       Collection<Range<Integer>> characterRanges,
       @Nullable JCCompilationUnit unit) {}
-
-  /// One replacement: `[inStart, inEnd)` in the old contents became `[outStart, outEnd)`.
-  private record Span(int inStart, int inEnd, int outStart, int outEnd) {}
-
-  /// The result of applying sorted, non-overlapping replacements to some text.
-  private record Edit(String contents, ImmutableList<Span> spans) {
-
-    /// Applies sorted, non-overlapping replacements to `contents`.
-    static Edit apply(String contents, List<Replacement> replacements) {
-      StringBuilder sb = new StringBuilder(contents.length());
-      ImmutableList.Builder<Span> spans =
-          ImmutableList.builderWithExpectedSize(replacements.size());
-      int cursor = 0;
-      for (Replacement replacement : replacements) {
-        Range<Integer> range = replacement.replaceRange();
-        int inStart = range.lowerEndpoint();
-        int inEnd = range.upperEndpoint();
-        checkArgument(
-            inStart >= cursor,
-            "Replacements must be sorted and non-overlapping, but %s overlaps previous end %s",
-            range,
-            cursor);
-        sb.append(contents, cursor, inStart);
-        int outStart = sb.length();
-        sb.append(replacement.replacementString());
-        int outEnd = sb.length();
-        spans.add(new Span(inStart, inEnd, outStart, outEnd));
-        cursor = inEnd;
-      }
-      sb.append(contents, cursor, contents.length());
-      return new Edit(sb.toString(), spans.build());
-    }
-
-    /// Maps an offset in the old contents to the corresponding offset in the new contents.
-    ///
-    /// Offsets before a span are unchanged relative to the previous span; offsets inside a span are
-    /// clamped to its replacement text; offsets after all spans are shifted by the final span.
-    int map(int offset) {
-      Span prev = null;
-      for (Span span : spans) {
-        if (offset < span.inStart()) {
-          return prev == null ? offset : prev.outEnd() + (offset - prev.inEnd());
-        }
-        if (offset <= span.inEnd()) {
-          return span.outStart() + min(offset - span.inStart(), span.outEnd() - span.outStart());
-        }
-        prev = span;
-      }
-      return prev == null ? offset : prev.outEnd() + (offset - prev.inEnd());
-    }
-  }
 
   private record Parsed(Context context, JCCompilationUnit unit) {}
 
@@ -207,15 +155,8 @@ final class Cleanups {
       return;
     }
     Edit edit = Edit.apply(contents, replacements);
-    RangeSet<Integer> newRanges = TreeRangeSet.create();
-    for (Range<Integer> range : ranges.asRanges()) {
-      int mappedStart = edit.map(range.lowerEndpoint());
-      int mappedEnd = edit.map(range.upperEndpoint());
-      if (mappedStart < mappedEnd) {
-        newRanges.add(Range.closedOpen(mappedStart, mappedEnd));
-      }
-    }
-    for (Span span : edit.spans()) {
+    RangeSet<Integer> newRanges = TreeRangeSet.create(edit.mapRanges(ranges.asRanges()));
+    for (Edit.Span span : edit.spans()) {
       Range<Integer> r = reformatRange(span, edit.contents());
       if (!r.isEmpty()) {
         newRanges.add(r);
@@ -228,7 +169,7 @@ final class Cleanups {
   }
 
   /// Returns the range to reformat for the given span.
-  private static Range<Integer> reformatRange(Span span, String contents) {
+  private static Range<Integer> reformatRange(Edit.Span span, String contents) {
     if (span.outStart() == span.outEnd()) {
       return deletionReformatRange(contents, span.outStart());
     }

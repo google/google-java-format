@@ -17,6 +17,8 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assume.assumeTrue;
 
+import com.google.common.collect.ImmutableRangeSet;
+import com.google.common.collect.Range;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import java.util.Random;
 import org.junit.Test;
@@ -187,5 +189,67 @@ public class ReproBug {
       // `unused` rather than `_` since google-java-format still supports building with JDK 21.)
       String unused = StringWrapper.wrap(40, formatter.formatSource(input), formatter);
     }
+  }
+
+  // https://github.com/google/google-java-format/issues/1114
+  @Test
+  public void wrap_onlyInCharacterRanges() throws Exception {
+    String input =
+        """
+        class T {
+          String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+          String t = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+        }
+        """;
+    Formatter formatter = new Formatter();
+    int tStart = input.indexOf("String t");
+    int tEnd = input.indexOf(';', tStart);
+    assertThat(
+            StringWrapper.wrap(
+                100, input, formatter, ImmutableRangeSet.of(Range.closedOpen(tStart, tEnd))))
+        .isEqualTo(
+            """
+            class T {
+              String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+              String t =
+                  "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance"
+                      + " to interrupt";
+            }
+            """);
+    // A range that does not intersect any string literal returns the input unchanged.
+    assertThat(
+            StringWrapper.wrap(100, input, formatter, ImmutableRangeSet.of(Range.closedOpen(0, 9))))
+        .isEqualTo(input);
+  }
+
+  @Test
+  public void wrap_mapsCharacterRangesAfterFirstPass() throws Exception {
+    // The first pass formats the statement containing `t`, collapsing the extra spaces before the
+    // literal so its range in the formatted output is disjoint from its original range in `input`.
+    String input =
+        """
+        class T {
+          String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+          String t = %s"one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+        }
+        """
+            .formatted(" ".repeat(150));
+    int tLiteralStart = input.lastIndexOf("\"one");
+    int tLiteralEnd = input.indexOf(';', tLiteralStart);
+    assertThat(
+            StringWrapper.wrap(
+                100,
+                input,
+                new Formatter(),
+                ImmutableRangeSet.of(Range.closedOpen(tLiteralStart, tLiteralEnd))))
+        .isEqualTo(
+            """
+            class T {
+              String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+              String t =
+                  "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance"
+                      + " to interrupt";
+            }
+            """);
   }
 }

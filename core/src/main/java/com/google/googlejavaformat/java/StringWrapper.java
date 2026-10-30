@@ -22,7 +22,9 @@ import static java.util.stream.Collectors.joining;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.googlejavaformat.Newlines;
 import com.sun.source.tree.BinaryTree;
@@ -58,20 +60,36 @@ public final class StringWrapper {
   /// Reflows string literals in the given Java source code that extend past the given column limit.
   static String wrap(final int columnLimit, String input, Formatter formatter)
       throws FormatterException {
+    return wrap(
+        columnLimit, input, formatter, ImmutableRangeSet.of(Range.closedOpen(0, input.length())));
+  }
+
+  /// Reflows string literals in the given character ranges of the given Java source code that
+  /// extend past the given column limit.
+  static String wrap(
+      final int columnLimit, String input, Formatter formatter, RangeSet<Integer> characterRanges)
+      throws FormatterException {
     JavaFormatterOptions options = formatter.options();
     if (!needWrapping(columnLimit, input, options)) {
       // fast path
       return input;
     }
 
-    TreeRangeMap<Integer, String> replacements = getReflowReplacements(columnLimit, input, options);
-    String firstPass = formatter.formatSource(input, replacements.asMapOfRanges().keySet());
+    TreeRangeMap<Integer, String> replacements =
+        getReflowReplacements(columnLimit, input, options, characterRanges);
+    if (replacements.asMapOfRanges().isEmpty()) {
+      return input;
+    }
+    Edit firstPass =
+        Edit.apply(
+            input, formatter.getFormatReplacements(input, replacements.asMapOfRanges().keySet()));
 
-    if (!firstPass.equals(input)) {
+    if (!firstPass.contents().equals(input)) {
       // If formatting the replacement ranges resulted in a change, recalculate the replacements on
       // the updated input.
-      input = firstPass;
-      replacements = getReflowReplacements(columnLimit, input, options);
+      input = firstPass.contents();
+      characterRanges = firstPass.mapRanges(characterRanges.asRanges());
+      replacements = getReflowReplacements(columnLimit, input, options, characterRanges);
     }
 
     String result = applyReplacements(input, replacements);
@@ -111,8 +129,12 @@ public final class StringWrapper {
   }
 
   private static TreeRangeMap<Integer, String> getReflowReplacements(
-      int columnLimit, final String input, JavaFormatterOptions options) throws FormatterException {
-    return new Reflower(columnLimit, input, options).getReflowReplacements();
+      int columnLimit,
+      final String input,
+      JavaFormatterOptions options,
+      RangeSet<Integer> characterRanges)
+      throws FormatterException {
+    return new Reflower(columnLimit, input, options, characterRanges).getReflowReplacements();
   }
 
   private static class Reflower {
@@ -120,15 +142,21 @@ public final class StringWrapper {
     private final String input;
     private final int columnLimit;
     private final JavaFormatterOptions options;
+    private final RangeSet<Integer> characterRanges;
     private final String separator;
     private final JCTree.JCCompilationUnit unit;
     private final Position.LineMap lineMap;
 
-    Reflower(int columnLimit, String input, JavaFormatterOptions options)
+    Reflower(
+        int columnLimit,
+        String input,
+        JavaFormatterOptions options,
+        RangeSet<Integer> characterRanges)
         throws FormatterException {
       this.columnLimit = columnLimit;
       this.input = input;
       this.options = options;
+      this.characterRanges = characterRanges;
       this.separator = Newlines.guessLineSeparator(input);
       this.unit = parse(input, /* allowStringFolding= */ false);
       this.lineMap = unit.getLineMap();
@@ -170,6 +198,10 @@ public final class StringWrapper {
           return null;
         }
         int endPosition = getEndPosition(literalTree, unit);
+        if (!characterRanges.intersects(
+            Range.closedOpen(getStartPosition(literalTree), endPosition))) {
+          return null;
+        }
         int lineEnd = endPosition;
         while (Newlines.hasNewlineAt(input, lineEnd) == -1) {
           lineEnd++;

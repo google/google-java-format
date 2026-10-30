@@ -189,15 +189,20 @@ public final class Formatter {
         Cleanups.enabledPasses(
             options.cleanup(), removeUnusedImports, options.reorderModifiers(), sortImports);
     Cleanups.Result cleaned = Cleanups.apply(input, characterRanges, options.style(), passes);
-    String formatted =
-        JavaOutput.applyReplacements(
+    Edit formatted =
+        Edit.apply(
             cleaned.contents(),
             getFormatReplacements(
                 cleaned.contents(), cleaned.characterRanges(), options.cleanup(), cleaned.unit()));
     if (reflowLongStrings) {
-      formatted = StringWrapper.wrap(options.maxLineLength(), formatted, this);
+      // Only reflow long strings in the requested ranges, mapped onto the formatted output.
+      return StringWrapper.wrap(
+          options.maxLineLength(),
+          formatted.contents(),
+          this,
+          formatted.mapRanges(cleaned.characterRanges()));
     }
-    return formatted;
+    return formatted.contents();
   }
 
   /// Formats an input string (a Java compilation unit) and fixes imports.

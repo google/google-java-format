@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Locale;
 import org.junit.Rule;
@@ -601,6 +602,41 @@ class T {
             in);
     assertThat(main.format("--skip-reflowing-long-strings", "-")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expected);
+  }
+
+  // https://github.com/google/google-java-format/issues/1114
+  @Test
+  public void reflowLongStrings_onlyInRequestedLines() throws Exception {
+    String input =
+        """
+        class T {
+          String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+          String t = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+        }
+        """;
+    String expected =
+        """
+        class T {
+          String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+          String t =
+              "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance"
+                  + " to interrupt";
+        }
+        """;
+    assertThat(formatStdin(input, "-lines", "3")).isEqualTo(expected);
+    // Nothing on the first line needs formatting, so nothing changes.
+    assertThat(formatStdin(input, "-lines", "1")).isEqualTo(input);
+  }
+
+  private static String formatStdin(String input, String... args) throws Exception {
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), in);
+    String[] argsWithStdin = Arrays.copyOf(args, args.length + 1);
+    argsWithStdin[args.length] = "-";
+    assertWithMessage(err.toString()).that(main.format(argsWithStdin)).isEqualTo(0);
+    return out.toString();
   }
 
   @Test
