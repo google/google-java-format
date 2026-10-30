@@ -230,23 +230,41 @@ public final class StringWrapper {
       // adjust for leading and trailing double quotes
       String text = input.substring(getStartPosition(tree) + 1, getEndPosition(tree, unit) - 1);
       int start = 0;
-      for (int idx = 0; idx < text.length(); idx++) {
+      int next;
+      for (int idx = 0; idx < text.length(); idx = next) {
+        int splitAt;
+        int length;
         if (CharMatcher.whitespace().matches(text.charAt(idx))) {
-          // continue below
-        } else if (hasEscapedWhitespaceAt(text, idx) != -1) {
-          // continue below
+          // split before whitespace
+          splitAt = idx;
+          next = idx + 1;
+        } else if ((length = hasEscapedWhitespaceAt(text, idx)) != -1) {
+          // split before escaped whitespace
+          splitAt = idx;
+          next = idx + length;
         } else if (hasEscapedNewlineAt(text, idx) != -1) {
-          int length;
-          while ((length = hasEscapedNewlineAt(text, idx)) != -1) {
-            idx += length;
+          // Split after a run of escaped newlines, rather than before it, so the newlines end the
+          // preceding piece. `reflow` ends a line after a piece ending in an escaped newline, so
+          // where possible each line of the wrapped literal corresponds to a line of its value.
+          next = idx;
+          while ((length = hasEscapedNewlineAt(text, next)) != -1) {
+            next += length;
           }
+          splitAt = next;
         } else {
+          // Skip over the entire escape sequence, so the second character of an escape like `\\` is
+          // not mistaken for the start of another escape. Octal and Unicode escapes don't need
+          // special handling: after the backslash they only contain letters and digits, which are
+          // never split points.
+          next = idx + (text.charAt(idx) == '\\' ? 2 : 1);
           continue;
         }
-        piece.append(text, start, idx);
-        result.add(piece.toString());
-        piece = new StringBuilder();
-        start = idx;
+        if (splitAt > start || piece.length() > 0) {
+          piece.append(text, start, splitAt);
+          result.add(piece.toString());
+          piece = new StringBuilder();
+          start = splitAt;
+        }
       }
       if (piece.length() > 0) {
         result.add(piece.toString());

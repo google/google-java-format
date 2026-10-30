@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assume.assumeTrue;
 
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
+import java.util.Random;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -105,5 +106,86 @@ public class ReproBug {
             \t\t\t\""";
             }
             """);
+  }
+
+  // https://github.com/google/google-java-format/issues/1186
+  @Test
+  public void escapedBackslashBeforeT() throws Exception {
+    String input =
+        """
+        class T {
+          String t =
+           "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789\\\\t";
+        }
+        """;
+    String output =
+        """
+        class T {
+          String t =
+              "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789\\\\t";
+        }
+        """;
+    assertThat(new Formatter().formatSourceAndFixImports(input)).isEqualTo(output);
+  }
+
+  // https://github.com/google/google-java-format/issues/1439
+  @Test
+  public void escapedBackslashes() throws Exception {
+    String input =
+        """
+        class T {
+          String s = "%s xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\\text{C} \\\\n \\\\\\\\";
+        }
+        """
+            .formatted("word ".repeat(20));
+    String output =
+        """
+        class T {
+          String s =
+              "word word word word word word word word word word word word word word word word word word"
+                  + " word word "
+                  + " xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\\text{C} \\\\n"
+                  + " \\\\\\\\";
+        }
+        """;
+    assertThat(new Formatter().formatSourceAndFixImports(input)).isEqualTo(output);
+  }
+
+  @Test
+  public void escapesRandomized() throws Exception {
+    // The source text of string literal characters and escape sequences, including escaped
+    // backslashes followed by characters that would otherwise form escapes, and octal and Unicode
+    // escapes.
+    String[] atoms = {
+      "a",
+      "bb",
+      " ",
+      "\\\\",
+      "\\t",
+      "\\n",
+      "\\r\\n",
+      "\\\"",
+      "\\\\t",
+      "\\\\n",
+      "\\\\\\t",
+      "\\0",
+      "\\12",
+      "\\377",
+      "\\s",
+      "\\u0041",
+      "\\\\u0041"
+    };
+    Random random = new Random(42);
+    Formatter formatter = new Formatter();
+    for (int i = 0; i < 200; i++) {
+      StringBuilder literal = new StringBuilder();
+      while (literal.length() < 150) {
+        literal.append(atoms[random.nextInt(atoms.length)]);
+      }
+      String input = "class T {\n  String s = \"" + literal + "\";\n}\n";
+      // StringWrapper checks that its output parses and has the same AST as its input. (This uses
+      // `unused` rather than `_` since google-java-format still supports building with JDK 21.)
+      String unused = StringWrapper.wrap(40, formatter.formatSource(input), formatter);
+    }
   }
 }

@@ -119,34 +119,6 @@ public class DiagnosticTest {
   }
 
   @Test
-  public void stringWrappingProducesInvalidCode() throws Exception {
-    // Reflowing this string splits the escaped backslash in `\\t`, which produces an unterminated
-    // string literal several lines past the end of the original input.
-    String input =
-        """
-        class T {
-          String s = "%s%s\\\\tend";
-        }
-        """
-            .formatted("word ".repeat(100), "x".repeat(95));
-
-    StringWriter stdout = new StringWriter();
-    StringWriter stderr = new StringWriter();
-    Main main = new Main(new PrintWriter(stdout, true), new PrintWriter(stderr, true), System.in);
-
-    Path tmpdir = testFolder.newFolder().toPath();
-    Path path = tmpdir.resolve("T.java");
-    Files.writeString(path, input);
-
-    int result = main.format(path.toString());
-    assertThat(stdout.toString()).isEmpty();
-    assertThat(stderr.toString())
-        .contains(
-            "it would produce code that does not parse (9:13: error: unclosed string literal)");
-    assertThat(result).isEqualTo(1);
-  }
-
-  @Test
   public void oneFileParseError() throws Exception {
     String one = "class One {\n";
     String two = "class Two {}\n";
