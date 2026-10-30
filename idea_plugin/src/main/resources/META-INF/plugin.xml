@@ -35,6 +35,8 @@
   ]]></description>
   <change-notes><![CDATA[
     <dl>
+      <dt>2.0.0.0</dt>
+      <dd>Updated to use google-java-format 2.0.0.</dd>
       <dt>1.36.1.1</dt>
       <dd>Move settings page to Tools section.</dd>
       <dt>1.36.1.0</dt>
