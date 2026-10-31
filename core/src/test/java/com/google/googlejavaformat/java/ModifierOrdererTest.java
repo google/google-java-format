@@ -17,14 +17,17 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 
+import com.google.common.base.Enums;
 import com.google.common.collect.Range;
 import java.util.Arrays;
+import javax.lang.model.element.Modifier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** {@link ModifierOrderer}Test */
+/// [ModifierOrderer]Test
 @RunWith(JUnit4.class)
 public class ModifierOrdererTest {
 
@@ -107,5 +110,12 @@ public class ModifierOrdererTest {
   public void sealedClass() throws FormatterException {
     assertThat(ModifierOrderer.reorderModifiers("non-sealed sealed public").getText())
         .isEqualTo("public sealed non-sealed");
+  }
+
+  @Test
+  public void valueClass() throws FormatterException {
+    assume().that(Enums.getIfPresent(Modifier.class, "VALUE").isPresent()).isTrue();
+    assertThat(ModifierOrderer.reorderModifiers("value final public").getText())
+        .isEqualTo("public final value");
   }
 }

@@ -17,6 +17,7 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.googlejavaformat.FormatterDiagnostic;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +34,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Tests for error reporting. */
+/// Tests for error reporting.
 @RunWith(JUnit4.class)
 public class DiagnosticTest {
   @Rule public TemporaryFolder testFolder = new TemporaryFolder();
@@ -98,6 +99,23 @@ public class DiagnosticTest {
     assertThat(stdout.toString()).isEmpty();
     assertThat(stderr.toString()).contains("error: illegal unicode escape");
     assertThat(result).isEqualTo(1);
+  }
+
+  @Test
+  public void formatDiagnostics_positionOutOfRange() {
+    String input = "class T {}\n";
+    assertThat(
+            new FormatterException(new FormatterDiagnostic(5, 3, "oops"))
+                .formatDiagnostics("T.java", input))
+        .isEqualTo("T.java:5:3: error: oops" + System.lineSeparator());
+    assertThat(
+            new FormatterException(new FormatterDiagnostic(0, 3, "oops"))
+                .formatDiagnostics("T.java", input))
+        .isEqualTo("T.java:0:3: error: oops" + System.lineSeparator());
+    assertThat(
+            new FormatterException(new FormatterDiagnostic(1, 0, "oops"))
+                .formatDiagnostics("T.java", input))
+        .isEqualTo("T.java:1:0: error: oops" + System.lineSeparator());
   }
 
   @Test

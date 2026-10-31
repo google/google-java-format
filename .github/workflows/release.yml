@@ -28,10 +28,12 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           java-version: 21
           distribution: "zulu"
@@ -74,7 +76,7 @@ jobs:
           GITHUB_EVENT_INPUTS_VERSION: ${{ github.event.inputs.version }}
 
       - name: Add Artifacts to Release Entry
-        uses: softprops/action-gh-release@v3.0.1
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           draft: true
           name: ${{ github.event.input.version }}
@@ -87,6 +89,9 @@ jobs:
   build-native-image:
     name: "Build GraalVM native-image on ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     permissions:
       contents: write
     needs: build-maven-jars
@@ -102,9 +107,11 @@ jobs:
       EXTENSION: ${{ matrix.os == 'windows-latest' && '.exe' || '' }}
     steps:
       - name: "Check out repository"
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: "Set up GraalVM"
-        uses: graalvm/setup-graalvm@v1
+        uses: graalvm/setup-graalvm@5298d94fb55a4f185c602eeac5de1b553882abe2 # v1.6.4
         with:
           java-version: "25"
           distribution: "graalvm-community"
@@ -112,13 +119,16 @@ jobs:
           native-image-job-reports: "true"
           cache: "maven"
       - name: Bump Version Number
-        run: mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${{ github.event.inputs.version }}"
+        env:
+          GITHUB_EVENT_INPUTS_VERSION: ${{ github.event.inputs.version }}
+        run: mvn --no-transfer-progress versions:set versions:commit -DnewVersion="${GITHUB_EVENT_INPUTS_VERSION}"
       - name: "Native"
         run: mvn -Pnative -DskipTests package -pl core -am
       - name: "Move outputs"
-        run: cp core/target/google-java-format${{ env.EXTENSION }} google-java-format_${{ env.SUFFIX }}${{ env.EXTENSION }}
+        run: cp core/target/google-java-format${EXTENSION} google-java-format_${SUFFIX}${EXTENSION}
       - name: "Upload native-image"
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "v${{ github.event.inputs.version }}" "google-java-format_${{ env.SUFFIX }}${{ env.EXTENSION }}"
+          GITHUB_EVENT_INPUTS_VERSION: ${{ github.event.inputs.version }}
+        run: gh release upload "v${GITHUB_EVENT_INPUTS_VERSION}" "google-java-format_${SUFFIX}${EXTENSION}"

@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getLast;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Verify;
 import com.google.common.collect.DiscreteDomain;
@@ -41,7 +42,6 @@ import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 import com.sun.tools.javac.util.Options;
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -58,20 +58,17 @@ import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
 import org.jspecify.annotations.Nullable;
 
-/** {@code JavaInput} extends {@link Input} to represent a Java input document. */
+/// `JavaInput` extends [Input] to represent a Java input document.
 final class JavaInput extends Input {
-  /**
-   * A {@code JavaInput} is a sequence of {@link Tok}s that cover the Java input. A {@link Tok} is
-   * either a token (if {@code isToken()}), or a non-token, which is a comment (if {@code
-   * isComment()}) or a newline (if {@code isNewline()}) or a maximal sequence of other whitespace
-   * characters (if {@code isSpaces()}). Each {@link Tok} contains a sequence of characters, an
-   * index (sequential starting at {@code 0} for tokens and comments, else {@code -1}), and a
-   * ({@code 0}-origin) position in the input. The concatenation of the texts of all the {@link
-   * Tok}s equals the input. Each Input ends with a token EOF {@link Tok}, with empty text.
-   *
-   * <p>A {@code /*} comment possibly contains newlines; a {@code //} comment does not contain the
-   * terminating newline character, but is followed by a newline {@link Tok}.
-   */
+  /// A `JavaInput` is a sequence of [Tok]s that cover the Java input. A [Tok] is either a token (if
+  /// `isToken()`), or a non-token, which is a comment (if `isComment()`) or a newline (if
+  /// `isNewline()`) or a maximal sequence of other whitespace characters (if `isSpaces()`). Each
+  /// [Tok] contains a sequence of characters, an index (sequential starting at `0` for tokens and
+  /// comments, else `-1`), and a (`0`-origin) position in the input. The concatenation of the texts
+  /// of all the [Tok]s equals the input. Each Input ends with a token EOF [Tok], with empty text.
+  ///
+  /// A `/*` comment possibly contains newlines; a `//` comment does not contain the terminating
+  /// newline character, but is followed by a newline [Tok].
   static final class Tok implements Input.Tok {
     private final int index;
     private final String originalText;
@@ -81,17 +78,15 @@ final class JavaInput extends Input {
     private final boolean isToken;
     private final TokenKind kind;
 
-    /**
-     * The {@code Tok} constructor.
-     *
-     * @param index its index
-     * @param originalText its original text, before removing Unicode escapes
-     * @param text its text after removing Unicode escapes
-     * @param position its {@code 0}-origin position in the input
-     * @param columnI its {@code 0}-origin column number in the input
-     * @param isToken whether the {@code Tok} is a token
-     * @param kind the token kind
-     */
+    /// The `Tok` constructor.
+    ///
+    /// @param index its index
+    /// @param originalText its original text, before removing Unicode escapes
+    /// @param text its text after removing Unicode escapes
+    /// @param position its `0`-origin position in the input
+    /// @param columnI its `0`-origin column number in the input
+    /// @param isToken whether the `Tok` is a token
+    /// @param kind the token kind
     Tok(
         int index,
         String originalText,
@@ -190,56 +185,46 @@ final class JavaInput extends Input {
     }
   }
 
-  /**
-   * A {@link Token} contains a token {@link Tok} and its associated non-tokens; each non-token
-   * {@link Tok} belongs to one {@link Token}. Each {@link Token} has an immutable list of its
-   * non-tokens that appear before it, and another list of its non-tokens that appear after it. The
-   * concatenation of the texts of all the {@link Token}s' {@link Tok}s, each preceded by the texts
-   * of its {@code toksBefore} and followed by the texts of its {@code toksAfter}, equals the input.
-   */
+  /// A [Token] contains a token [Tok] and its associated non-tokens; each non-token [Tok] belongs
+  /// to one [Token]. Each [Token] has an immutable list of its non-tokens that appear before it,
+  /// and another list of its non-tokens that appear after it. The concatenation of the texts of all
+  /// the [Token]s' [Tok]s, each preceded by the texts of its `toksBefore` and followed by the texts
+  /// of its `toksAfter`, equals the input.
   static final class Token implements Input.Token {
     private final Tok tok;
     private final ImmutableList<Tok> toksBefore;
     private final ImmutableList<Tok> toksAfter;
 
-    /**
-     * Token constructor.
-     *
-     * @param toksBefore the earlier non-token {link Tok}s assigned to this {@code Token}
-     * @param tok this token {@link Tok}
-     * @param toksAfter the later non-token {link Tok}s assigned to this {@code Token}
-     */
+    /// Token constructor.
+    ///
+    /// @param toksBefore the earlier non-token [Tok]s assigned to this `Token`
+    /// @param tok this token [Tok]
+    /// @param toksAfter the later non-token [Tok]s assigned to this `Token`
     Token(List<Tok> toksBefore, Tok tok, List<Tok> toksAfter) {
       this.toksBefore = ImmutableList.copyOf(toksBefore);
       this.tok = tok;
       this.toksAfter = ImmutableList.copyOf(toksAfter);
     }
 
-    /**
-     * Get the token's {@link Tok}.
-     *
-     * @return the token's {@link Tok}
-     */
+    /// Get the token's [Tok].
+    ///
+    /// @return the token's [Tok]
     @Override
     public Tok getTok() {
       return tok;
     }
 
-    /**
-     * Get the earlier {@link Tok}s assigned to this {@code Token}.
-     *
-     * @return the earlier {@link Tok}s assigned to this {@code Token}
-     */
+    /// Get the earlier [Tok]s assigned to this `Token`.
+    ///
+    /// @return the earlier [Tok]s assigned to this `Token`
     @Override
     public ImmutableList<? extends Input.Tok> getToksBefore() {
       return toksBefore;
     }
 
-    /**
-     * Get the later {@link Tok}s assigned to this {@code Token}.
-     *
-     * @return the later {@link Tok}s assigned to this {@code Token}
-     */
+    /// Get the later [Tok]s assigned to this `Token`.
+    ///
+    /// @return the later [Tok]s assigned to this `Token`
     @Override
     public ImmutableList<? extends Input.Tok> getToksAfter() {
       return toksAfter;
@@ -258,27 +243,22 @@ final class JavaInput extends Input {
   private final String text; // The input.
   private int kN; // The number of numbered toks (tokens or comments), excluding the EOF.
 
-  /*
-   * The following lists record the sequential indices of the {@code Tok}s on each input line. (Only
-   * tokens and comments have sequential indices.) Tokens and {@code //} comments lie on just one
-   * line; {@code /*} comments can lie on multiple lines. These data structures (along with
-   * equivalent ones for the formatted output) let us compute correspondences between the input and
-   * output.
-   */
+  // The following lists record the sequential indices of the `Tok`s on each input line. (Only
+  // tokens and comments have sequential indices.) Tokens and `//` comments lie on just one line;
+  // `/*` comments can lie on multiple lines. These data structures (along with equivalent ones for
+  // the formatted output) let us compute correspondences between the input and output.
 
   private final ImmutableMap<Integer, Integer> positionToColumnMap; // Map Tok position to column.
   private final ImmutableList<Token> tokens; // The Tokens for this input.
   private final ImmutableRangeMap<Integer, Token> positionTokenMap; // Map position to Token.
 
-  /** Map from Tok index to the associated Token. */
+  /// Map from Tok index to the associated Token.
   private final Token[] kToToken;
 
-  /**
-   * Input constructor.
-   *
-   * @param text the input text
-   * @throws FormatterException if the input cannot be parsed
-   */
+  /// Input constructor.
+  ///
+  /// @param text the input text
+  /// @throws FormatterException if the input cannot be parsed
   JavaInput(String text) throws FormatterException {
     this.text = checkNotNull(text);
     setLines(ImmutableList.copyOf(Newlines.lineIterator(text)));
@@ -323,11 +303,9 @@ final class JavaInput extends Input {
     return builder.buildOrThrow();
   }
 
-  /**
-   * Get the input text.
-   *
-   * @return the input text
-   */
+  /// Get the input text.
+  ///
+  /// @return the input text
   @Override
   public String getText() {
     return text;
@@ -338,7 +316,7 @@ final class JavaInput extends Input {
     return positionToColumnMap;
   }
 
-  /** Lex the input and build the list of toks. */
+  /// Lex the input and build the list of toks.
   private ImmutableList<Tok> buildToks(String text) throws FormatterException {
     ImmutableList<Tok> toks = buildToks(text, ImmutableSet.of());
     kN = getLast(toks).getIndex();
@@ -346,13 +324,11 @@ final class JavaInput extends Input {
     return toks;
   }
 
-  /**
-   * Lex the input and build the list of toks.
-   *
-   * @param text the text to be lexed.
-   * @param stopTokens a set of tokens which should cause lexing to stop. If one of these is found,
-   *     the returned list will include tokens up to but not including that token.
-   */
+  /// Lex the input and build the list of toks.
+  ///
+  /// @param text the text to be lexed.
+  /// @param stopTokens a set of tokens which should cause lexing to stop. If one of these is found,
+  ///   the returned list will include tokens up to but not including that token.
   static ImmutableList<Tok> buildToks(String text, ImmutableSet<TokenKind> stopTokens)
       throws FormatterException {
     stopTokens = ImmutableSet.<TokenKind>builder().addAll(stopTokens).add(TokenKind.EOF).build();
@@ -366,7 +342,7 @@ final class JavaInput extends Input {
     log.useSource(
         new SimpleJavaFileObject(URI.create("Source.java"), Kind.SOURCE) {
           @Override
-          public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+          public String getCharContent(boolean ignoreEncodingErrors) {
             return text;
           }
         });
@@ -374,6 +350,8 @@ final class JavaInput extends Input {
     ImmutableList<RawTok> rawToks = JavacTokens.getTokens(text, context, stopTokens);
     Collection<JCDiagnostic> ds;
     try {
+      // GET_DIAGNOSTICS is DeferredDiagnosticHandler#getDiagnostics, which returns a
+      // Collection<JCDiagnostic> on all supported JDK versions
       @SuppressWarnings("unchecked")
       var extraLocalForSuppression = (Collection<JCDiagnostic>) GET_DIAGNOSTICS.invoke(diagnostics);
       ds = extraLocalForSuppression;
@@ -605,24 +583,43 @@ final class JavaInput extends Input {
         && tok.getText().matches("\\/\\*[A-Za-z0-9\\s_\\-]+=\\s*\\*\\/");
   }
 
-  /**
-   * Convert from a character range to a token range.
-   *
-   * @param characterRange the {@code 0}-based {@link Range} of characters
-   * @return the {@code 0}-based {@link Range} of tokens
-   * @throws FormatterException if the upper endpoint of the range is outside the file
-   */
-  private Range<Integer> characterRangeToTokenRange(Range<Integer> characterRange)
+  /// Checks that `characterRange` ends within a text of length `textLength`.
+  ///
+  /// @throws FormatterException if the upper endpoint of the range is outside the text
+  static void validateRange(Range<Integer> characterRange, int textLength)
       throws FormatterException {
-    if (characterRange.upperEndpoint() > text.length()) {
+    if (characterRange.upperEndpoint() > textLength) {
       throw new FormatterException(
           String.format(
               "error: invalid offset (%d) or length (%d); offset + length (%d) > file length (%d)",
               characterRange.lowerEndpoint(),
               characterRange.upperEndpoint() - characterRange.lowerEndpoint(),
               characterRange.upperEndpoint(),
-              text.length()));
+              textLength));
     }
+  }
+
+  /// Checks that every range in `characterRanges` ends within a text of length `textLength`.
+  ///
+  /// @throws FormatterException if the upper endpoint of any range is outside the text
+  static void validateRanges(Collection<Range<Integer>> characterRanges, int textLength)
+      throws FormatterException {
+    for (Range<Integer> characterRange : characterRanges) {
+      validateRange(characterRange, textLength);
+    }
+  }
+
+  private static final CharMatcher NOT_WHITESPACE = CharMatcher.whitespace().negate();
+
+  /// Convert from a character range to a token range.
+  ///
+  /// @param characterRange the `0`-based [Range] of characters
+  /// @return the `0`-based [Range] of tokens
+  /// @throws FormatterException if the upper endpoint of the range is outside the file
+  private Range<Integer> characterRangeToTokenRange(Range<Integer> characterRange)
+      throws FormatterException {
+    validateRange(characterRange, text.length());
+
     // empty range stands for "format the line under the cursor"
     Range<Integer> nonEmptyRange =
         characterRange.isEmpty()
@@ -630,50 +627,46 @@ final class JavaInput extends Input {
             : characterRange;
     ImmutableCollection<Token> enclosed =
         getPositionTokenMap().subRangeMap(nonEmptyRange).asMapOfRanges().values();
+    boolean touchesEof = NOT_WHITESPACE.indexIn(text, characterRange.upperEndpoint()) == -1;
     if (enclosed.isEmpty()) {
+      if (touchesEof) {
+        return Range.closedOpen(getkN(), getkN() + 1);
+      }
       return EMPTY_RANGE;
     }
-    return Range.closedOpen(
-        enclosed.iterator().next().getTok().getIndex(), getLast(enclosed).getTok().getIndex() + 1);
+    int hi = touchesEof ? getkN() + 1 : getLast(enclosed).getTok().getIndex() + 1;
+    return Range.closedOpen(enclosed.iterator().next().getTok().getIndex(), hi);
   }
 
-  /**
-   * Get the number of toks.
-   *
-   * @return the number of toks, excluding the EOF tok
-   */
+  /// Get the number of toks.
+  ///
+  /// @return the number of toks, excluding the EOF tok
   @Override
   public int getkN() {
     return kN;
   }
 
-  /**
-   * Get the Token by index.
-   *
-   * @param k the Tok index
-   */
+  /// Get the Token by index.
+  ///
+  /// @param k the Tok index
   @Override
   public Token getToken(int k) {
     return kToToken[k];
   }
 
-  /**
-   * Get the input tokens.
-   *
-   * @return the input tokens
-   */
+  /// Get the input tokens.
+  ///
+  /// @return the input tokens
   @Override
   public ImmutableList<? extends Input.Token> getTokens() {
     return tokens;
   }
 
-  /**
-   * Get the navigable map from position to {@link Token}. Used to look for tokens following a given
-   * one, and to implement the --offset and --length flags to reformat a character range in the
-   * input file.
-   *
-   * @return the navigable map from position to {@link Token}
-   */
+  /// Get the navigable map from position to [Token]. Used to look for tokens following a given one,
+  /// and to implement the --offset and --length flags to reformat a character range in the input
+  /// file.
+  ///
+  /// @return the navigable map from position to [Token]
   @Override
   public ImmutableRangeMap<Integer, Token> getPositionTokenMap() {
     return positionTokenMap;
@@ -699,6 +692,10 @@ final class JavaInput extends Input {
   public int getColumnNumber(int inputPosition) {
     Verify.verifyNotNull(unit, "Expected compilation unit to be set.");
     return unit.getLineMap().getColumnNumber(inputPosition);
+  }
+
+  @Nullable JCCompilationUnit getCompilationUnit() {
+    return unit;
   }
 
   // TODO(cushon): refactor JavaInput so the CompilationUnit can be passed into

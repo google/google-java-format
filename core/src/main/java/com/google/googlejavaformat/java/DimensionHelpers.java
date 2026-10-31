@@ -29,17 +29,15 @@ import java.util.Deque;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Utilities for working with array dimensions.
- *
- * <p>javac's parser does not preserve concrete syntax for mixed-notation arrays, so we have to
- * re-lex the input to extract it.
- *
- * <p>For example, {@code int [] a;} cannot be distinguished from {@code int [] a [];} in the AST.
- */
+/// Utilities for working with array dimensions.
+///
+/// javac's parser does not preserve concrete syntax for mixed-notation arrays, so we have to re-lex
+/// the input to extract it.
+///
+/// For example, `int [] a;` cannot be distinguished from `int [] a [];` in the AST.
 final class DimensionHelpers {
 
-  /** The array dimension specifiers (including any type annotations) associated with a type. */
+  /// The array dimension specifiers (including any type annotations) associated with a type.
   record TypeWithDims(@Nullable Tree node, ImmutableList<List<AnnotationTree>> dims) {
     TypeWithDims {
       requireNonNull(dims, "dims");
@@ -51,7 +49,7 @@ final class DimensionHelpers {
     NO
   }
 
-  /** Returns a (possibly re-ordered) {@link TypeWithDims} for the given type. */
+  /// Returns a (possibly re-ordered) [TypeWithDims] for the given type.
   static TypeWithDims extractDims(Tree node, SortedDims sorted) {
     Deque<List<AnnotationTree>> builder = new ArrayDeque<>();
     node = extractDims(builder, node);
@@ -64,18 +62,16 @@ final class DimensionHelpers {
     return new TypeWithDims(node, ImmutableList.copyOf(dims));
   }
 
-  /**
-   * Rotate the list of dimension specifiers until all dimensions with type annotations appear in
-   * source order.
-   *
-   * <p>javac reorders dimension specifiers in method declarations with mixed-array notation, which
-   * means that any type annotations don't appear in source order.
-   *
-   * <p>For example, the type of {@code int @A [] f() @B [] {}} is parsed as {@code @B [] @A []}.
-   *
-   * <p>This doesn't handle cases with un-annotated dimension specifiers, so the formatting logic
-   * checks the token stream to figure out which side of the method name they appear on.
-   */
+  /// Rotate the list of dimension specifiers until all dimensions with type annotations appear in
+  /// source order.
+  ///
+  /// javac reorders dimension specifiers in method declarations with mixed-array notation, which
+  /// means that any type annotations don't appear in source order.
+  ///
+  /// For example, the type of `int @A [] f() @B [] {}` is parsed as `@B [] @A []`.
+  ///
+  /// This doesn't handle cases with un-annotated dimension specifiers, so the formatting logic
+  /// checks the token stream to figure out which side of the method name they appear on.
   private static Iterable<List<AnnotationTree>> reorderBySourcePosition(
       Deque<List<AnnotationTree>> dims) {
     int lastAnnotation = -1;
@@ -97,13 +93,10 @@ final class DimensionHelpers {
     return dims;
   }
 
-  /**
-   * Accumulates a flattened list of array dimensions specifiers with type annotations, and returns
-   * the base type.
-   *
-   * <p>Given {@code int @A @B [][] @C []}, adds {@code [[@A, @B], [@C]]} to dims and returns {@code
-   * int}.
-   */
+  /// Accumulates a flattened list of array dimensions specifiers with type annotations, and returns
+  /// the base type.
+  ///
+  /// Given `int @A @B [][] @C []`, adds `[[@A, @B], [@C]]` to dims and returns `int`.
   private static Tree extractDims(Deque<List<AnnotationTree>> dims, Tree node) {
     return switch (node.getKind()) {
       case ARRAY_TYPE -> extractDims(dims, ((ArrayTypeTree) node).getType());

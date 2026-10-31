@@ -19,12 +19,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * String reader designed for use from the lexer. Callers invoke the {@link #tryConsume tryConsume*}
- * methods to specify what characters they expect and then {@link #readAndResetRecorded} to retrieve
- * and consume the matched characters. This is a slightly odd API -- why not just return the matched
- * characters from tryConsume? -- but it is convenient for the lexer.
- */
+/// String reader designed for use from the lexer. Callers invoke the [`tryConsume*`][#tryConsume]
+/// methods to specify what characters they expect and then [#readAndResetRecorded] to retrieve and
+/// consume the matched characters. This is a slightly odd API -- why not just return the matched
+/// characters from tryConsume? -- but it is convenient for the lexer.
 final class CharStream {
   private final String input;
   private int position;
@@ -42,11 +40,9 @@ final class CharStream {
     return true;
   }
 
-  /**
-   * Tries to consume characters from the current position that match the given pattern.
-   *
-   * @param pattern the pattern to search for, which must be anchored to match only at position 0
-   */
+  /// Tries to consume characters from the current position that match the given pattern.
+  ///
+  /// @param pattern the pattern to search for, which must be anchored to match only at position 0
   boolean tryConsumeRegex(Pattern pattern) {
     Matcher matcher = pattern.matcher(input).region(position, input.length());
     if (!matcher.lookingAt()) {

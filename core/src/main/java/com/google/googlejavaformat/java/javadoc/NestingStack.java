@@ -19,18 +19,16 @@ import java.util.Collection;
 import java.util.Deque;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Stack for tracking the level of nesting. In the simplest case, we have a stack of {@link Integer}
- * where each entry is just the integer 1, and the stack is effectively a counter. In more complex
- * cases, the entries may depend on context. For example, if the stack is keeping track of Javadoc
- * lists, the entries represent indentation levels, and those depend on whether the list is an HTML
- * list or a Markdown list.
- *
- * <p>Iterating over the stack goes from the bottom to the top. So for an indentation stack, for
- * example, it produces the elements of indentation in the correct order.
- *
- * @param <E> The type of the elements in the stack.
- */
+/// Stack for tracking the level of nesting. In the simplest case, we have a stack of [Integer]
+/// where each entry is just the integer 1, and the stack is effectively a counter. In more complex
+/// cases, the entries may depend on context. For example, if the stack is keeping track of Javadoc
+/// lists, the entries represent indentation levels, and those depend on whether the list is an HTML
+/// list or a Markdown list.
+///
+/// Iterating over the stack goes from the bottom to the top. So for an indentation stack, for
+/// example, it produces the elements of indentation in the correct order.
+///
+/// @param <E> The type of the elements in the stack.
 final class NestingStack<E> {
   private final Deque<E> stack = new ArrayDeque<>();
 
@@ -49,9 +47,8 @@ final class NestingStack<E> {
     return stack.pop();
   }
 
-  /**
-   * If the stack contains the given element, pop it and everything above it. Otherwise, do nothing.
-   */
+  /// If the stack contains the given element, pop it and everything above it. Otherwise, do
+  /// nothing.
   void popUntil(E value) {
     if (stack.contains(value)) {
       E popped;

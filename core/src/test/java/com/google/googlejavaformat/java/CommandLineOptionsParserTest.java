@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
@@ -29,7 +30,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** {@link CommandLineOptionsParser}Test */
+/// [CommandLineOptionsParser]Test
 @RunWith(JUnit4.class)
 public class CommandLineOptionsParserTest {
 
@@ -54,6 +55,8 @@ public class CommandLineOptionsParserTest {
     assertThat(options.reflowLongStrings()).isTrue();
     assertThat(options.formatJavadoc()).isTrue();
     assertThat(options.reorderModifiers()).isTrue();
+    assertThat(options.cleanup()).isTrue();
+    assertThat(options.maxLineLength()).isEqualTo(100);
   }
 
   @Test
@@ -75,6 +78,31 @@ public class CommandLineOptionsParserTest {
   @Test
   public void aosp() {
     assertThat(CommandLineOptionsParser.parse(Arrays.asList("-aosp")).aosp()).isTrue();
+  }
+
+  @Test
+  public void googleStyle() {
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--google-style")).aosp()).isFalse();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("-google-style")).aosp()).isFalse();
+  }
+
+  @Test
+  public void lastStyleWins() {
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--aosp", "--google-style")).aosp())
+        .isFalse();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--google-style", "--aosp")).aosp())
+        .isTrue();
+  }
+
+  @Test
+  public void style() {
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--style=google")).aosp()).isFalse();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--style", "google")).aosp()).isFalse();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--style=aosp")).aosp()).isTrue();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--style", "aosp")).aosp()).isTrue();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> CommandLineOptionsParser.parse(Arrays.asList("--style=invalid")));
   }
 
   @Test
@@ -208,5 +236,89 @@ public class CommandLineOptionsParserTest {
             CommandLineOptionsParser.parse(Arrays.asList("--skip-reordering-modifiers"))
                 .reorderModifiers())
         .isFalse();
+  }
+
+  @Test
+  public void cleanup() {
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--cleanup")).cleanup()).isTrue();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--cleanup=true")).cleanup()).isTrue();
+    assertThat(CommandLineOptionsParser.parse(Arrays.asList("--cleanup=false")).cleanup())
+        .isFalse();
+  }
+
+  @Test
+  public void cleanupAndSkipFlagsOrderIndependent() {
+    CommandLineOptions opt1 =
+        CommandLineOptionsParser.parse(Arrays.asList("--skip-reordering-modifiers", "--cleanup"));
+    CommandLineOptions opt2 =
+        CommandLineOptionsParser.parse(Arrays.asList("--cleanup", "--skip-reordering-modifiers"));
+    assertThat(opt1.reorderModifiers()).isFalse();
+    assertThat(opt1.cleanup()).isTrue();
+    assertThat(opt2.reorderModifiers()).isFalse();
+    assertThat(opt2.cleanup()).isTrue();
+
+    CommandLineOptions opt3 =
+        CommandLineOptionsParser.parse(Arrays.asList("--skip-javadoc-formatting", "--cleanup"));
+    CommandLineOptions opt4 =
+        CommandLineOptionsParser.parse(Arrays.asList("--cleanup", "--skip-javadoc-formatting"));
+    assertThat(opt3.formatJavadoc()).isFalse();
+    assertThat(opt3.cleanup()).isTrue();
+    assertThat(opt4.formatJavadoc()).isFalse();
+    assertThat(opt4.cleanup()).isTrue();
+  }
+
+  @Test
+  public void maxLineLength() {
+    assertThat(
+            CommandLineOptionsParser.parse(Arrays.asList("--max-line-length", "80"))
+                .maxLineLength())
+        .isEqualTo(80);
+    assertThat(
+            CommandLineOptionsParser.parse(Arrays.asList("--max-line-length=120")).maxLineLength())
+        .isEqualTo(120);
+  }
+
+  @Test
+  public void maxLineLengthOutOfRange() {
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> CommandLineOptionsParser.parse(Arrays.asList("--max-line-length=0")));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("invalid max-line-length: 0 (must be between 1 and 999)");
+
+    e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> CommandLineOptionsParser.parse(Arrays.asList("--max-line-length=-1")));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("invalid max-line-length: -1 (must be between 1 and 999)");
+
+    e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> CommandLineOptionsParser.parse(Arrays.asList("--max-line-length=1000")));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("invalid max-line-length: 1000 (must be between 1 and 999)");
+
+    assertThat(
+            CommandLineOptionsParser.parse(Arrays.asList("--max-line-length=999")).maxLineLength())
+        .isEqualTo(999);
+  }
+
+  @Test
+  public void styleFlagOrder() {
+    CommandLineOptions opt1 =
+        CommandLineOptionsParser.parse(Arrays.asList("--max-line-length=120", "--aosp"));
+    assertThat(opt1.aosp()).isTrue();
+    assertThat(opt1.maxLineLength()).isEqualTo(120);
+
+    CommandLineOptions opt2 =
+        CommandLineOptionsParser.parse(Arrays.asList("--aosp", "--max-line-length=120"));
+    assertThat(opt2.aosp()).isTrue();
+    assertThat(opt2.maxLineLength()).isEqualTo(120);
   }
 }

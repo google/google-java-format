@@ -25,7 +25,7 @@ import java.util.Set;
 import javax.lang.model.SourceVersion;
 import javax.tools.Tool;
 
-/** Provide a way to be invoked without necessarily starting a new VM. */
+/// Provide a way to be invoked without necessarily starting a new VM.
 @AutoService(Tool.class)
 public class GoogleJavaFormatTool implements Tool {
   @Override

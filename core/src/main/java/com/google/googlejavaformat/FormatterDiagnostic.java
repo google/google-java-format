@@ -17,15 +17,13 @@ package com.google.googlejavaformat;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * An error that prevented formatting from succeeding.
- *
- * @param line the line number on which the error occurred, or {@code -1} if the error does not have
- *     a line number.
- * @param column the 1-indexed column number on which the error occurred, or {@code -1} if the error
- *     does not have a column.
- * @param message a description of the problem that prevented formatting from succeeding.
- */
+/// An error that prevented formatting from succeeding.
+///
+/// @param line the line number on which the error occurred, or `-1` if the error does not have a
+///   line number.
+/// @param column the 1-indexed column number on which the error occurred, or `-1` if the error does
+///   not have a column.
+/// @param message a description of the problem that prevented formatting from succeeding.
 public record FormatterDiagnostic(int line, int column, String message) {
   public FormatterDiagnostic {
     checkArgument(line >= -1);

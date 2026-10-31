@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Tests for {@link GoogleJavaFormatToolProvider}. */
+/// Tests for [GoogleJavaFormatToolProvider].
 @RunWith(JUnit4.class)
 public class GoogleJavaFormatToolProviderTest {
 

@@ -24,17 +24,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Tests formatting javadoc. */
+/// Tests formatting javadoc.
 @RunWith(JUnit4.class)
 public final class JavadocFormattingTest {
   private static final boolean MARKDOWN_JAVADOC_SUPPORTED = Runtime.version().feature() >= 23;
 
   private final Formatter formatter = new Formatter();
 
-  /**
-   * Tests that the formatter formats the given input string to the given expected string. Also
-   * tests that the formatter is idempotent when formatting an already formatted string.
-   */
+  /// Tests that the formatter formats the given input string to the given expected string. Also
+  /// tests that the formatter is idempotent when formatting an already formatted string.
   private void doFormatTest(String input, String expected) {
     try {
       String actual = formatter.formatSource(input);
@@ -109,8 +107,6 @@ public final class JavadocFormattingTest {
 
   @Test
   public void commentMostlyUntouched() {
-    // This test isn't necessarily what we'd want to do, but it's what we do now, and it's OK-ish.
-    @SuppressWarnings("MisleadingEscapedSpace") // TODO(b/496180372): remove
     String input =
         """
         /**
@@ -129,14 +125,28 @@ public final class JavadocFormattingTest {
         /**
          * Foo.
          * <!--
-         *abc
+         * abc
          *   def
          * </tr>
-         *-->
+         * -->
          * bar
          */
         class Test {}
         """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownHtmlComment() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// <!--
+        /// abc
+        /// -->
+        class Test {}
+        """;
+    String expected = input;
     doFormatTest(input, expected);
   }
 
@@ -1885,7 +1895,6 @@ class Test {}
         class Test {}
         """
             .replace("moe", "MOE");
-    // TODO(kak): Ideally the extra blank lines would not be inserted after the code block
     String expected =
         """
         /// This is the first line.
@@ -1896,8 +1905,6 @@ class Test {}
         /// ```
         /// this is a code block
         /// ```
-        ///
-        ///
         /// <!-- moe:end_intracomment_strip -->
         class Test {}
         """
@@ -2207,7 +2214,6 @@ record Test(String foo) {}
 /// > To marry two wives at one time.
 class Test {}
 """;
-    // TODO(emcmanus): the blank lines here should not be present.
     String expected =
 """
 /// A test class.
@@ -2490,6 +2496,221 @@ package com.example;
         ///   <table>
         ///   <tr><td>Foo</td></tr>
         ///   </table>
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownNoFormatJavadoc() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// A very long line of text, long enough that it would be wrapped if javadoc formatting were enabled.
+        class Test {
+          /// Another very long line of text, also long enough that it would be wrapped if javadoc formatting were enabled.
+          void method() {}
+        }
+        """;
+    Formatter noJavadocFormatter =
+        new Formatter(JavaFormatterOptions.builder().formatJavadoc(false).build());
+    assertThat(noJavadocFormatter.formatSource(input)).isEqualTo(input);
+  }
+
+  @Test
+  public void trailingAsterisksBeforeClose() {
+    String input =
+        """
+        /** Version information for all the QuotaKeys that we have data for **/
+        class Test {}
+        """;
+    String expected =
+        """
+        /** Version information for all the QuotaKeys that we have data for */
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void preCodeWithoutLeadingStarPreservesIndent() {
+    String input =
+        """
+        /**
+         * <pre>{@code
+        class Demo {
+          // Comment
+          static final int X = 1;
+
+          public static void example() {
+            int y = 2;
+          }
+        }
+         * }</pre>
+         */
+        class Test {}
+        """;
+    String expected =
+        """
+        /**
+         * <pre>{@code
+         * class Demo {
+         *   // Comment
+         *   static final int X = 1;
+         *
+         *   public static void example() {
+         *     int y = 2;
+         *   }
+         * }
+         * }</pre>
+         */
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void hyphenatedLineBreakJoined() {
+    String input =
+        """
+        /**
+         * This calculation requires an infinite-
+         * precision number.
+         */
+        class Test {}
+        """;
+    String expected =
+        """
+        /** This calculation requires an infinite-precision number. */
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void suspendedHyphenPreserved() {
+    String input =
+        """
+        /**
+         * Both pre-
+         * and post-processing steps.
+         */
+        class Test {}
+        """;
+    String expected =
+        """
+        /** Both pre- and post-processing steps. */
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownHyphenatedLineBreakJoined() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// This calculation requires an infinite-
+        /// precision number.
+        class Test {}
+        """;
+    String expected =
+        """
+        /// This calculation requires an infinite-precision number.
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void unclosedInlineTagInList() {
+    String input =
+        """
+        /**
+         * <ul>
+         *   <li>{@link #validating() sets (allowInvalid=false, mayDissolve=false, snapFunction=null): Do not modify the input geometry. Validate it instead.
+         *   <li>3. Check if the input geometry is valid as is.
+         * </ul>
+         */
+        class Test {}
+        """;
+    // TODO(b/407787200): Lexing fails due to unclosed inline tag, leaving comment unformatted.
+    String expected =
+        """
+        /**
+         * <ul>
+         *   <li>{@link #validating() sets (allowInvalid=false, mayDissolve=false, snapFunction=null): Do not modify the input geometry. Validate it instead.
+         *   <li>3. Check if the input geometry is valid as is.
+         * </ul>
+         */
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void unclosedInlineTagAtEndOfComment() {
+    String input =
+        """
+        /**
+         * Return the child position of this cell within its parent. For more details, see {@link com.google.common.geometry.S2CellId
+         */
+        class Test {}
+        """;
+    // TODO(b/407787200): Lexing fails due to unclosed inline tag, leaving comment unformatted.
+    String expected =
+        """
+        /**
+         * Return the child position of this cell within its parent. For more details, see {@link com.google.common.geometry.S2CellId
+         */
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void unclosedInlineTagBeforeBlankLine() {
+    String input =
+        """
+        /**
+         * Some description with {@link #validating() sets (allowInvalid=false, mayDissolve=false, snapFunction=null): Do not modify the input geometry.
+         *
+         * <p>Next paragraph that is also long enough to exceed the line length limit and require line wrapping.
+         */
+        class Test {}
+        """;
+    // TODO(b/407787200): Lexing fails due to unclosed inline tag, leaving comment unformatted.
+    String expected =
+        """
+        /**
+         * Some description with {@link #validating() sets (allowInvalid=false, mayDissolve=false, snapFunction=null): Do not modify the input geometry.
+         *
+         * <p>Next paragraph that is also long enough to exceed the line length limit and require line wrapping.
+         */
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void unclosedInlineTagBeforeFooterTag() {
+    String input =
+        """
+        /**
+         * Some description with {@link #validating() sets (allowInvalid=false, mayDissolve=false, snapFunction=null): Do not modify the input geometry.
+         *
+         * @param x a parameter description that is also long enough to exceed the line length limit and require line wrapping
+         */
+        class Test {}
+        """;
+    // TODO(b/407787200): Lexing fails due to unclosed inline tag, leaving comment unformatted.
+    String expected =
+        """
+        /**
+         * Some description with {@link #validating() sets (allowInvalid=false, mayDissolve=false, snapFunction=null): Do not modify the input geometry.
+         *
+         * @param x a parameter description that is also long enough to exceed the line length limit and require line wrapping
+         */
         class Test {}
         """;
     doFormatTest(input, expected);

@@ -16,9 +16,11 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.common.truth.TruthJUnit.assume;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
+import com.google.common.base.Enums;
 import com.google.common.io.CharStreams;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import java.io.ByteArrayInputStream;
@@ -29,13 +31,14 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import javax.lang.model.element.Modifier;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Integration test for google-java-format. */
+/// Integration test for google-java-format.
 @RunWith(JUnit4.class)
 public final class FormatterTest {
 
@@ -717,5 +720,633 @@ class T {
               }
             }
             """);
+  }
+
+  @Test
+  public void testI1205() throws Exception {
+    String input =
+        """
+        public interface Foo {
+
+          private static String foo =
+              \"""
+               foo\\
+               bar \""";
+        }
+        """;
+    String expected =
+        """
+        public interface Foo {
+
+          private static String foo =
+              \"""
+              foo\\
+              bar\\
+              \""";
+        }
+        """;
+    String formatted = new Formatter().formatSource(input);
+    assertThat(formatted).isEqualTo(expected);
+  }
+
+  // Test that whitespace handling on text block lines only removes spaces, not other control
+  // characters.
+  @Test
+  public void textBlockControlCharacter() throws Exception {
+    // We want an actual control character in the Java source being formatted, not a unicode escape,
+    // i.e. the escape below doesn't need to be double-escaped.
+    String input =
+        """
+        package p;
+
+        public class T {
+          String s =
+              \"""
+              \u0007lorem
+              \u0007
+              ipsum
+              \""";
+        }
+        """;
+    String actual = new Formatter().formatSource(input);
+    assertThat(actual).isEqualTo(input);
+  }
+
+  @Test
+  public void textBlockTrailingWhitespace() throws Exception {
+    String input =
+        """
+        public class T {
+          String s =
+              \"""
+              lorem   \s
+              ipsum
+              \""";
+        }
+        """;
+    String expected =
+        """
+        public class T {
+          String s =
+              \"""
+              lorem
+              ipsum
+              \""";
+        }
+        """;
+    String actual = new Formatter().formatSource(input);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  // It would be neat if the formatter could remove the trailing whitespace here, but in general
+  // it preserves unicode escapes from the original text.
+  @Test
+  public void textBlockTrailingWhitespaceUnicodeEscape() throws Exception {
+    // We want a unicode escape in the Java source being formatted, so it needs to be escaped
+    // in the string literal in this test.
+    String input =
+        """
+        public class T {
+          String s =
+              \"""
+              lorem\\u0020
+              ipsum
+              \""";
+        }
+        """;
+    String expected =
+        """
+        public class T {
+          String s =
+              \"""
+              lorem\\u0020
+              ipsum
+              \""";
+        }
+        """;
+    String actual = new Formatter().formatSource(input);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void textBlockSpaceTabMix() throws Exception {
+    String input =
+        """
+        public class T {
+          String s =
+              \"""
+              lorem
+             \tipsum
+              \""";
+        }
+        """;
+    String expected =
+        """
+        public class T {
+          String s =
+              \"""
+              lorem
+              ipsum
+              \""";
+        }
+        """;
+    String actual = new Formatter().formatSource(input);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void textBlockLeadingBlankLine() throws Exception {
+    String input =
+        """
+        public class T {
+          String s =
+              \"""
+
+              lorem
+              ipsum
+              \""";
+        }
+        """;
+    String expected =
+        """
+        public class T {
+          String s =
+              \"""
+
+              lorem
+              ipsum
+              \""";
+        }
+        """;
+    String actual = new Formatter().formatSource(input);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void textBlockInHuggedLambda() throws Exception {
+    String input =
+        """
+        class T {
+          void f() {
+            foo(
+                tree,
+                "The following matches unexpectedly occurred in method `%s`".formatted(tree.getName()),
+                unexpectedMatchesByLineNumber.entries().stream()
+                    .map(
+                        e ->
+                            \"""
+                            Rule `%s` matches on line %s, while it should match in a method named \\
+                            `test%s`.\"""
+                                .formatted(e.getValue(), e.getKey(), e.getValue()))
+                    .collect(toImmutableSet()),
+                state);
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f() {
+            foo(
+                tree,
+                "The following matches unexpectedly occurred in method `%s`".formatted(tree.getName()),
+                unexpectedMatchesByLineNumber.entries().stream()
+                    .map(e ->
+                        \"""
+                        Rule `%s` matches on line %s, while it should match in a method named \\
+                        `test%s`.\\
+                        \"""
+                            .formatted(e.getValue(), e.getKey(), e.getValue()))
+                    .collect(toImmutableSet()),
+                state);
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void maxLineLength() throws Exception {
+    String input =
+        """
+        class T {
+          /** A javadoc comment that is longer than forty columns. */
+          void f(int aaaaaaaaaa, int bbbbbbbbbb, int cccccccccc) {
+            // A line comment that is longer than forty columns.
+            int x = aaaaaaaaaa + bbbbbbbbbb + cccccccccc;
+          }
+        }
+        """;
+    Formatter formatter =
+        new Formatter(
+            JavaFormatterOptions.builder()
+                .style(Style.GOOGLE.toBuilder().maxLineLength(40).build())
+                .build());
+    assertThat(formatter.formatSource(input))
+        .isEqualTo(
+            """
+            class T {
+              /**
+               * A javadoc comment that is longer
+               * than forty columns.
+               */
+              void f(
+                  int aaaaaaaaaa,
+                  int bbbbbbbbbb,
+                  int cccccccccc) {
+                // A line comment that is longer
+                // than forty columns.
+                int x =
+                    aaaaaaaaaa
+                        + bbbbbbbbbb
+                        + cccccccccc;
+              }
+            }
+            """);
+  }
+
+  @Test
+  public void useTabsGoogleStyle() throws Exception {
+    String input =
+        """
+        class T {
+          /**
+           * Multi-line javadoc
+           * comment.
+           */
+          void f(int a, int b) {
+            // multi-line
+            // comment
+            int x = aaaaaaaaaa + bbbbbbbbbb + cccccccccc;
+          }
+        }
+        """;
+    Formatter formatter =
+        new Formatter(
+            JavaFormatterOptions.builder()
+                .style(Style.GOOGLE.toBuilder().useTabs(true).maxLineLength(30).build())
+                .build());
+    assertThat(formatter.formatSource(input))
+        .isEqualTo(
+            """
+            class T {
+            \t/**
+            \t * Multi-line javadoc
+            \t * comment.
+            \t */
+            \tvoid f(int a, int b) {
+            \t\t// multi-line
+            \t\t// comment
+            \t\tint x =
+            \t\t\t\taaaaaaaaaa
+            \t\t\t\t\t\t+ bbbbbbbbbb
+            \t\t\t\t\t\t+ cccccccccc;
+            \t}
+            }
+            """);
+  }
+
+  @Test
+  public void useTabsAospStyle() throws Exception {
+    String input =
+        """
+        class T {
+          /**
+           * Multi-line javadoc
+           * comment.
+           */
+          void f(int a, int b) {
+            int x = aaaaaaaaaa + bbbbbbbbbb + cccccccccc;
+          }
+        }
+        """;
+    Formatter formatter =
+        new Formatter(
+            JavaFormatterOptions.builder()
+                .style(Style.AOSP.toBuilder().useTabs(true).maxLineLength(30).build())
+                .build());
+    assertThat(formatter.formatSource(input))
+        .isEqualTo(
+            """
+            class T {
+            \t/**
+            \t * Multi-line javadoc
+            \t * comment.
+            \t */
+            \tvoid f(int a, int b) {
+            \t\tint x =
+            \t\t\t\taaaaaaaaaa
+            \t\t\t\t\t\t+ bbbbbbbbbb
+            \t\t\t\t\t\t+ cccccccccc;
+            \t}
+            }
+            """);
+  }
+
+  @Test
+  public void styleVisualLengthAndIndentString() {
+    Style google = Style.GOOGLE;
+    assertThat(google.tabWidth()).isEqualTo(2);
+    assertThat(google.visualLength("abcd")).isEqualTo(4);
+    assertThat(google.visualLength("\tab")).isEqualTo(3);
+
+    Style googleTabs = Style.GOOGLE.toBuilder().useTabs(true).build();
+    assertThat(googleTabs.tabWidth()).isEqualTo(2);
+    assertThat(googleTabs.indentString(5)).isEqualTo("\t\t ");
+    assertThat(googleTabs.visualLength(googleTabs.indentString(5))).isEqualTo(5);
+    assertThat(googleTabs.visualLength("\t")).isEqualTo(2);
+    assertThat(googleTabs.visualLength("\t\t")).isEqualTo(4);
+    assertThat(googleTabs.visualLength(" \t")).isEqualTo(2);
+    assertThat(googleTabs.visualLength("\tab")).isEqualTo(4);
+
+    Style aospTabs = Style.AOSP.toBuilder().useTabs(true).build();
+    assertThat(aospTabs.tabWidth()).isEqualTo(4);
+    assertThat(aospTabs.indentString(10)).isEqualTo("\t\t  ");
+    assertThat(aospTabs.visualLength(aospTabs.indentString(10))).isEqualTo(10);
+    assertThat(aospTabs.visualLength("\t")).isEqualTo(4);
+    assertThat(aospTabs.visualLength("  \t")).isEqualTo(4);
+    assertThat(google.indentString(0)).isEmpty();
+    assertThat(googleTabs.indentString(0)).isEmpty();
+    assertThat(aospTabs.indentString(0)).isEmpty();
+    assertThat(google.indentString(4)).isSameInstanceAs(google.indentString(4));
+    assertThat(google.indentString(104)).isEqualTo(" ".repeat(104));
+    assertThat(googleTabs.indentString(104)).isEqualTo("\t".repeat(52));
+    assertThat(JavaOutput.spaces(4)).isSameInstanceAs(JavaOutput.spaces(4));
+    assertThat(JavaOutput.spaces(0)).isEmpty();
+    assertThat(JavaOutput.spaces(104)).isEqualTo(" ".repeat(104));
+  }
+
+  @Test
+  public void maxLineLengthExactBoundary() throws Exception {
+    // "class T extends S {}" is exactly 20 characters. At column 0 it fits within maxLineLength=20.
+    // If Doc.State column was initialized > 0, it would break before 'extends'.
+    String input = "class T extends S {}\n";
+    Formatter formatter =
+        new Formatter(
+            JavaFormatterOptions.builder()
+                .style(Style.GOOGLE.toBuilder().maxLineLength(20).build())
+                .build());
+    assertThat(formatter.formatSource(input)).isEqualTo("class T extends S {}\n");
+  }
+
+  @Test
+  public void maxLineLengthOutOfRange() {
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class, () -> Style.builder().maxLineLength(0).build());
+    assertThat(e).hasMessageThat().contains("maxLineLength must be between 1 and 999, was: 0");
+
+    e =
+        assertThrows(
+            IllegalArgumentException.class, () -> Style.builder().maxLineLength(-1).build());
+    assertThat(e).hasMessageThat().contains("maxLineLength must be between 1 and 999, was: -1");
+
+    e =
+        assertThrows(
+            IllegalArgumentException.class, () -> Style.builder().maxLineLength(1000).build());
+    assertThat(e).hasMessageThat().contains("maxLineLength must be between 1 and 999, was: 1000");
+
+    assertThat(Style.builder().maxLineLength(999).build().maxLineLength()).isEqualTo(999);
+  }
+
+  @Test
+  public void valueClassAndRecord() throws Exception {
+    assume().that(Enums.getIfPresent(Modifier.class, "VALUE").isPresent()).isTrue();
+    String input =
+        """
+        value final public class PointValueClass {
+          final int x;
+          final int y;
+
+          PointValueClass(int x, int y) {
+            this.x = x;
+            this.y = y;
+          }
+        }
+
+        value public record PointValueRecord(int x, int y) {}
+        """;
+    String expected =
+        """
+        public final value class PointValueClass {
+          final int x;
+          final int y;
+
+          PointValueClass(int x, int y) {
+            this.x = x;
+            this.y = y;
+          }
+        }
+
+        public value record PointValueRecord(int x, int y) {}
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void valueLambdaParameter() throws Exception {
+    String input =
+        """
+        import java.util.Map;
+
+        class T {
+          void f(Map<String, String> map) {
+            map.forEach((key, value) -> System.err.println(key + value));
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(input);
+  }
+
+  @Test
+  public void fenceCommentsAssert() throws Exception {
+    String input =
+        """
+        class T {
+          void f(int x) {
+            assert
+              // comment
+              x > 0 : "positive";
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f(int x) {
+            assert
+                // comment
+                x > 0
+                : "positive";
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void fenceCommentsEnumSemicolon() throws Exception {
+    String input =
+        """
+        enum E1 {
+          A,
+            // comment
+            ;
+        }
+
+        enum E2 {
+          A
+            // comment
+            ;
+        }
+        """;
+    String expected =
+        """
+        enum E1 {
+          A,
+          // comment
+          ;
+        }
+
+        enum E2 {
+          A
+          // comment
+          ;
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void fenceCommentsForInitializer() throws Exception {
+    String input =
+        """
+        class T {
+          void f(int n) {
+            for (
+              // comment
+              int i = 0; i < n; i++) {}
+            for (
+              /* comment */
+              int i = 0; i < n; i++) {}
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f(int n) {
+            for (
+                // comment
+                int i = 0;
+                i < n;
+                i++) {}
+            for (
+                /* comment */
+                int i = 0;
+                i < n;
+                i++) {}
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void fenceCommentsTryWithResources() throws Exception {
+    String input =
+        """
+        class T {
+          void f(AutoCloseable a, AutoCloseable b) throws Exception {
+            try (
+              // comment
+              AutoCloseable r1 = a; AutoCloseable r2 = b) {}
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f(AutoCloseable a, AutoCloseable b) throws Exception {
+            try (
+                // comment
+                AutoCloseable r1 = a;
+                AutoCloseable r2 = b) {}
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void fenceCommentsMultiCatch() throws Exception {
+    String input =
+        """
+        class T {
+          void f() {
+            try {
+            } catch (
+              // comment
+              IllegalArgumentException | IllegalStateException e) {
+            }
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          void f() {
+            try {
+            } catch (
+                // comment
+                IllegalArgumentException | IllegalStateException e) {
+            }
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void fenceCommentsTypeArguments() throws Exception {
+    String input =
+        """
+        class T {
+          <U> T() {}
+
+          static <U> void g() {}
+
+          void f() {
+            new <
+              // comment
+              String>T();
+            Runnable r =
+                T
+                    ::<
+                      // comment
+                      String>g;
+          }
+        }
+        """;
+    String expected =
+        """
+        class T {
+          <U> T() {}
+
+          static <U> void g() {}
+
+          void f() {
+            new <
+                // comment
+                String>T();
+            Runnable r =
+                T
+                    ::<
+                        // comment
+                        String>g;
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
   }
 }

@@ -23,10 +23,8 @@ import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Encapsulates information about a file to be formatted, including which parts of the file to
- * format.
- */
+/// Encapsulates information about a file to be formatted, including which parts of the file to
+/// format.
 class FormatFileCallable implements Callable<FormatFileCallable.Result> {
 
   record Result(
@@ -68,29 +66,26 @@ class FormatFileCallable implements Callable<FormatFileCallable.Result> {
   public Result call() {
     try {
       if (parameters.fixImportsOnly()) {
-        return Result.create(path, input, fixImports(input), /* exception= */ null);
+        return Result.create(
+            path,
+            input,
+            Formatter.fixImports(
+                input, options.style(), parameters.removeUnusedImports(), parameters.sortImports()),
+            /* exception= */ null);
       }
 
       Formatter formatter = new Formatter(options);
-      String formatted = formatter.formatSource(input, characterRanges(input).asRanges());
-      formatted = fixImports(formatted);
-      if (parameters.reflowLongStrings()) {
-        formatted = StringWrapper.wrap(Formatter.MAX_LINE_LENGTH, formatted, formatter);
-      }
+      String formatted =
+          formatter.formatSource(
+              input,
+              characterRanges(input).asRanges(),
+              parameters.removeUnusedImports(),
+              parameters.sortImports(),
+              parameters.reflowLongStrings());
       return Result.create(path, input, formatted, /* exception= */ null);
     } catch (FormatterException e) {
       return Result.create(path, input, /* output= */ null, e);
     }
-  }
-
-  private String fixImports(String input) throws FormatterException {
-    if (parameters.removeUnusedImports()) {
-      input = RemoveUnusedImports.removeUnusedImports(input);
-    }
-    if (parameters.sortImports()) {
-      input = ImportOrderer.reorderImports(input, options.style());
-    }
-    return input;
   }
 
   private RangeSet<Integer> characterRanges(String input) {

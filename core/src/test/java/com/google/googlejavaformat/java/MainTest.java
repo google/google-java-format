@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Locale;
 import org.junit.Rule;
@@ -42,7 +43,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Tests for {@link Main}. */
+/// Tests for [Main].
 @RunWith(JUnit4.class)
 public class MainTest {
 
@@ -274,7 +275,7 @@ class Test {
 
         class Test {
           ArrayList<String> a = new ArrayList<>();
-        ArrayList<String> b = new ArrayList<>();
+          ArrayList<String> b = new ArrayList<>();
         }\
         """;
     StringWriter out = new StringWriter();
@@ -285,7 +286,24 @@ class Test {
             new ByteArrayInputStream(input.getBytes(UTF_8)));
     assertThat(main.format("-", "-lines", "4")).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(expected);
-    // Line 4 gets rewritten because of `-lines 4`, but line 5 does not.
+
+    String expectedNoReindent =
+        """
+        import java.util.ArrayList;
+
+        class Test {
+          ArrayList<String> a = new ArrayList<>();
+        ArrayList<String> b = new ArrayList<>();
+        }\
+        """;
+    out = new StringWriter();
+    main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            new ByteArrayInputStream(input.getBytes(UTF_8)));
+    assertThat(main.format("-", "-lines", "4", "--cleanup=false")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expectedNoReindent);
   }
 
   // test that errors are reported on the right line when imports are removed
@@ -586,6 +604,41 @@ class T {
     assertThat(out.toString()).isEqualTo(expected);
   }
 
+  // https://github.com/google/google-java-format/issues/1114
+  @Test
+  public void reflowLongStrings_onlyInRequestedLines() throws Exception {
+    String input =
+        """
+        class T {
+          String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+          String t = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+        }
+        """;
+    String expected =
+        """
+        class T {
+          String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+          String t =
+              "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance"
+                  + " to interrupt";
+        }
+        """;
+    assertThat(formatStdin(input, "-lines", "3")).isEqualTo(expected);
+    // Nothing on the first line needs formatting, so nothing changes.
+    assertThat(formatStdin(input, "-lines", "1")).isEqualTo(input);
+  }
+
+  private static String formatStdin(String input, String... args) throws Exception {
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), in);
+    String[] argsWithStdin = Arrays.copyOf(args, args.length + 1);
+    argsWithStdin[args.length] = "-";
+    assertWithMessage(err.toString()).that(main.format(argsWithStdin)).isEqualTo(0);
+    return out.toString();
+  }
+
   @Test
   public void noFormatJavadoc() throws Exception {
     String input =
@@ -658,6 +711,68 @@ class T {
   }
 
   @Test
+  public void cleanupsOptionTest() throws Exception {
+    String input =
+        """
+        class Test {
+          int x = 1;
+          ;
+        }
+        """;
+    String cleaned =
+        """
+        class Test {
+          int x = 1;
+        }
+        """;
+    assertThat(new Formatter(JavaFormatterOptions.builder().build()).formatSource(input))
+        .isEqualTo(cleaned);
+    assertThat(
+            new Formatter(JavaFormatterOptions.builder().cleanup(false).build())
+                .formatSource(input))
+        .isEqualTo(input);
+  }
+
+  @Test
+  public void cleanupFlag() throws Exception {
+    String input =
+        """
+        class Test {
+          int x = 1;
+          ;
+        }
+        """;
+    String cleaned =
+        """
+        class Test {
+          int x = 1;
+        }
+        """;
+    {
+      InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
+      StringWriter out = new StringWriter();
+      Main main =
+          new Main(
+              new PrintWriter(out, true),
+              new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+              in);
+      assertThat(main.format("-")).isEqualTo(0);
+      assertThat(out.toString()).isEqualTo(cleaned);
+    }
+    {
+      InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
+      StringWriter out = new StringWriter();
+      Main main =
+          new Main(
+              new PrintWriter(out, true),
+              new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+              in);
+      assertThat(main.format("--cleanup=false", "-")).isEqualTo(0);
+      assertThat(out.toString()).isEqualTo(input);
+    }
+  }
+
+  @Test
   public void syntaxError() throws Exception {
     Path path = testFolder.newFile("Test.java").toPath();
     String input =
@@ -710,5 +825,37 @@ class T {
             .replace("«path»", path.toString())
             .replace("\n", System.lineSeparator());
     assertThat(err.toString()).isEqualTo(expected);
+  }
+
+  @Test
+  public void maxLineLength() throws Exception {
+    String input =
+        """
+        class Test {
+          void f() {
+            int x = aaaaaaaaaa + bbbbbbbbbb + cccccccccc;
+          }
+        }
+        """;
+    String expected =
+        """
+        class Test {
+          void f() {
+            int x =
+                aaaaaaaaaa
+                    + bbbbbbbbbb
+                    + cccccccccc;
+          }
+        }
+        """;
+    InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    Main main =
+        new Main(
+            new PrintWriter(out, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+            in);
+    assertThat(main.format("--max-line-length=30", "-")).isEqualTo(0);
+    assertThat(out.toString()).isEqualTo(expected);
   }
 }

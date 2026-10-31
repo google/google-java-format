@@ -18,13 +18,14 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterators;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** {@link Newlines}Test */
+/// [Newlines]Test
 @RunWith(JUnit4.class)
 public class NewlinesTest {
   @Test
@@ -59,6 +60,46 @@ public class NewlinesTest {
         .containsExactly("foo\r\n", "bar\r\n");
     assertThat(ImmutableList.copyOf(Newlines.lineIterator("foo\r\nbar")))
         .containsExactly("foo\r\n", "bar");
+  }
+
+  @Test
+  public void lastLineStart() {
+    assertThat(Newlines.lastLineStart("")).isEqualTo(0);
+    assertThat(Newlines.lastLineStart("foo")).isEqualTo(0);
+    assertThat(Newlines.lastLineStart("foo\nbar")).isEqualTo(4);
+    assertThat(Newlines.lastLineStart("foo\rbar")).isEqualTo(4);
+    assertThat(Newlines.lastLineStart("foo\r\nbar")).isEqualTo(5);
+    assertThat(Newlines.lastLineStart("foo\n")).isEqualTo(4);
+    assertThat(Newlines.lastLineStart("foo\r\n")).isEqualTo(5);
+    assertThat(Newlines.lastLineStart("a\n\r\nb")).isEqualTo(4);
+    assertThat(Newlines.lastLineStart("a\r\rb")).isEqualTo(3);
+  }
+
+  @Test
+  public void lastLineStart_matchesLineOffsetIterator() {
+    for (String input :
+        ImmutableList.of(
+            "", "foo", "foo\nbar\n", "foo\rbar", "foo\r\nbar\r\n", "\n", "\r\n\r", "a\n\r\nb")) {
+      assertThat(Newlines.lastLineStart(input))
+          .isEqualTo(Iterators.getLast(Newlines.lineOffsetIterator(input)));
+    }
+  }
+
+  @Test
+  public void isLineStart() {
+    assertThat(Newlines.isLineStart("ab", 0)).isTrue();
+    assertThat(Newlines.isLineStart("ab", 1)).isFalse();
+    assertThat(Newlines.isLineStart("a\nb", 2)).isTrue();
+    assertThat(Newlines.isLineStart("a\rb", 2)).isTrue();
+    assertThat(Newlines.isLineStart("a\r\nb", 3)).isTrue();
+  }
+
+  @Test
+  public void containsBreaks_region() {
+    assertThat(Newlines.containsBreaks("ab\ncd", 0, 2)).isFalse();
+    assertThat(Newlines.containsBreaks("ab\ncd", 0, 3)).isTrue();
+    assertThat(Newlines.containsBreaks("ab\rcd", 2, 3)).isTrue();
+    assertThat(Newlines.containsBreaks("ab\ncd", 3, 5)).isFalse();
   }
 
   @Test

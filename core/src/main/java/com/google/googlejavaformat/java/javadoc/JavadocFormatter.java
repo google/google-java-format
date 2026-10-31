@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat.java.javadoc;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.googlejavaformat.java.javadoc.JavadocLexer.lex;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
@@ -60,29 +61,24 @@ import com.google.googlejavaformat.java.javadoc.Token.SnippetEnd;
 import com.google.googlejavaformat.java.javadoc.Token.TableCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.TableOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.Whitespace;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Entry point for formatting Javadoc.
- *
- * <p>This stateless class reads tokens from the stateful lexer and translates them to "requests"
- * and "writes" to the stateful writer. It also munges tokens into "standardized" forms. Finally, it
- * performs postprocessing to convert the written Javadoc to a one-liner if possible or to leave a
- * single blank line if it's empty.
- */
+/// Entry point for formatting Javadoc.
+///
+/// This stateless class reads tokens from the stateful lexer and translates them to "requests" and
+/// "writes" to the stateful writer. It also munges tokens into "standardized" forms. Finally, it
+/// performs postprocessing to convert the written Javadoc to a one-liner if possible or to leave a
+/// single blank line if it's empty.
 public final class JavadocFormatter {
 
-  static final int MAX_LINE_LENGTH = 100;
-
-  /**
-   * Formats the given Javadoc comment. A classic Javadoc comment must start with ∕✱✱ and end with
-   * ✱∕, and the output will start and end with the same characters. A Markdown Javadoc comment
-   * consists of lines each of which starts with ///, and the output will also consist of such
-   * lines.
-   */
-  public static String formatJavadoc(String input, int blockIndent) {
+  /// Formats the given Javadoc comment. A classic Javadoc comment must start with ∕✱✱ and end with
+  /// ✱∕, and the output will start and end with the same characters. A Markdown Javadoc comment
+  /// consists of lines each of which starts with ///, and the output will also consist of such
+  /// lines.
+  public static String formatJavadoc(String input, int blockIndent, int maxLineLength) {
     boolean classicJavadoc =
         switch (input) {
           case String s when s.startsWith("/**") -> true;
@@ -90,22 +86,23 @@ public final class JavadocFormatter {
           default ->
               throw new IllegalArgumentException("Input does not start with /** or ///: " + input);
         };
-    String inputForLexer = classicJavadoc ? input : ("///" + markdownCommentText(input));
+    String inputForLexer = classicJavadoc ? classicCommentText(input) : markdownCommentText(input);
     ImmutableList<Token> tokens;
     try {
       tokens = lex(inputForLexer, classicJavadoc);
     } catch (LexException e) {
       return input;
     }
-    String result = render(tokens, blockIndent, classicJavadoc);
+    String result = render(tokens, blockIndent, classicJavadoc, maxLineLength);
     if (classicJavadoc) {
-      result = makeSingleLineIfPossible(blockIndent, result);
+      result = makeSingleLineIfPossible(blockIndent, result, maxLineLength);
     }
     return result;
   }
 
-  private static String render(List<Token> input, int blockIndent, boolean classicJavadoc) {
-    JavadocWriter output = new JavadocWriter(blockIndent, classicJavadoc);
+  private static String render(
+      List<Token> input, int blockIndent, boolean classicJavadoc, int maxLineLength) {
+    JavadocWriter output = new JavadocWriter(blockIndent, classicJavadoc, maxLineLength);
     for (Token token : input) {
       switch (token) {
         case BeginJavadoc unused -> output.writeBeginJavadoc();
@@ -176,25 +173,23 @@ public final class JavadocFormatter {
 
   private static final Pattern ONE_CONTENT_LINE_PATTERN = compile(" */[*][*]\n *[*] (.*)\n *[*]/");
 
-  /**
-   * Returns the given string or a one-line version of it (e.g., "∕✱✱ Tests for foos. ✱∕") if it
-   * fits on one line.
-   */
-  private static String makeSingleLineIfPossible(int blockIndent, String input) {
+  /// Returns the given string or a one-line version of it (e.g., "∕✱✱ Tests for foos. ✱∕") if it
+  /// fits on one line.
+  private static String makeSingleLineIfPossible(int blockIndent, String input, int maxLineLength) {
     Matcher matcher = ONE_CONTENT_LINE_PATTERN.matcher(input);
     if (matcher.matches()) {
       String line = matcher.group(1);
       if (line.isEmpty()) {
         return "/** */";
-      } else if (oneLineJavadoc(line, blockIndent)) {
+      } else if (oneLineJavadoc(line, blockIndent, maxLineLength)) {
         return "/** " + line + " */";
       }
     }
     return input;
   }
 
-  private static boolean oneLineJavadoc(String line, int blockIndent) {
-    int oneLinerContentLength = MAX_LINE_LENGTH - "/**  */".length() - blockIndent;
+  private static boolean oneLineJavadoc(String line, int blockIndent, int maxLineLength) {
+    int oneLinerContentLength = maxLineLength - "/**  */".length() - blockIndent;
     if (line.length() > oneLinerContentLength) {
       return false;
     }
@@ -208,10 +203,63 @@ public final class JavadocFormatter {
 
   private static final CharMatcher NOT_SPACE_OR_TAB = CharMatcher.noneOf(" \t");
 
-  /**
-   * Returns the given string with the leading /// and any common leading whitespace removed from
-   * each line. The resultant string can then be fed to a standard Markdown parser.
-   */
+  private static final Pattern CLASSIC_PREFIX_PATTERN = Pattern.compile("^[ \\t]*[*][ \\t]?");
+
+  private static String stripJavadocBeginAndEnd(String input) {
+    checkArgument(input.startsWith("/**"), "Missing /**: %s", input);
+    checkArgument(input.endsWith("*/") && input.length() > 4, "Missing */: %s", input);
+    int end = input.length() - "*/".length();
+    while (end > "/**".length() && input.charAt(end - 1) == '*') {
+      end--;
+    }
+    return input.substring("/**".length(), end);
+  }
+
+  /// Returns the given classic Javadoc comment after removing the leading ∕✱✱, trailing ✱∕, and any
+  /// leading asterisks and common leading whitespace on each line.
+  private static String classicCommentText(String input) {
+    String stripped = stripJavadocBeginAndEnd(input);
+    List<String> lines = stripped.lines().toList();
+    if (lines.isEmpty()) {
+      // Can't happen: it would only happen for `/***/`, but we filter out comments starting `/***`.
+      return "";
+    }
+    // The first line is handled specially in case we have something like `/** * foo\n * bar\n */`.
+    // The end result should not strip the `*` from `* foo`.
+    List<String> processedLines = new ArrayList<>();
+    processedLines.add(lines.get(0));
+    List<String> continuations = lines.subList(1, lines.size());
+    int starPrefixLength =
+        continuations.stream()
+            .map(CLASSIC_PREFIX_PATTERN::matcher)
+            .filter(Matcher::find)
+            .mapToInt(Matcher::end)
+            .min()
+            .orElse(0);
+    int nonStarMinLeading =
+        continuations.stream()
+            .filter(line -> !CLASSIC_PREFIX_PATTERN.matcher(line).find())
+            .filter(line -> NOT_SPACE_OR_TAB.matchesAnyOf(line))
+            .mapToInt(NOT_SPACE_OR_TAB::indexIn)
+            .min()
+            .orElse(0);
+    int nonStarStripCount = Math.min(starPrefixLength, nonStarMinLeading);
+    for (String line : continuations) {
+      Matcher m = CLASSIC_PREFIX_PATTERN.matcher(line);
+      if (m.find()) {
+        processedLines.add(m.replaceFirst(""));
+      } else {
+        processedLines.add(
+            line.length() >= nonStarStripCount ? line.substring(nonStarStripCount) : "");
+      }
+    }
+    // Unlike Markdown comments, stripping common leading whitespace is not mandated by any
+    // specification. But it's not forbidden either.
+    return stripCommonLeadingWhitespace(processedLines);
+  }
+
+  /// Returns the given string with the leading /// and any common leading whitespace removed from
+  /// each line. The resultant string can then be fed to a standard Markdown parser.
   private static String markdownCommentText(String input) {
     List<String> lines =
         input
@@ -219,6 +267,10 @@ public final class JavadocFormatter {
             .peek(line -> checkState(line.contains("///"), "Line does not contain ///: %s", line))
             .map(line -> line.substring(line.indexOf("///") + 3))
             .toList();
+    return stripCommonLeadingWhitespace(lines);
+  }
+
+  private static String stripCommonLeadingWhitespace(List<String> lines) {
     int leadingSpace =
         lines.stream()
             .filter(line -> NOT_SPACE_OR_TAB.matchesAnyOf(line))

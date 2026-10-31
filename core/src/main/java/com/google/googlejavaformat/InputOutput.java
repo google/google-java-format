@@ -22,38 +22,34 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** This class defines methods common to an {@link Input} or an {@link Output}. */
+/// This class defines methods common to an [Input] or an [Output].
 public abstract class InputOutput {
   private ImmutableList<String> lines = ImmutableList.of();
 
   protected static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
   private static final DiscreteDomain<Integer> INTEGERS = DiscreteDomain.integers();
 
-  /** Set the lines. */
+  /// Set the lines.
   protected final void setLines(ImmutableList<String> lines) {
     this.lines = lines;
   }
 
-  /**
-   * Get the line count.
-   *
-   * @return the line count
-   */
+  /// Get the line count.
+  ///
+  /// @return the line count
   public final int getLineCount() {
     return lines.size();
   }
 
-  /**
-   * Get a line.
-   *
-   * @param lineI the line number
-   * @return the line
-   */
+  /// Get a line.
+  ///
+  /// @param lineI the line number
+  /// @return the line
   public final String getLine(int lineI) {
     return lines.get(lineI);
   }
 
-  /** The {@link Range}s of the tokens or comments lying on each line, in any part. */
+  /// The [Range]s of the tokens or comments lying on each line, in any part.
   protected final List<Range<Integer>> ranges = new ArrayList<>();
 
   private static void addToRanges(List<Range<Integer>> ranges, int i, int k) {
@@ -79,13 +75,11 @@ public abstract class InputOutput {
     }
   }
 
-  /**
-   * Given an {@code InputOutput}, compute the map from tok indices to line ranges.
-   *
-   * @param put the {@code InputOutput}
-   * @return the map from {@code com.google.googlejavaformat.java.JavaInput.Tok} indices to line
-   *     ranges in this {@code put}
-   */
+  /// Given an `InputOutput`, compute the map from tok indices to line ranges.
+  ///
+  /// @param put the `InputOutput`
+  /// @return the map from `com.google.googlejavaformat.java.JavaInput.Tok` indices to line ranges
+  ///   in this `put`
   public static Map<Integer, Range<Integer>> makeKToIJ(InputOutput put) {
     Map<Integer, Range<Integer>> map = new HashMap<>();
     int ijN = put.getLineCount();
@@ -102,12 +96,10 @@ public abstract class InputOutput {
     return map;
   }
 
-  /**
-   * Get the {@link Range} of {@link Input.Tok}s lying in any part on a line.
-   *
-   * @param lineI the line number
-   * @return the {@link Range} of {@link Input.Tok}s on the specified line
-   */
+  /// Get the [Range] of [Input.Tok]s lying in any part on a line.
+  ///
+  /// @param lineI the line number
+  /// @return the [Range] of [Input.Tok]s on the specified line
   public final Range<Integer> getRanges(int lineI) {
     return 0 <= lineI && lineI < ranges.size() ? ranges.get(lineI) : EMPTY_RANGE;
   }

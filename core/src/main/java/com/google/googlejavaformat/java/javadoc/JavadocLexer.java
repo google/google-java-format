@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat.java.javadoc;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.Iterators.peekingIterator;
@@ -69,23 +68,15 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-/** Lexer for the Javadoc formatter. */
+/// Lexer for the Javadoc formatter.
 final class JavadocLexer {
-  /** Takes a Javadoc comment, including ∕✱✱ and ✱∕, and returns tokens, including ∕✱✱ and ✱∕. */
+  /// Takes a Javadoc comment, including ∕✱✱ and ✱∕, and returns tokens, including ∕✱✱ and ✱∕.
   static ImmutableList<Token> lex(String input, boolean classicJavadoc) throws LexException {
     input = normalizeLineEndings(input);
     MarkdownPositions markdownPositions;
     if (classicJavadoc) {
-      /*
-       * TODO(cpovirk): In theory, we should interpret Unicode escapes (yet output them in their
-       * original form). This would mean mean everything from an encoded ∕✱✱ to an encoded <pre>
-       * tag, so we'll probably never bother.
-       */
-      input = stripJavadocBeginAndEnd(input);
       markdownPositions = MarkdownPositions.EMPTY;
     } else {
-      checkArgument(input.startsWith("///"));
-      input = input.substring("///".length());
       try {
         markdownPositions = MarkdownPositions.parse(input);
       } catch (UnsupportedOperationException e) {
@@ -96,7 +87,7 @@ final class JavadocLexer {
         .generateTokens();
   }
 
-  /** The lexer crashes on windows line endings, so for now just normalize to `\n`. */
+  /// The lexer crashes on windows line endings, so for now just normalize to `\n`.
   // TODO(cushon): use the platform line separator for output
   private static String normalizeLineEndings(String input) {
     return NON_UNIX_LINE_ENDING.matcher(input).replaceAll("\n");
@@ -104,47 +95,31 @@ final class JavadocLexer {
 
   private static final Pattern NON_UNIX_LINE_ENDING = Pattern.compile("\r\n?");
 
-  private static String stripJavadocBeginAndEnd(String input) {
-    /*
-     * We do this ahead of time so that the main part of the lexer need not say things like
-     * "(?![*]/)" to avoid accidentally swallowing ✱∕ when consuming a newline.
-     */
-    checkArgument(input.startsWith("/**"), "Missing /**: %s", input);
-    checkArgument(input.endsWith("*/") && input.length() > 4, "Missing */: %s", input);
-    return input.substring("/**".length(), input.length() - "*/".length());
-  }
-
-  /**
-   * An element of the nested contexts we might be in. For example, if we are inside {@code
-   * <pre>{@code ...}</pre>} then the stack of nested contexts would be {@code PRE} plus {@code
-   * CODE_CONTEXT}.
-   */
+  /// An element of the nested contexts we might be in. For example, if we are inside `<pre>{@code
+  /// ...}</pre>` then the stack of nested contexts would be `PRE` plus `CODE_CONTEXT`.
   enum NestingContext {
-    /** {@code <pre>...</pre>}. */
+    /// `<pre>...</pre>`.
     HTML_PRE_CONTEXT,
 
-    /** {@code <code>...</code>}. */
+    /// `<code>...</code>`.
     HTML_CODE_CONTEXT,
 
-    /** Markdown {@code `...`}. */
+    /// Markdown `` `...` ``.
     MARKDOWN_CODE_CONTEXT,
 
-    /** {@code <table>...</table>}. */
+    /// `<table>...</table>`.
     TABLE,
 
-    /** {@code {@snippet ...}}. */
+    /// `{@snippet ...}`.
     SNIPPET_CONTEXT,
 
-    /** Nested braces within one of the other contexts. */
+    /// Nested braces within one of the other contexts.
     BRACE_CONTEXT,
 
-    /**
-     * An inline tag such as {@code {@link ...}} or {@code {@code ...}}, but not {@code {@snippet
-     * ...}}.
-     */
+    /// An inline tag such as `{@link ...}` or `{@code ...}`, but not `{@snippet ...}`.
     INLINE_TAG_CONTEXT,
 
-    /** Markdown {@code >}. */
+    /// Markdown `>`.
     BLOCKQUOTE
   }
 
@@ -248,8 +223,7 @@ final class JavadocLexer {
   private Function<String, Token> consumeToken() throws LexException {
     boolean preserveExistingFormatting = preserveExistingFormatting();
 
-    Pattern newlinePattern = classicJavadoc ? CLASSIC_NEWLINE_PATTERN : MARKDOWN_NEWLINE_PATTERN;
-    if (input.tryConsumeRegex(newlinePattern)) {
+    if (input.tryConsumeRegex(NEWLINE_PATTERN)) {
       somethingSinceNewline = false;
       return preserveExistingFormatting ? ForcedNewline::new : Whitespace::new;
     }
@@ -412,19 +386,16 @@ final class JavadocLexer {
     }
   }
 
-  /**
-   * Join together adjacent literal tokens, and join together adjacent whitespace tokens.
-   *
-   * <p>For literal tokens, this means something like {@code ["<b>", "foo", "</b>"] =>
-   * ["<b>foo</b>"]}. See {@link #literalPattern()} for discussion of why those tokens are separate
-   * to begin with.
-   *
-   * <p>Whitespace tokens are treated analogously. The joining of whitespace tokens allows our
-   * Markdown output to detect "loose lists" and our Traditional output to {@linkplain
-   * #inferParagraphTags infer where to place paragraph tags}.
-   *
-   * <p>Note that we do <i>not</i> merge a literal token and a whitespace token together.
-   */
+  /// Join together adjacent literal tokens, and join together adjacent whitespace tokens.
+  ///
+  /// For literal tokens, this means something like `["<b>", "foo", "</b>"] => ["<b>foo</b>"]`. See
+  /// [#literalPattern()] for discussion of why those tokens are separate to begin with.
+  ///
+  /// Whitespace tokens are treated analogously. The joining of whitespace tokens allows our
+  /// Markdown output to detect "loose lists" and our Traditional output to [infer where to place
+  /// paragraph tags][#inferParagraphTags].
+  ///
+  /// Note that we do *not* merge a literal token and a whitespace token together.
   private static ImmutableList<Token> joinAdjacentLiteralsAndAdjacentWhitespace(List<Token> input) {
     /*
      * Note: Our final token is always END_JAVADOC. This saves us some trouble:
@@ -467,6 +438,16 @@ final class JavadocLexer {
         continue;
       }
 
+      if (seenWhitespace.contains("\n")
+          && !hasMultipleNewlines(seenWhitespace)
+          && isHyphenatedWordEnd(accumulated)
+          && tokens.peek() instanceof Literal literal
+          && isWordStart(literal.value())
+          && !isSuspendedHyphenConjunction(literal.value())) {
+        accumulated.append(tokens.next().value());
+        continue;
+      }
+
       output.add(new Literal(accumulated.toString()));
       accumulated.setLength(0);
 
@@ -477,11 +458,24 @@ final class JavadocLexer {
       // We have another token coming. Leave it for the next iteration.
     }
 
-    /*
-     * TODO(cpovirk): Another case where we could try to join tokens is if a line ends with
-     * /[^ -]-/, as in "non-\nblocking."
-     */
     return output.build();
+  }
+
+  private static boolean isHyphenatedWordEnd(CharSequence cs) {
+    int length = cs.length();
+    return length >= 2 && cs.charAt(length - 1) == '-' && isWordChar(cs.charAt(length - 2));
+  }
+
+  private static boolean isWordChar(char c) {
+    return Character.isLetterOrDigit(c) || c == '_';
+  }
+
+  private static boolean isWordStart(String s) {
+    return !s.isEmpty() && isWordChar(s.charAt(0));
+  }
+
+  private static boolean isSuspendedHyphenConjunction(String s) {
+    return s.equals("and") || s.equals("or");
   }
 
   private static String consumeAdjacentWhitespace(PeekingIterator<Token> tokens) {
@@ -492,13 +486,11 @@ final class JavadocLexer {
     return seenWhitespace.toString();
   }
 
-  /**
-   * Where the input has two consecutive line breaks between literals, insert a {@code <p>} tag
-   * between the literals.
-   *
-   * <p>This method must be called after {@link #joinAdjacentLiteralsAndAdjacentWhitespace}, as it
-   * assumes that adjacent whitespace tokens have already been joined.
-   */
+  /// Where the input has two consecutive line breaks between literals, insert a `<p>` tag between
+  /// the literals.
+  ///
+  /// This method must be called after [#joinAdjacentLiteralsAndAdjacentWhitespace], as it assumes
+  /// that adjacent whitespace tokens have already been joined.
   private static ImmutableList<Token> inferParagraphTags(List<Token> input) {
     ImmutableList.Builder<Token> output = ImmutableList.builder();
 
@@ -528,14 +520,12 @@ final class JavadocLexer {
      */
   }
 
-  /**
-   * Replaces whitespace after a {@code href=...>} token with an "optional link break." This allows
-   * us to output either {@code <a href=foo>foo</a>} or {@code <a href=foo>\nfoo</a>}, depending on
-   * how much space we have left on the line.
-   *
-   * <p>This method must be called after {@link #joinAdjacentLiteralsAndAdjacentWhitespace}, as it
-   * assumes that adjacent whitespace tokens have already been joined.
-   */
+  /// Replaces whitespace after a `href=...>` token with an "optional link break." This allows us to
+  /// output either `<a href=foo>foo</a>` or `<a href=foo>\nfoo</a>`, depending on how much space we
+  /// have left on the line.
+  ///
+  /// This method must be called after [#joinAdjacentLiteralsAndAdjacentWhitespace], as it assumes
+  /// that adjacent whitespace tokens have already been joined.
   private static ImmutableList<Token> optionalizeSpacesAfterLinks(List<Token> input) {
     ImmutableList.Builder<Token> output = ImmutableList.builder();
 
@@ -560,11 +550,9 @@ final class JavadocLexer {
      */
   }
 
-  /**
-   * Adjust indentation inside `<pre>{@code` blocks.
-   *
-   * <p>Also trim leading and trailing blank lines, and move the trailing `}` to its own line.
-   */
+  /// Adjust indentation inside `<pre>{@code` blocks.
+  ///
+  /// Also trim leading and trailing blank lines, and move the trailing `}` to its own line.
   private static ImmutableList<Token> deindentPreCodeBlocks(List<Token> input) {
     // TODO: b/323389829 - De-indent {@snippet ...} blocks, too.
     ImmutableList.Builder<Token> output = ImmutableList.builder();
@@ -648,24 +636,20 @@ final class JavadocLexer {
     }
   }
 
-  /** Contexts that imply that we should not do HTML interpretation. */
+  /// Contexts that imply that we should not do HTML interpretation.
   private static final ImmutableSet<NestingContext> TAG_CONTEXTS =
       ImmutableSet.of(NestingContext.SNIPPET_CONTEXT, NestingContext.INLINE_TAG_CONTEXT);
 
-  /**
-   * Contexts that are opened by a left brace and closed by a matching right brace. These are the
-   * ones where a nested left brace should open a nested context.
-   */
+  /// Contexts that are opened by a left brace and closed by a matching right brace. These are the
+  /// ones where a nested left brace should open a nested context.
   private static final ImmutableSet<NestingContext> BRACE_CONTEXTS =
       ImmutableSet.of(
           NestingContext.SNIPPET_CONTEXT,
           NestingContext.INLINE_TAG_CONTEXT,
           NestingContext.BRACE_CONTEXT);
 
-  /**
-   * Contexts that preserve formatting, including line breaks and leading whitespace, within the
-   * context.
-   */
+  /// Contexts that preserve formatting, including line breaks and leading whitespace, within the
+  /// context.
   private static final ImmutableSet<NestingContext> PRESERVE_FORMATTING_CONTEXTS =
       ImmutableSet.of(
           NestingContext.HTML_PRE_CONTEXT,
@@ -687,13 +671,11 @@ final class JavadocLexer {
    * We'd remove the trailing whitespace later on (in JavaCommentsHelper.rewrite), but I feel safer
    * stripping it now: It otherwise might confuse our line-length count, which we use for wrapping.
    */
-  private static final Pattern CLASSIC_NEWLINE_PATTERN = compile("[ \t]*\n[ \t]*[*]?[ \t]?");
   /*
-   * With Traditional comments, the initial space and leading `*` characters (if any) are still
-   * present in the input, but with Markdown comments, the leading `///` characters and shared
-   * initial whitespace have been removed at the point where this pattern is applied.
+   * The leading `///` or `*` characters and shared initial whitespace have been removed at the
+   * point where this pattern is applied.
    */
-  private static final Pattern MARKDOWN_NEWLINE_PATTERN = compile("[ \t]*\n");
+  private static final Pattern NEWLINE_PATTERN = compile("[ \t]*\n");
   private static final Pattern BLOCKQUOTE_MARKER_PATTERN = compile("> ?");
 
   // We ensure elsewhere that we match this only at the beginning of a line.
@@ -743,11 +725,9 @@ final class JavadocLexer {
    */
   private static final Pattern MARKDOWN_LITERAL_PATTERN = compile(".\\p{IsAlphabetic}*", DOTALL);
 
-  /**
-   * The pattern used for "literals", things that do not have any special formatting meaning. This
-   * doesn't have to be a maximal sequence of literal characters, since adjacent literals will be
-   * joined together in a later step.
-   */
+  /// The pattern used for "literals", things that do not have any special formatting meaning. This
+  /// doesn't have to be a maximal sequence of literal characters, since adjacent literals will be
+  /// joined together in a later step.
   private Pattern literalPattern() {
     return classicJavadoc ? CLASSIC_LITERAL_PATTERN : MARKDOWN_LITERAL_PATTERN;
   }

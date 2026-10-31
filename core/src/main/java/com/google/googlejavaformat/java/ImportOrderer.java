@@ -13,7 +13,6 @@
  */
 package com.google.googlejavaformat.java;
 
-import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.primitives.Booleans.trueFirst;
 
 import com.google.common.base.CharMatcher;
@@ -22,51 +21,69 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Range;
+import com.google.errorprone.annotations.InlineMe;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import com.google.googlejavaformat.java.JavaInput.Tok;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-/** Orders imports in Java source code. */
+/// Orders imports in Java source code.
 public class ImportOrderer {
 
   private static final Splitter DOT_SPLITTER = Splitter.on('.');
 
-  /**
-   * Reorder the inputs in {@code text}, a complete Java program. On success, another complete Java
-   * program is returned, which is the same as the original except the imports are in order.
-   *
-   * @throws FormatterException if the input could not be parsed.
-   */
+  /// Reorder the inputs in `text`, a complete Java program. On success, another complete Java
+  /// program is returned, which is the same as the original except the imports are in order.
+  ///
+  /// @throws FormatterException if the input could not be parsed.
   public static String reorderImports(String text, Style style) throws FormatterException {
-    ImmutableList<Tok> toks = JavaInput.buildToks(text, CLASS_START);
-    return new ImportOrderer(text, toks, style).reorderImports();
+    ImmutableList<Replacement> replacements = findReplacements(text, style);
+    if (replacements.isEmpty()) {
+      return text;
+    }
+    Replacement replacement = replacements.get(0);
+    Range<Integer> range = replacement.replaceRange();
+    return text.substring(0, range.lowerEndpoint())
+        + replacement.replacementString()
+        + text.substring(range.upperEndpoint());
   }
 
-  /**
-   * Reorder the inputs in {@code text}, a complete Java program, in Google style. On success,
-   * another complete Java program is returned, which is the same as the original except the imports
-   * are in order.
-   *
-   * @deprecated Use {@link #reorderImports(String, Style)} instead
-   * @throws FormatterException if the input could not be parsed.
-   */
+  /// Reorder the inputs in `text`, a complete Java program, in Google style. On success, another
+  /// complete Java program is returned, which is the same as the original except the imports are in
+  /// order.
+  ///
+  /// @deprecated Use [#reorderImports(String, Style)] instead
+  /// @throws FormatterException if the input could not be parsed.
   @Deprecated
+  @InlineMe(
+      replacement = "ImportOrderer.reorderImports(text, Style.GOOGLE)",
+      imports = {
+        "com.google.googlejavaformat.java.ImportOrderer",
+        "com.google.googlejavaformat.java.JavaFormatterOptions.Style"
+      })
   public static String reorderImports(String text) throws FormatterException {
     return reorderImports(text, Style.GOOGLE);
   }
 
-  private String reorderImports() throws FormatterException {
+  /// Returns a replacement that rewrites the import block, from the start of the first import's
+  /// line through the whitespace after the last import, or an empty list if the imports are already
+  /// in order.
+  static ImmutableList<Replacement> findReplacements(String text, Style style)
+      throws FormatterException {
+    ImmutableList<Tok> toks = JavaInput.buildToks(text, CLASS_START);
+    return new ImportOrderer(text, toks, style).findReplacements();
+  }
+
+  private ImmutableList<Replacement> findReplacements() throws FormatterException {
     Optional<Integer> maybeFirstImport = findIdentifier(0, IMPORT_OR_CLASS_START);
     if (!maybeFirstImport.isPresent() || !tokenAt(maybeFirstImport.get()).equals("import")) {
       // No imports, so nothing to do.
-      return text;
+      return ImmutableList.of();
     }
     int firstImportStart = maybeFirstImport.get();
     int unindentedFirstImportStart = unindent(firstImportStart);
@@ -80,63 +97,59 @@ public class ImportOrderer {
       throw new FormatterException("Imports not contiguous (perhaps a comment separates them?)");
     }
 
-    StringBuilder result = new StringBuilder();
-    String prefix = tokString(0, unindentedFirstImportStart);
-    result.append(prefix);
+    int start = toks.get(unindentedFirstImportStart).getPosition();
+
+    StringBuilder replacement = new StringBuilder();
+    String prefix = text.substring(0, start);
     if (!prefix.isEmpty() && Newlines.getLineEnding(prefix) == null) {
-      result.append(lineSeparator).append(lineSeparator);
+      replacement.append(lineSeparator).append(lineSeparator);
     }
-    result.append(reorderedImportsString(imports.imports));
+    replacement.append(reorderedImportsString(imports.imports));
 
-    List<String> tail = new ArrayList<>();
-    tail.add(CharMatcher.whitespace().trimLeadingFrom(tokString(afterLastImport, toks.size())));
-    if (!toks.isEmpty()) {
-      Tok lastTok = getLast(toks);
-      int tailStart = lastTok.getPosition() + lastTok.length();
-      tail.add(text.substring(tailStart));
-    }
-    if (tail.stream().anyMatch(s -> !s.isEmpty())) {
-      result.append(lineSeparator);
-      tail.forEach(result::append);
+    int afterLastImportPos =
+        afterLastImport < toks.size() ? toks.get(afterLastImport).getPosition() : text.length();
+    String afterText = text.substring(afterLastImportPos);
+    String trimmedAfterText = CharMatcher.whitespace().trimLeadingFrom(afterText);
+    int numTrimmed = afterText.length() - trimmedAfterText.length();
+    int end = afterLastImportPos + numTrimmed;
+
+    if (end < text.length()) {
+      replacement.append(lineSeparator);
     }
 
-    return result.toString();
+    String replacementString = replacement.toString();
+    if (replacementString.equals(text.substring(start, end))) {
+      return ImmutableList.of();
+    }
+    return ImmutableList.of(Replacement.create(start, end, replacementString));
   }
 
-  /**
-   * {@link TokenKind}s that indicate the start of a type definition. We use this to avoid scanning
-   * the whole file, since we know that imports must precede any type definition.
-   */
+  /// [TokenKind]s that indicate the start of a type definition. We use this to avoid scanning the
+  /// whole file, since we know that imports must precede any type definition.
   private static final ImmutableSet<TokenKind> CLASS_START =
       ImmutableSet.of(TokenKind.CLASS, TokenKind.INTERFACE, TokenKind.ENUM);
 
-  /**
-   * We use this set to find the first import, and again to check that there are no imports after
-   * the place we stopped gathering them. An annotation definition ({@code @interface}) is two
-   * tokens, the second which is {@code interface}, so we don't need a separate entry for that.
-   */
+  /// We use this set to find the first import, and again to check that there are no imports after
+  /// the place we stopped gathering them. An annotation definition (`@interface`) is two tokens,
+  /// the second which is `interface`, so we don't need a separate entry for that.
   private static final ImmutableSet<String> IMPORT_OR_CLASS_START =
       ImmutableSet.of("import", "class", "interface", "enum");
 
-  /**
-   * A {@link Comparator} that orders {@link Import}s by Google Style, defined at
-   * https://google.github.io/styleguide/javaguide.html#s3.3.3-import-ordering-and-spacing.
-   *
-   * <p>Module imports are not allowed by Google Style, so we make an arbitrary choice about where
-   * to include them if they are present.
-   */
+  /// A [Comparator] that orders [Import]s by Google Style, defined at
+  /// https://google.github.io/styleguide/javaguide.html#s3.3.3-import-ordering-and-spacing.
+  ///
+  /// Module imports are not allowed by Google Style, so we make an arbitrary choice about where to
+  /// include them if they are present.
   private static final Comparator<Import> GOOGLE_IMPORT_COMPARATOR =
       Comparator.comparing(Import::importType).thenComparing(Import::imported);
 
-  /**
-   * A {@link Comparator} that orders {@link Import}s by AOSP Style, defined at
-   * https://source.android.com/setup/contribute/code-style#order-import-statements and implemented
-   * in IntelliJ at
-   * https://android.googlesource.com/platform/development/+/master/ide/intellij/codestyles/AndroidStyle.xml.
-   *
-   * <p>Module imports are not mentioned by Android Style, so we make an arbitrary choice about
-   * where to include them if they are present.
-   */
+  /// A [Comparator] that orders [Import]s by AOSP Style, defined at
+  /// https://source.android.com/setup/contribute/code-style#order-import-statements and implemented
+  /// in IntelliJ at
+  /// https://android.googlesource.com/platform/development/+/master/ide/intellij/codestyles/AndroidStyle.xml.
+  ///
+  /// Module imports are not mentioned by Android Style, so we make an arbitrary choice about where
+  /// to include them if they are present.
   private static final Comparator<Import> AOSP_IMPORT_COMPARATOR =
       Comparator.comparing(Import::importType)
           .thenComparing(Import::isAndroid, trueFirst())
@@ -144,18 +157,14 @@ public class ImportOrderer {
           .thenComparing(Import::isJava, trueFirst())
           .thenComparing(Import::imported);
 
-  /**
-   * Determines whether to insert a blank line between the {@code prev} and {@code curr} {@link
-   * Import}s based on Google style.
-   */
+  /// Determines whether to insert a blank line between the `prev` and `curr` [Import]s based on
+  /// Google style.
   private static boolean shouldInsertBlankLineGoogle(Import prev, Import curr) {
     return !prev.importType().equals(curr.importType());
   }
 
-  /**
-   * Determines whether to insert a blank line between the {@code prev} and {@code curr} {@link
-   * Import}s based on AOSP style.
-   */
+  /// Determines whether to insert a blank line between the `prev` and `curr` [Import]s based on
+  /// AOSP style.
   private static boolean shouldInsertBlankLineAosp(Import prev, Import curr) {
     if (!prev.importType().equals(curr.importType())) {
       return true;
@@ -177,14 +186,16 @@ public class ImportOrderer {
     this.text = text;
     this.toks = toks;
     this.lineSeparator = Newlines.guessLineSeparator(text);
-    if (style.equals(Style.GOOGLE)) {
-      this.importComparator = GOOGLE_IMPORT_COMPARATOR;
-      this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineGoogle;
-    } else if (style.equals(Style.AOSP)) {
-      this.importComparator = AOSP_IMPORT_COMPARATOR;
-      this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineAosp;
-    } else {
-      throw new IllegalArgumentException("Unsupported code style: " + style);
+    switch (style.importOrder()) {
+      case GOOGLE -> {
+        this.importComparator = GOOGLE_IMPORT_COMPARATOR;
+        this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineGoogle;
+      }
+      case AOSP -> {
+        this.importComparator = AOSP_IMPORT_COMPARATOR;
+        this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineAosp;
+      }
+      default -> throw new IllegalArgumentException("Unsupported code style: " + style);
     }
   }
 
@@ -194,31 +205,29 @@ public class ImportOrderer {
     NORMAL
   }
 
-  /**
-   * An import statement.
-   *
-   * @param imported the name being imported, for example {@code java.util.List}.
-   * @param trailing the {@code //} comment lines after the final {@code ;}, up to and including the
-   *     line terminator of the last one. Note: In case two imports were separated by a space (which
-   *     is disallowed by the style guide), the trailing whitespace of the first import does not
-   *     include a line terminator.
-   * @param importType the {@link ImportType} of the import.
-   * @param lineSeparator the line separator to use when formatting the import.
-   */
+  /// An import statement.
+  ///
+  /// @param imported the name being imported, for example `java.util.List`.
+  /// @param trailing the `//` comment lines after the final `;`, up to and including the line
+  ///   terminator of the last one. Note: In case two imports were separated by a space (which is
+  ///   disallowed by the style guide), the trailing whitespace of the first import does not include
+  ///   a line terminator.
+  /// @param importType the [ImportType] of the import.
+  /// @param lineSeparator the line separator to use when formatting the import.
   private record Import(
       String imported, String trailing, ImportType importType, String lineSeparator) {
-    /** The top-level package of the import. */
+    /// The top-level package of the import.
     String topLevel() {
       return DOT_SPLITTER.split(imported).iterator().next();
     }
 
-    /** True if this is an Android import per AOSP style. */
+    /// True if this is an Android import per AOSP style.
     boolean isAndroid() {
       return Stream.of("android.", "androidx.", "dalvik.", "libcore.", "com.android.")
           .anyMatch(imported::startsWith);
     }
 
-    /** True if this is a Java import per AOSP style. */
+    /// True if this is a Java import per AOSP style.
     boolean isJava() {
       return switch (topLevel()) {
         case "java", "javax" -> true;
@@ -226,7 +235,7 @@ public class ImportOrderer {
       };
     }
 
-    /** True if this is a third-party import per AOSP style. */
+    /// True if this is a third-party import per AOSP style.
     boolean isThirdParty() {
       return !(isAndroid() || isJava());
     }
@@ -252,30 +261,20 @@ public class ImportOrderer {
     }
   }
 
-  private String tokString(int start, int end) {
-    StringBuilder sb = new StringBuilder();
-    for (int i = start; i < end; i++) {
-      sb.append(toks.get(i).getOriginalText());
-    }
-    return sb.toString();
-  }
-
   private record ImportsAndIndex(ImmutableSortedSet<Import> imports, int index) {}
 
-  /**
-   * Scans a sequence of import lines. The parsing uses this approximate grammar:
-   *
-   * <pre>{@code
-   * <imports> -> (<end-of-line> | <import>)*
-   * <import> -> "import" <whitespace> ("static" <whitespace>)?
-   *    <identifier> ("." <identifier>)* ("." "*")? <whitespace>? ";"
-   *    <whitespace>? <end-of-line>? (<line-comment> <end-of-line>)*
-   * }</pre>
-   *
-   * @param i the index to start parsing at.
-   * @return the result of parsing the imports.
-   * @throws FormatterException if imports could not parsed according to the grammar.
-   */
+  /// Scans a sequence of import lines. The parsing uses this approximate grammar:
+  ///
+  /// ```
+  /// <imports> -> (<end-of-line> | <import>)*
+  /// <import> -> "import" <whitespace> ("static" <whitespace>)?
+  ///    <identifier> ("." <identifier>)* ("." "*")? <whitespace>? ";"
+  ///    <whitespace>? <end-of-line>? (<line-comment> <end-of-line>)*
+  /// ```
+  ///
+  /// @param i the index to start parsing at.
+  /// @return the result of parsing the imports.
+  /// @throws FormatterException if imports could not parsed according to the grammar.
   private ImportsAndIndex scanImports(int i) throws FormatterException {
     int afterLastImport = i;
     ImmutableSortedSet.Builder<Import> imports = ImmutableSortedSet.orderedBy(importComparator);
@@ -380,18 +379,16 @@ public class ImportOrderer {
     }
   }
 
-  /**
-   * Scans the imported thing, the dot-separated name that comes after import [static] and before
-   * the semicolon. We don't allow spaces inside the dot-separated name. Wildcard imports are
-   * supported: if the input is {@code import java.util.*;} then the returned string will be {@code
-   * java.util.*}.
-   *
-   * @param start the index of the start of the identifier. If the import is {@code import
-   *     java.util.List;} then this index points to the token {@code java}.
-   * @return the parsed import ({@code java.util.List} in the example) and the index of the first
-   *     token after the imported thing ({@code ;} in the example).
-   * @throws FormatterException if the imported name could not be parsed.
-   */
+  /// Scans the imported thing, the dot-separated name that comes after import [static] and before
+  /// the semicolon. We don't allow spaces inside the dot-separated name. Wildcard imports are
+  /// supported: if the input is `import java.util.*;` then the returned string will be
+  /// `java.util.*`.
+  ///
+  /// @param start the index of the start of the identifier. If the import is `import
+  ///   java.util.List;` then this index points to the token `java`.
+  /// @return the parsed import (`java.util.List` in the example) and the index of the first token
+  ///   after the imported thing (`;` in the example).
+  /// @throws FormatterException if the imported name could not be parsed.
   private StringAndIndex scanImported(int start) throws FormatterException {
     int i = start;
     StringBuilder imported = new StringBuilder();
@@ -415,13 +412,11 @@ public class ImportOrderer {
     }
   }
 
-  /**
-   * Returns the index of the first place where one of the given identifiers occurs, or {@code
-   * Optional.empty()} if there is none.
-   *
-   * @param start the index to start looking at
-   * @param identifiers the identifiers to look for
-   */
+  /// Returns the index of the first place where one of the given identifiers occurs, or
+  /// `Optional.empty()` if there is none.
+  ///
+  /// @param start the index to start looking at
+  /// @param identifiers the identifiers to look for
   private Optional<Integer> findIdentifier(int start, ImmutableSet<String> identifiers) {
     for (int i = start; i < toks.size(); i++) {
       if (isIdentifierToken(i)) {
@@ -434,7 +429,7 @@ public class ImportOrderer {
     return Optional.empty();
   }
 
-  /** Returns the given token, or the preceding token if it is a whitespace token. */
+  /// Returns the given token, or the preceding token if it is a whitespace token.
   private int unindent(int i) {
     if (i > 0 && isSpaceToken(i - 1)) {
       return i - 1;

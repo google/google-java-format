@@ -21,7 +21,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Tests for command-line flags. */
+/// Tests for command-line flags.
 @RunWith(JUnit4.class)
 public class CommandLineFlagsTest {
 
@@ -156,7 +156,7 @@ public class CommandLineFlagsTest {
     } catch (UsageException e) {
       assertThat(e)
           .hasMessageThat()
-          .contains("cannot use --dry-run and --in-place at the same time");
+          .contains("cannot use --dry-run and --replace at the same time");
     }
   }
 

@@ -14,18 +14,17 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getLast;
 import static com.google.googlejavaformat.java.Trees.getEndPosition;
 import static com.google.googlejavaformat.java.Trees.getStartPosition;
-import static java.lang.Math.min;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Strings;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.googlejavaformat.Newlines;
 import com.sun.source.tree.BinaryTree;
@@ -48,34 +47,49 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
-/** Wraps string literals that exceed the column limit. */
+/// Wraps string literals that exceed the column limit.
 public final class StringWrapper {
 
   private static final String TEXT_BLOCK_DELIMITER = "\"\"\"";
 
-  /** Reflows long string literals in the given Java source code. */
+  /// Reflows long string literals in the given Java source code.
   public static String wrap(String input, Formatter formatter) throws FormatterException {
-    return StringWrapper.wrap(Formatter.MAX_LINE_LENGTH, input, formatter);
+    return StringWrapper.wrap(formatter.options().maxLineLength(), input, formatter);
   }
 
-  /**
-   * Reflows string literals in the given Java source code that extend past the given column limit.
-   */
+  /// Reflows string literals in the given Java source code that extend past the given column limit.
   static String wrap(final int columnLimit, String input, Formatter formatter)
       throws FormatterException {
-    if (!needWrapping(columnLimit, input)) {
+    return wrap(
+        columnLimit, input, formatter, ImmutableRangeSet.of(Range.closedOpen(0, input.length())));
+  }
+
+  /// Reflows string literals in the given character ranges of the given Java source code that
+  /// extend past the given column limit.
+  static String wrap(
+      final int columnLimit, String input, Formatter formatter, RangeSet<Integer> characterRanges)
+      throws FormatterException {
+    JavaFormatterOptions options = formatter.options();
+    if (!needWrapping(columnLimit, input, options)) {
       // fast path
       return input;
     }
 
-    TreeRangeMap<Integer, String> replacements = getReflowReplacements(columnLimit, input);
-    String firstPass = formatter.formatSource(input, replacements.asMapOfRanges().keySet());
+    TreeRangeMap<Integer, String> replacements =
+        getReflowReplacements(columnLimit, input, options, characterRanges);
+    if (replacements.asMapOfRanges().isEmpty()) {
+      return input;
+    }
+    Edit firstPass =
+        Edit.apply(
+            input, formatter.getFormatReplacements(input, replacements.asMapOfRanges().keySet()));
 
-    if (!firstPass.equals(input)) {
+    if (!firstPass.contents().equals(input)) {
       // If formatting the replacement ranges resulted in a change, recalculate the replacements on
       // the updated input.
-      input = firstPass;
-      replacements = getReflowReplacements(columnLimit, input);
+      input = firstPass.contents();
+      characterRanges = firstPass.mapRanges(characterRanges.asRanges());
+      replacements = getReflowReplacements(columnLimit, input, options, characterRanges);
     }
 
     String result = applyReplacements(input, replacements);
@@ -84,64 +98,90 @@ public final class StringWrapper {
       // We really don't want bugs in this pass to change the behaviour of programs we're
       // formatting, so check that the pretty-printed AST is the same before and after reformatting.
       String expected = parse(input, /* allowStringFolding= */ true).toString();
-      String actual = parse(result, /* allowStringFolding= */ true).toString();
+      String actual;
+      try {
+        actual = parse(result, /* allowStringFolding= */ true).toString();
+      } catch (FormatterException e) {
+        // Diagnostics for the reflowed output don't correspond to positions in the original input,
+        // and the error is a bug in this pass rather than in the input, so report it as such.
+        throw somethingHasGoneTerriblyWrong(
+            "it would produce code that does not parse (" + e.getMessage() + ")", result, input);
+      }
       if (!expected.equals(actual)) {
-        throw new FormatterException(
-            String.format(
-                "Something has gone terribly wrong. We planned to make the below formatting change,"
-                    + " but have aborted because it would unexpectedly change the AST.\n"
-                    + "Please file a bug: "
-                    + "https://github.com/google/google-java-format/issues/new"
-                    + "\n\n=== Actual: ===\n%s\n=== Expected: ===\n%s\n",
-                actual, expected));
+        throw somethingHasGoneTerriblyWrong(
+            "it would unexpectedly change the AST", actual, expected);
       }
     }
 
     return result;
   }
 
+  private static FormatterException somethingHasGoneTerriblyWrong(
+      String reason, String actual, String expected) {
+    return new FormatterException(
+        String.format(
+            "Something has gone terribly wrong. We planned to make the below formatting change,"
+                + " but have aborted because %s.\n"
+                + "Please file a bug: "
+                + "https://github.com/google/google-java-format/issues/new"
+                + "\n\n=== Actual: ===\n%s\n=== Expected: ===\n%s\n",
+            reason, actual, expected));
+  }
+
   private static TreeRangeMap<Integer, String> getReflowReplacements(
-      int columnLimit, final String input) throws FormatterException {
-    return new Reflower(columnLimit, input).getReflowReplacements();
+      int columnLimit,
+      final String input,
+      JavaFormatterOptions options,
+      RangeSet<Integer> characterRanges)
+      throws FormatterException {
+    return new Reflower(columnLimit, input, options, characterRanges).getReflowReplacements();
   }
 
   private static class Reflower {
 
     private final String input;
     private final int columnLimit;
+    private final JavaFormatterOptions options;
+    private final RangeSet<Integer> characterRanges;
     private final String separator;
     private final JCTree.JCCompilationUnit unit;
     private final Position.LineMap lineMap;
 
-    Reflower(int columnLimit, String input) throws FormatterException {
+    Reflower(
+        int columnLimit,
+        String input,
+        JavaFormatterOptions options,
+        RangeSet<Integer> characterRanges)
+        throws FormatterException {
       this.columnLimit = columnLimit;
       this.input = input;
+      this.options = options;
+      this.characterRanges = characterRanges;
       this.separator = Newlines.guessLineSeparator(input);
       this.unit = parse(input, /* allowStringFolding= */ false);
       this.lineMap = unit.getLineMap();
     }
 
+    private int visualColumn(int position) {
+      int lineStart = lineMap.getStartPosition(lineMap.getLineNumber(position));
+      return options.visualLength(input, lineStart, position);
+    }
+
     TreeRangeMap<Integer, String> getReflowReplacements() {
       // Paths to string literals that extend past the column limit.
       List<TreePath> longStringLiterals = new ArrayList<>();
-      // Paths to text blocks to be re-indented.
-      List<Tree> textBlocks = new ArrayList<>();
-      new LongStringsAndTextBlockScanner(longStringLiterals, textBlocks)
-          .scan(new TreePath(unit), null);
+      new LongStringsScanner(longStringLiterals).scan(new TreePath(unit), null);
       TreeRangeMap<Integer, String> replacements = TreeRangeMap.create();
-      indentTextBlocks(replacements, textBlocks);
       wrapLongStrings(replacements, longStringLiterals);
       return replacements;
     }
 
-    private class LongStringsAndTextBlockScanner extends TreePathScanner<Void, Void> {
+    private class LongStringsScanner extends TreePathScanner<Void, Void> {
 
       private final List<TreePath> longStringLiterals;
-      private final List<Tree> textBlocks;
 
-      LongStringsAndTextBlockScanner(List<TreePath> longStringLiterals, List<Tree> textBlocks) {
+      LongStringsScanner(List<TreePath> longStringLiterals) {
         this.longStringLiterals = longStringLiterals;
-        this.textBlocks = textBlocks;
       }
 
       @Override
@@ -149,9 +189,7 @@ public final class StringWrapper {
         if (literalTree.getKind() != Kind.STRING_LITERAL) {
           return null;
         }
-        int pos = getStartPosition(literalTree);
-        if (input.substring(pos, min(input.length(), pos + 3)).equals(TEXT_BLOCK_DELIMITER)) {
-          textBlocks.add(literalTree);
+        if (input.startsWith(TEXT_BLOCK_DELIMITER, getStartPosition(literalTree))) {
           return null;
         }
         Tree parent = getCurrentPath().getParentPath().getLeaf();
@@ -160,64 +198,19 @@ public final class StringWrapper {
           return null;
         }
         int endPosition = getEndPosition(literalTree, unit);
+        if (!characterRanges.intersects(
+            Range.closedOpen(getStartPosition(literalTree), endPosition))) {
+          return null;
+        }
         int lineEnd = endPosition;
         while (Newlines.hasNewlineAt(input, lineEnd) == -1) {
           lineEnd++;
         }
-        if (lineMap.getColumnNumber(lineEnd) - 1 <= columnLimit) {
+        if (visualColumn(lineEnd) <= columnLimit) {
           return null;
         }
         longStringLiterals.add(getCurrentPath());
         return null;
-      }
-    }
-
-    private void indentTextBlocks(
-        TreeRangeMap<Integer, String> replacements, List<Tree> textBlocks) {
-      for (Tree tree : textBlocks) {
-        int startPosition = lineMap.getStartPosition(lineMap.getLineNumber(getStartPosition(tree)));
-        int endPosition = getEndPosition(tree, unit);
-        String text = input.substring(startPosition, endPosition);
-        int leadingWhitespace = CharMatcher.whitespace().negate().indexIn(text);
-
-        // Find the source code of the text block with incidental whitespace removed.
-        // The first line of the text block is always """, and it does not affect incidental
-        // whitespace.
-        ImmutableList<String> initialLines = text.lines().collect(toImmutableList());
-        String stripped = initialLines.stream().skip(1).collect(joining(separator)).stripIndent();
-        ImmutableList<String> lines = stripped.lines().collect(toImmutableList());
-        boolean deindent =
-            getLast(initialLines).stripTrailing().length()
-                == getLast(lines).stripTrailing().length();
-
-        String prefix = deindent ? "" : " ".repeat(leadingWhitespace);
-
-        StringBuilder output = new StringBuilder(prefix).append(initialLines.get(0).stripLeading());
-        for (int i = 0; i < lines.size(); i++) {
-          String line = lines.get(i);
-          String trimmed = line.stripTrailing();
-          output.append(separator);
-          if (!trimmed.isEmpty()) {
-            // Don't add incidental leading whitespace to empty lines
-            output.append(prefix);
-          }
-          if (i == lines.size() - 1) {
-            String withoutDelimiter =
-                trimmed
-                    .substring(0, trimmed.length() - TEXT_BLOCK_DELIMITER.length())
-                    .stripTrailing();
-            if (!withoutDelimiter.stripLeading().isEmpty()) {
-              output.append(withoutDelimiter).append('\\').append(separator).append(prefix);
-            }
-            // If the trailing line is just """, indenting it more than the prefix of incidental
-            // whitespace has no effect, and results in a javac text-blocks warning that 'trailing
-            // white space will be removed'.
-            output.append(TEXT_BLOCK_DELIMITER);
-          } else {
-            output.append(line);
-          }
-        }
-        replacements.put(Range.closedOpen(startPosition, endPosition), output.toString());
       }
     }
 
@@ -238,7 +231,7 @@ public final class StringWrapper {
         // to be wrapped.
         List<Tree> flat = flatten(input, unit, path, enclosing, first);
         // Zero-indexed start column
-        int startColumn = lineMap.getColumnNumber(getStartPosition(flat.get(0))) - 1;
+        int startColumn = visualColumn(getStartPosition(flat.get(0)));
 
         // Handling leaving trailing non-string tokens at the end of the literal,
         // e.g. the trailing `);` in `foo("...");`.
@@ -253,15 +246,14 @@ public final class StringWrapper {
         ImmutableList<String> components = stringComponents(input, unit, flat);
         replacements.put(
             Range.closedOpen(getStartPosition(flat.get(0)), getEndPosition(getLast(flat), unit)),
-            reflow(separator, columnLimit, startColumn, trailing, components, first.get()));
+            reflow(
+                separator, columnLimit, startColumn, trailing, components, first.get(), options));
       }
     }
   }
 
-  /**
-   * Returns the source text of the given string literal trees, excluding the leading and trailing
-   * double-quotes and the `+` operator.
-   */
+  /// Returns the source text of the given string literal trees, excluding the leading and trailing
+  /// double-quotes and the `+` operator.
   private static ImmutableList<String> stringComponents(
       String input, JCTree.JCCompilationUnit unit, List<Tree> flat) {
     ImmutableList.Builder<String> result = ImmutableList.builder();
@@ -270,23 +262,41 @@ public final class StringWrapper {
       // adjust for leading and trailing double quotes
       String text = input.substring(getStartPosition(tree) + 1, getEndPosition(tree, unit) - 1);
       int start = 0;
-      for (int idx = 0; idx < text.length(); idx++) {
+      int next;
+      for (int idx = 0; idx < text.length(); idx = next) {
+        int splitAt;
+        int length;
         if (CharMatcher.whitespace().matches(text.charAt(idx))) {
-          // continue below
-        } else if (hasEscapedWhitespaceAt(text, idx) != -1) {
-          // continue below
+          // split before whitespace
+          splitAt = idx;
+          next = idx + 1;
+        } else if ((length = hasEscapedWhitespaceAt(text, idx)) != -1) {
+          // split before escaped whitespace
+          splitAt = idx;
+          next = idx + length;
         } else if (hasEscapedNewlineAt(text, idx) != -1) {
-          int length;
-          while ((length = hasEscapedNewlineAt(text, idx)) != -1) {
-            idx += length;
+          // Split after a run of escaped newlines, rather than before it, so the newlines end the
+          // preceding piece. `reflow` ends a line after a piece ending in an escaped newline, so
+          // where possible each line of the wrapped literal corresponds to a line of its value.
+          next = idx;
+          while ((length = hasEscapedNewlineAt(text, next)) != -1) {
+            next += length;
           }
+          splitAt = next;
         } else {
+          // Skip over the entire escape sequence, so the second character of an escape like `\\` is
+          // not mistaken for the start of another escape. Octal and Unicode escapes don't need
+          // special handling: after the backslash they only contain letters and digits, which are
+          // never split points.
+          next = idx + (text.charAt(idx) == '\\' ? 2 : 1);
           continue;
         }
-        piece.append(text, start, idx);
-        result.add(piece.toString());
-        piece = new StringBuilder();
-        start = idx;
+        if (splitAt > start || piece.length() > 0) {
+          piece.append(text, start, splitAt);
+          result.add(piece.toString());
+          piece = new StringBuilder();
+          start = splitAt;
+        }
       }
       if (piece.length() > 0) {
         result.add(piece.toString());
@@ -320,24 +330,23 @@ public final class StringWrapper {
     return offset > 0 ? offset : -1;
   }
 
-  /**
-   * Reflows the given source text, trying to split on word boundaries.
-   *
-   * @param separator the line separator
-   * @param columnLimit the number of columns to wrap at
-   * @param startColumn the column position of the beginning of the original text
-   * @param trailing extra space to leave after the last line, to accommodate a ; or )
-   * @param components the text to reflow. This is a list of “words” of a single literal. Its first
-   *     and last quotes have been stripped
-   * @param first0 true if the text includes the beginning of its enclosing concat chain
-   */
+  /// Reflows the given source text, trying to split on word boundaries.
+  ///
+  /// @param separator the line separator
+  /// @param columnLimit the number of columns to wrap at
+  /// @param startColumn the column position of the beginning of the original text
+  /// @param trailing extra space to leave after the last line, to accommodate a ; or )
+  /// @param components the text to reflow. This is a list of “words” of a single literal. Its first
+  ///   and last quotes have been stripped
+  /// @param first0 true if the text includes the beginning of its enclosing concat chain
   private static String reflow(
       String separator,
       int columnLimit,
       int startColumn,
       int trailing,
       ImmutableList<String> components,
-      boolean first0) {
+      boolean first0,
+      JavaFormatterOptions options) {
     // We have space between the start column and the limit to output the first line.
     // Reserve two spaces for the start and end quotes.
     int width = columnLimit - startColumn - 2;
@@ -375,7 +384,7 @@ public final class StringWrapper {
     return lines.stream()
         .collect(
             joining(
-                "\"" + separator + Strings.repeat(" ", startColumn + (first0 ? 4 : -2)) + "+ \"",
+                "\"" + separator + options.indentString(startColumn + (first0 ? 4 : -2)) + "+ \"",
                 "\"",
                 "\""));
   }
@@ -391,10 +400,8 @@ public final class StringWrapper {
     return true;
   }
 
-  /**
-   * Flattens the given binary expression tree, and extracts the subset that contains the given path
-   * and any adjacent nodes that are also string literals.
-   */
+  /// Flattens the given binary expression tree, and extracts the subset that contains the given
+  /// path and any adjacent nodes that are also string literals.
   private static List<Tree> flatten(
       String input,
       JCTree.JCCompilationUnit unit,
@@ -447,23 +454,20 @@ public final class StringWrapper {
   private static final CharMatcher STRING_CONCAT_DELIMITER =
       CharMatcher.whitespace().or(CharMatcher.anyOf("\"+"));
 
-  /**
-   * Returns true if any lines in the given Java source exceed the column limit, or contain a {@code
-   * """} that could indicate a text block.
-   */
-  private static boolean needWrapping(int columnLimit, String input) {
+  /// Returns true if any lines in the given Java source exceed the column limit.
+  private static boolean needWrapping(int columnLimit, String input, JavaFormatterOptions options) {
     // TODO(cushon): consider adding Newlines.lineIterable?
     Iterator<String> it = Newlines.lineIterator(input);
     while (it.hasNext()) {
       String line = it.next();
-      if (line.length() > columnLimit || line.contains(TEXT_BLOCK_DELIMITER)) {
+      if (options.visualLength(line) > columnLimit) {
         return true;
       }
     }
     return false;
   }
 
-  /** Parses the given Java source. */
+  /// Parses the given Java source.
   private static JCTree.JCCompilationUnit parse(String source, boolean allowStringFolding)
       throws FormatterException {
     List<Diagnostic<? extends JavaFileObject>> errorDiagnostics = new ArrayList<>();
@@ -477,7 +481,7 @@ public final class StringWrapper {
     return unit;
   }
 
-  /** Applies replacements to the given string. */
+  /// Applies replacements to the given string.
   private static String applyReplacements(
       String javaInput, TreeRangeMap<Integer, String> replacementMap) throws FormatterException {
     // process in descending order so the replacement ranges aren't perturbed if any replacements

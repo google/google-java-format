@@ -17,11 +17,15 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assume.assumeTrue;
 
+import com.google.common.collect.ImmutableRangeSet;
+import com.google.common.collect.Range;
+import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
+import java.util.Random;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** {@link StringWrapper}Test */
+/// [StringWrapper]Test
 @RunWith(JUnit4.class)
 public class StringWrapperTest {
   @Test
@@ -72,141 +76,180 @@ public class ReproBug {
     assertThat(StringWrapper.wrap(100, input, new Formatter())).isEqualTo(input);
   }
 
-  // Test that whitespace handling on text block lines only removes spaces, not other control
-  // characters.
   @Test
-  public void textBlockControlCharacter() throws Exception {
-    assumeTrue(Runtime.version().feature() >= 15);
-    // We want an actual control character in the Java source being formatted, not a unicode escape,
-    // i.e. the escape below doesn't need to be double-escaped.
+  public void wrapWithMaxLineLengthAndTabs() throws Exception {
     String input =
         """
-        package p;
-        public class T {
-          String s =
+        class T {
+          String s = "one two three four five six seven eight";
+          String tb =
               \"""
-              \u0007lorem
-              \u0007
-              ipsum
+              hello
+              world
               \""";
         }
         """;
-    String actual = StringWrapper.wrap(100, input, new Formatter());
-    assertThat(actual).isEqualTo(input);
+    Formatter formatter =
+        new Formatter(
+            JavaFormatterOptions.builder()
+                .style(Style.GOOGLE.toBuilder().maxLineLength(35).useTabs(true).build())
+                .build());
+    assertThat(formatter.formatSourceAndFixImports(input))
+        .isEqualTo(
+            """
+            class T {
+            \tString s =
+            \t\t\t"one two three four five six"
+            \t\t\t\t\t+ " seven eight";
+            \tString tb =
+            \t\t\t\"""
+            \t\t\thello
+            \t\t\tworld
+            \t\t\t\""";
+            }
+            """);
+  }
+
+  // https://github.com/google/google-java-format/issues/1186
+  @Test
+  public void escapedBackslashBeforeT() throws Exception {
+    String input =
+        """
+        class T {
+          String t =
+           "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789\\\\t";
+        }
+        """;
+    String output =
+        """
+        class T {
+          String t =
+              "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789\\\\t";
+        }
+        """;
+    assertThat(new Formatter().formatSourceAndFixImports(input)).isEqualTo(output);
+  }
+
+  // https://github.com/google/google-java-format/issues/1439
+  @Test
+  public void escapedBackslashes() throws Exception {
+    String input =
+        """
+        class T {
+          String s = "%s xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\\text{C} \\\\n \\\\\\\\";
+        }
+        """
+            .formatted("word ".repeat(20));
+    String output =
+        """
+        class T {
+          String s =
+              "word word word word word word word word word word word word word word word word word word"
+                  + " word word "
+                  + " xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\\text{C} \\\\n"
+                  + " \\\\\\\\";
+        }
+        """;
+    assertThat(new Formatter().formatSourceAndFixImports(input)).isEqualTo(output);
   }
 
   @Test
-  public void textBlockTrailingWhitespace() throws Exception {
-    assumeTrue(Runtime.version().feature() >= 15);
-    @SuppressWarnings("MisleadingEscapedSpace") // TODO(b/496180372): remove
-    String input =
-        """
-        public class T {
-          String s =
-              \"""
-              lorem   \s
-              ipsum
-              \""";
-        }
-        """;
-    String expected =
-        """
-        public class T {
-          String s =
-              \"""
-              lorem
-              ipsum
-              \""";
-        }
-        """;
-    String actual = StringWrapper.wrap(100, input, new Formatter());
-    assertThat(actual).isEqualTo(expected);
+  public void escapesRandomized() throws Exception {
+    // The source text of string literal characters and escape sequences, including escaped
+    // backslashes followed by characters that would otherwise form escapes, and octal and Unicode
+    // escapes.
+    String[] atoms = {
+      "a",
+      "bb",
+      " ",
+      "\\\\",
+      "\\t",
+      "\\n",
+      "\\r\\n",
+      "\\\"",
+      "\\\\t",
+      "\\\\n",
+      "\\\\\\t",
+      "\\0",
+      "\\12",
+      "\\377",
+      "\\s",
+      "\\u0041",
+      "\\\\u0041"
+    };
+    Random random = new Random(42);
+    Formatter formatter = new Formatter();
+    for (int i = 0; i < 200; i++) {
+      StringBuilder literal = new StringBuilder();
+      while (literal.length() < 150) {
+        literal.append(atoms[random.nextInt(atoms.length)]);
+      }
+      String input = "class T {\n  String s = \"" + literal + "\";\n}\n";
+      // StringWrapper checks that its output parses and has the same AST as its input. (This uses
+      // `unused` rather than `_` since google-java-format still supports building with JDK 21.)
+      String unused = StringWrapper.wrap(40, formatter.formatSource(input), formatter);
+    }
   }
 
-  // It would be neat if the formatter could remove the trailing whitespace here, but in general
-  // it preserves unicode escapes from the original text.
+  // https://github.com/google/google-java-format/issues/1114
   @Test
-  public void textBlockTrailingWhitespaceUnicodeEscape() throws Exception {
-    assumeTrue(Runtime.version().feature() >= 15);
-    // We want a unicode escape in the Java source being formatted, so it needs to be escaped
-    // in the string literal in this test.
+  public void wrap_onlyInCharacterRanges() throws Exception {
     String input =
         """
-        public class T {
-          String s =
-              \"""
-              lorem\\u0020
-              ipsum
-              \""";
+        class T {
+          String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+          String t = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
         }
         """;
-    String expected =
-        """
-        public class T {
-          String s =
-              \"""
-              lorem\\u0020
-              ipsum
-              \""";
-        }
-        """;
-    String actual = StringWrapper.wrap(100, input, new Formatter());
-    assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
-  public void textBlockSpaceTabMix() throws Exception {
-    assumeTrue(Runtime.version().feature() >= 15);
-    String input =
-        """
-        public class T {
-          String s =
-              \"""
-              lorem
-             \tipsum
-              \""";
-        }
-        """;
-    String expected =
-        """
-        public class T {
-          String s =
-              \"""
-              lorem
-              ipsum
-              \""";
-        }
-        """;
-    String actual = StringWrapper.wrap(100, input, new Formatter());
-    assertThat(actual).isEqualTo(expected);
+    Formatter formatter = new Formatter();
+    int tStart = input.indexOf("String t");
+    int tEnd = input.indexOf(';', tStart);
+    assertThat(
+            StringWrapper.wrap(
+                100, input, formatter, ImmutableRangeSet.of(Range.closedOpen(tStart, tEnd))))
+        .isEqualTo(
+            """
+            class T {
+              String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+              String t =
+                  "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance"
+                      + " to interrupt";
+            }
+            """);
+    // A range that does not intersect any string literal returns the input unchanged.
+    assertThat(
+            StringWrapper.wrap(100, input, formatter, ImmutableRangeSet.of(Range.closedOpen(0, 9))))
+        .isEqualTo(input);
   }
 
   @Test
-  public void leadingBlankLine() throws Exception {
-    assumeTrue(Runtime.version().feature() >= 15);
+  public void wrap_mapsCharacterRangesAfterFirstPass() throws Exception {
+    // The first pass formats the statement containing `t`, collapsing the extra spaces before the
+    // literal so its range in the formatted output is disjoint from its original range in `input`.
     String input =
         """
-        public class T {
-          String s =
-              \"""
-
-              lorem
-              ipsum
-              \""";
+        class T {
+          String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+          String t = %s"one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
         }
-        """;
-    String expected =
         """
-        public class T {
-          String s =
-              \"""
-
-              lorem
-              ipsum
-              \""";
-        }
-        """;
-    String actual = StringWrapper.wrap(100, input, new Formatter());
-    assertThat(actual).isEqualTo(expected);
+            .formatted(" ".repeat(150));
+    int tLiteralStart = input.lastIndexOf("\"one");
+    int tLiteralEnd = input.indexOf(';', tLiteralStart);
+    assertThat(
+            StringWrapper.wrap(
+                100,
+                input,
+                new Formatter(),
+                ImmutableRangeSet.of(Range.closedOpen(tLiteralStart, tLiteralEnd))))
+        .isEqualTo(
+            """
+            class T {
+              String s = "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+              String t =
+                  "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance"
+                      + " to interrupt";
+            }
+            """);
   }
 }

@@ -14,6 +14,7 @@
 
 package com.google.googlejavaformat.java;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.CharMatcher;
@@ -31,7 +32,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/** A parser for {@link CommandLineOptions}. */
+/// A parser for [CommandLineOptions].
 final class CommandLineOptionsParser {
 
   private static final Splitter COMMA_SPLITTER = Splitter.on(',');
@@ -39,9 +40,10 @@ final class CommandLineOptionsParser {
   private static final Splitter ARG_SPLITTER =
       Splitter.on(CharMatcher.breakingWhitespace()).omitEmptyStrings().trimResults();
 
-  /** Parses {@link CommandLineOptions}. */
+  /// Parses [CommandLineOptions].
   static CommandLineOptions parse(Iterable<String> options) {
     CommandLineOptions.Builder optionsBuilder = CommandLineOptions.builder();
+    JavaFormatterOptions.Style.Builder styleBuilder = JavaFormatterOptions.Style.GOOGLE.toBuilder();
     List<String> expandedOptions = new ArrayList<>();
     expandParamsFiles(options, expandedOptions);
     Iterator<String> it = expandedOptions.iterator();
@@ -71,7 +73,17 @@ final class CommandLineOptionsParser {
             parseRangeSet(linesBuilder, getValue(flag, it, value));
         case "--offset", "-offset" -> optionsBuilder.addOffset(parseInteger(it, flag, value));
         case "--length", "-length" -> optionsBuilder.addLength(parseInteger(it, flag, value));
-        case "--aosp", "-aosp", "-a" -> optionsBuilder.aosp(true);
+        case "--google-style", "-google-style" -> styleBuilder.google();
+        case "--aosp", "-aosp", "-a" -> styleBuilder.aosp();
+        case "--style" -> {
+          String style = getValue(flag, it, value);
+          switch (style) {
+            case "google" -> styleBuilder.google();
+            case "aosp" -> styleBuilder.aosp();
+            default ->
+                throw new IllegalArgumentException(String.format("invalid style value: %s", style));
+          }
+        }
         case "--version", "-version", "-v" -> optionsBuilder.version(true);
         case "--help", "-help", "-h" -> optionsBuilder.help(true);
         case "--fix-imports-only" -> optionsBuilder.fixImportsOnly(true);
@@ -80,6 +92,26 @@ final class CommandLineOptionsParser {
         case "--skip-reflowing-long-strings" -> optionsBuilder.reflowLongStrings(false);
         case "--skip-javadoc-formatting" -> optionsBuilder.formatJavadoc(false);
         case "--skip-reordering-modifiers" -> optionsBuilder.reorderModifiers(false);
+        case "--cleanup" -> {
+          if (value == null) {
+            optionsBuilder.cleanup(true);
+          } else {
+            switch (value) {
+              case "true" -> optionsBuilder.cleanup(true);
+              case "false" -> optionsBuilder.cleanup(false);
+              default -> throw new IllegalArgumentException("unexpected --cleanup value: " + value);
+            }
+          }
+        }
+        case "--max-line-length" -> {
+          int length = parseInteger(it, flag, value);
+          checkArgument(
+              length > 0 && length <= JavaFormatterOptions.Style.MAX_LINE_LENGTH_LIMIT,
+              "invalid max-line-length: %s (must be between 1 and %s)",
+              length,
+              JavaFormatterOptions.Style.MAX_LINE_LENGTH_LIMIT);
+          styleBuilder.maxLineLength(length);
+        }
         case "-" -> optionsBuilder.stdin(true);
         case "-n", "--dry-run" -> optionsBuilder.dryRun(true);
         case "--set-exit-if-changed" -> optionsBuilder.setExitIfChanged(true);
@@ -88,6 +120,7 @@ final class CommandLineOptionsParser {
         default -> throw new IllegalArgumentException("unexpected flag: " + flag);
       }
     }
+    optionsBuilder.style(styleBuilder.build());
     optionsBuilder.lines(ImmutableRangeSet.copyOf(linesBuilder));
     return optionsBuilder.build();
   }
@@ -111,22 +144,18 @@ final class CommandLineOptionsParser {
     return it.next();
   }
 
-  /**
-   * Parse multiple --lines flags, like {"1:12,14,20:36", "40:45,50"}. Multiple ranges can be given
-   * with multiple --lines flags or separated by commas. A single line can be set by a single
-   * number. Line numbers are {@code 1}-based, but are converted to the {@code 0}-based numbering
-   * used internally by google-java-format.
-   */
+  /// Parse multiple --lines flags, like {"1:12,14,20:36", "40:45,50"}. Multiple ranges can be given
+  /// with multiple --lines flags or separated by commas. A single line can be set by a single
+  /// number. Line numbers are `1`-based, but are converted to the `0`-based numbering used
+  /// internally by google-java-format.
   private static void parseRangeSet(RangeSet<Integer> result, String ranges) {
     for (String range : COMMA_SPLITTER.split(ranges)) {
       result.add(parseRange(range));
     }
   }
 
-  /**
-   * Parse a range, as in "1:12" or "42". Line numbers provided are {@code 1}-based, but are
-   * converted here to {@code 0}-based.
-   */
+  /// Parse a range, as in "1:12" or "42". Line numbers provided are `1`-based, but are converted
+  /// here to `0`-based.
   private static Range<Integer> parseRange(String arg) {
     List<String> args = COLON_SPLITTER.splitToList(arg);
     return switch (args.size()) {
@@ -143,10 +172,8 @@ final class CommandLineOptionsParser {
     };
   }
 
-  /**
-   * Pre-processes an argument list, expanding arguments of the form {@code @filename} by reading
-   * the content of the file and appending whitespace-delimited options to {@code arguments}.
-   */
+  /// Pre-processes an argument list, expanding arguments of the form `@filename` by reading the
+  /// content of the file and appending whitespace-delimited options to `arguments`.
   private static void expandParamsFiles(Iterable<String> args, List<String> expanded) {
     for (String arg : args) {
       if (arg.isEmpty()) {

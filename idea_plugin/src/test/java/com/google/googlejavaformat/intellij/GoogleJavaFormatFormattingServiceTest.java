@@ -26,8 +26,10 @@ import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
 import com.intellij.formatting.service.AsyncFormattingRequest;
 import com.intellij.formatting.service.FormattingService;
 import com.intellij.formatting.service.FormattingServiceUtil;
+import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.codeStyle.CodeStyleManager;
@@ -54,6 +56,7 @@ public class GoogleJavaFormatFormattingServiceTest {
     fixture =
         JavaTestFixtureFactory.getFixtureFactory()
             .createCodeInsightFixture(projectBuilder.getFixture());
+    VfsRootAccess.allowRootAccess(fixture.getProjectDisposable(), PathManager.getPluginsPath());
     fixture.setUp();
 
     delegatingFormatter = new DelegatingFormatter();

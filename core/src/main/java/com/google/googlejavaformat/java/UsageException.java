@@ -16,7 +16,7 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/** Checked exception class for formatter command-line usage errors. */
+/// Checked exception class for formatter command-line usage errors.
 final class UsageException extends Exception {
 
   private static final String DOCS_LINK =
@@ -34,8 +34,16 @@ Options:
     Format stdin -> stdout
   --assume-filename, -assume-filename
     File name to use for diagnostics when formatting standard input (default is <stdin>).
+  --google-style, -google-style
+    Use Google Style (2-space indentation). This is the default; if both --aosp and
+    --google-style are given, the last one wins.
   --aosp, -aosp, -a
     Use AOSP style instead of Google Style (4-space indentation).
+  --style
+    Use the given style, either "google" or "aosp". This is equivalent to
+    --google-style and --aosp, respectively. If multiple style options are given, the last one wins.
+  --max-line-length
+    Maximum line length (default is 100).
   --fix-imports-only
     Fix import order and remove any unused imports, but do no other formatting.
   --skip-sorting-imports
@@ -48,6 +56,8 @@ Options:
     Do not reformat javadoc.
   --skip-reordering-modifiers
     Do not reorder modifiers into the JLS-recommended order.
+  --cleanup[=(true|false)]
+    Enables non-whitespace cleanups, such as removing redundant semicolons (default is true).
   --dry-run, -n
     Prints the paths of the files whose contents would change if the formatter were run normally.
   --set-exit-if-changed
