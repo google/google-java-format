@@ -67,8 +67,18 @@ public class SnippetFormatter {
     this(JavaFormatterOptions.defaultOptions());
   }
 
+  /// Creates a snippet formatter with the given options.
+  ///
+  /// Snippet formatting only changes whitespace, so modifier reordering and cleanups are always
+  /// disabled.
   public SnippetFormatter(JavaFormatterOptions formatterOptions) {
-    formatter = new Formatter(formatterOptions);
+    JavaFormatterOptions whitespaceOnlyOptions =
+        new JavaFormatterOptions(
+            formatterOptions.formatJavadoc(),
+            /* reorderModifiers= */ false,
+            /* cleanup= */ false,
+            formatterOptions.style());
+    formatter = new Formatter(whitespaceOnlyOptions);
   }
 
   private static String createIndentationString(int indentationLevel) {
