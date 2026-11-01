@@ -18,15 +18,15 @@ import com.google.common.base.Verify;
 import java.util.List;
 import java.util.Optional;
 
-/** Heuristics for classifying qualified names as types. */
+/// Heuristics for classifying qualified names as types.
 final class TypeNameClassifier {
 
   private TypeNameClassifier() {}
 
-  /** A state machine for classifying qualified names. */
+  /// A state machine for classifying qualified names.
   private enum TyParseState {
 
-    /** The start state. */
+    /// The start state.
     START(false) {
       @Override
       public TyParseState next(JavaCaseFormat n) {
@@ -44,7 +44,7 @@ final class TypeNameClassifier {
       }
     },
 
-    /** The current prefix is a type. */
+    /// The current prefix is a type.
     TYPE(true) {
       @Override
       public TyParseState next(JavaCaseFormat n) {
@@ -55,7 +55,7 @@ final class TypeNameClassifier {
       }
     },
 
-    /** The current prefix is a type, followed by a single static member access. */
+    /// The current prefix is a type, followed by a single static member access.
     FIRST_STATIC_MEMBER(true) {
       @Override
       public TyParseState next(JavaCaseFormat n) {
@@ -63,7 +63,7 @@ final class TypeNameClassifier {
       }
     },
 
-    /** Anything not represented by one of the other states. */
+    /// Anything not represented by one of the other states.
     REJECT(false) {
       @Override
       public TyParseState next(JavaCaseFormat n) {
@@ -71,7 +71,7 @@ final class TypeNameClassifier {
       }
     },
 
-    /** An ambiguous type prefix. */
+    /// An ambiguous type prefix.
     AMBIGUOUS(false) {
       @Override
       public TyParseState next(JavaCaseFormat n) {
@@ -93,22 +93,18 @@ final class TypeNameClassifier {
       return isSingleUnit;
     }
 
-    /** Transition function. */
+    /// Transition function.
     abstract TyParseState next(JavaCaseFormat n);
   }
 
-  /**
-   * Returns the end index (inclusive) of the longest prefix that matches the naming conventions of
-   * a type or static field access, or -1 if no such prefix was found.
-   *
-   * <p>Examples:
-   *
-   * <ul>
-   *   <li>ClassName
-   *   <li>ClassName.staticMemberName
-   *   <li>com.google.ClassName.InnerClass.staticMemberName
-   * </ul>
-   */
+  /// Returns the end index (inclusive) of the longest prefix that matches the naming conventions of
+  /// a type or static field access, or -1 if no such prefix was found.
+  ///
+  /// Examples:
+  ///
+  /// - ClassName
+  /// - ClassName.staticMemberName
+  /// - com.google.ClassName.InnerClass.staticMemberName
   static Optional<Integer> typePrefixLength(List<String> nameParts) {
     TyParseState state = TyParseState.START;
     Optional<Integer> typeLength = Optional.empty();
@@ -124,14 +120,14 @@ final class TypeNameClassifier {
     return typeLength;
   }
 
-  /** Case formats used in Java identifiers. */
+  /// Case formats used in Java identifiers.
   enum JavaCaseFormat {
     UPPERCASE,
     LOWERCASE,
     UPPER_CAMEL,
     LOWER_CAMEL;
 
-    /** Classifies an identifier's case format. */
+    /// Classifies an identifier's case format.
     static JavaCaseFormat from(String name) {
       Verify.verify(!name.isEmpty());
       boolean firstUppercase = false;

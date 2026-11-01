@@ -17,8 +17,10 @@ package com.google.googlejavaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Range;
@@ -36,7 +38,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/** Tests formatting parts of files. */
+/// Tests formatting parts of files.
 @RunWith(Parameterized.class)
 public final class PartialFormattingTest {
 
@@ -143,6 +145,16 @@ public final class PartialFormattingTest {
         lines(
             "class Foo {",
             "  void m() {",
+            "    ImmutableList<Integer> ids = ImmutableList.builder()",
+            "    .add(1)",
+            "    .add(2)",
+            "    .build();",
+            "}}",
+            "");
+    String expectedNoReindent =
+        lines(
+            "class Foo {",
+            "  void m() {",
             "ImmutableList<Integer> ids = ImmutableList.builder()",
             ".add(1)",
             ".add(2)",
@@ -150,8 +162,9 @@ public final class PartialFormattingTest {
             "}}",
             "");
     int idx = input.indexOf("void");
-    String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertThat(output).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1)).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1, /* cleanup= */ false))
+        .isEqualTo(expectedNoReindent);
   }
 
   @Test
@@ -173,14 +186,26 @@ public final class PartialFormattingTest {
             "    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,",
             "    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,",
             "    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX> {",
+            "  void ",
+            "   m() ",
+            "   {",
+            "  }}",
+            "");
+    String expectedNoReindent =
+        lines(
+            "class Foo<",
+            "    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,",
+            "    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,",
+            "    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX> {",
             "void ",
             " m() ",
             " {",
             "}}",
             "");
     int idx = input.indexOf("class");
-    String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertThat(output).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1)).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1, /* cleanup= */ false))
+        .isEqualTo(expectedNoReindent);
   }
 
   @Test
@@ -202,6 +227,18 @@ public final class PartialFormattingTest {
     String expectedOutput =
         lines(
             "class Test {",
+            "  int ",
+            "   xxx ",
+            "   = 1;",
+            "  int yyy = 1;",
+            "  int ",
+            "   zzz ",
+            "   = 1;",
+            "}",
+            "");
+    String expectedNoReindent =
+        lines(
+            "class Test {",
             "int ",
             " xxx ",
             " = 1;",
@@ -212,8 +249,9 @@ public final class PartialFormattingTest {
             "}",
             "");
     int idx = input.indexOf("yyy");
-    String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertThat(output).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1)).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1, /* cleanup= */ false))
+        .isEqualTo(expectedNoReindent);
   }
 
   @Test
@@ -371,7 +409,12 @@ public final class PartialFormattingTest {
 
   private static String doGetFormatReplacements(String input, int characterILo, int characterIHi)
       throws Exception {
-    return new Formatter()
+    return doGetFormatReplacements(input, characterILo, characterIHi, /* cleanup= */ true);
+  }
+
+  private static String doGetFormatReplacements(
+      String input, int characterILo, int characterIHi, boolean cleanup) throws Exception {
+    return new Formatter(JavaFormatterOptions.builder().cleanup(cleanup).build())
         .formatSource(input, ImmutableList.of(Range.closedOpen(characterILo, characterIHi + 1)));
   }
 
@@ -388,23 +431,22 @@ public final class PartialFormattingTest {
     String expectedOutput =
         lines(
             "class Foo{", //
+            "  int xxx;",
+            "  int yyy;",
+            "  int zzz;",
+            "}",
+            "");
+    String expectedNoReindent =
+        lines(
+            "class Foo{", //
             "int xxx;",
             "  int yyy;",
             "int zzz;",
             "}",
             "");
 
-    Path tmpdir = testFolder.newFolder().toPath();
-    Path path = tmpdir.resolve("Foo.java");
-    Files.write(path, input.getBytes(UTF_8));
-
-    StringWriter out = new StringWriter();
-    StringWriter err = new StringWriter();
-
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
-    String[] args = {"-lines", "3", path.toString()};
-    assertThat(main.format(args)).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(expectedOutput);
+    assertThat(formatMain(input, "-lines", "3")).isEqualTo(expectedOutput);
+    assertThat(formatMain(input, "--cleanup=false", "-lines", "3")).isEqualTo(expectedNoReindent);
   }
 
   @Test
@@ -420,23 +462,22 @@ public final class PartialFormattingTest {
     String expectedOutput =
         lines(
             "class Foo{", //
+            "  int xxx;",
+            "  int yyy;",
+            "  int zzz;",
+            "}",
+            "");
+    String expectedNoReindent =
+        lines(
+            "class Foo{", //
             "int xxx;",
             "  int yyy;",
             "  int zzz;",
             "}",
             "");
 
-    Path tmpdir = testFolder.newFolder().toPath();
-    Path path = tmpdir.resolve("Foo.java");
-    Files.write(path, input.getBytes(UTF_8));
-
-    StringWriter out = new StringWriter();
-    StringWriter err = new StringWriter();
-
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
-    String[] args = {"-lines", "3:4", path.toString()};
-    assertThat(main.format(args)).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(expectedOutput);
+    assertThat(formatMain(input, "-lines", "3:4")).isEqualTo(expectedOutput);
+    assertThat(formatMain(input, "--cleanup=false", "-lines", "3:4")).isEqualTo(expectedNoReindent);
   }
 
   @Test
@@ -459,6 +500,21 @@ public final class PartialFormattingTest {
     String expectedOutput =
         lines(
             "public class MyTest {",
+            "  {",
+            "    // asd",
+            "    int x = 1;",
+            "    // asd",
+            "    int y = 2;",
+            "    // asd",
+            "    int z = 3;",
+            "    // asd",
+            "  }",
+            "}",
+            "",
+            "");
+    String expectedNoReindent =
+        lines(
+            "public class MyTest {",
             "{",
             "// asd",
             "int x = 1;",
@@ -472,17 +528,8 @@ public final class PartialFormattingTest {
             "",
             "");
 
-    Path tmpdir = testFolder.newFolder().toPath();
-    Path path = tmpdir.resolve("Foo.java");
-    Files.write(path, input.getBytes(UTF_8));
-
-    StringWriter out = new StringWriter();
-    StringWriter err = new StringWriter();
-
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
-    String[] args = {"-lines", "5", path.toString()};
-    assertThat(main.format(args)).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(expectedOutput);
+    assertThat(formatMain(input, "-lines", "5")).isEqualTo(expectedOutput);
+    assertThat(formatMain(input, "--cleanup=false", "-lines", "5")).isEqualTo(expectedNoReindent);
   }
 
   @Test
@@ -505,6 +552,21 @@ public final class PartialFormattingTest {
     String expectedOutput =
         lines(
             "public class MyTest {",
+            "  {",
+            "    // asd",
+            "    int x = 1;",
+            "    // asd",
+            "    int y = 2;",
+            "    // asd",
+            "    int z = 3;",
+            "    // asd",
+            "  }",
+            "}",
+            "",
+            "");
+    String expectedNoReindent =
+        lines(
+            "public class MyTest {",
             "{",
             "// asd",
             "int x = 1;",
@@ -518,17 +580,8 @@ public final class PartialFormattingTest {
             "",
             "");
 
-    Path tmpdir = testFolder.newFolder().toPath();
-    Path path = tmpdir.resolve("Foo.java");
-    Files.write(path, input.getBytes(UTF_8));
-
-    StringWriter out = new StringWriter();
-    StringWriter err = new StringWriter();
-
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
-    String[] args = {"-lines", "6", path.toString()};
-    assertThat(main.format(args)).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(expectedOutput);
+    assertThat(formatMain(input, "-lines", "6")).isEqualTo(expectedOutput);
+    assertThat(formatMain(input, "--cleanup=false", "-lines", "6")).isEqualTo(expectedNoReindent);
   }
 
   @Test
@@ -551,6 +604,21 @@ public final class PartialFormattingTest {
     String expectedOutput =
         lines(
             "public class MyTest {",
+            "  {",
+            "    // asd",
+            "    int x = 1;",
+            "    // asd",
+            "    int y = 2;",
+            "    // asd",
+            "    int z = 3;",
+            "    // asd",
+            "  }",
+            "}",
+            "",
+            "");
+    String expectedNoReindent =
+        lines(
+            "public class MyTest {",
             "{",
             "// asd",
             "int x = 1;",
@@ -564,17 +632,8 @@ public final class PartialFormattingTest {
             "",
             "");
 
-    Path tmpdir = testFolder.newFolder().toPath();
-    Path path = tmpdir.resolve("Foo.java");
-    Files.write(path, input.getBytes(UTF_8));
-
-    StringWriter out = new StringWriter();
-    StringWriter err = new StringWriter();
-
-    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
-    String[] args = {"-lines", "7", path.toString()};
-    assertThat(main.format(args)).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(expectedOutput);
+    assertThat(formatMain(input, "-lines", "7")).isEqualTo(expectedOutput);
+    assertThat(formatMain(input, "--cleanup=false", "-lines", "7")).isEqualTo(expectedNoReindent);
   }
 
   @Test
@@ -722,7 +781,14 @@ public final class PartialFormattingTest {
     Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), System.in);
     String[] args = {"-lines", "3:4", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
-    assertThat(out.toString()).isEqualTo(input);
+    assertThat(out.toString()).isEqualTo(input.substring(4));
+
+    StringWriter outNoReindent = new StringWriter();
+    Main mainNoReindent =
+        new Main(new PrintWriter(outNoReindent, true), new PrintWriter(err, true), System.in);
+    assertThat(mainNoReindent.format("-lines", "3:4", "--cleanup=false", path.toString()))
+        .isEqualTo(0);
+    assertThat(outNoReindent.toString()).isEqualTo(input);
   }
 
   @Test
@@ -745,6 +811,22 @@ public final class PartialFormattingTest {
     String expectedOutput =
         lines(
             "public class MyTest {{",
+            "    int x = ",
+            "     1;",
+            "    int y =",
+            "        new Runnable() {",
+            "          void run() {",
+            "            System.err.println(42);",
+            "          }",
+            "        };",
+            "    int z = ",
+            "     1;",
+            "}}",
+            "",
+            "");
+    String expectedOutputNoReindent =
+        lines(
+            "public class MyTest {{",
             "int x = ",
             " 1;",
             "    int y =",
@@ -761,8 +843,10 @@ public final class PartialFormattingTest {
 
     String toFormat = "Runnable";
     int idx = input.indexOf(toFormat);
-    String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
-    assertThat(output).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + toFormat.length()))
+        .isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + toFormat.length(), /* cleanup= */ false))
+        .isEqualTo(expectedOutputNoReindent);
   }
 
   @Test
@@ -785,6 +869,22 @@ public final class PartialFormattingTest {
     String expectedOutput =
         lines(
             "public class MyTest {",
+            "  int x = ",
+            "   1;",
+            "  int y =",
+            "      new Runnable() {",
+            "        void run() {",
+            "          System.err.println(42);",
+            "        }",
+            "      };",
+            "  int z = ",
+            "   1;",
+            "}",
+            "",
+            "");
+    String expectedOutputNoReindent =
+        lines(
+            "public class MyTest {",
             "int x = ",
             " 1;",
             "  int y =",
@@ -801,8 +901,10 @@ public final class PartialFormattingTest {
 
     String toFormat = "Runnable";
     int idx = input.indexOf(toFormat);
-    String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
-    assertThat(output).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + toFormat.length()))
+        .isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + toFormat.length(), /* cleanup= */ false))
+        .isEqualTo(expectedOutputNoReindent);
   }
 
   @Test
@@ -896,6 +998,15 @@ public final class PartialFormattingTest {
     }
     assertThat(startPositions).hasSize(3);
     assertThat(startPositions).isInStrictOrder();
+
+    ImmutableList<Replacement> replacementsWithReindent =
+        new Formatter().getFormatReplacements(input, ranges, /* reindent= */ true);
+    List<Integer> startPositionsWithReindent = new ArrayList<>();
+    for (Replacement replacement : replacementsWithReindent) {
+      startPositionsWithReindent.add(replacement.replaceRange().lowerEndpoint());
+    }
+    assertThat(startPositionsWithReindent).hasSize(5);
+    assertThat(startPositionsWithReindent).isInStrictOrder();
   }
 
   @Test
@@ -924,6 +1035,15 @@ public final class PartialFormattingTest {
     }
     assertThat(startPositions).hasSize(3);
     assertThat(startPositions).isInStrictOrder();
+
+    ImmutableList<Replacement> replacementsWithReindent =
+        new Formatter().getFormatReplacements(input, ranges, /* reindent= */ true);
+    List<Integer> startPositionsWithReindent = new ArrayList<>();
+    for (Replacement replacement : replacementsWithReindent) {
+      startPositionsWithReindent.add(replacement.replaceRange().lowerEndpoint());
+    }
+    assertThat(startPositionsWithReindent).hasSize(5);
+    assertThat(startPositionsWithReindent).isInStrictOrder();
   }
 
   private void testFormatLine(String input, String expectedOutput, int i) throws Exception {
@@ -986,6 +1106,18 @@ public final class PartialFormattingTest {
     String expectedOutput =
         lines(
             "public class MyTest {{",
+            "    if (true) {",
+            "      if (true) {",
+            "        System.err.println(\"Hello\");",
+            "      } else {",
+            "        System.err.println(\"Goodbye\");",
+            "      }",
+            "    }",
+            "}}",
+            "");
+    String expectedOutputNoReindent =
+        lines(
+            "public class MyTest {{",
             "if (true) {",
             "if (true) {",
             "        System.err.println(\"Hello\");",
@@ -998,8 +1130,10 @@ public final class PartialFormattingTest {
 
     String toFormat = "Hello";
     int idx = input.indexOf(toFormat);
-    String output = doGetFormatReplacements(input, idx, idx + toFormat.length());
-    assertThat(output).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + toFormat.length()))
+        .isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + toFormat.length(), /* cleanup= */ false))
+        .isEqualTo(expectedOutputNoReindent);
   }
 
   // regression test for b/b22196513
@@ -1212,6 +1346,20 @@ public final class PartialFormattingTest {
             "    switch (foo) {",
             "      case FOO:",
             "        f();",
+            "        break;",
+            "      case BAR:",
+            "        g();",
+            "        break;",
+            "    }",
+            "  }",
+            "}");
+    String expectedOutputNoReindent =
+        lines(
+            "class Test {",
+            "  {",
+            "    switch (foo) {",
+            "      case FOO:",
+            "        f();",
             "      break;",
             "      case BAR:", // we deliberately only format the first case
             "      g();",
@@ -1221,8 +1369,9 @@ public final class PartialFormattingTest {
             "}");
 
     int idx = input.indexOf("f()");
-    String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertThat(output).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1)).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1, /* cleanup= */ false))
+        .isEqualTo(expectedOutputNoReindent);
   }
 
   // regression test for b/23349153
@@ -1259,12 +1408,20 @@ public final class PartialFormattingTest {
         lines(
             "class Test {{", //
             "    Object o = f();",
+            "    int x;",
+            "}}",
+            "");
+    String expectedOutputNoReindent =
+        lines(
+            "class Test {{", //
+            "    Object o = f();",
             "            int x;",
             "}}",
             "");
     int idx = input.indexOf("Object o");
-    String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertThat(output).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1)).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1, /* cleanup= */ false))
+        .isEqualTo(expectedOutputNoReindent);
   }
 
   @Test
@@ -1280,12 +1437,20 @@ public final class PartialFormattingTest {
         lines(
             "class Test {{", //
             "    Object o = f();",
+            "    ;",
+            "}}",
+            "");
+    String expectedOutputNoReindent =
+        lines(
+            "class Test {{", //
+            "    Object o = f();",
             "            ;",
             "}}",
             "");
     int idx = input.indexOf("Object o");
-    String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertThat(output).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1)).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1, /* cleanup= */ false))
+        .isEqualTo(expectedOutputNoReindent);
   }
 
   // Regression test for b/18479811
@@ -1313,12 +1478,6 @@ public final class PartialFormattingTest {
             "}}}",
             "");
 
-    for (; length <= line1.length() + newline.length(); length++) {
-      Range<Integer> range = Range.closedOpen(startOffset, startOffset + length);
-      String output = new Formatter().formatSource(input, ImmutableList.of(range));
-      assertEquals("bad output", expectedFormatLine1, output);
-    }
-
     String expectedFormatLine1And2 =
         lines(
             "class Test {{",
@@ -1327,10 +1486,28 @@ public final class PartialFormattingTest {
             "}}}",
             "");
 
+    Formatter noReindentFormatter =
+        new Formatter(JavaFormatterOptions.builder().cleanup(false).build());
+    for (; length <= line1.length() + newline.length(); length++) {
+      Range<Integer> range = Range.closedOpen(startOffset, startOffset + length);
+      assertEquals(
+          "bad output",
+          expectedFormatLine1And2,
+          new Formatter().formatSource(input, ImmutableList.of(range)));
+      assertEquals(
+          "bad output",
+          expectedFormatLine1,
+          noReindentFormatter.formatSource(input, ImmutableList.of(range)));
+    }
+
     for (; length <= line1.length() + line2.length() + 2 * newline.length(); length++) {
       Range<Integer> range = Range.closedOpen(startOffset, startOffset + length);
       String output = new Formatter().formatSource(input, ImmutableList.of(range));
       assertEquals("bad output", expectedFormatLine1And2, output);
+      assertEquals(
+          "bad output",
+          expectedFormatLine1And2,
+          noReindentFormatter.formatSource(input, ImmutableList.of(range)));
     }
   }
 
@@ -1363,14 +1540,26 @@ public final class PartialFormattingTest {
             "}}}",
             "");
 
+    String expectedFormatLine1And2 =
+        lines(
+            "class Test {{", //
+            "    for (Integer x : Arrays.asList(1, 2, 3)) {", //
+            "      System.err.println(x);",
+            "}}}",
+            "");
+
+    Formatter noReindentFormatter =
+        new Formatter(JavaFormatterOptions.builder().cleanup(false).build());
     int line2Start = input.indexOf(line2);
     int nonWhitespaceLine2Start = input.indexOf("System.err");
     int start;
     // formatting a range that touches non-whitespace characters in line2 should format line2
     for (start = nonWhitespaceLine2Start; start > (line2Start - newline.length()); start--) {
       Range<Integer> range = Range.closedOpen(start, nonWhitespaceLine2Start + newline.length());
-      String output = new Formatter().formatSource(input, ImmutableList.of(range));
-      assertThat(output).isEqualTo(expectedFormatLine2);
+      assertThat(new Formatter().formatSource(input, ImmutableList.of(range)))
+          .isEqualTo(expectedFormatLine1And2);
+      assertThat(noReindentFormatter.formatSource(input, ImmutableList.of(range)))
+          .isEqualTo(expectedFormatLine2);
     }
     // formatting a range that touches whitespace characters between line1 and line2 should
     // not result in any formatting
@@ -1378,16 +1567,18 @@ public final class PartialFormattingTest {
     int line1End = input.indexOf(line1) + line1.length();
     for (; start >= line1End; start--) {
       Range<Integer> range = Range.closedOpen(start, line2Start);
-      String output = new Formatter().formatSource(input, ImmutableList.of(range));
-      assertThat(output).isEqualTo(input);
+      assertThat(new Formatter().formatSource(input, ImmutableList.of(range))).isEqualTo(input);
+      assertThat(noReindentFormatter.formatSource(input, ImmutableList.of(range))).isEqualTo(input);
     }
     // formatting a range that touches non-whitespace characters in line1 should format line1
     assertThat(input.substring(start + 1, start + 1 + newline.length())).isEqualTo(newline);
     int line1Start = input.indexOf(line1);
     for (; start >= line1Start; start--) {
       Range<Integer> range = Range.closedOpen(start, line2Start);
-      String output = new Formatter().formatSource(input, ImmutableList.of(range));
-      assertThat(output).isEqualTo(expectedFormatLine1);
+      assertThat(new Formatter().formatSource(input, ImmutableList.of(range)))
+          .isEqualTo(expectedFormatLine1And2);
+      assertThat(noReindentFormatter.formatSource(input, ImmutableList.of(range)))
+          .isEqualTo(expectedFormatLine1);
     }
   }
 
@@ -1421,6 +1612,13 @@ public final class PartialFormattingTest {
     };
     String[] expected = {
       "enum E {", //
+      "  ONE,",
+      "  TWO,",
+      "  THREE;",
+      "}",
+    };
+    String[] expectedNoReindent = {
+      "enum E {", //
       "ONE,",
       "  TWO,",
       "THREE;",
@@ -1438,6 +1636,13 @@ public final class PartialFormattingTest {
     String[] args = {"-lines", "3", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(lines(expected));
+
+    StringWriter outNoReindent = new StringWriter();
+    Main mainNoReindent =
+        new Main(new PrintWriter(outNoReindent, true), new PrintWriter(err, true), System.in);
+    assertThat(mainNoReindent.format("-lines", "3", "--cleanup=false", path.toString()))
+        .isEqualTo(0);
+    assertThat(outNoReindent.toString()).isEqualTo(lines(expectedNoReindent));
   }
 
   @Test
@@ -1450,6 +1655,13 @@ public final class PartialFormattingTest {
       "}",
     };
     String[] expected = {
+      "class T {", //
+      "  final private int a = 0;",
+      "  private final int b = 0;",
+      "  final private int c = 0;",
+      "}",
+    };
+    String[] expectedNoReindent = {
       "class T {", //
       "final private int a = 0;",
       "  private final int b = 0;",
@@ -1468,6 +1680,13 @@ public final class PartialFormattingTest {
     String[] args = {"-lines", "3", path.toString()};
     assertThat(main.format(args)).isEqualTo(0);
     assertThat(out.toString()).isEqualTo(lines(expected));
+
+    StringWriter outNoReindent = new StringWriter();
+    Main mainNoReindent =
+        new Main(new PrintWriter(outNoReindent, true), new PrintWriter(err, true), System.in);
+    assertThat(mainNoReindent.format("-lines", "3", "--cleanup=false", path.toString()))
+        .isEqualTo(0);
+    assertThat(outNoReindent.toString()).isEqualTo(lines(expectedNoReindent));
   }
 
   @Test
@@ -1527,6 +1746,12 @@ public final class PartialFormattingTest {
     String[] expected = {
       "class foo {{", //
       "    int a = 0;",
+      "    int c = 0;",
+      "}}",
+    };
+    String[] expectedNoReindent = {
+      "class foo {{", //
+      "    int a = 0;",
       "  int c = 0;",
       "}}",
     };
@@ -1534,6 +1759,10 @@ public final class PartialFormattingTest {
     int idx = in.indexOf(';');
     assertThat(new Formatter().formatSource(in, ImmutableList.of(Range.closedOpen(idx, idx))))
         .isEqualTo(lines(expected));
+    assertThat(
+            new Formatter(JavaFormatterOptions.builder().cleanup(false).build())
+                .formatSource(in, ImmutableList.of(Range.closedOpen(idx, idx))))
+        .isEqualTo(lines(expectedNoReindent));
   }
 
   // formatting trailing whitespace at the end of the line doesn't format the line on either side
@@ -1760,6 +1989,26 @@ public final class PartialFormattingTest {
             "  {",
             "    switch (foo) {",
             "      case FOO:",
+            "        f();",
+            "        break;",
+            "      case BAR:",
+            "        switch (bar) {",
+            "          case BAZ:",
+            "            h();",
+            "            break;",
+            "          case BOZ:",
+            "            i();",
+            "            break;",
+            "        }",
+            "    }",
+            "  }",
+            "}");
+    String expectedOutputNoReindent =
+        lines(
+            "class Test {",
+            "  {",
+            "    switch (foo) {",
+            "      case FOO:",
             "      f();",
             "      break;",
             "      case BAR:",
@@ -1776,8 +2025,9 @@ public final class PartialFormattingTest {
             "}");
 
     int idx = input.indexOf("h()");
-    String output = doGetFormatReplacements(input, idx, idx + 1);
-    assertThat(output).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1)).isEqualTo(expectedOutput);
+    assertThat(doGetFormatReplacements(input, idx, idx + 1, /* cleanup= */ false))
+        .isEqualTo(expectedOutputNoReindent);
   }
 
   @Test
@@ -1798,5 +2048,330 @@ public final class PartialFormattingTest {
 
     String output = runFormatter(input, new String[] {"-offset", "13", "-length", "1"});
     assertThat(output).isEqualTo(expectedOutput);
+  }
+
+  // b/30464184: remove unused imports in partial formatting leaves at most one blank line
+  @Test
+  public void unusedImportDeletionNoDoubleBlankLine() throws Exception {
+    String input =
+        lines("package com.example;", "", "import java.util.List;", "", "class Test {}", "");
+    String expectedOutput = lines("package com.example;", "", "class Test {}", "");
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    input,
+                    ImmutableList.of(rangeOf(input, "import java.util.List;")),
+                    /* removeUnusedImports= */ true,
+                    /* sortImports= */ true,
+                    /* reflowLongStrings= */ false))
+        .isEqualTo(expectedOutput);
+
+    String noPackageInput = lines("import java.util.List;", "", "class Test {}", "");
+    String noPackageExpected = lines("class Test {}", "");
+    assertThat(
+            new Formatter()
+                .formatSource(
+                    noPackageInput,
+                    ImmutableList.of(rangeOf(noPackageInput, "import java.util.List;")),
+                    /* removeUnusedImports= */ true,
+                    /* sortImports= */ true,
+                    /* reflowLongStrings= */ false))
+        .isEqualTo(noPackageExpected);
+  }
+
+  // b/150227347: trailing blank lines at EOF removed when range touches EOF
+  @Test
+  public void trailingBlankLinesAtEofRemoved() throws Exception {
+    String input = lines("class Test {", "  void f() {}", "}", "", "", "");
+    String expectedOutput = lines("class Test {", "  void f() {}", "}", "");
+    assertThat(runFormatter(input, new String[] {"-lines", "3:5"})).isEqualTo(expectedOutput);
+    assertThat(runFormatter(input, new String[] {"-lines", "4:5"})).isEqualTo(expectedOutput);
+    assertThat(runFormatter(input, new String[] {"-lines", "4:6"})).isEqualTo(expectedOutput);
+
+    String commentInput = lines("class Test {} // comment", "", "", "");
+    String commentExpected = lines("class Test {} // comment", "");
+    assertThat(runFormatter(commentInput, new String[] {"-lines", "2:3"}))
+        .isEqualTo(commentExpected);
+  }
+
+  @Test
+  public void verifyReindentReplacements() {
+    String text = "  a\n    b\n";
+    Replacement reindentA = Replacement.create(0, 2, "    ");
+    Replacement reindentB = Replacement.create(4, 8, "");
+    JavaOutput.verifyReindentReplacements(
+        text, ImmutableList.of(reindentA, reindentB), ImmutableList.of(reindentA, reindentB));
+
+    Replacement nonWhitespaceInput = Replacement.create(0, 3, "  ");
+    assertThrows(
+        VerifyException.class,
+        () ->
+            JavaOutput.verifyReindentReplacements(
+                text, ImmutableList.of(nonWhitespaceInput), ImmutableList.of(nonWhitespaceInput)));
+
+    Replacement nonWhitespaceOutput = Replacement.create(0, 2, "  x");
+    assertThrows(
+        VerifyException.class,
+        () ->
+            JavaOutput.verifyReindentReplacements(
+                text,
+                ImmutableList.of(nonWhitespaceOutput),
+                ImmutableList.of(nonWhitespaceOutput)));
+
+    Replacement format = Replacement.create(1, 6, "a\n  b");
+    assertThrows(
+        VerifyException.class,
+        () ->
+            JavaOutput.verifyReindentReplacements(
+                text, ImmutableList.of(reindentA), ImmutableList.of(reindentA, format)));
+  }
+
+  /// Returns a text block with its `\n` line separators replaced by the separator under test.
+  private String text(String textBlock) {
+    return textBlock.replace("\n", newline);
+  }
+
+  // b/24140798: re-indent enclosing blocks and statements while preserving line breaks outside
+  // -lines.
+  @Test
+  public void reindentBracesAndBlocks() throws Exception {
+    String input =
+        text(
+            """
+            class T {
+              void f() {
+                if (true) {
+              if (true) {
+                /* comment */ int x =
+                    1 + 2;
+                int y = 3   +   4;
+              } else {
+                int z =
+                    5 + 6;
+              }
+                }
+              }
+            }
+            """);
+    String expectedOutput =
+        text(
+            """
+            class T {
+              void f() {
+                if (true) {
+                  if (true) {
+                    /* comment */ int x =
+                        1 + 2;
+                    int y = 3 + 4;
+                  } else {
+                    int z =
+                        5 + 6;
+                  }
+                }
+              }
+            }
+            """);
+
+    assertThat(runFormatter(input, new String[] {"-lines", "7"})).isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void reindentSwitchEnumModule() throws Exception {
+    String switchInput =
+        text(
+            """
+            class T {
+              void f(int x) {
+                switch (x) {
+                  case 1:
+                    int y = 1   +   2;
+                    break;
+              }
+              }
+            }
+            """);
+    String switchExpected =
+        text(
+            """
+            class T {
+              void f(int x) {
+                switch (x) {
+                  case 1:
+                    int y = 1 + 2;
+                    break;
+                }
+              }
+            }
+            """);
+    assertThat(runFormatter(switchInput, new String[] {"-lines", "5"})).isEqualTo(switchExpected);
+
+    String enumInput =
+        text(
+            """
+            class T {
+              enum E {
+                ONE,
+                TWO;
+                }
+            }
+            """);
+    String enumExpected =
+        text(
+            """
+            class T {
+              enum E {
+                ONE,
+                TWO;
+              }
+            }
+            """);
+    assertThat(runFormatter(enumInput, new String[] {"-lines", "3"})).isEqualTo(enumExpected);
+
+    String moduleInput =
+        text(
+            """
+            module com.example.foo {
+              requires java.base;
+              requires java.sql;
+              }
+            """);
+    String moduleExpected =
+        text(
+            """
+            module com.example.foo {
+              requires java.base;
+              requires java.sql;
+            }
+            """);
+    assertThat(runFormatter(moduleInput, new String[] {"-lines", "2"})).isEqualTo(moduleExpected);
+  }
+
+  @Test
+  public void reindentStatementStartingOnPreviousStatementsLastLine() throws Exception {
+    String input =
+        text(
+            """
+            class T {
+              void f() {
+                if (true) {
+              foo(
+                  1); bar(
+                  2);
+              int y = 1   +   2;
+                }
+              }
+            }
+            """);
+    String expectedOutput =
+        text(
+            """
+            class T {
+              void f() {
+                if (true) {
+                  foo(
+                      1); bar(
+                      2);
+                  int y = 1 + 2;
+                }
+              }
+            }
+            """);
+    assertThat(new Formatter().formatSource(input, ImmutableList.of(rangeOf(input, "int y"))))
+        .isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void reindentTrailingMultiLineComment() throws Exception {
+    String input =
+        text(
+            """
+            class T {
+              void f() {
+                if (true) {
+              foo(); /* a
+                     b */
+              int y = 1   +   2;
+                }
+              }
+            }
+            """);
+    String expectedOutput =
+        text(
+            """
+            class T {
+              void f() {
+                if (true) {
+                  foo(); /* a
+                         b */
+                  int y = 1 + 2;
+                }
+              }
+            }
+            """);
+    assertThat(new Formatter().formatSource(input, ImmutableList.of(rangeOf(input, "int y"))))
+        .isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void reindentTextBlockPreserved() throws Exception {
+    String input =
+        text(
+            """
+            class T {
+              void f() {
+              String s = \"""
+                  hello
+                  world\""";
+                int y = 1   +   2;
+              }
+            }
+            """);
+    String expectedOutput =
+        text(
+            """
+            class T {
+              void f() {
+                String s = \"""
+                  hello
+                  world\""";
+                int y = 1 + 2;
+              }
+            }
+            """);
+    assertThat(new Formatter().formatSource(input, ImmutableList.of(rangeOf(input, "int y"))))
+        .isEqualTo(expectedOutput);
+  }
+
+  @Test
+  public void reindentTabs() throws Exception {
+    String input =
+        text(
+            """
+            class T {
+            \tvoid f() {
+            \tint x =
+            \t\t1;
+            \t\tint y = 2   +   3;
+            \t}
+            }
+            """);
+    String expectedOutput =
+        text(
+            """
+            class T {
+            \tvoid f() {
+            \t\tint x =
+            \t\t\t1;
+            \t\tint y = 2 + 3;
+            \t}
+            }
+            """);
+    Formatter tabFormatter =
+        new Formatter(
+            JavaFormatterOptions.builder()
+                .style(JavaFormatterOptions.Style.builder().useTabs(true).build())
+                .build());
+    assertThat(tabFormatter.formatSource(input, ImmutableList.of(rangeOf(input, "int y"))))
+        .isEqualTo(expectedOutput);
   }
 }

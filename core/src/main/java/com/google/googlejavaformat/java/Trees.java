@@ -53,24 +53,24 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardLocation;
 import org.jspecify.annotations.Nullable;
 
-/** Utilities for working with {@link Tree}s. */
+/// Utilities for working with [Tree]s.
 class Trees {
-  /** Returns the length of the source for the node. */
+  /// Returns the length of the source for the node.
   static int getLength(Tree tree, TreePath path) {
     return getEndPosition(tree, path) - getStartPosition(tree);
   }
 
-  /** Returns the source start position of the node. */
+  /// Returns the source start position of the node.
   static int getStartPosition(Tree expression) {
     return ((JCTree) expression).getStartPosition();
   }
 
-  /** Returns the source end position of the node. */
+  /// Returns the source end position of the node.
   static int getEndPosition(Tree expression, TreePath path) {
     return getEndPosition(expression, path.getCompilationUnit());
   }
 
-  /** Returns the source end position of the node. */
+  /// Returns the source end position of the node.
   static int getEndPosition(Tree tree, CompilationUnitTree unit) {
     try {
       return (int) GET_END_POS_HANDLE.invokeExact((JCTree) tree, (JCCompilationUnit) unit);
@@ -80,7 +80,7 @@ class Trees {
     }
   }
 
-  /** Returns the source text for the node. */
+  /// Returns the source text for the node.
   static String getSourceForNode(Tree node, TreePath path) {
     CharSequence source;
     try {
@@ -91,7 +91,7 @@ class Trees {
     return source.subSequence(getStartPosition(node), getEndPosition(node, path)).toString();
   }
 
-  /** Returns the simple name of a (possibly qualified) method invocation expression. */
+  /// Returns the simple name of a (possibly qualified) method invocation expression.
   static Name getMethodName(MethodInvocationTree methodInvocation) {
     ExpressionTree select = methodInvocation.getMethodSelect();
     return switch (select) {
@@ -101,7 +101,7 @@ class Trees {
     };
   }
 
-  /** Returns the receiver of a qualified method invocation expression, or {@code null}. */
+  /// Returns the receiver of a qualified method invocation expression, or `null`.
   static @Nullable ExpressionTree getMethodReceiver(MethodInvocationTree methodInvocation) {
     ExpressionTree select = methodInvocation.getMethodSelect();
     return select instanceof MemberSelectTree memberSelectTree
@@ -109,7 +109,7 @@ class Trees {
         : null;
   }
 
-  /** Returns the string name of an operator, including assignment and compound assignment. */
+  /// Returns the string name of an operator, including assignment and compound assignment.
   static String operatorName(ExpressionTree expression) {
     JCTree.Tag tag = ((JCTree) expression).getTag();
     if (tag == JCTree.Tag.ASSIGN) {
@@ -123,12 +123,12 @@ class Trees {
     return assignOp ? name + "=" : name;
   }
 
-  /** Returns the precedence of an expression's operator. */
+  /// Returns the precedence of an expression's operator.
   static int precedence(ExpressionTree expression) {
     return TreeInfo.opPrec(((JCTree) expression).getTag());
   }
 
-  /** Skips a single parenthesized tree. */
+  /// Skips a single parenthesized tree.
   static ExpressionTree skipParen(ExpressionTree node) {
     return ((ParenthesizedTree) node).getExpression();
   }

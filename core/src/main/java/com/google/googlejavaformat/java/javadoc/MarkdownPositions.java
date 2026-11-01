@@ -54,17 +54,14 @@ import org.commonmark.node.ThematicBreak;
 import org.commonmark.parser.IncludeSourceSpans;
 import org.commonmark.parser.Parser;
 
-/**
- * Determines the locations in a Markdown string where Markdown constructs occur. For example, if
- * position 10 in the string looks like {@code # Heading\n}, the {@code positionToToken} map will
- * contain an entry for 10 with a {@code HeaderOpenTag} token and an entry for (10 +
- * "#&nbsp;Heading".length()) with a {@code HeaderCloseTag} token. These locations can then be
- * inserted at the appropriate point in the stream of {@link Token} instances that the lexer
- * produces.
- *
- * <p>The text ({@Token#value()}) of these inserted tokens is mostly not added to the output, since
- * the original Markdown characters are treated as literals.
- */
+/// Determines the locations in a Markdown string where Markdown constructs occur. For example, if
+/// position 10 in the string looks like `# Heading\n`, the `positionToToken` map will contain an
+/// entry for 10 with a `HeaderOpenTag` token and an entry for (10 + "#&nbsp;Heading".length()) with
+/// a `HeaderCloseTag` token. These locations can then be inserted at the appropriate point in the
+/// stream of [Token] instances that the lexer produces.
+///
+/// The text ([Token#value()]) of these inserted tokens is mostly not added to the output, since the
+/// original Markdown characters are treated as literals.
 final class MarkdownPositions {
   final ImmutableListMultimap<Integer, Token> positionToToken;
 
@@ -222,25 +219,20 @@ final class MarkdownPositions {
       positionToToken.get(end - count).addFirst(new MarkdownCodeSpanEnd(backticks));
     }
 
-    /**
-     * Visits the given node and the other nodes that are reachable from it via the {@link
-     * Node#getNext()} references. Does nothing if {@code node} is null.
-     */
+    /// Visits the given node and the other nodes that are reachable from it via the
+    /// [Node#getNext()] references. Does nothing if `node` is null.
     private void visitNodeList(Node node) {
       for (; node != null; node = node.getNext()) {
         visit(node);
       }
     }
 
-    /**
-     * Adds tokens for the given node, {@code startToken} at the point where the node starts in the
-     * input, and {@code endToken} at the point where it ends. The {@code startToken} goes after any
-     * other tokens at that position and the {@code endToken} goes before any other tokens at that
-     * position. That reflects the structure. For example, at the start of a bullet list, the
-     * visitor we will translate this into {@link ListOpenTag} then {@link ListItemOpenTag} at the
-     * start position, and {@link ListItemCloseTag} then {@link ListCloseTag} (in that order) at the
-     * end position.
-     */
+    /// Adds tokens for the given node, `startToken` at the point where the node starts in the
+    /// input, and `endToken` at the point where it ends. The `startToken` goes after any other
+    /// tokens at that position and the `endToken` goes before any other tokens at that position.
+    /// That reflects the structure. For example, at the start of a bullet list, the visitor we will
+    /// translate this into [ListOpenTag] then [ListItemOpenTag] at the start position, and
+    /// [ListItemCloseTag] then [ListCloseTag] (in that order) at the end position.
     private void addSpan(Node node, Token startToken, Token endToken) {
       addSpan(node, startToken, endToken, startPosition(node));
     }

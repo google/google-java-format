@@ -19,9 +19,9 @@ import com.google.common.collect.Range;
 import com.google.googlejavaformat.OpsBuilder.BlankLineWanted;
 import java.util.Optional;
 
-/** An output from the formatter. */
+/// An output from the formatter.
 public abstract class Output extends InputOutput {
-  /** Unique identifier for a break. */
+  /// Unique identifier for a break.
   public static final class BreakTag {
 
     Optional<Boolean> taken = Optional.empty();
@@ -40,37 +40,29 @@ public abstract class Output extends InputOutput {
     }
   }
 
-  /**
-   * Indent by outputting {@code indent} spaces.
-   *
-   * @param indent the current indent
-   */
+  /// Indent by outputting `indent` spaces.
+  ///
+  /// @param indent the current indent
   public abstract void indent(int indent);
 
-  /**
-   * Output a string.
-   *
-   * @param text the string
-   * @param range the {@link Range} corresponding to the string
-   */
+  /// Output a string.
+  ///
+  /// @param text the string
+  /// @param range the [Range] corresponding to the string
   public abstract void append(String text, Range<Integer> range);
 
-  /**
-   * A blank line is or is not wanted here.
-   *
-   * @param k the {@link Input.Tok} index
-   * @param wanted whether a blank line is wanted here
-   */
+  /// A blank line is or is not wanted here.
+  ///
+  /// @param k the [Input.Tok] index
+  /// @param wanted whether a blank line is wanted here
   public abstract void blankLine(int k, BlankLineWanted wanted);
 
-  /** Marks a region that can be partially formatted. */
+  /// Marks a region that can be partially formatted.
   public abstract void markForPartialFormat(Input.Token start, Input.Token end);
 
-  /**
-   * Get the {@link CommentsHelper}.
-   *
-   * @return the {@link CommentsHelper}
-   */
+  /// Get the [CommentsHelper].
+  ///
+  /// @return the [CommentsHelper]
   public abstract CommentsHelper getCommentsHelper();
 
   @Override

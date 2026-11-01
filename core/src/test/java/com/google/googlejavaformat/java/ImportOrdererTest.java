@@ -28,11 +28,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/** Tests for {@link ImportOrderer}. */
+/// Tests for [ImportOrderer].
 @RunWith(Enclosed.class)
 public class ImportOrdererTest {
 
-  /** Tests for import ordering in Google style. */
+  /// Tests for import ordering in Google style.
   @RunWith(Parameterized.class)
   public static class GoogleStyle {
 
@@ -573,7 +573,7 @@ public class ImportOrdererTest {
     }
   }
 
-  /** Tests for import ordering in AOSP style. */
+  /// Tests for import ordering in AOSP style.
   @RunWith(Parameterized.class)
   public static class AospStyle {
 
@@ -877,5 +877,34 @@ public class ImportOrdererTest {
     // some parsing edge cases.
     row[0] = ((String) row[0]).replace("\\\n", "");
     return row;
+  }
+
+  /// Tests for [ImportOrderer#findReplacements].
+  public static class FindReplacements {
+
+    @Test
+    public void alreadySorted_noReplacement() throws FormatterException {
+      String input =
+          """
+          import a.A;
+          import b.B;
+
+          class C {}
+          """;
+      assertThat(ImportOrderer.findReplacements(input, Style.GOOGLE)).isEmpty();
+    }
+
+    @Test
+    public void manyBlankLinesAfterImports() throws FormatterException {
+      String input = "import b.B;\nimport a.A;" + "\n".repeat(12) + "class C{}\n";
+      assertThat(ImportOrderer.reorderImports(input, Style.GOOGLE))
+          .isEqualTo(
+              """
+              import a.A;
+              import b.B;
+
+              class C{}
+              """);
+    }
   }
 }

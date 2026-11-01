@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
-/** Checked exception class for formatter errors. */
+/// Checked exception class for formatter errors.
 public final class FormatterException extends Exception {
 
   private final ImmutableList<FormatterDiagnostic> diagnostics;
@@ -68,7 +68,7 @@ public final class FormatterException extends Exception {
       sb.append(path).append(":").append(diagnostic).append(System.lineSeparator());
       int line = diagnostic.line();
       int column = diagnostic.column();
-      if (line != -1 && column != -1) {
+      if (line > 0 && column > 0 && line <= lines.size()) {
         sb.append(CharMatcher.breakingWhitespace().trimTrailingFrom(lines.get(line - 1)))
             .append(System.lineSeparator());
         sb.append(" ".repeat(column - 1)).append('^').append(System.lineSeparator());

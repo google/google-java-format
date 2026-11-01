@@ -67,7 +67,7 @@ public class GoogleJavaFormatFormattingService extends AsyncDocumentFormattingSe
   private static Formatter createFormatter(Style style, boolean canChangeWhiteSpaceOnly) {
     JavaFormatterOptions.Builder optBuilder = JavaFormatterOptions.builder().style(style);
     if (canChangeWhiteSpaceOnly) {
-      optBuilder.formatJavadoc(false).reorderModifiers(false);
+      optBuilder.formatJavadoc(false).reorderModifiers(false).cleanup(false);
     }
     return new Formatter(optBuilder.build());
   }

@@ -22,25 +22,25 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.Immutable;
 import com.google.googlejavaformat.Doc;
 
-/**
- * Options for a google-java-format invocation.
- *
- * <p>Like gofmt, the google-java-format CLI exposes <em>no</em> configuration options (aside from
- * {@code --aosp}).
- *
- * <p>The goal of google-java-format is to provide consistent formatting, and to free developers
- * from arguments over style choices. It is an explicit non-goal to support developers' individual
- * preferences, and in fact it would work directly against our primary goals.
- *
- * @param style Returns the code style.
- */
+/// Options for a google-java-format invocation.
+///
+/// The google-java-format CLI exposes very few configuration options.
+///
+/// The goal of google-java-format is to provide consistent formatting, and to free developers from
+/// arguments over style choices. It is an explicit non-goal to support developers' individual
+/// preferences, and in fact it would work directly against our primary goals.
+///
+/// @param cleanup Whether to enable non-whitespace cleanups (applies to formatSource* and the CLI
+///   only).
+/// @param style Returns the code style.
 @Immutable
-public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifiers, Style style) {
+public record JavaFormatterOptions(
+    boolean formatJavadoc, boolean reorderModifiers, boolean cleanup, Style style) {
   public JavaFormatterOptions {
     requireNonNull(style, "style");
   }
 
-  /** Code style configuration for layout and imports. */
+  /// Code style configuration for layout and imports.
   @Immutable
   public record Style(
       int indentationMultiplier, int maxLineLength, boolean useTabs, ImportOrder importOrder) {
@@ -53,30 +53,67 @@ public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifie
       requireNonNull(importOrder, "importOrder");
     }
 
-    /**
-     * The largest supported {@link #maxLineLength}. Layout widths saturate at {@link
-     * Doc#MAX_LINE_WIDTH}, which is also how forced breaks are represented, so the line length must
-     * be smaller than that.
-     */
+    /// The largest supported [#maxLineLength]. Layout widths saturate at [Doc#MAX_LINE_WIDTH],
+    /// which is also how forced breaks are represented, so the line length must be smaller than
+    /// that.
     static final int MAX_LINE_LENGTH_LIMIT = Doc.MAX_LINE_WIDTH - 1;
 
-    /** The default Google Java Style configuration. */
+    /// The default Google Java Style configuration.
     public static final Style GOOGLE = builder().google().build();
 
-    /** The AOSP-compliant configuration. */
+    /// The AOSP-compliant configuration.
     public static final Style AOSP = builder().aosp().build();
 
     /**
-     * Returns the visual column width of a tab stop.
+     * Returns the predefined styles, in the order they were declared when {@code Style} was an
+     * enum.
      *
-     * <p>This matches the standard block indentation width for the style: 2 columns for Google
-     * Style and 4 columns for AOSP.
+     * <p>Retained for compatibility with callers compiled against the enum version of {@code
+     * Style}.
      */
+    public static Style[] values() {
+      return new Style[] {GOOGLE, AOSP};
+    }
+
+    /**
+     * Returns the predefined style with the given name ({@code "GOOGLE"} or {@code "AOSP"}).
+     *
+     * <p>Retained for compatibility with callers compiled against the enum version of {@code
+     * Style}.
+     *
+     * @throws IllegalArgumentException if there is no predefined style with the given name
+     * @throws NullPointerException if {@code name} is null
+     */
+    public static Style valueOf(String name) {
+      return switch (requireNonNull(name, "Name is null")) {
+        case "GOOGLE" -> GOOGLE;
+        case "AOSP" -> AOSP;
+        default ->
+            throw new IllegalArgumentException(
+                "No enum constant " + Style.class.getCanonicalName() + "." + name);
+      };
+    }
+
+    /**
+     * Returns the name of the predefined style this style is based on ({@code "GOOGLE"} or {@code
+     * "AOSP"}), such that {@code valueOf(GOOGLE.name()) == GOOGLE}.
+     *
+     * <p>Retained for compatibility with callers compiled against the enum version of {@code
+     * Style}.
+     */
+    public String name() {
+      return importOrder().name();
+    }
+
+    /// Returns the visual column width of a tab stop.
+    ///
+    /// This matches the standard block indentation width for the style: 2 columns for Google Style
+    /// and 4 columns for AOSP.
     public int tabWidth() {
       return 2 * indentationMultiplier();
     }
 
-    /** Returns the indentation string for the given visual column width. */
+    /// Returns the indentation string for the given visual column width.
     public String indentString(int indent) {
       if (!useTabs()) {
         return JavaOutput.spaces(indent);
@@ -85,12 +122,12 @@ public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifie
       return "\t".repeat(indent / tabWidth) + " ".repeat(indent % tabWidth);
     }
 
-    /** Returns the visual column width of the given character sequence. */
+    /// Returns the visual column width of the given character sequence.
     public int visualLength(CharSequence input) {
       return visualLength(input, 0, input.length());
     }
 
-    /** Returns the visual column width of the given subsequence. */
+    /// Returns the visual column width of the given subsequence.
     public int visualLength(CharSequence input, int start, int end) {
       if (!useTabs()) {
         return end - start;
@@ -126,7 +163,7 @@ public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifie
           .importOrder(importOrder());
     }
 
-    /** A builder for {@link Style}. */
+    /// A builder for [Style].
     @AutoBuilder
     public abstract static class Builder {
       public abstract Builder indentationMultiplier(int indentationMultiplier);
@@ -151,13 +188,13 @@ public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifie
     }
   }
 
-  /** The import order to use. */
+  /// The import order to use.
   public enum ImportOrder {
     GOOGLE,
     AOSP,
   }
 
-  /** Returns the multiplier for the unit of indent. */
+  /// Returns the multiplier for the unit of indent.
   public int indentationMultiplier() {
     return style().indentationMultiplier();
   }
@@ -170,35 +207,36 @@ public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifie
     return style().useTabs();
   }
 
-  /** Returns the indentation string for the given visual column width. */
+  /// Returns the indentation string for the given visual column width.
   public String indentString(int indent) {
     return style().indentString(indent);
   }
 
-  /** Returns the visual column width of the given character sequence. */
+  /// Returns the visual column width of the given character sequence.
   public int visualLength(CharSequence input) {
     return style().visualLength(input);
   }
 
-  /** Returns the visual column width of the given subsequence. */
+  /// Returns the visual column width of the given subsequence.
   public int visualLength(CharSequence input, int start, int end) {
     return style().visualLength(input, start, end);
   }
 
-  /** Returns the default formatting options. */
+  /// Returns the default formatting options.
   public static JavaFormatterOptions defaultOptions() {
     return builder().build();
   }
 
-  /** Returns a builder for {@link JavaFormatterOptions}. */
+  /// Returns a builder for [JavaFormatterOptions].
   public static Builder builder() {
     return new AutoBuilder_JavaFormatterOptions_Builder()
         .style(Style.GOOGLE)
         .formatJavadoc(true)
-        .reorderModifiers(true);
+        .reorderModifiers(true)
+        .cleanup(true);
   }
 
-  /** A builder for {@link JavaFormatterOptions}. */
+  /// A builder for [JavaFormatterOptions].
   @AutoBuilder
   public abstract static class Builder {
 
@@ -207,6 +245,9 @@ public record JavaFormatterOptions(boolean formatJavadoc, boolean reorderModifie
     public abstract Builder formatJavadoc(boolean formatJavadoc);
 
     public abstract Builder reorderModifiers(boolean reorderModifiers);
+
+    /// Sets whether to enable non-whitespace cleanups (applies to formatSource* and the CLI only).
+    public abstract Builder cleanup(boolean cleanup);
 
     public abstract JavaFormatterOptions build();
   }

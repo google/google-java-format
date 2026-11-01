@@ -66,22 +66,18 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Entry point for formatting Javadoc.
- *
- * <p>This stateless class reads tokens from the stateful lexer and translates them to "requests"
- * and "writes" to the stateful writer. It also munges tokens into "standardized" forms. Finally, it
- * performs postprocessing to convert the written Javadoc to a one-liner if possible or to leave a
- * single blank line if it's empty.
- */
+/// Entry point for formatting Javadoc.
+///
+/// This stateless class reads tokens from the stateful lexer and translates them to "requests" and
+/// "writes" to the stateful writer. It also munges tokens into "standardized" forms. Finally, it
+/// performs postprocessing to convert the written Javadoc to a one-liner if possible or to leave a
+/// single blank line if it's empty.
 public final class JavadocFormatter {
 
-  /**
-   * Formats the given Javadoc comment. A classic Javadoc comment must start with ∕✱✱ and end with
-   * ✱∕, and the output will start and end with the same characters. A Markdown Javadoc comment
-   * consists of lines each of which starts with ///, and the output will also consist of such
-   * lines.
-   */
+  /// Formats the given Javadoc comment. A classic Javadoc comment must start with ∕✱✱ and end with
+  /// ✱∕, and the output will start and end with the same characters. A Markdown Javadoc comment
+  /// consists of lines each of which starts with ///, and the output will also consist of such
+  /// lines.
   public static String formatJavadoc(String input, int blockIndent, int maxLineLength) {
     boolean classicJavadoc =
         switch (input) {
@@ -177,10 +173,8 @@ public final class JavadocFormatter {
 
   private static final Pattern ONE_CONTENT_LINE_PATTERN = compile(" */[*][*]\n *[*] (.*)\n *[*]/");
 
-  /**
-   * Returns the given string or a one-line version of it (e.g., "∕✱✱ Tests for foos. ✱∕") if it
-   * fits on one line.
-   */
+  /// Returns the given string or a one-line version of it (e.g., "∕✱✱ Tests for foos. ✱∕") if it
+  /// fits on one line.
   private static String makeSingleLineIfPossible(int blockIndent, String input, int maxLineLength) {
     Matcher matcher = ONE_CONTENT_LINE_PATTERN.matcher(input);
     if (matcher.matches()) {
@@ -214,13 +208,15 @@ public final class JavadocFormatter {
   private static String stripJavadocBeginAndEnd(String input) {
     checkArgument(input.startsWith("/**"), "Missing /**: %s", input);
     checkArgument(input.endsWith("*/") && input.length() > 4, "Missing */: %s", input);
-    return input.substring("/**".length(), input.length() - "*/".length());
+    int end = input.length() - "*/".length();
+    while (end > "/**".length() && input.charAt(end - 1) == '*') {
+      end--;
+    }
+    return input.substring("/**".length(), end);
   }
 
-  /**
-   * Returns the given classic Javadoc comment after removing the leading ∕✱✱, trailing ✱∕, and any
-   * leading asterisks and common leading whitespace on each line.
-   */
+  /// Returns the given classic Javadoc comment after removing the leading ∕✱✱, trailing ✱∕, and any
+  /// leading asterisks and common leading whitespace on each line.
   private static String classicCommentText(String input) {
     String stripped = stripJavadocBeginAndEnd(input);
     List<String> lines = stripped.lines().toList();
@@ -232,15 +228,29 @@ public final class JavadocFormatter {
     // The end result should not strip the `*` from `* foo`.
     List<String> processedLines = new ArrayList<>();
     processedLines.add(lines.get(0));
-    for (String line : lines.subList(1, lines.size())) {
+    List<String> continuations = lines.subList(1, lines.size());
+    int starPrefixLength =
+        continuations.stream()
+            .map(CLASSIC_PREFIX_PATTERN::matcher)
+            .filter(Matcher::find)
+            .mapToInt(Matcher::end)
+            .min()
+            .orElse(0);
+    int nonStarMinLeading =
+        continuations.stream()
+            .filter(line -> !CLASSIC_PREFIX_PATTERN.matcher(line).find())
+            .filter(line -> NOT_SPACE_OR_TAB.matchesAnyOf(line))
+            .mapToInt(NOT_SPACE_OR_TAB::indexIn)
+            .min()
+            .orElse(0);
+    int nonStarStripCount = Math.min(starPrefixLength, nonStarMinLeading);
+    for (String line : continuations) {
       Matcher m = CLASSIC_PREFIX_PATTERN.matcher(line);
       if (m.find()) {
         processedLines.add(m.replaceFirst(""));
       } else {
-        // Input line did not have leading `*`. In that case, it's hard to know what is supposed to
-        // be indentation of the comment as a whole and what is supposed to be indentation of the
-        // content. We just strip all leading whitespace.
-        processedLines.add(line.stripLeading());
+        processedLines.add(
+            line.length() >= nonStarStripCount ? line.substring(nonStarStripCount) : "");
       }
     }
     // Unlike Markdown comments, stripping common leading whitespace is not mandated by any
@@ -248,10 +258,8 @@ public final class JavadocFormatter {
     return stripCommonLeadingWhitespace(processedLines);
   }
 
-  /**
-   * Returns the given string with the leading /// and any common leading whitespace removed from
-   * each line. The resultant string can then be fed to a standard Markdown parser.
-   */
+  /// Returns the given string with the leading /// and any common leading whitespace removed from
+  /// each line. The resultant string can then be fed to a standard Markdown parser.
   private static String markdownCommentText(String input) {
     List<String> lines =
         input

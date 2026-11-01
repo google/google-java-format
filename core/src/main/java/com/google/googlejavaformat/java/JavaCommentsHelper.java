@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** {@code JavaCommentsHelper} extends {@link CommentsHelper} to rewrite Java comments. */
+/// `JavaCommentsHelper` extends [CommentsHelper] to rewrite Java comments.
 final class JavaCommentsHelper implements CommentsHelper {
 
   private final String lineSeparator;

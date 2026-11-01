@@ -22,16 +22,12 @@ import static java.lang.Math.max;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
-import com.google.common.collect.RangeMap;
-import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeMap;
-import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.Newlines;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.ReferenceTree;
-import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.Tree;
@@ -51,16 +47,13 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Removes unused imports from a source file. Imports that are only used in javadoc are nevertheless
- * kept.
- */
+/// Removes unused imports from a source file. Imports that are only used in javadoc are
+/// nevertheless kept.
 public class RemoveUnusedImports {
 
   // Visits an AST, recording all simple names that could refer to imported
@@ -91,7 +84,7 @@ public class RemoveUnusedImports {
       docTreeSymbolScanner = new DocTreeScanner();
     }
 
-    /** Skip the imports themselves when checking for usage. */
+    /// Skip the imports themselves when checking for usage.
     @Override
     public Void visitImport(ImportTree importTree, Void usedSymbols) {
       return null;
@@ -106,38 +99,13 @@ public class RemoveUnusedImports {
       return null;
     }
 
-    // TODO(cushon): remove this override when pattern matching in switch is no longer a preview
-    // feature, and TreePathScanner visits CaseTree#getLabels instead of CaseTree#getExpressions
-    @SuppressWarnings("unchecked") // reflection
-    @Override
-    public Void visitCase(CaseTree tree, Void unused) {
-      if (CASE_TREE_GET_LABELS != null) {
-        try {
-          scan((List<? extends Tree>) CASE_TREE_GET_LABELS.invoke(tree), null);
-        } catch (ReflectiveOperationException e) {
-          throw new LinkageError(e.getMessage(), e);
-        }
-      }
-      return super.visitCase(tree, null);
-    }
-
-    private static final Method CASE_TREE_GET_LABELS = caseTreeGetLabels();
-
-    private static Method caseTreeGetLabels() {
-      try {
-        return CaseTree.class.getMethod("getLabels");
-      } catch (NoSuchMethodException e) {
-        return null;
-      }
-    }
-
     @Override
     public Void scan(Tree tree, Void unused) {
       if (tree == null) {
         return null;
       }
       scanJavadoc();
-      return super.scan(tree, unused);
+      return super.scan(tree, null);
     }
 
     private void scanJavadoc() {
@@ -185,7 +153,7 @@ public class RemoveUnusedImports {
       private class ReferenceScanner extends TreeScanner<Void, Void> {
         private final long basePos;
 
-        public ReferenceScanner(long basePos) {
+        ReferenceScanner(long basePos) {
           this.basePos = basePos;
         }
 
@@ -196,7 +164,7 @@ public class RemoveUnusedImports {
               basePos != -1
                   ? Range.closedOpen((int) basePos, (int) basePos + node.getName().length())
                   : null);
-          return super.visitIdentifier(node, aVoid);
+          return super.visitIdentifier(node, null);
         }
       }
     }
@@ -209,10 +177,14 @@ public class RemoveUnusedImports {
       // error handling is done during formatting
       return contents;
     }
+    return applyReplacements(contents, findUnusedImports(context, unit, contents));
+  }
+
+  static ImmutableList<Replacement> findUnusedImports(
+      Context context, JCCompilationUnit unit, String contents) {
     UnusedImportScanner scanner = new UnusedImportScanner(JavacTrees.instance(context));
     scanner.scan(unit, null);
-    return applyReplacements(
-        contents, buildReplacements(contents, unit, scanner.usedNames, scanner.usedInJavadoc));
+    return buildReplacements(contents, unit, scanner.usedNames, scanner.usedInJavadoc);
   }
 
   private static JCCompilationUnit parse(Context context, String javaInput)
@@ -227,13 +199,13 @@ public class RemoveUnusedImports {
     return unit;
   }
 
-  /** Construct replacements to fix unused imports. */
-  private static RangeMap<Integer, String> buildReplacements(
+  /// Construct replacements to fix unused imports.
+  private static ImmutableList<Replacement> buildReplacements(
       String contents,
       JCCompilationUnit unit,
       Set<String> usedNames,
       Multimap<String, Range<Integer>> usedInJavadoc) {
-    RangeMap<Integer, String> replacements = TreeRangeMap.create();
+    ImmutableList.Builder<Replacement> replacements = ImmutableList.builder();
     for (JCTree importTree : unit.getImports()) {
       if (isModuleImport(importTree)) {
         continue;
@@ -250,9 +222,9 @@ public class RemoveUnusedImports {
           && contents.subSequence(endPosition, endPosition + sep.length()).toString().equals(sep)) {
         endPosition += sep.length();
       }
-      replacements.put(Range.closedOpen(importTree.getStartPosition(), endPosition), "");
+      replacements.add(Replacement.create(importTree.getStartPosition(), endPosition, ""));
     }
-    return replacements;
+    return replacements.build();
   }
 
   private static String getSimpleName(JCTree importTree) {
@@ -327,28 +299,20 @@ public class RemoveUnusedImports {
     }
   }
 
-  /** Applies the replacements to the given source, and re-format any edited javadoc. */
-  private static String applyReplacements(String source, RangeMap<Integer, String> replacements) {
-    // save non-empty fixed ranges for reformatting after fixes are applied
-    RangeSet<Integer> fixedRanges = TreeRangeSet.create();
-
-    // Apply the fixes in increasing order, adjusting ranges to account for
-    // earlier fixes that change the length of the source. The output ranges are
-    // needed so we can reformat fixed regions, otherwise the fixes could just
-    // be applied in descending order without adjusting offsets.
+  /// Applies the replacements to the given source.
+  private static String applyReplacements(String source, List<Replacement> replacements) {
     StringBuilder sb = new StringBuilder(source);
     int offset = 0;
-    for (Map.Entry<Range<Integer>, String> replacement : replacements.asMapOfRanges().entrySet()) {
-      Range<Integer> range = replacement.getKey();
-      String replaceWith = replacement.getValue();
+    for (Replacement replacement : replacements) {
+      Range<Integer> range = replacement.replaceRange();
+      String replaceWith = replacement.replacementString();
       int start = offset + range.lowerEndpoint();
       int end = offset + range.upperEndpoint();
       sb.replace(start, end, replaceWith);
-      if (!replaceWith.isEmpty()) {
-        fixedRanges.add(Range.closedOpen(start, end));
-      }
       offset += replaceWith.length() - (range.upperEndpoint() - range.lowerEndpoint());
     }
     return sb.toString();
   }
+
+  private RemoveUnusedImports() {}
 }

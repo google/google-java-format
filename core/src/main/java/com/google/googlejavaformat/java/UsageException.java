@@ -16,7 +16,7 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/** Checked exception class for formatter command-line usage errors. */
+/// Checked exception class for formatter command-line usage errors.
 final class UsageException extends Exception {
 
   private static final String DOCS_LINK =
@@ -56,6 +56,8 @@ Options:
     Do not reformat javadoc.
   --skip-reordering-modifiers
     Do not reorder modifiers into the JLS-recommended order.
+  --cleanup[=(true|false)]
+    Enables non-whitespace cleanups, such as removing redundant semicolons (default is true).
   --dry-run, -n
     Prints the paths of the files whose contents would change if the formatter were run normally.
   --set-exit-if-changed

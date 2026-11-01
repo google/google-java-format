@@ -17,7 +17,7 @@ package com.google.googlejavaformat;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 
-/** An unchecked formatting error. */
+/// An unchecked formatting error.
 public class FormattingError extends Error {
 
   private final ImmutableList<FormatterDiagnostic> diagnostics;

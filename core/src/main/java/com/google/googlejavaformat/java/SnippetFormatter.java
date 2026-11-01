@@ -26,10 +26,10 @@ import com.google.common.collect.TreeRangeSet;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Formats a subset of a compilation unit. */
+/// Formats a subset of a compilation unit.
 public class SnippetFormatter {
 
-  /** The kind of snippet to format. */
+  /// The kind of snippet to format.
   public enum SnippetKind {
     COMPILATION_UNIT,
     CLASS_BODY_DECLARATIONS,
@@ -67,8 +67,18 @@ public class SnippetFormatter {
     this(JavaFormatterOptions.defaultOptions());
   }
 
+  /// Creates a snippet formatter with the given options.
+  ///
+  /// Snippet formatting only changes whitespace, so modifier reordering and cleanups are always
+  /// disabled.
   public SnippetFormatter(JavaFormatterOptions formatterOptions) {
-    formatter = new Formatter(formatterOptions);
+    JavaFormatterOptions whitespaceOnlyOptions =
+        new JavaFormatterOptions(
+            formatterOptions.formatJavadoc(),
+            /* reorderModifiers= */ false,
+            /* cleanup= */ false,
+            formatterOptions.style());
+    formatter = new Formatter(whitespaceOnlyOptions);
   }
 
   private static String createIndentationString(int indentationLevel) {
@@ -92,7 +102,7 @@ public class SnippetFormatter {
     return result;
   }
 
-  /** Runs the Google Java formatter on the given source, with only the given ranges specified. */
+  /// Runs the Google Java formatter on the given source, with only the given ranges specified.
   public ImmutableList<Replacement> format(
       SnippetKind kind,
       String source,
@@ -125,10 +135,8 @@ public class SnippetFormatter {
         .collect(toImmutableList());
   }
 
-  /**
-   * Generates {@code Replacement}s rewriting {@code source} to {@code replacement}, under the
-   * assumption that they differ in whitespace alone.
-   */
+  /// Generates `Replacement`s rewriting `source` to `replacement`, under the assumption that they
+  /// differ in whitespace alone.
   private static List<Replacement> toReplacements(String source, String replacement) {
     if (!NOT_WHITESPACE.retainFrom(source).equals(NOT_WHITESPACE.retainFrom(replacement))) {
       throw new IllegalArgumentException(

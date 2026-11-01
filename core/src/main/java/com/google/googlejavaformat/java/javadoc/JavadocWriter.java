@@ -51,13 +51,11 @@ import com.google.googlejavaformat.java.javadoc.Token.TableOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.Whitespace;
 import java.util.List;
 
-/**
- * Stateful object that accepts "requests" and "writes," producing formatted Javadoc.
- *
- * <p>Our Javadoc formatter doesn't ever generate a parse tree, only a stream of tokens, so the
- * writer must compute and store the answer to questions like "How many levels of nested HTML list
- * are we inside?"
- */
+/// Stateful object that accepts "requests" and "writes," producing formatted Javadoc.
+///
+/// Our Javadoc formatter doesn't ever generate a parse tree, only a stream of tokens, so the writer
+/// must compute and store the answer to questions like "How many levels of nested HTML list are we
+/// inside?"
 final class JavadocWriter {
 
   private static final Literal BACKSLASH_LITERAL = new Literal("\\");
@@ -67,11 +65,9 @@ final class JavadocWriter {
   private final int maxLineLength;
   private final StringBuilder output = new StringBuilder();
 
-  /**
-   * Whether we are inside an {@code <li>} element, excluding the case in which the {@code <li>}
-   * contains a {@code <ul>} or {@code <ol>} that we are also inside -- unless of course we're
-   * inside an {@code <li>} element in that inner list :)
-   */
+  /// Whether we are inside an `<li>` element, excluding the case in which the `<li>` contains a
+  /// `<ul>` or `<ol>` that we are also inside -- unless of course we're inside an `<li>` element in
+  /// that inner list :)
   private boolean continuingListItemOfInnermostList;
 
   private boolean continuingFooterTag;
@@ -90,11 +86,9 @@ final class JavadocWriter {
     this.maxLineLength = maxLineLength;
   }
 
-  /**
-   * Requests whitespace between the previously written token and the next written token. The
-   * request may be honored, or it may be overridden by a request for "more significant" whitespace,
-   * like a newline.
-   */
+  /// Requests whitespace between the previously written token and the next written token. The
+  /// request may be honored, or it may be overridden by a request for "more significant"
+  /// whitespace, like a newline.
   void requestWhitespace() {
     requestWhitespace(WHITESPACE);
   }
@@ -103,15 +97,12 @@ final class JavadocWriter {
     this.requestedWhitespace = max(requestedWhitespace, this.requestedWhitespace);
   }
 
-  /**
-   * Requests whitespace or a blank line depending on the whitespace token.
-   *
-   * <p>In Markdown Javadoc, if the whitespace token contains multiple newlines, it represents a
-   * blank line in the input (e.g., between a paragraph and a list, or between loose list items). We
-   * want to preserve these blank lines, so we request a blank line. Otherwise, or in classic
-   * Javadoc (where blank lines are handled via inferred {@code <p>} tags), we just request standard
-   * whitespace.
-   */
+  /// Requests whitespace or a blank line depending on the whitespace token.
+  ///
+  /// In Markdown Javadoc, if the whitespace token contains multiple newlines, it represents a blank
+  /// line in the input (e.g., between a paragraph and a list, or between loose list items). We want
+  /// to preserve these blank lines, so we request a blank line. Otherwise, or in classic Javadoc
+  /// (where blank lines are handled via inferred `<p>` tags), we just request standard whitespace.
   void requestWhitespaceOrBlankLine(Whitespace token) {
     if (!classicJavadoc && JavadocLexer.hasMultipleNewlines(token.value())) {
       requestBlankLine();
@@ -425,12 +416,10 @@ final class JavadocWriter {
     requestWhitespace(NEWLINE);
   }
 
-  /**
-   * The kind of whitespace that has been requested between the previous and next tokens. The order
-   * of the values is significant: It goes from lowest priority to highest. For example, if the
-   * previous token requests {@link #BLANK_LINE} after it but the next token requests only {@link
-   * #NEWLINE} before it, we insert {@link #BLANK_LINE}.
-   */
+  /// The kind of whitespace that has been requested between the previous and next tokens. The order
+  /// of the values is significant: It goes from lowest priority to highest. For example, if the
+  /// previous token requests [#BLANK_LINE] after it but the next token requests only [#NEWLINE]
+  /// before it, we insert [#BLANK_LINE].
   enum RequestedWhitespace {
     NONE,
     WHITESPACE,

@@ -18,40 +18,35 @@ import com.google.common.base.MoreObjects;
 import java.util.ArrayDeque;
 import java.util.List;
 
-/** A {@code DocBuilder} converts a sequence of {@link Op}s into a {@link Doc}. */
+/// A `DocBuilder` converts a sequence of [Op]s into a [Doc].
 public final class DocBuilder {
   private final Doc.Level base = Doc.Level.make(Indent.Const.ZERO);
   private final ArrayDeque<Doc.Level> stack = new ArrayDeque<>();
 
-  /**
-   * A possibly earlier {@link Doc.Level} for appending text, à la Philip Wadler.
-   *
-   * <p>Processing {@link Doc}s presents a subtle problem. Suppose we have a {@link Doc} for to an
-   * assignment node, {@code a = b}, with an optional {@link Doc.Break} following the {@code =}.
-   * Suppose we have 5 characters to write it, so that we think we don't need the break.
-   * Unfortunately, this {@link Doc} lies in an expression statement {@link Doc} for the statement
-   * {@code a = b;} and this statement does not fit in 3 characters. This is why many formatters
-   * sometimes emit lines that are too long, or cheat by using a narrower line length to avoid such
-   * problems.
-   *
-   * <p>One solution to this problem is not to decide whether a {@link Doc.Level} should be broken
-   * until later (in this case, after the semicolon has been seen). A simpler approach is to rewrite
-   * the {@link Doc} as here, so that the semicolon moves inside the inner {@link Doc}, and we can
-   * decide whether to break that {@link Doc} without seeing later text.
-   */
+  /// A possibly earlier [Doc.Level] for appending text, à la Philip Wadler.
+  ///
+  /// Processing [Doc]s presents a subtle problem. Suppose we have a [Doc] for to an assignment
+  /// node, `a = b`, with an optional [Doc.Break] following the `=`. Suppose we have 5 characters to
+  /// write it, so that we think we don't need the break. Unfortunately, this [Doc] lies in an
+  /// expression statement [Doc] for the statement `a = b;` and this statement does not fit in 3
+  /// characters. This is why many formatters sometimes emit lines that are too long, or cheat by
+  /// using a narrower line length to avoid such problems.
+  ///
+  /// One solution to this problem is not to decide whether a [Doc.Level] should be broken until
+  /// later (in this case, after the semicolon has been seen). A simpler approach is to rewrite the
+  /// [Doc] as here, so that the semicolon moves inside the inner [Doc], and we can decide whether
+  /// to break that [Doc] without seeing later text.
   private Doc.Level appendLevel = base;
 
-  /** Start to build a {@code DocBuilder}. */
+  /// Start to build a `DocBuilder`.
   public DocBuilder() {
     stack.addLast(base);
   }
 
-  /**
-   * Add a list of {@link Op}s to the {@link OpsBuilder}.
-   *
-   * @param ops the {@link Op}s
-   * @return the {@link OpsBuilder}
-   */
+  /// Add a list of [Op]s to the [OpsBuilder].
+  ///
+  /// @param ops the [Op]s
+  /// @return the [OpsBuilder]
   public DocBuilder withOps(List<Op> ops) {
     for (Op op : ops) {
       op.add(this); // These operations call the operations below to build the doc.
@@ -59,46 +54,38 @@ public final class DocBuilder {
     return this;
   }
 
-  /**
-   * Open a new {@link Doc.Level}.
-   *
-   * @param plusIndent the extra indent for the {@link Doc.Level}
-   */
+  /// Open a new [Doc.Level].
+  ///
+  /// @param plusIndent the extra indent for the [Doc.Level]
   void open(Indent plusIndent) {
     Doc.Level level = Doc.Level.make(plusIndent);
     stack.addLast(level);
   }
 
-  /** Close the current {@link Doc.Level}. */
+  /// Close the current [Doc.Level].
   void close() {
     Doc.Level top = stack.removeLast();
     stack.peekLast().add(top);
   }
 
-  /**
-   * Add a {@link Doc} to the current {@link Doc.Level}.
-   *
-   * @param doc the {@link Doc}
-   */
+  /// Add a [Doc] to the current [Doc.Level].
+  ///
+  /// @param doc the [Doc]
   void add(Doc doc) {
     appendLevel.add(doc);
   }
 
-  /**
-   * Add a {@link Doc.Break} to the current {@link Doc.Level}.
-   *
-   * @param breakDoc the {@link Doc.Break}
-   */
+  /// Add a [Doc.Break] to the current [Doc.Level].
+  ///
+  /// @param breakDoc the [Doc.Break]
   void breakDoc(Doc.Break breakDoc) {
     appendLevel = stack.peekLast();
     appendLevel.add(breakDoc);
   }
 
-  /**
-   * Return the {@link Doc}.
-   *
-   * @return the {@link Doc}
-   */
+  /// Return the [Doc].
+  ///
+  /// @return the [Doc]
   public Doc build() {
     return base;
   }

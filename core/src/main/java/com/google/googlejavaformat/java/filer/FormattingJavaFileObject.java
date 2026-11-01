@@ -28,20 +28,18 @@ import javax.tools.ForwardingJavaFileObject;
 import javax.tools.JavaFileObject;
 import org.jspecify.annotations.Nullable;
 
-/** A {@link JavaFileObject} decorator which {@linkplain Formatter formats} source code. */
+/// A [JavaFileObject] decorator which [formats][Formatter] source code.
 final class FormattingJavaFileObject extends ForwardingJavaFileObject<JavaFileObject> {
-  /** A rough estimate of the average file size: 80 chars per line, 500 lines. */
+  /// A rough estimate of the average file size: 80 chars per line, 500 lines.
   private static final int DEFAULT_FILE_SIZE = 80 * 500;
 
   private final Formatter formatter;
   private final Messager messager;
 
-  /**
-   * Create a new {@link FormattingJavaFileObject}.
-   *
-   * @param delegate {@link JavaFileObject} to decorate
-   * @param messager to log messages with.
-   */
+  /// Create a new [FormattingJavaFileObject].
+  ///
+  /// @param delegate [JavaFileObject] to decorate
+  /// @param messager to log messages with.
   FormattingJavaFileObject(
       JavaFileObject delegate, Formatter formatter, @Nullable Messager messager) {
     super(checkNotNull(delegate));

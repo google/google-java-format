@@ -14,21 +14,19 @@
 
 package com.google.googlejavaformat.java.javadoc;
 
-/**
- * Javadoc token. Our idea of what constitutes a token is often larger or smaller than what you'd
- * naturally expect. The decision is usually pragmatic rather than theoretical. Most of the details
- * are in {@link JavadocLexer}.
- *
- * <p>The general idea is that every token that requires special handling (extra line breaks,
- * indentation, forcing or forbidding whitespace) from {@link JavadocWriter} gets its own type. But
- * I haven't been super careful about it, so I'd imagine that we could merge or remove some of these
- * if we wanted. (For example, ParagraphCloseTag and ListItemCloseTag could be a common Ignorable
- * token type. But their corresponding Open types exist, so I've kept the Close types.)
- *
- * <p>Note, though, that tokens of the same type may still have been handled differently by {@link
- * JavadocLexer} when it created them. For example, Literal is used for both plain text and inline
- * tags, even though the two affect the lexer's state differently.
- */
+/// Javadoc token. Our idea of what constitutes a token is often larger or smaller than what you'd
+/// naturally expect. The decision is usually pragmatic rather than theoretical. Most of the details
+/// are in [JavadocLexer].
+///
+/// The general idea is that every token that requires special handling (extra line breaks,
+/// indentation, forcing or forbidding whitespace) from [JavadocWriter] gets its own type. But I
+/// haven't been super careful about it, so I'd imagine that we could merge or remove some of these
+/// if we wanted. (For example, ParagraphCloseTag and ListItemCloseTag could be a common Ignorable
+/// token type. But their corresponding Open types exist, so I've kept the Close types.)
+///
+/// Note, though, that tokens of the same type may still have been handled differently by
+/// [JavadocLexer] when it created them. For example, Literal is used for both plain text and inline
+/// tags, even though the two affect the lexer's state differently.
 sealed interface Token {
   String value();
 
@@ -36,30 +34,27 @@ sealed interface Token {
     return value().length();
   }
 
-  /**
-   * Tokens that are always pinned to the following token. For example, {@code <p>} in {@code <p>Foo
-   * bar} (never {@code <p> Foo bar} or {@code <p>\nFoo bar}); or {#code
-   * <li>} or {@code -␣} in {@code <li>Foo bar} or {@code -␣Foo bar}.
-   *
-   *     <p>This is not the only kind of "pinning" that we do: See also the joining of Literal
-   *     tokens done by the lexer. The special pinning here is necessary because these tokens are
-   *     not of type Literal (because they require other special handling).
-   */
+  /// Tokens that are always pinned to the following token. For example, `<p>` in `<p>Foo bar`
+  /// (never `<p> Foo bar` or `<p>\nFoo bar`); or `<li>` or `-␣` in `<li>Foo bar` or `-␣Foo bar`.
+  ///
+  /// This is not the only kind of "pinning" that we do: See also the joining of Literal tokens done
+  /// by the lexer. The special pinning here is necessary because these tokens are not of type
+  /// Literal (because they require other special handling).
   interface StartOfLineToken {}
 
-  /** ∕✱✱ */
+  /// ∕✱✱
   record BeginJavadoc(String value) implements Token {}
 
-  /** ✱∕ */
+  /// ✱∕
   record EndJavadoc(String value) implements Token {}
 
-  /** The {@code @foo} that begins a block Javadoc tag like {@code @throws}. */
+  /// The `@foo` that begins a block Javadoc tag like `@throws`.
   record FooterJavadocTagStart(String value) implements Token {}
 
-  /** The opening {@code ｛@snippet} of a code snippet. */
+  /// The opening `｛@snippet` of a code snippet.
   record SnippetBegin(String value) implements Token {}
 
-  /** The closing {@code ｝} of a code snippet. */
+  /// The closing `｝` of a code snippet.
   record SnippetEnd(String value) implements Token {}
 
   record ListOpenTag(String value) implements Token {}
@@ -98,112 +93,93 @@ sealed interface Token {
 
   record TableCloseTag(String value) implements Token {}
 
-  /** {@code <!-- MOE：begin_intracomment_strip -->} */
+  /// `<!-- MOE：begin_intracomment_strip -->`
   record MoeBeginStripComment(String value) implements Token {}
 
-  /** {@code <!-- MOE：end_intracomment_strip -->} */
+  /// `<!-- MOE：end_intracomment_strip -->`
   record MoeEndStripComment(String value) implements Token {}
 
   record HtmlComment(String value) implements Token {}
 
   record BrTag(String value) implements Token {}
 
-  /**
-   * A Markdown code span start, like the start of {@code `foo`} or {@code ``bar``}.
-   *
-   * @param value the start backtick string, one or more backtick characters.
-   */
+  /// A Markdown code span start, like the start of `` `foo` `` or ```` ``bar`` ````.
+  ///
+  /// @param value the start backtick string, one or more backtick characters.
   record MarkdownCodeSpanStart(String value) implements Token {}
 
-  /**
-   * A Markdown code span end, like the end of {@code `foo`} or {@code ``bar``}.
-   *
-   * @param value the end backtick string, one or more backtick characters (the same number as the
-   *     corresponding start backtick string).
-   */
+  /// A Markdown code span end, like the end of `` `foo` `` or ```` ``bar`` ````.
+  ///
+  /// @param value the end backtick string, one or more backtick characters (the same number as the
+  ///   corresponding start backtick string).
   record MarkdownCodeSpanEnd(String value) implements Token {}
 
-  /**
-   * A fenced code block, like:
-   *
-   * <pre>
-   * ```java
-   * code block
-   * with an info string ("java")
-   * ```
-   * </pre>
-   *
-   * @param value the full text of the code block as it appeared in the input, including the start
-   *     and end fences and the literal content.
-   * @param start the start fence, including the info string if any ({@code ```java} in the
-   *     example).
-   * @param end the end fence.
-   * @param literal the text that the code block represents. This does not include the start and end
-   *     fences, nor any indentation that precedes these fences and every intervening line.
-   */
+  /// A fenced code block, like:
+  ///
+  /// ````
+  /// ```java
+  /// code block
+  /// with an info string ("java")
+  /// ```
+  /// ````
+  ///
+  /// @param value the full text of the code block as it appeared in the input, including the start
+  ///   and end fences and the literal content.
+  /// @param start the start fence, including the info string if any (```` ```java ```` in the
+  ///   example).
+  /// @param end the end fence.
+  /// @param literal the text that the code block represents. This does not include the start and
+  ///   end fences, nor any indentation that precedes these fences and every intervening line.
   record MarkdownFencedCodeBlock(String value, String start, String end, String literal)
       implements Token {}
 
-  /**
-   * A Markdown table, like:
-   *
-   * {@snippet :
-   * | foo | bar |
-   * | --- | --- |
-   * | baz | qux |
-   * }
-   *
-   * @param value the full text of the table as it appeared in the input, including the delimiters
-   *     and the literal content.
-   */
+  /// A Markdown table, like:
+  ///
+  /// ```
+  /// | foo | bar |
+  /// | --- | --- |
+  /// | baz | qux |
+  /// ```
+  ///
+  /// @param value the full text of the table as it appeared in the input, including the delimiters
+  ///   and the literal content.
   record MarkdownTable(String value) implements Token {}
 
-  /**
-   * Whitespace that is not in a {@code <pre>} or {@code <table>} section. Whitespace includes
-   * leading newlines, asterisks, and tabs and spaces. In the output, it is translated to newlines
-   * (with leading spaces and asterisks) or spaces.
-   */
+  /// Whitespace that is not in a `<pre>` or `<table>` section. Whitespace includes leading
+  /// newlines, asterisks, and tabs and spaces. In the output, it is translated to newlines (with
+  /// leading spaces and asterisks) or spaces.
   record Whitespace(String value) implements Token {}
 
-  /**
-   * A newline in a {@code <pre>} or {@code <table>} section. We preserve user formatting in these
-   * sections, including newlines.
-   */
+  /// A newline in a `<pre>` or `<table>` section. We preserve user formatting in these sections,
+  /// including newlines.
   record ForcedNewline(String value) implements Token {}
 
-  /** A Markdown hard line break ({@code \} at the end of a line). */
+  /// A Markdown hard line break (`\` at the end of a line).
   record MarkdownHardLineBreak(String value) implements Token {}
 
-  /**
-   * Token that permits but does not force a line break. The way that we accomplish this is somewhat
-   * indirect: As far as {@link JavadocWriter} is concerned, this token is meaningless. But its mere
-   * existence prevents {@link JavadocLexer} from joining two {@link Literal} tokens that would
-   * otherwise be adjacent. Since this token is not real whitespace, the writer may end up writing
-   * the literals together with no space between, just as if they'd been joined. However, if they
-   * don't fit together on the line, the writer will write the first one, start a new line, and
-   * write the second. Hence, the token acts as an optional line break.
-   */
+  /// Token that permits but does not force a line break. The way that we accomplish this is
+  /// somewhat indirect: As far as [JavadocWriter] is concerned, this token is meaningless. But its
+  /// mere existence prevents [JavadocLexer] from joining two [Literal] tokens that would otherwise
+  /// be adjacent. Since this token is not real whitespace, the writer may end up writing the
+  /// literals together with no space between, just as if they'd been joined. However, if they don't
+  /// fit together on the line, the writer will write the first one, start a new line, and write the
+  /// second. Hence, the token acts as an optional line break.
   record OptionalLineBreak(String value) implements Token {}
 
-  /**
-   * Token representing a Markdown block quote marker ({@code >}). This token causes the
-   * corresponding text to be consumed, but does not itself lead to any output.
-   */
+  /// Token representing a Markdown block quote marker (`>`). This token causes the corresponding
+  /// text to be consumed, but does not itself lead to any output.
   record BlockQuoteMarker(String value) implements Token {}
 
-  /**
-   * Anything else: {@code foo}, {@code <b>}, {@code {@code foo}} etc. {@link JavadocLexer}
-   * sometimes creates adjacent literal tokens, which it then merges into a single, larger literal
-   * token before returning its output.
-   *
-   * <p>This also includes whitespace in a {@code <pre>} or {@code <table>} section. We preserve
-   * user formatting in these sections, including arbitrary numbers of spaces. By treating such
-   * whitespace as a literal, we can merge it with adjacent literals, preventing us from
-   * autowrapping inside these sections -- and doing so naively, to boot. The wrapped line would
-   * have no indentation after "* " or, possibly worse, it might begin with an arbitrary amount of
-   * whitespace that didn't fit on the previous line. Of course, by doing this, we're potentially
-   * creating lines of more than 100 characters. But it seems fair to call in the humans to resolve
-   * such problems.
-   */
+  /// Anything else: `foo`, `<b>`, `{@code foo}` etc. [JavadocLexer] sometimes creates adjacent
+  /// literal tokens, which it then merges into a single, larger literal token before returning its
+  /// output.
+  ///
+  /// This also includes whitespace in a `<pre>` or `<table>` section. We preserve user formatting
+  /// in these sections, including arbitrary numbers of spaces. By treating such whitespace as a
+  /// literal, we can merge it with adjacent literals, preventing us from autowrapping inside these
+  /// sections -- and doing so naively, to boot. The wrapped line would have no indentation after "*
+  /// " or, possibly worse, it might begin with an arbitrary amount of whitespace that didn't fit on
+  /// the previous line. Of course, by doing this, we're potentially creating lines of more than 100
+  /// characters. But it seems fair to call in the humans to resolve such problems.
   record Literal(String value) implements Token {}
 }

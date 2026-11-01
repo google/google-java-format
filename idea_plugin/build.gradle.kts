@@ -30,7 +30,7 @@ repositories {
 }
 
 // https://github.com/google/google-java-format/releases
-val googleJavaFormatVersion = "1.37.0"
+val googleJavaFormatVersion = "2.0.0"
 val pluginPatchVersion = "0"
 
 java {

@@ -30,24 +30,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/** A wrapper around javac's lexer. */
+/// A wrapper around javac's lexer.
 final class JavacTokens {
 
-  /** The lexer eats terminal comments, so feed it one we don't care about. */
+  /// The lexer eats terminal comments, so feed it one we don't care about.
   // TODO(b/33103797): fix javac and remove the work-around
   private static final CharSequence EOF_COMMENT = "\n//EOF";
 
-  /**
-   * An unprocessed input token, including whitespace and comments.
-   *
-   * @param stringVal the escaped string value of a literal, or {@code null} for other tokens.
-   * @param kind the token kind, or {@code null} for whitespace and comments.
-   * @param pos the start position.
-   * @param endPos the end position.
-   */
+  /// An unprocessed input token, including whitespace and comments.
+  ///
+  /// @param stringVal the escaped string value of a literal, or `null` for other tokens.
+  /// @param kind the token kind, or `null` for whitespace and comments.
+  /// @param pos the start position.
+  /// @param endPos the end position.
   record RawTok(String stringVal, TokenKind kind, int pos, int endPos) {}
 
-  /** Lex the input and return a list of {@link RawTok}s. */
+  /// Lex the input and return a list of [RawTok]s.
   static ImmutableList<RawTok> getTokens(
       String source, Context context, Set<TokenKind> stopTokens) {
     if (source == null) {
@@ -105,7 +103,7 @@ final class JavacTokens {
     return token.comments.stream().map(comments::get).collect(toImmutableList()).reverse();
   }
 
-  /** A {@link JavaTokenizer} that saves comments. */
+  /// A [JavaTokenizer] that saves comments.
   private static class CommentSavingTokenizer extends JavaTokenizer {
 
     private final Map<Comment, CommentWithTextAndPosition> comments = new HashMap<>();
@@ -147,14 +145,12 @@ final class JavacTokens {
     }
   }
 
-  /** A {@link Comment} that saves its text and start position. */
+  /// A [Comment] that saves its text and start position.
   private record CommentWithTextAndPosition(int pos, int endPos, String text) {
-    /**
-     * Returns the source position of the character at index {@code index} in the comment text.
-     *
-     * <p>The handling of javadoc comments in javac has more logic to skip over leading whitespace
-     * and '*' characters when indexing into doc comments, but we don't need any of that.
-     */
+    /// Returns the source position of the character at index `index` in the comment text.
+    ///
+    /// The handling of javadoc comments in javac has more logic to skip over leading whitespace and
+    /// '*' characters when indexing into doc comments, but we don't need any of that.
     int getSourcePos(int index) {
       checkArgument(
           0 <= index && index < (endPos - pos),

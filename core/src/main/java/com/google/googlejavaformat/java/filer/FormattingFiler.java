@@ -27,10 +27,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import org.jspecify.annotations.Nullable;
 
-/**
- * A decorating {@link Filer} implementation which formats Java source files with a {@link
- * Formatter}.
- */
+/// A decorating [Filer] implementation which formats Java source files with a [Formatter].
 public final class FormattingFiler implements Filer {
 
   private final Filer delegate;
@@ -38,11 +35,9 @@ public final class FormattingFiler implements Filer {
   private final Formatter formatter = new Formatter();
   private final Messager messager;
 
-  /**
-   * Create a new {@link FormattingFiler}.
-   *
-   * @param processingEnv the processing environment
-   */
+  /// Create a new [FormattingFiler].
+  ///
+  /// @param processingEnv the processing environment
   public static Filer create(ProcessingEnvironment processingEnv) {
     Filer delegate = processingEnv.getFiler();
     if (processingEnv.getOptions().containsKey("experimental_turbine_hjar")) {
@@ -51,26 +46,22 @@ public final class FormattingFiler implements Filer {
     return new FormattingFiler(delegate, processingEnv.getMessager());
   }
 
-  /**
-   * Create a new {@link FormattingFiler}.
-   *
-   * @param delegate filer to decorate
-   * @deprecated prefer {@link #create(ProcessingEnvironment)}
-   */
+  /// Create a new [FormattingFiler].
+  ///
+  /// @param delegate filer to decorate
+  /// @deprecated prefer [#create(ProcessingEnvironment)]
   @Deprecated
   public
   FormattingFiler(Filer delegate) {
     this(delegate, null);
   }
 
-  /**
-   * Create a new {@link FormattingFiler}. An optional {@link Messager} may be specified to make
-   * logs more visible.
-   *
-   * @param delegate filer to decorate
-   * @param messager to log warnings to
-   * @deprecated prefer {@link #create(ProcessingEnvironment)}
-   */
+  /// Create a new [FormattingFiler]. An optional [Messager] may be specified to make logs more
+  /// visible.
+  ///
+  /// @param delegate filer to decorate
+  /// @param messager to log warnings to
+  /// @deprecated prefer [#create(ProcessingEnvironment)]
   @Deprecated
   public
   FormattingFiler(Filer delegate, @Nullable Messager messager) {

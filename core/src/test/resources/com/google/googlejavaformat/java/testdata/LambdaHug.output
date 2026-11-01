@@ -1,0 +1,396 @@
+class LambdaHug {
+  void statements() {
+    executor.submit(() -> {
+      run();
+    });
+    executor.submit(() -> {
+      runSomethingThatIsLong();
+      runSomethingElseThatIsAlsoLong();
+      run();
+    });
+    listenableFuture.addListener(
+        () -> {
+          System.err.println("done");
+        },
+        MoreExecutors.directExecutor());
+    Futures.addCallback(
+        future,
+        new FutureCallback<Object>() {
+          public void onSuccess(Object o) {}
+        });
+    foo.bar(
+        firstArgument,
+        secondArgument,
+        (param1, param2) -> {
+          return expr(param1, param2);
+        });
+    foo.bar(
+        firstArgument,
+        secondArgument,
+        (param1, param2) -> param1.someLongMethodName(param2).another());
+    foo.bar(
+        someVeryLongFirstArgumentExpressionThatIsReallyLong,
+        anotherVeryLongArgument,
+        x -> {
+          run();
+        });
+    foo.bar(
+        x -> {},
+        y -> {
+          run();
+          runSomethingElseThatIsAlsoLong();
+          runSomethingElseThatIsAlsoLong();
+        });
+    foo.bar(
+        new Object[] {aaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb},
+        x -> {
+          run();
+          run();
+          run();
+        });
+    foo.bar((param1, param2) ->
+        param1.someLongMethodName(param2).anotherLongMethodName().andAnotherOne());
+  }
+
+  int returns() {
+    return computeSomething(
+        input,
+        (a, b) -> {
+          return a.combineWith(b).withSomethingElse(c);
+        });
+  }
+
+  void assignments() {
+    Runnable r =
+        executor.submit(() -> {
+          runSomethingThatIsLong();
+          runSomethingElseThatIsAlsoLong();
+        });
+    x =
+        list.stream()
+            .map(element -> element.transformWithSomethingLong().andSomethingElse())
+            .collect(toList());
+    Runnable r =
+        () -> {
+          runSomethingThatIsLong();
+          runSomethingElseThatIsAlsoLong();
+          run();
+        };
+    Comparator<String> c =
+        new Comparator<String>() {
+          public int compare(String a, String b) {
+            return 0;
+          }
+        };
+    listener =
+        new Listener(someArgument, anotherArgument, yetAnotherArgumentThatIsLong) {
+          void f() {}
+        };
+    callbacks +=
+        register(event -> {
+          handle(event);
+          handleAgain(event);
+          handleOnceMore(event);
+        });
+    x =
+        someObject
+            .withSomeMethod(argument)
+            .andAnotherMethod(argument)
+            .thenAccept(y -> {
+              consume(y);
+            });
+    ImmutableMap<String, SomeVeryLongTypeName<AnotherLongTypeName>> someLongVariableName =
+        compute(k -> {
+          return k;
+        });
+  }
+
+  private final Runnable field =
+      () -> {
+        runSomethingThatIsLong();
+        runSomethingElseThatIsAlsoLong();
+      };
+
+  void chains() {
+    list.stream()
+        .filter(x -> x.isSomethingThatIsLong() && x.isSomethingElseThatIsLong() && x.isThirdThing())
+        .map(x -> {
+          Object y = x.transform();
+          return y.transformAgainWithSomethingLonger();
+        })
+        .forEach(System.out::println);
+    CompletableFuture.supplyAsync(() -> computeSomethingExpensive(input, parameters))
+        .thenAccept(result -> {
+          consume(result);
+          consumeAgain(result);
+        });
+    someObject.someModerateLengthFunctionName(
+        foo -> doOtherModerateLengthName(foo, bar, baz, qux, quux));
+    SpliteratorTester.of(() ->
+            Streams.concat(Stream.of("a"), Stream.of("b"), Stream.empty(), Stream.of("c", "d"))
+                .spliterator())
+        .expect("a", "b", "c", "d");
+    new Thread(
+            () -> {
+              assertThrows(CancellationException.class, future::get);
+              successLatch.countDown();
+            })
+        .start();
+    return new Promise<V>(
+            (resolve, reject) -> {
+              Futures.addCallback(this, callback, MoreExecutors.directExecutor());
+            })
+        .then(onFulfilled, onRejected);
+    CompletableFuture.runAsync(
+            () -> {
+              doSomethingExpensive();
+              doSomethingElseExpensive();
+            })
+        .join();
+    CompletableFuture.supplyAsync(
+            () -> {
+              return computeSomethingExpensive(input, parameters);
+            })
+        .thenAccept(result -> {
+          consume(result);
+          consumeAgain(result);
+        });
+    this.process(
+            item -> {
+              handle(item);
+              handleAgain(item);
+              handleOnceMore(item);
+            })
+        .andThen(cleanup);
+    someLongReceiverName
+        .withCallback(event -> {
+          handle(event);
+          handleAgain(event);
+        })
+        .register();
+    item.withCallback(
+            event -> {
+              handle(event);
+              handleAgain(event);
+            })
+        .register();
+    withCallback(
+            event -> {
+              handle(event);
+              handleAgain(event);
+            })
+        .register();
+    someLongReceiverName
+        .computeItems(x -> {
+          handle(x);
+          handleAgain(x);
+        })
+        .stream()
+        .toList();
+    MyClass.computeItems(
+            x -> {
+              handle(x);
+              handleAgain(x);
+            })
+        .stream()
+        .toList();
+    computeItems(
+            x -> {
+              handle(x);
+              handleAgain(x);
+            })
+        .stream()
+        .toList();
+    new Receiver()
+            .computeItems(x -> {
+              handle(x);
+              handleAgain(x);
+            })
+            .stream()
+            .toList();
+    item.of(() ->
+            Streams.concat(Stream.of("a"), Stream.of("b"), Stream.empty(), Stream.of("c", "d"))
+                .spliterator())
+        .expect("a", "b", "c", "d");
+    task(
+            event -> {
+              handle(event);
+              handleAgain(event);
+              handleOnceMore(event);
+            })
+        .handleFailure(failure);
+    task(() ->
+            Streams.concat(Stream.of("a"), Stream.of("b"), Stream.empty(), Stream.of("c", "d"))
+                .spliterator())
+        .expect("a");
+  }
+
+  void conditions() {
+    if (anyMatch(
+        c -> {
+          return true;
+        })) {
+      return;
+    }
+    while (items.stream()
+        .anyMatch(item -> {
+          return item.isSomethingThatIsLong() && item.isSomethingElse();
+        })) {
+      process();
+    }
+    if (anyMatch(
+            c -> {
+              return true;
+            })
+        && other) {
+      return;
+    }
+    if (anyMatch(
+        c -> {
+          return check(x -> {
+            handle(x);
+            handleAgain(x);
+          });
+        })) {
+      return;
+    }
+    if (items.stream()
+        .anyMatch(item -> item.isSomethingThatIsLong() && item.isSomethingElseThatIsLong())) {
+      return;
+    }
+    for (String s :
+        items(() -> {
+          compute();
+          computeAgain();
+        })) {
+      process(s);
+    }
+    for (Iterator<String> it =
+            iterator(() -> {
+              compute();
+              computeAgain();
+            });
+        it.hasNext(); ) {
+      process(it.next());
+    }
+    switch (compute(
+        () -> {
+          compute();
+          return 1;
+        })) {
+      case 1 -> process();
+      default -> {}
+    }
+    int y =
+        switch (compute(
+            () -> {
+              compute();
+              return 1;
+            })) {
+          case 1 -> 1;
+          default -> 2;
+        };
+    synchronized (
+        lockFor(() -> {
+          compute();
+          computeAgain();
+        })) {
+      process();
+    }
+    try (Resource r =
+        open(() -> {
+          compute();
+          computeAgain();
+        })) {
+      process(r);
+    }
+    do {
+      process();
+    } while (anyMatch(c -> {
+      return true;
+    }));
+    if (anyMatch(
+        c ->
+            check(x -> {
+              handle(x);
+              handleAgain(x);
+            }))) {
+      return;
+    }
+    if (anyMatch(
+        param ->
+            param.someLongMethodName(argumentNumberOne, argumentNumberTwo, argumentNumberThree))) {
+      return;
+    }
+  }
+
+  void nested() {
+    outer(a ->
+        inner(b ->
+            innermost(c -> {
+              doSomethingWith(a, b, c);
+              doSomethingElseWith(a, b, c);
+            })));
+  }
+
+  void anonymousClasses() {
+    new Thread(() -> {
+      run();
+    });
+    new Thread(
+        () -> {
+          System.out.println("hi");
+        }) {
+      @Override
+      public String toString() {
+        return "my special thread";
+      }
+    };
+    new Thread(
+        () -> {
+          System.out.println("hi");
+        }) {
+      @Override
+      public String toString() {
+        return "my special thread";
+      }
+    }.start();
+    new Thread(() -> {}) {
+      @Override
+      public String toString() {
+        return "my special thread";
+      }
+    };
+    new Foo((param1, param2) ->
+        param1.someLongMethodName(param2).anotherLongMethodName().andAnotherOne()) {
+      void f() {}
+    };
+  }
+
+  enum E {
+    ONE(() -> {
+      run();
+    }),
+    TWO(
+        () -> {
+          run();
+        }) {
+      @Override
+      public String toString() {
+        return "two";
+      }
+    };
+
+    E(Runnable r) {}
+  }
+
+  void comments() {
+    f(
+        // comment
+        x ->
+            System.err.println("hello, world, this is a long string that doesn't fit on the line"));
+    f(x -> { // trailing comment
+      run();
+    });
+  }
+}

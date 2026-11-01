@@ -25,10 +25,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/**
- * Tests for array dimension handling, especially mixed array notation and type annotations on
- * dimensions.
- */
+/// Tests for array dimension handling, especially mixed array notation and type annotations on
+/// dimensions.
 @RunWith(Parameterized.class)
 public class ArrayDimensionTest {
   @Parameters

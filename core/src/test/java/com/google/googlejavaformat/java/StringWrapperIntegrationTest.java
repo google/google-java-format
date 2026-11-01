@@ -24,7 +24,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/** {@link StringWrapper}IntegrationTest */
+/// [StringWrapper]IntegrationTest
 @RunWith(Parameterized.class)
 public class StringWrapperIntegrationTest {
 
@@ -426,7 +426,8 @@ class T {
         .collect(toImmutableList());
   }
 
-  private final Formatter formatter = new Formatter();
+  private final Formatter formatter =
+      new Formatter(JavaFormatterOptions.builder().cleanup(false).build());
 
   private final String input;
   private final String output;

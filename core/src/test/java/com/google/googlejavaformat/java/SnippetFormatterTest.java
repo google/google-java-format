@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** {@link SnippetFormatter}Test */
+/// [SnippetFormatter]Test
 @RunWith(JUnit4.class)
 public class SnippetFormatterTest {
   @Test
@@ -98,5 +98,37 @@ public class SnippetFormatterTest {
                 true);
     assertThat(replacements)
         .containsExactly(Replacement.create(0, 24, "/** a b */\nclass Test {}\n"));
+  }
+
+  @Test
+  public void onlyWhitespaceChanges() throws FormatterException {
+    String input = "static public void f() { g((x) -> x);; }";
+    ImmutableList<Replacement> replacements =
+        new SnippetFormatter()
+            .format(
+                SnippetKind.CLASS_BODY_DECLARATIONS,
+                input,
+                ImmutableList.of(Range.closedOpen(0, input.length())),
+                4,
+                false);
+    assertThat(apply(input, replacements))
+        .isEqualTo(
+            """
+            static public void f() {
+                      g((x) -> x);
+                      ;
+                    }\
+            """);
+  }
+
+  private static String apply(String input, List<Replacement> replacements) {
+    StringBuilder sb = new StringBuilder(input);
+    for (Replacement replacement : replacements.reversed()) {
+      sb.replace(
+          replacement.replaceRange().lowerEndpoint(),
+          replacement.replaceRange().upperEndpoint(),
+          replacement.replacementString());
+    }
+    return sb.toString();
   }
 }
