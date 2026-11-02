@@ -29,7 +29,7 @@ offsets (`--offset`), passing through to standard-out (default) or altered
 in-place (`--replace`).
 
 Option `--help` will print full usage details; including built-in documentation
-about other flags, such as `--aosp`, `--fix-imports-only`,
+about other flags, such as `--style`, `--max-line-length`, `--fix-imports-only`,
 `--skip-sorting-imports`, `--skip-removing-unused-import`,
 `--skip-reflowing-long-strings`, `--skip-javadoc-formatting`, or the `--dry-run`
 and `--set-exit-if-changed`.
@@ -40,9 +40,10 @@ arguments.
 To reformat changed lines in a specific patch, use
 [`google-java-format-diff.py`](https://github.com/google/google-java-format/blob/master/scripts/google-java-format-diff.py).
 
-***Note:*** *There is no configurability as to the formatter's algorithm for
-formatting. This is a deliberate design decision to unify our code formatting on
-a single format.*
+***Note:*** *There is almost no configurability as to the formatter's algorithm
+for formatting. This is a deliberate design decision to unify our code
+formatting on a single format. See [Configuration](#configuration) for the few
+options that are available.*
 
 ### IntelliJ, Android Studio, and other JetBrains IDEs
 
@@ -191,6 +192,46 @@ new Formatter().formatSource(source, output);
 
 Your starting point should be the instance methods of
 `com.google.googlejavaformat.java.Formatter`.
+
+## Configuration
+
+`google-java-format` is an opinionated formatter with very little configuration.
+Its core formatting decisions, like where lines break and how much continuation
+lines are indented, are deliberately not configurable. See also
+[this FAQ entry](https://github.com/google/google-java-format/wiki/FAQ#i-just-need-to-configure-it-a-bit-differently-how)
+for more details.
+
+There are a few configuration options for projects that need them:
+
+*   `--style=google|aosp` selects the code style. The default, `google`, follows
+    [Google Java Style][]. `aosp` follows the
+    [AOSP Java code style](https://source.android.com/docs/setup/contribute/code-style):
+    it indents blocks by 4 spaces and continuation lines by 8, instead of 2
+    and 4. Line breaking is otherwise the same as Google style, so
+    `--style=aosp` is also an option for projects that want 4-space indentation
+    without otherwise following AOSP conventions. (`--google-style` and `--aosp`
+    are equivalent shorthands.)
+*   `--max-line-length=N` sets the column limit. The default is 100.
+
+Besides layout, the formatter makes some changes that aren't just whitespace,
+and each of them can be turned off:
+
+*   `--cleanup=false` disables small cleanups such as removing redundant
+    semicolons, empty annotation parentheses (`@Foo()` to `@Foo`), and
+    parentheses around a single lambda parameter (`(x) -> ...` to `x -> ...`).
+    Cleanups are enabled by default, and only apply to the lines being
+    formatted.
+*   `--skip-sorting-imports` and `--skip-removing-unused-imports` disable import
+    sorting and unused import removal (`--fix-imports-only` does only those, and
+    no other formatting).
+*   `--skip-reordering-modifiers` keeps modifiers in their existing order.
+*   `--skip-reflowing-long-strings` disables splitting string literals that
+    exceed the column limit.
+*   `--skip-javadoc-formatting` leaves Javadoc comments unformatted.
+
+Run `google-java-format --help` for the full command-line reference. When using
+the formatter as a library, `JavaFormatterOptions.builder()` and
+`JavaFormatterOptions.Style.builder()` provide the corresponding options.
 
 ## Building from source
 
