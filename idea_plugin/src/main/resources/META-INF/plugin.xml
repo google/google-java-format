@@ -35,9 +35,6 @@
   ]]></description>
   <change-notes><![CDATA[
     <dl>
-      <dt>2.0.0.1</dt>
-      <dd>Add max-line-length configuration support.</dd>
-      <dd>Fix NPEs and other errors related to a null style.</dd>
       <dt>2.0.0.0</dt>
       <dd>Updated to use google-java-format 2.0.0.</dd>
       <dt>1.36.1.1</dt>

@@ -21,11 +21,14 @@ on:
         description: "version number for this release."
         required: true
 
+permissions: {}
+
 jobs:
   build-maven-jars:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -59,15 +62,46 @@ jobs:
         env:
           GITHUB_EVENT_INPUTS_VERSION: ${{ github.event.inputs.version }}
 
-      - name: Deploy to Sonatype staging
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: "projects/305452601764/locations/global/workloadIdentityPools/builders/providers/github"
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Clean up stale releases from staging repo
+        run: |
+          # clean up stale releases from staging repo
+          packages=$(gcloud artifacts packages list \
+              --project="oss-exit-gate-prod" \
+              --location="us" \
+              --repository="google-java-fmt--mavencentral" \
+              --format="value(name)" 2>/dev/null)
+          echo "${packages}" | xargs -r -I {} sh -c '
+              package_name=$(basename "{}")
+              echo "Deleting package: $package_name..."
+              gcloud artifacts packages delete "{}" \
+                  --project="'"oss-exit-gate-prod"'" \
+                  --location="'"us"'" \
+                  --repository="'"google-java-fmt--mavencentral"'" \
+                  --quiet
+          '
+
+      - name: Deploy to OSS Exit Gate staging and trigger release
         env:
-          CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
-          CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: mvn --no-transfer-progress -pl '!eclipse_plugin' -P sonatype-oss-release clean deploy -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          mvn --no-transfer-progress -pl '!eclipse_plugin' -P sonatype-oss-release,oss-exit-gate clean deploy -Dgpg.passphrase="${GPG_PASSPHRASE}"
+          echo '{"publish_all": true}' > manifest.json
+          gcloud storage cp manifest.json "gs://oss-exit-gate-prod-projects-bucket/google-java-fmt/mavencentral/manifests/manifest-${RUN_ID}-${RUN_ATTEMPT}.json"
 
       - name: Build Eclipse plugin
-        run: mvn --no-transfer-progress -pl 'eclipse_plugin' verify gpg:sign -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: mvn --no-transfer-progress -pl 'eclipse_plugin' verify gpg:sign -DskipTests=true -Dgpg.passphrase="${GPG_PASSPHRASE}"
 
       - name: Push tag
         run: |

@@ -18,6 +18,8 @@ package com.google.googlejavaformat.intellij;
 
 import com.google.googlejavaformat.java.JavaFormatterOptions;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
+import java.util.Arrays;
+import java.util.Objects;
 
 /** Configuration options for the formatting style. */
 enum UiFormatterStyle {
@@ -32,7 +34,8 @@ enum UiFormatterStyle {
     this.style = style;
   }
 
-  public String getDescription() {
+  @Override
+  public String toString() {
     return description;
   }
 
@@ -41,6 +44,9 @@ enum UiFormatterStyle {
   }
 
   static UiFormatterStyle convert(JavaFormatterOptions.Style style) {
-    return style.isAosp() ? AOSP : GOOGLE;
+    return Arrays.stream(UiFormatterStyle.values())
+        .filter(value -> Objects.equals(value.style, style))
+        .findFirst()
+        .get();
   }
 }
