@@ -25,6 +25,7 @@ import com.intellij.codeInsight.actions.OptimizeImportsProcessor;
 import com.intellij.formatting.service.FormattingService;
 import com.intellij.lang.ImportOptimizer;
 import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
@@ -126,6 +127,48 @@ public class GoogleJavaFormatImportOptimizerTest {
     assertThat(delegatingFormatter.wasInvoked()).isTrue();
   }
 
+  @Test
+  public void reordersImportsWithConcurrentDocumentChange() throws Exception {
+    PsiFile file =
+        createPsiFile(
+            "com/foo/ImportTest.java",
+            """
+            package com.foo;
+
+            import java.util.List;
+            import java.util.ArrayList;
+            import java.util.Map;
+
+            public class ImportTest {
+              static final ArrayList arrayList;
+              static final List list;
+              static final Map map;
+            }
+            """);
+    Document document = PsiDocumentManager.getInstance(file.getProject()).getDocument(file);
+    assertThat(document).isNotNull();
+    delegatingFormatter.beforeRun =
+        () -> document.setText(document.getText() + "\n// concurrent edit\n");
+
+    OptimizeImportsProcessor processor = new OptimizeImportsProcessor(file.getProject(), file);
+    WriteCommandAction.runWriteCommandAction(
+        file.getProject(),
+        () -> {
+          processor.run();
+          PsiDocumentManager.getInstance(file.getProject()).commitAllDocuments();
+        });
+
+    assertThat(file.getText())
+        .contains(
+            """
+            import java.util.ArrayList;
+            import java.util.List;
+            import java.util.Map;
+            """);
+    assertThat(file.getText()).contains("// concurrent edit");
+    assertThat(delegatingFormatter.wasInvoked()).isTrue();
+  }
+
   private PsiFile createPsiFile(String path, String... contents) throws IOException {
     VirtualFile virtualFile =
         fixture.getTempDirFixture().createFile(path, String.join("\n", contents));
@@ -138,6 +181,7 @@ public class GoogleJavaFormatImportOptimizerTest {
   private static final class DelegatingFormatter extends GoogleJavaFormatFormattingService {
 
     private boolean invoked = false;
+    private Runnable beforeRun = () -> {};
 
     private boolean wasInvoked() {
       return invoked;
@@ -157,9 +201,11 @@ public class GoogleJavaFormatImportOptimizerTest {
 
         @Override
         public @NotNull Runnable processFile(@NotNull PsiFile file) {
+          Runnable delegateRunnable = delegate.processFile(file);
           return () -> {
             invoked = true;
-            delegate.processFile(file).run();
+            beforeRun.run();
+            delegateRunnable.run();
           };
         }
       };
