@@ -117,6 +117,31 @@ public class GoogleJavaFormatFormattingServiceTest {
   }
 
   @Test
+  public void customMaxLineLength() throws Exception {
+    settings.setMaxLineLength(40);
+    PsiFile file =
+        createPsiFile(
+            "com/foo/FormatTest.java",
+            "package com.foo;",
+            "public class FormatTest {",
+            "void foo() {",
+            "System.out.println(\"This is a long string that wraps\");",
+            "}",
+            "}");
+    String origText = file.getText();
+    CodeStyleManager manager = CodeStyleManager.getInstance(file.getProject());
+    WriteCommandAction.runWriteCommandAction(
+        file.getProject(), () -> manager.reformatText(file, 0, file.getTextLength()));
+
+    Style styleWith40 = Style.GOOGLE.toBuilder().maxLineLength(40).build();
+    assertThat(file.getText())
+        .isEqualTo(
+            new Formatter(JavaFormatterOptions.builder().style(styleWith40).build())
+                .formatSource(origText));
+    assertThat(delegatingFormatter.wasInvoked()).isTrue();
+  }
+
+  @Test
   public void canChangeWhitespaceOnlyDoesNotReorderModifiers() throws Exception {
     settings.setStyle(Style.GOOGLE);
     PsiFile file =
