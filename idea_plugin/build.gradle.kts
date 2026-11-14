@@ -18,9 +18,9 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 // https://github.com/JetBrains/intellij-platform-gradle-plugin/releases
 plugins {
-  id("org.jetbrains.intellij.platform") version "2.20.0"
+  id("org.jetbrains.intellij.platform") version "2.18.1"
   // See https://plugins.jetbrains.com/docs/intellij/using-kotlin.html#bundled-stdlib-versions
-  kotlin("jvm") version "2.4.21"
+  kotlin("jvm") version "2.4.10"
 }
 
 repositories {
@@ -31,7 +31,7 @@ repositories {
 
 // https://github.com/google/google-java-format/releases
 val googleJavaFormatVersion = "2.0.0"
-val pluginPatchVersion = "1"
+val pluginPatchVersion = "0"
 
 java {
   toolchain { languageVersion = JavaLanguageVersion.of(21) }
