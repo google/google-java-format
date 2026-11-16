@@ -1253,6 +1253,25 @@ public final class JavadocFormattingTest {
   }
 
   @Test
+  public void removeTrailingEmptyParagraphTag() {
+    String input =
+            """
+            /**
+             * The client's first name.
+             *
+             * <p>
+             */
+            class Test {}\
+            """;
+    String expected =
+            """
+            /** The client's first name. */
+            class Test {}
+            """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void inferParagraphTags() {
     String input =
         """
