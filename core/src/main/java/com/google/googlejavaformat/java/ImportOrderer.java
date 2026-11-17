@@ -94,7 +94,7 @@ public class ImportOrderer {
     // Make sure there are no more imports before the next class (etc) definition.
     Optional<Integer> maybeLaterImport = findIdentifier(afterLastImport, IMPORT_OR_CLASS_START);
     if (maybeLaterImport.isPresent() && tokenAt(maybeLaterImport.get()).equals("import")) {
-      throw new FormatterException("Imports not contiguous (perhaps a comment separates them?)");
+      return ImmutableList.of();
     }
 
     int start = toks.get(unindentedFirstImportStart).getPosition();

@@ -1320,4 +1320,31 @@ class T {
         """;
     assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
   }
+
+  @Test
+  public void blockCommentBetweenImports() throws Exception {
+    String input =
+        """
+        import java.util.Set;
+        /**Javadoc*/
+        import java.util.List;
+
+        class T {
+        List<String> xs;
+        Set<String> ys;
+        }
+        """;
+    String expected =
+        """
+        import java.util.Set;
+        /** Javadoc */
+        import java.util.List;
+
+        class T {
+          List<String> xs;
+          Set<String> ys;
+        }
+        """;
+    assertThat(new Formatter().formatSourceAndFixImports(input)).isEqualTo(expected);
+  }
 }

@@ -402,18 +402,14 @@ public class ImportOrdererTest {
             "   between imports either */",
             "import com.foo.Third;",
           },
-          {
-            "!!Imports not contiguous (perhaps a comment separates them?)",
-          }
+          {}
         },
         {
           {
             "import com.foo.Second; /* no block comments after imports */", //
             "import com.foo.First;",
           },
-          {
-            "!!Imports not contiguous (perhaps a comment separates them?)",
-          }
+          {}
         },
         {
           {
