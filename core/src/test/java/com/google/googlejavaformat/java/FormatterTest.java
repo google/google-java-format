@@ -1347,4 +1347,25 @@ class T {
         """;
     assertThat(new Formatter().formatSourceAndFixImports(input)).isEqualTo(expected);
   }
+
+  @Test
+  public void lineCommentNonBreakingSpace() throws Exception {
+    String input =
+        """
+        class T {
+          // Copyright (C) 2017 Interactive Brokers LLC. All rights reserved. This code is subject to the\u00a0terms and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable.
+          //\u00a0non-breaking space after comment prefix
+        }
+        """;
+    String expected =
+        """
+        class T {
+          // Copyright (C) 2017 Interactive Brokers LLC. All rights reserved. This code is subject to the
+          //\u00a0terms and conditions of the IB API Non-Commercial License or the IB API Commercial License, as
+          // applicable.
+          // \u00a0non-breaking space after comment prefix
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
 }
