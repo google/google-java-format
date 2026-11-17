@@ -247,4 +247,195 @@ public class DiagnosticTest {
     assertThat(exitCode).isEqualTo(1);
     assertThat(err.toString()).contains("<stdin>:2:4: error: unclosed character literal");
   }
+
+  @Test
+  public void unicodeEscapes() throws Exception {
+    assertStdinError(
+        """
+        class Foo {
+          // \\u000D
+        }
+        """,
+        "<stdin>:2:6: error: Unicode escapes not allowed in whitespace or comment delimiters");
+    assertStdinError(
+        """
+        class Foo {\\u0020}
+        """,
+        "<stdin>:1:12: error: Unicode escapes not allowed in whitespace or comment delimiters");
+    assertStdinError(
+        """
+        class Foo { \\u0020 }
+        """,
+        "<stdin>:1:13: error: Unicode escapes not allowed in whitespace");
+    assertStdinError(
+        """
+        class Foo {
+          \\u002f\\u002f comment
+        }
+        """,
+        "<stdin>:2:3: error: Unicode escapes not allowed in whitespace or comment delimiters");
+    assertStdinError(
+        """
+        class Foo {
+          /* \\u221e *\\u002f
+        }
+        """,
+        "<stdin>:2:14: error: Unicode escapes not allowed in whitespace or comment delimiters");
+    assertStdinError(
+        """
+        class Foo {
+          int x = 1 \\u002b 2;
+        }
+        """,
+        "<stdin>:2:13: error: Unicode escapes not allowed in identifiers, keywords, operators, or"
+            + " numeric literals");
+    assertStdinError(
+        """
+        class Foo {
+          int x = 1\\u0030;
+        }
+        """,
+        "<stdin>:2:12: error: Unicode escapes not allowed in identifiers, keywords, operators, or"
+            + " numeric literals");
+    assertStdinError(
+        """
+        class Foo {
+          void f() {
+            getAndIncrement\\u200b("foo");
+          }
+        }
+        """,
+        "<stdin>:3:20: error: Unicode escapes not allowed in identifiers, keywords, operators, or"
+            + " numeric literals");
+    assertStdinError(
+        """
+        class Foo {
+          void f() {
+            f\\u006fo("bar");
+          }
+        }
+        """,
+        "<stdin>:3:6: error: Unicode escapes not allowed in identifiers, keywords, operators, or"
+            + " numeric literals");
+    assertStdinError(
+        """
+        class Foo {
+          \\u0069nt x = 1;
+        }
+        """,
+        "<stdin>:2:3: error: Unicode escapes not allowed in identifiers, keywords, operators, or"
+            + " numeric literals");
+    assertStdinError(
+        """
+        class Foo {
+          String s = \\u0022hello\\u0022;
+        }
+        """,
+        "<stdin>:2:14: error: Unicode escapes not allowed in string literal delimiters");
+    assertStdinError(
+        """
+        class Foo {
+          String s = "hello\\u0022;
+        }
+        """,
+        "<stdin>:2:20: error: Unicode escapes not allowed in string literal delimiters");
+    assertStdinError(
+        """
+        class Foo {
+          char c = 'a\\u0027;
+        }
+        """,
+        "<stdin>:2:14: error: Unicode escapes not allowed in character literal delimiters");
+    assertStdinError(
+        """
+        class Foo {
+          String s = \\u0022""
+        hello
+        \""";
+        }
+        """,
+        "<stdin>:2:14: error: Unicode escapes not allowed in text block delimiters");
+    assertStdinError(
+        """
+        class Foo {
+          String s = \"""
+        hello
+        ""\\u0022;
+        }
+        """,
+        "<stdin>:4:3: error: Unicode escapes not allowed in text block delimiters");
+    assertStdinError(
+        """
+        class Foo {
+          String s = \"""\\u000ahello\""";
+        }
+        """,
+        "<stdin>:2:17: error: Unicode escapes not allowed in text block line terminators");
+    assertStdinError(
+        """
+        class Foo {
+          String s = \"""
+          hello\\u000Aworld
+          \""";
+        }
+        """,
+        "<stdin>:3:8: error: Unicode escapes not allowed in text block line terminators");
+    assertStdinError(
+        """
+        class Foo {
+          String s = \"""
+          hello\\uuu000dworld
+          \""";
+        }
+        """,
+        "<stdin>:3:8: error: Unicode escapes not allowed in text block line terminators");
+    assertStdinError(
+        """
+        class Foo {
+          String s = \"""
+          hello\\\\\\u000aworld
+          \""";
+        }
+        """,
+        "<stdin>:3:10: error: Unicode escapes not allowed in text block line terminators");
+    assertStdinError(
+        """
+        class Foo {
+          String s = \"""
+          hello\\u005c\\u000aworld
+          \""";
+        }
+        """,
+        "<stdin>:3:14: error: Unicode escapes not allowed in text block line terminators");
+  }
+
+  @Test
+  public void ignorableCharacters() throws Exception {
+    assertStdinError(
+        """
+        class Foo {
+          void f() {
+            getAndIncrement\u200b("foo");
+          }
+        }
+        """,
+        "<stdin>:3:20: error: Ignorable characters not allowed in identifiers or keywords");
+    assertStdinError(
+        """
+        class Foo {
+          in\u200bt x = 1;
+        }
+        """,
+        "<stdin>:2:5: error: Ignorable characters not allowed in identifiers or keywords");
+  }
+
+  private static void assertStdinError(String input, String expected) throws Exception {
+    InputStream inStream = new ByteArrayInputStream(input.getBytes(UTF_8));
+    StringWriter out = new StringWriter();
+    StringWriter err = new StringWriter();
+    Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), inStream);
+    int exitCode = main.format("-");
+    assertThat(exitCode).isEqualTo(1);
+    assertThat(err.toString()).startsWith(expected + System.lineSeparator());
+  }
 }

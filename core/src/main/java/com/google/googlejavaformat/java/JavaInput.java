@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getLast;
+import static java.lang.Math.max;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.CharMatcher;
@@ -31,6 +32,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
+import com.google.googlejavaformat.FormatterDiagnostic;
 import com.google.googlejavaformat.Input;
 import com.google.googlejavaformat.Newlines;
 import com.google.googlejavaformat.java.JavacTokens.RawTok;
@@ -42,6 +44,7 @@ import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 import com.sun.tools.javac.util.Options;
+import com.sun.tools.javac.util.Position;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -370,21 +373,20 @@ final class JavaInput extends Input {
         break;
       }
       int charI0 = t.pos();
-      // Get string, possibly with Unicode escapes.
-      String originalTokText = text.substring(charI0, t.endPos());
-      String tokText =
-          t.kind() == TokenKind.STRINGLITERAL
-              ? t.stringVal() // Unicode escapes removed.
-              : originalTokText;
+      String tokText = text.substring(charI0, t.endPos()); // The token's source text.
       char tokText0 = tokText.charAt(0); // The token's first character.
       final boolean isToken; // Is this tok a token?
       final boolean isNumbered; // Is this tok numbered? (tokens and comments)
       String extraNewline = null; // Extra newline at end?
       List<String> strings = new ArrayList<>();
       if (Character.isWhitespace(tokText0)) {
+        int escape = tokText.indexOf('\\');
+        if (escape != -1) {
+          throw error(text, charI0 + escape, "Unicode escapes not allowed in whitespace");
+        }
         isToken = false;
         isNumbered = false;
-        Iterator<String> it = Newlines.lineIterator(originalTokText);
+        Iterator<String> it = Newlines.lineIterator(tokText);
         while (it.hasNext()) {
           String line = it.next();
           String newline = Newlines.getLineEnding(line);
@@ -398,22 +400,41 @@ final class JavaInput extends Input {
             strings.add(line);
           }
         }
-      } else if (tokText.startsWith("'") || tokText.startsWith("\"")) {
+      } else if (t.kind() == TokenKind.CHARLITERAL || t.kind() == TokenKind.STRINGLITERAL) {
+        checkLiteral(text, charI0, t.kind(), tokText);
         isToken = true;
         isNumbered = true;
-        strings.add(originalTokText);
-      } else if (tokText.startsWith("//") || tokText.startsWith("/*")) {
+        strings.add(tokText);
+      } else if (tokText.startsWith("//") || (tokText.startsWith("/*") && tokText.endsWith("*/"))) {
         // For compatibility with an earlier lexer, the newline after a // comment is its own tok.
-        if (tokText.startsWith("//")
-            && (originalTokText.endsWith("\n") || originalTokText.endsWith("\r"))) {
-          extraNewline = Newlines.getLineEnding(originalTokText);
+        if (tokText.startsWith("//") && (tokText.endsWith("\n") || tokText.endsWith("\r"))) {
+          extraNewline = Newlines.getLineEnding(tokText);
           tokText = tokText.substring(0, tokText.length() - extraNewline.length());
-          originalTokText =
-              originalTokText.substring(0, originalTokText.length() - extraNewline.length());
         }
         isToken = false;
         isNumbered = true;
-        strings.add(originalTokText);
+        strings.add(tokText);
+      } else if (t.kind() == null) {
+        // A non-token that is neither whitespace nor a comment, because a Unicode escape in a
+        // comment delimiter or line terminator changed how javac lexed it. A block comment is only
+        // misidentified if its closing delimiter is escaped.
+        int escape = tokText.startsWith("/*") ? tokText.lastIndexOf('\\') : tokText.indexOf('\\');
+        throw error(
+            text,
+            charI0 + max(escape, 0),
+            "Unicode escapes not allowed in whitespace or comment delimiters");
+      } else if (tokText.indexOf('\\') != -1) {
+        throw error(
+            text,
+            charI0 + tokText.indexOf('\\'),
+            "Unicode escapes not allowed in identifiers, keywords, operators, or numeric literals");
+      } else if (indexOfIgnorable(tokText) != -1) {
+        // javac discards ignorable characters in identifiers and keywords, e.g. `in`, U+200B, `t`
+        // is lexed as the keyword `int`.
+        throw error(
+            text,
+            charI0 + indexOfIgnorable(tokText),
+            "Ignorable characters not allowed in identifiers or keywords");
       } else if (Character.isJavaIdentifierStart(tokText0)
           || Character.isDigit(tokText0)
           || (tokText0 == '.' && tokText.length() > 1 && Character.isDigit(tokText.charAt(1)))) {
@@ -423,8 +444,7 @@ final class JavaInput extends Input {
         strings.add(tokText);
       } else {
         // Other tokens ("+" or "++" or ">>" are broken into one-character toks, because ">>"
-        // cannot be lexed without syntactic knowledge. This implementation fails if the token
-        // contains Unicode escapes.
+        // cannot be lexed without syntactic knowledge.
         isToken = true;
         isNumbered = true;
         for (char c : tokText.toCharArray()) {
@@ -433,26 +453,14 @@ final class JavaInput extends Input {
       }
       if (strings.size() == 1) {
         toks.add(
-            new Tok(
-                isNumbered ? kN++ : -1,
-                originalTokText,
-                tokText,
-                charI,
-                columnI,
-                isToken,
-                t.kind()));
-        charI += originalTokText.length();
-        columnI = updateColumn(columnI, originalTokText);
-
+            new Tok(isNumbered ? kN++ : -1, tokText, tokText, charI, columnI, isToken, t.kind()));
+        charI += tokText.length();
+        columnI = updateColumn(columnI, tokText);
       } else {
-        if (strings.size() != 1 && !tokText.equals(originalTokText)) {
-          throw new FormatterException(
-              "Unicode escapes not allowed in whitespace or multi-character operators");
-        }
         for (String str : strings) {
           toks.add(new Tok(isNumbered ? kN++ : -1, str, str, charI, columnI, isToken, null));
           charI += str.length();
-          columnI = updateColumn(columnI, originalTokText);
+          columnI = updateColumn(columnI, tokText);
         }
       }
       if (extraNewline != null) {
@@ -463,6 +471,95 @@ final class JavaInput extends Input {
     }
     toks.add(new Tok(kN, "", "", charI, columnI, true, null)); // EOF tok.
     return ImmutableList.copyOf(toks);
+  }
+
+  /// Rejects literals whose delimiters, or text block line terminators, are Unicode escapes. The
+  /// formatter operates on the source text of literals, which needs to agree with javac's lexing.
+  private static void checkLiteral(String text, int pos, TokenKind kind, String tokText)
+      throws FormatterException {
+    int lineTerminator = indexOfUnicodeLineTerminatorEscape(tokText);
+    String delimiter;
+    String description;
+    if (kind == TokenKind.CHARLITERAL) {
+      delimiter = "'";
+      description = "character literal";
+    } else if (Newlines.firstBreak(tokText) != -1 || lineTerminator != -1) {
+      // A Unicode line terminator will be rejected below. Here we identify it is in a text block.
+      delimiter = "\"\"\"";
+      description = "text block";
+    } else {
+      delimiter = "\"";
+      description = "string literal";
+    }
+    if (!tokText.startsWith(delimiter)) {
+      throw error(
+          text,
+          pos + tokText.indexOf('\\'),
+          "Unicode escapes not allowed in " + description + " delimiters");
+    }
+    if (!tokText.endsWith(delimiter)) {
+      throw error(
+          text,
+          pos + tokText.lastIndexOf('\\'),
+          "Unicode escapes not allowed in " + description + " delimiters");
+    }
+    if (lineTerminator != -1) {
+      throw error(
+          text,
+          pos + lineTerminator,
+          "Unicode escapes not allowed in " + description + " line terminators");
+    }
+  }
+
+  /// Returns the index of the first Unicode escape for a line terminator (LF U+000A or CR U+000D)
+  /// in `s`, or `-1`.
+  private static int indexOfUnicodeLineTerminatorEscape(String s) {
+    int start = s.indexOf('\\');
+    while (start != -1) {
+      int end = start;
+      while (end < s.length() && s.charAt(end) == '\\') {
+        end++;
+      }
+      // A backslash is only eligible to begin a Unicode escape if it is preceded by an even number
+      // of contiguous backslashes (JLS 3.3), and only the last backslash in a run can be followed
+      // by a `u`.
+      int last = end - 1;
+      if ((last - start) % 2 == 0 && isUnicodeLineTerminatorEscape(s, last)) {
+        return last;
+      }
+      start = s.indexOf('\\', end);
+    }
+    return -1;
+  }
+
+  /// Returns true if the backslash at `backslash` begins a Unicode escape for a line terminator.
+  private static boolean isUnicodeLineTerminatorEscape(String s, int backslash) {
+    int i = backslash + 1;
+    while (i < s.length() && s.charAt(i) == 'u') {
+      i++;
+    }
+    return i > backslash + 1
+        && (s.regionMatches(/* ignoreCase= */ true, i, "000a", 0, 4)
+            || s.regionMatches(/* ignoreCase= */ true, i, "000d", 0, 4));
+  }
+
+  /// Returns the index of the first identifier-ignorable character in `s`, or `-1`.
+  private static int indexOfIgnorable(String s) {
+    for (int i = 0; i < s.length(); ) {
+      int codePoint = s.codePointAt(i);
+      if (Character.isIdentifierIgnorable(codePoint)) {
+        return i;
+      }
+      i += Character.charCount(codePoint);
+    }
+    return -1;
+  }
+
+  private static FormatterException error(String text, int inputPosition, String message) {
+    Position.LineMap lineMap = Position.makeLineMap(text.toCharArray(), text.length(), false);
+    return new FormatterException(
+        new FormatterDiagnostic(
+            lineMap.getLineNumber(inputPosition), lineMap.getColumnNumber(inputPosition), message));
   }
 
   private static final Constructor<DeferredDiagnosticHandler>

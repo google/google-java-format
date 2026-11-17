@@ -780,6 +780,26 @@ class T {
   }
 
   @Test
+  public void unicodeEscapesInLiteralAndCommentContents() throws Exception {
+    // Unicode escapes in the contents of comments and literals are preserved. The input contains
+    // Unicode escapes, so they need to be escaped in the string literal in this test.
+    String input =
+        """
+        class T {
+          // \\u221e
+          /* \\u221e */
+          String s = "\\u0041\\u005c\\u005c";
+          char c = '\\u0041';
+          String t =
+              \"""
+              \\\\u000a \\u0041
+              \""";
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(input);
+  }
+
+  @Test
   public void textBlockSpaceTabMix() throws Exception {
     String input =
         """

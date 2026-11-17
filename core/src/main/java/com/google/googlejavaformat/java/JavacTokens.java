@@ -39,11 +39,10 @@ final class JavacTokens {
 
   /// An unprocessed input token, including whitespace and comments.
   ///
-  /// @param stringVal the escaped string value of a literal, or `null` for other tokens.
   /// @param kind the token kind, or `null` for whitespace and comments.
   /// @param pos the start position.
   /// @param endPos the end position.
-  record RawTok(String stringVal, TokenKind kind, int pos, int endPos) {}
+  record RawTok(TokenKind kind, int pos, int endPos) {}
 
   /// Lex the input and return a list of [RawTok]s.
   static ImmutableList<RawTok> getTokens(
@@ -64,10 +63,9 @@ final class JavacTokens {
       if (t.comments != null) {
         for (CommentWithTextAndPosition c : getComments(t, tokenizer.comments())) {
           if (last < c.getSourcePos(0)) {
-            tokens.add(new RawTok(null, null, last, c.getSourcePos(0)));
+            tokens.add(new RawTok(null, last, c.getSourcePos(0)));
           }
-          tokens.add(
-              new RawTok(null, null, c.getSourcePos(0), c.getSourcePos(0) + c.text().length()));
+          tokens.add(new RawTok(null, c.getSourcePos(0), c.getSourcePos(0) + c.text().length()));
           last = c.getSourcePos(0) + c.text().length();
         }
       }
@@ -78,18 +76,13 @@ final class JavacTokens {
         break;
       }
       if (last < t.pos) {
-        tokens.add(new RawTok(null, null, last, t.pos));
+        tokens.add(new RawTok(null, last, t.pos));
       }
-      tokens.add(
-          new RawTok(
-              t.kind == TokenKind.STRINGLITERAL ? "\"" + t.stringVal() + "\"" : null,
-              t.kind,
-              t.pos,
-              t.endPos));
+      tokens.add(new RawTok(t.kind, t.pos, t.endPos));
       last = t.endPos;
     } while (scanner.token().kind != TokenKind.EOF);
     if (last < end) {
-      tokens.add(new RawTok(null, null, last, end));
+      tokens.add(new RawTok(null, last, end));
     }
     return tokens.build();
   }
