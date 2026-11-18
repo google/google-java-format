@@ -112,15 +112,18 @@ final class JavaCommentsHelper implements CommentsHelper {
   private String indentLineComments(Tok tok, List<String> lines, int column0) {
     lines = wrapLineComments(tok, lines, column0);
     StringBuilder builder = new StringBuilder();
-    builder.append(lines.get(0).trim());
     String indentString = options.indentString(column0);
-    for (int i = 1; i < lines.size(); ++i) {
-      builder.append(lineSeparator).append(indentString).append(lines.get(i).trim());
+    for (int i = 0; i < lines.size(); ++i) {
+      if (i > 0) {
+        builder.append(lineSeparator).append(indentString);
+      }
+      builder.append(CharMatcher.whitespace().trimFrom(lines.get(i)));
     }
     return builder.toString();
   }
 
-  private static final Pattern LINE_COMMENT_MISSING_SPACE_PREFIX = Pattern.compile("^(//+)[^\\s/]");
+  private static final Pattern LINE_COMMENT_MISSING_SPACE_PREFIX =
+      Pattern.compile("^(//+)[^\\s/]", Pattern.UNICODE_CHARACTER_CLASS);
 
   // Preserve special `//noinspection` and `//$NON-NLS-x$` comments used by IDEs, which cannot
   // contain leading spaces.
@@ -149,8 +152,8 @@ final class JavaCommentsHelper implements CommentsHelper {
       }
       while (line.length() + column0 > options.maxLineLength()) {
         int idx = options.maxLineLength() - column0;
-        // only break on whitespace characters, and ignore the leading `// `
-        while (idx >= 2 && !CharMatcher.whitespace().matches(line.charAt(idx))) {
+        // only break on breaking whitespace characters, and ignore the leading `// `
+        while (idx >= 2 && !CharMatcher.breakingWhitespace().matches(line.charAt(idx))) {
           idx--;
         }
         if (idx <= 2) {
