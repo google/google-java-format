@@ -99,6 +99,20 @@ The plugin adds two formatter implementations:
 These that can be selected in "Window" > "Preferences" > "Java" > "Code Style" >
 "Formatter" > "Formatter Implementation".
 
+#### Eclipse Formatter Profile
+
+The formatter implementation is provided by the `google-java-format` Eclipse plugin
+and determines which formatting rules are applied to Java source code.
+
+The Active profile is configured separately in Eclipse. To use the Google Java Style profile,
+import the [Google Java Style Eclipse profile](https://raw.githubusercontent.com/google/styleguide/gh-pages/eclipse-java-google-style.xml)
+through "Window" > "Preferences" > "Java" > "Code Style" > "Formatter" > "Import...",
+then select the imported profile as the Active profile.
+
+Import organization is configured separately under "Java" > "Code Style" > "Organize Imports".
+To obtain consistent results with the command-line formatter or Maven plugin, remove all import
+groups from these settings.
+
 #### Eclipse JRE Config
 
 The plugin uses some internal classes that aren't available without extra
