@@ -16,6 +16,7 @@ package com.google.googlejavaformat.java;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.util.Comparator.comparingInt;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
@@ -43,11 +44,13 @@ import org.jspecify.annotations.Nullable;
 final class Cleanups {
 
   /// The cleaned contents, the requested character ranges remapped onto them (plus any modified
-  /// regions), and the javac unit for `contents` if it can be reused for formatting.
+  /// regions), and the javac unit and lexed [JavaInput] for `contents` if they can be reused for
+  /// formatting.
   record Result(
       String contents,
       Collection<Range<Integer>> characterRanges,
-      @Nullable JCCompilationUnit unit) {}
+      @Nullable JCCompilationUnit unit,
+      @Nullable JavaInput javaInput) {}
 
   private record Parsed(Context context, JCCompilationUnit unit) {}
 
@@ -78,7 +81,7 @@ final class Cleanups {
       throws FormatterException {
     JavaInput.validateRanges(characterRanges, contents.length());
     if (passes.isEmpty()) {
-      return new Result(contents, characterRanges, null);
+      return new Result(contents, characterRanges, null, null);
     }
     RangeSet<Integer> normalized = TreeRangeSet.create();
     for (Range<Integer> range : characterRanges) {
@@ -88,8 +91,17 @@ final class Cleanups {
               : range);
     }
     Cleanups cleanups = new Cleanups(contents, ImmutableRangeSet.copyOf(normalized), style);
+    boolean fuseAstPasses =
+        passes.contains(CleanupPass.REMOVE_UNUSED_IMPORTS)
+            && passes.contains(CleanupPass.AST_CLEANUPS);
     for (CleanupPass pass : passes) {
-      cleanups.applyReplacements(pass.findReplacements(cleanups));
+      if (fuseAstPasses && pass == CleanupPass.REMOVE_UNUSED_IMPORTS) {
+        cleanups.applyFusedAstPasses();
+      } else if (fuseAstPasses && pass == CleanupPass.AST_CLEANUPS) {
+        // Already applied together with REMOVE_UNUSED_IMPORTS on the same parsed AST.
+      } else {
+        cleanups.applyReplacements(pass.findReplacements(cleanups));
+      }
     }
     // An empty range can't be represented in a RangeSet, so restore it if the passes removed all
     // contents (or the input was empty).
@@ -98,12 +110,16 @@ final class Cleanups {
             ? ImmutableList.of(Range.closedOpen(0, 0))
             : cleanups.ranges.asRanges();
     return new Result(
-        cleanups.contents, resultRanges, cleanups.parsed == null ? null : cleanups.parsed.unit());
+        cleanups.contents,
+        resultRanges,
+        cleanups.parsed == null ? null : cleanups.parsed.unit(),
+        cleanups.javaInput);
   }
 
   private String contents;
   private ImmutableRangeSet<Integer> ranges;
   private @Nullable Parsed parsed;
+  private @Nullable JavaInput javaInput;
   private final Style style;
 
   private Cleanups(String contents, ImmutableRangeSet<Integer> ranges, Style style) {
@@ -148,6 +164,48 @@ final class Cleanups {
     return parsed().context();
   }
 
+  JavaInput javaInput() throws FormatterException {
+    if (javaInput == null) {
+      javaInput = new JavaInput(contents);
+    }
+    return javaInput;
+  }
+
+  @Nullable JavaInput cachedJavaInput() {
+    return javaInput;
+  }
+
+  /// Runs `REMOVE_UNUSED_IMPORTS` and `AST_CLEANUPS` against a single parsed [JCCompilationUnit] so
+  /// unused-import edits do not force an extra full-file parse before AST cleanups.
+  private void applyFusedAstPasses() throws FormatterException {
+    ImmutableList<Replacement> unusedImports =
+        RemoveUnusedImports.findUnusedImports(context(), unit(), contents);
+    RangeSet<Integer> preExistingDeletions;
+    if (unusedImports.isEmpty()) {
+      preExistingDeletions = ImmutableRangeSet.of();
+    } else {
+      RangeSet<Integer> deletions = TreeRangeSet.create();
+      for (Replacement r : unusedImports) {
+        deletions.add(r.replaceRange());
+      }
+      preExistingDeletions = deletions;
+    }
+    ImmutableList<Replacement> astCleanups =
+        CleanupScanner.scan(
+            unit(), contents, javaInput().getToks(), ranges(), preExistingDeletions);
+    if (unusedImports.isEmpty()) {
+      applyReplacements(astCleanups);
+    } else if (astCleanups.isEmpty()) {
+      applyReplacements(unusedImports);
+    } else {
+      List<Replacement> merged = new ArrayList<>(unusedImports.size() + astCleanups.size());
+      merged.addAll(unusedImports);
+      merged.addAll(astCleanups);
+      merged.sort(comparingInt(r -> r.replaceRange().lowerEndpoint()));
+      applyReplacements(merged);
+    }
+  }
+
   /// Applies a pass's replacements to the current contents, remapping requested ranges and adding
   /// modified regions.
   private void applyReplacements(List<Replacement> replacements) {
@@ -166,6 +224,7 @@ final class Cleanups {
     this.contents = edit.contents();
     this.ranges = ImmutableRangeSet.copyOf(newRanges);
     this.parsed = null;
+    this.javaInput = null;
   }
 
   /// Returns the range to reformat for the given span.
