@@ -53,12 +53,11 @@ public class GoogleJavaFormatImportOptimizer implements ImportOptimizer {
 
     JavaFormatterOptions.Style style = GoogleJavaFormatSettings.getInstance(project).getStyle();
 
-    final String origText = document.getText();
+    final String origText =
+        documentManager.isDocumentBlockedByPsi(document) ? file.getText() : document.getText();
     String text;
     try {
-      text =
-          Formatter.fixImports(
-              origText, style, /* removeUnusedImports= */ true, /* sortImports= */ true);
+      text = formatImports(origText, style);
     } catch (FormatterException e) {
       Notifications.displayParsingErrorNotification(project, file.getName());
       return () -> {};
@@ -80,11 +79,26 @@ public class GoogleJavaFormatImportOptimizer implements ImportOptimizer {
       // getCharsSequence() as we should have `writeAction()` (which I think means effectively a
       // write-lock) and it saves calling getText(), which apparently is expensive.
       CharSequence newText = document.getCharsSequence();
+      String textToSet = text;
       if (CharSequence.compare(origText, newText) != 0) {
-        return;
+        try {
+          textToSet = formatImports(newText.toString(), style);
+        } catch (FormatterException e) {
+          Notifications.displayParsingErrorNotification(project, file.getName());
+          return;
+        }
+        if (CharSequence.compare(textToSet, newText) == 0) {
+          return;
+        }
       }
 
-      document.setText(text);
+      document.setText(textToSet);
     };
+  }
+
+  private static String formatImports(String documentText, JavaFormatterOptions.Style style)
+      throws FormatterException {
+    return Formatter.fixImports(
+        documentText, style, /* removeUnusedImports= */ true, /* sortImports= */ true);
   }
 }
