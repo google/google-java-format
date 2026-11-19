@@ -193,7 +193,12 @@ public final class Formatter {
         Edit.apply(
             cleaned.contents(),
             getFormatReplacements(
-                cleaned.contents(), cleaned.characterRanges(), options.cleanup(), cleaned.unit()));
+                cleaned.contents(),
+                cleaned.characterRanges(),
+                options.cleanup(),
+                cleaned.unit(),
+                cleaned.toks(),
+                cleaned.javaInput()));
     if (reflowLongStrings) {
       // Only reflow long strings in the requested ranges, mapped onto the formatted output.
       return StringWrapper.wrap(
@@ -265,16 +270,27 @@ public final class Formatter {
   ImmutableList<Replacement> getFormatReplacements(
       String input, Collection<Range<Integer>> characterRanges, boolean reindent)
       throws FormatterException {
-    return getFormatReplacements(input, characterRanges, reindent, /* unit= */ null);
+    return getFormatReplacements(
+        input,
+        characterRanges,
+        reindent,
+        /* unit= */ null,
+        /* cachedToks= */ null,
+        /* cachedJavaInput= */ null);
   }
 
-  ImmutableList<Replacement> getFormatReplacements(
+  private ImmutableList<Replacement> getFormatReplacements(
       String input,
       Collection<Range<Integer>> characterRanges,
       boolean reindent,
-      @Nullable JCCompilationUnit unit)
+      @Nullable JCCompilationUnit unit,
+      @Nullable ImmutableList<JavaInput.Tok> cachedToks,
+      @Nullable JavaInput cachedJavaInput)
       throws FormatterException {
-    JavaInput javaInput = new JavaInput(input);
+    JavaInput javaInput =
+        cachedJavaInput != null
+            ? cachedJavaInput
+            : (cachedToks != null ? new JavaInput(input, cachedToks) : new JavaInput(input));
     if (unit != null) {
       javaInput.setCompilationUnit(unit);
     }

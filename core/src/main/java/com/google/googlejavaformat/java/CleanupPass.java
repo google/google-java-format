@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import com.google.common.collect.ImmutableList;
+import com.google.googlejavaformat.java.JavaInput.Tok;
 
 /// Standard cleanup passes applied before formatting.
 enum CleanupPass {
@@ -30,21 +31,25 @@ enum CleanupPass {
   AST_CLEANUPS {
     @Override
     ImmutableList<Replacement> findReplacements(Cleanups cleanups) throws FormatterException {
-      return CleanupScanner.scan(cleanups.unit(), cleanups.contents(), cleanups.ranges());
+      return CleanupScanner.scan(
+          cleanups.unit(), cleanups.contents(), cleanups.toks(), cleanups.ranges());
     }
   },
   /// Reorders modifiers into JLS order.
   REORDER_MODIFIERS {
     @Override
     ImmutableList<Replacement> findReplacements(Cleanups cleanups) throws FormatterException {
-      JavaInput javaInput = new JavaInput(cleanups.contents());
-      return ModifierOrderer.findModifierReplacements(javaInput, cleanups.ranges());
+      return ModifierOrderer.findModifierReplacements(cleanups.javaInput(), cleanups.ranges());
     }
   },
   /// Reorders imports into canonical style order.
   SORT_IMPORTS {
     @Override
     ImmutableList<Replacement> findReplacements(Cleanups cleanups) throws FormatterException {
+      ImmutableList<Tok> cached = cleanups.cachedToks();
+      if (cached != null) {
+        return ImportOrderer.findReplacements(cleanups.contents(), cleanups.style(), cached);
+      }
       return ImportOrderer.findReplacements(cleanups.contents(), cleanups.style());
     }
   };

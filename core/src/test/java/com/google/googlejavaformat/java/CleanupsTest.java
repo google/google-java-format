@@ -597,8 +597,10 @@ public class CleanupsTest {
   public void parseReuseWhenNoEdits() throws Exception {
     String input =
         """
+        import java.util.List;
+
         class Test {
-          int x;
+          List<String> xs;
         }
         """;
     Cleanups.Result result =
@@ -607,11 +609,13 @@ public class CleanupsTest {
             ImmutableList.of(Range.closedOpen(0, input.length())),
             Style.GOOGLE,
             Cleanups.enabledPasses(
-                /* cleanup= */ false,
+                /* cleanup= */ true,
                 /* removeUnusedImports= */ true,
-                /* reorderModifiers= */ false,
-                /* sortImports= */ false));
+                /* reorderModifiers= */ true,
+                /* sortImports= */ true));
     assertThat(result.unit()).isNotNull();
+    assertThat(result.toks()).isNotNull();
+    assertThat(result.javaInput()).isNotNull();
     assertThat(result.contents()).isEqualTo(input);
   }
 
@@ -634,6 +638,8 @@ public class CleanupsTest {
                 /* reorderModifiers= */ true,
                 /* sortImports= */ false));
     assertThat(result.unit()).isNull();
+    assertThat(result.toks()).isNull();
+    assertThat(result.javaInput()).isNull();
     assertThat(result.contents()).contains("public static int x;");
   }
 
@@ -697,8 +703,70 @@ public class CleanupsTest {
                 /* reorderModifiers= */ false,
                 /* sortImports= */ false));
     assertThat(result.unit()).isNotNull();
+    assertThat(result.toks()).isNotNull();
+    assertThat(result.javaInput()).isNull();
     assertThat(result.contents()).doesNotContain("ArrayList");
     assertThat(result.contents()).contains("if (a) {");
+  }
+
+  @Test
+  public void adjacentUnusedImportAndRedundantSemicolon() throws Exception {
+    String input =
+        """
+        package test;
+
+        import java.util.ArrayList;;
+
+        class Test {}
+        """;
+    Cleanups.Result result =
+        Cleanups.apply(
+            input,
+            ImmutableList.of(Range.closedOpen(0, input.length())),
+            Style.GOOGLE,
+            Cleanups.enabledPasses(
+                /* cleanup= */ true,
+                /* removeUnusedImports= */ true,
+                /* reorderModifiers= */ true,
+                /* sortImports= */ true));
+    assertThat(result.unit()).isNull();
+    assertThat(result.toks()).isNotNull();
+    assertThat(result.javaInput()).isNotNull();
+    assertThat(result.contents())
+        .isEqualTo(
+            """
+            package test;
+
+
+            class Test {}
+            """);
+  }
+
+  @Test
+  public void fixImportsOnlyDoesNotBuildJavaInput() throws Exception {
+    String input =
+        """
+        import java.util.List;
+        import java.util.Set;
+
+        class Test {
+          List<Set<String>> xs;
+        }
+        """;
+    Cleanups.Result result =
+        Cleanups.apply(
+            input,
+            ImmutableList.of(Range.closedOpen(0, input.length())),
+            Style.GOOGLE,
+            Cleanups.enabledPasses(
+                /* cleanup= */ false,
+                /* removeUnusedImports= */ true,
+                /* reorderModifiers= */ false,
+                /* sortImports= */ true));
+    assertThat(result.unit()).isNotNull();
+    assertThat(result.toks()).isNull();
+    assertThat(result.javaInput()).isNull();
+    assertThat(result.contents()).isEqualTo(input);
   }
 
   @Test

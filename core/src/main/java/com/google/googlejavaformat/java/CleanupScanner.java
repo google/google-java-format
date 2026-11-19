@@ -57,10 +57,12 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
   private static final int IMPLICIT_CLASS = 1 << 19;
 
   static ImmutableList<Replacement> scan(
-      JCCompilationUnit unit, String contents, Collection<Range<Integer>> ranges)
+      JCCompilationUnit unit,
+      String contents,
+      ImmutableList<Tok> toks,
+      Collection<Range<Integer>> ranges)
       throws FormatterException {
     RangeSet<Integer> targetRanges = TreeRangeSet.create(ranges);
-    ImmutableList<Tok> toks = JavaInput.buildToks(contents, ImmutableSet.of());
     RangeSet<Integer> activeDeletions = TreeRangeSet.create();
     new CleanupScanner(contents, unit, toks, targetRanges, activeDeletions).scan(unit, null);
     if (activeDeletions.isEmpty()) {
