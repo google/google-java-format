@@ -28,6 +28,11 @@ The formatter can act on whole files, on limited lines (`--lines`), on specific
 offsets (`--offset`), passing through to standard-out (default) or altered
 in-place (`--replace`).
 
+When using `--lines`, the formatter may modify lines outside the specified
+range. This is because it expands the range as necessary to format complete
+code sections, such as statements, method signatures, and class signatures.
+Leading comments associated with these sections may also be reformatted.
+
 Option `--help` will print full usage details; including built-in documentation
 about other flags, such as `--style`, `--max-line-length`, `--fix-imports-only`,
 `--skip-sorting-imports`, `--skip-removing-unused-import`,
