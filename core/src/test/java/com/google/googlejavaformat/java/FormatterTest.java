@@ -1368,4 +1368,29 @@ class T {
         """;
     assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
   }
+
+  @Test
+  public void shebangComment() throws Exception {
+    String input =
+        """
+        ///usr/bin/env jbang "$0" "$@" ; exit $?
+
+        public class hello {
+          public static void main(String... args) {
+            System.out.println("Hello World");
+          }
+        }
+        """;
+    String expected =
+        """
+        /// usr/bin/env jbang "$0" "$@" ; exit $?
+
+        public class hello {
+          public static void main(String... args) {
+            System.out.println("Hello World");
+          }
+        }
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
 }
