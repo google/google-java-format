@@ -251,6 +251,7 @@ final class JavaInput extends Input {
   // `/*` comments can lie on multiple lines. These data structures (along with equivalent ones for
   // the formatted output) let us compute correspondences between the input and output.
 
+  private final ImmutableList<Tok> toks; // All Toks (including whitespace and comments).
   private final ImmutableMap<Integer, Integer> positionToColumnMap; // Map Tok position to column.
   private final ImmutableList<Token> tokens; // The Tokens for this input.
   private final ImmutableRangeMap<Integer, Token> positionTokenMap; // Map position to Token.
@@ -265,7 +266,7 @@ final class JavaInput extends Input {
   JavaInput(String text) throws FormatterException {
     this.text = checkNotNull(text);
     setLines(ImmutableList.copyOf(Newlines.lineIterator(text)));
-    ImmutableList<Tok> toks = buildToks(text);
+    this.toks = buildToks(text);
     positionToColumnMap = makePositionToColumnMap(toks);
     tokens = buildTokens(toks);
     ImmutableRangeMap.Builder<Integer, Token> tokenLocations = ImmutableRangeMap.builder();
@@ -749,6 +750,11 @@ final class JavaInput extends Input {
   @Override
   public Token getToken(int k) {
     return kToToken[k];
+  }
+
+  /// Get all input toks (tokens, comments, whitespace, and EOF).
+  ImmutableList<Tok> getToks() {
+    return toks;
   }
 
   /// Get the input tokens.
