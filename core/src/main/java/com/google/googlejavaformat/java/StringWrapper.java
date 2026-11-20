@@ -27,11 +27,29 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.googlejavaformat.Newlines;
+import com.sun.source.tree.AnnotationTree;
+import com.sun.source.tree.AssertTree;
+import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.BinaryTree;
+import com.sun.source.tree.CaseTree;
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompoundAssignmentTree;
+import com.sun.source.tree.ConditionalExpressionTree;
+import com.sun.source.tree.ExpressionStatementTree;
+import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
+import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.NewArrayTree;
+import com.sun.source.tree.NewClassTree;
+import com.sun.source.tree.ParenthesizedTree;
+import com.sun.source.tree.ReturnTree;
+import com.sun.source.tree.SwitchExpressionTree;
+import com.sun.source.tree.ThrowTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.Tree.Kind;
+import com.sun.source.tree.VariableTree;
+import com.sun.source.tree.YieldTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.tree.JCTree;
@@ -40,12 +58,13 @@ import com.sun.tools.javac.util.Position;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
+import org.jspecify.annotations.Nullable;
 
 /// Wraps string literals that exceed the column limit.
 public final class StringWrapper {
@@ -69,51 +88,142 @@ public final class StringWrapper {
   static String wrap(
       final int columnLimit, String input, Formatter formatter, RangeSet<Integer> characterRanges)
       throws FormatterException {
+    return wrap(
+        columnLimit,
+        input,
+        formatter,
+        characterRanges,
+        /* parsedUnit= */ null,
+        /* alreadyFormattedWholeFile= */ false);
+  }
+
+  static String wrap(
+      final int columnLimit,
+      String input,
+      Formatter formatter,
+      RangeSet<Integer> characterRanges,
+      JCTree.@Nullable JCCompilationUnit parsedUnit,
+      boolean alreadyFormattedWholeFile)
+      throws FormatterException {
     JavaFormatterOptions options = formatter.options();
-    if (!needWrapping(columnLimit, input, options)) {
+    if (!needWrapping(columnLimit, input, options, characterRanges)) {
       // fast path
       return input;
     }
 
-    TreeRangeMap<Integer, String> replacements =
-        getReflowReplacements(columnLimit, input, options, characterRanges);
-    if (replacements.asMapOfRanges().isEmpty()) {
+    ReflowResult reflow =
+        getReflowReplacements(columnLimit, input, options, characterRanges, parsedUnit);
+    if (reflow.replacements().asMapOfRanges().isEmpty()) {
       return input;
     }
-    Edit firstPass =
-        Edit.apply(
-            input, formatter.getFormatReplacements(input, replacements.asMapOfRanges().keySet()));
+    if (!alreadyFormattedWholeFile) {
+      Edit firstPass =
+          Edit.apply(
+              input,
+              formatter.getFormatReplacements(
+                  input,
+                  reflow.replacements().asMapOfRanges().keySet(),
+                  /* reindent= */ false,
+                  reflow.unit()));
 
-    if (!firstPass.contents().equals(input)) {
-      // If formatting the replacement ranges resulted in a change, recalculate the replacements on
-      // the updated input.
-      input = firstPass.contents();
-      characterRanges = firstPass.mapRanges(characterRanges.asRanges());
-      replacements = getReflowReplacements(columnLimit, input, options, characterRanges);
-    }
-
-    String result = applyReplacements(input, replacements);
-
-    {
-      // We really don't want bugs in this pass to change the behaviour of programs we're
-      // formatting, so check that the pretty-printed AST is the same before and after reformatting.
-      String expected = parse(input, /* allowStringFolding= */ true).toString();
-      String actual;
-      try {
-        actual = parse(result, /* allowStringFolding= */ true).toString();
-      } catch (FormatterException e) {
-        // Diagnostics for the reflowed output don't correspond to positions in the original input,
-        // and the error is a bug in this pass rather than in the input, so report it as such.
-        throw somethingHasGoneTerriblyWrong(
-            "it would produce code that does not parse (" + e.getMessage() + ")", result, input);
-      }
-      if (!expected.equals(actual)) {
-        throw somethingHasGoneTerriblyWrong(
-            "it would unexpectedly change the AST", actual, expected);
+      if (!firstPass.contents().equals(input)) {
+        // If formatting the replacement ranges resulted in a change, recalculate the replacements
+        // on the updated input.
+        input = firstPass.contents();
+        characterRanges = firstPass.mapRanges(characterRanges.asRanges());
+        reflow =
+            getReflowReplacements(
+                columnLimit, input, options, characterRanges, /* parsedUnit= */ null);
+        if (reflow.replacements().asMapOfRanges().isEmpty()) {
+          return input;
+        }
       }
     }
+
+    String result = applyReplacements(input, reflow.replacements());
+
+    verifyReplacements(input, result, reflow);
 
     return result;
+  }
+
+  /// Verifies that reflowing string literals did not produce unparseable code or change the AST.
+  ///
+  /// When all replacements occur in syntactic contexts where replacing a string literal with a
+  /// string `+` concatenation cannot change operator precedence, we parse a tiny synthetic class
+  /// containing only the replacement expressions (with `allowStringFolding=true`) and verify each
+  /// folds to the exact original string literal value. Otherwise, we fall back to full-file AST
+  /// comparison.
+  private static void verifyReplacements(String input, String result, ReflowResult reflow)
+      throws FormatterException {
+    if (reflow.needsFullAstVerification()) {
+      verifyFullAst(input, result);
+      return;
+    }
+    Map<Range<Integer>, String> replacementMap = reflow.replacements().asMapOfRanges();
+    StringBuilder synthetic = new StringBuilder();
+    synthetic.append("class C {\n");
+    List<String> expectedValues = new ArrayList<>(replacementMap.size());
+    int idx = 0;
+    for (Map.Entry<Range<Integer>, String> entry : replacementMap.entrySet()) {
+      synthetic
+          .append("  String s")
+          .append(idx++)
+          .append(" = ")
+          .append(entry.getValue())
+          .append(";\n");
+      expectedValues.add(reflow.expectedValues().get(entry.getKey()));
+    }
+    synthetic.append("}\n");
+
+    JCTree.JCCompilationUnit syntheticUnit;
+    try {
+      syntheticUnit = parse(synthetic.toString(), /* allowStringFolding= */ true);
+    } catch (FormatterException e) {
+      throw somethingHasGoneTerriblyWrong(
+          "it would produce code that does not parse (" + e.getMessage() + ")", result, input);
+    }
+
+    if (syntheticUnit.getTypeDecls().size() == 1
+        && syntheticUnit.getTypeDecls().get(0) instanceof ClassTree classTree
+        && classTree.getMembers().size() == expectedValues.size()) {
+      boolean allMatch = true;
+      for (int i = 0; i < expectedValues.size(); i++) {
+        Tree member = classTree.getMembers().get(i);
+        if (member instanceof VariableTree varTree
+            && varTree.getInitializer() instanceof LiteralTree literalTree
+            && literalTree.getKind() == Kind.STRING_LITERAL
+            && expectedValues.get(i).equals(literalTree.getValue())) {
+          continue;
+        }
+        allMatch = false;
+        break;
+      }
+      if (allMatch) {
+        return;
+      }
+    }
+    // Unexpected mismatch in synthetic verification; run full AST comparison to produce the full
+    // diagnostic diff.
+    verifyFullAst(input, result);
+  }
+
+  private static void verifyFullAst(String input, String result) throws FormatterException {
+    // We really don't want bugs in this pass to change the behaviour of programs we're
+    // formatting, so check that the pretty-printed AST is the same before and after reformatting.
+    String expected = parse(input, /* allowStringFolding= */ true).toString();
+    String actual;
+    try {
+      actual = parse(result, /* allowStringFolding= */ true).toString();
+    } catch (FormatterException e) {
+      // Diagnostics for the reflowed output don't correspond to positions in the original input,
+      // and the error is a bug in this pass rather than in the input, so report it as such.
+      throw somethingHasGoneTerriblyWrong(
+          "it would produce code that does not parse (" + e.getMessage() + ")", result, input);
+    }
+    if (!expected.equals(actual)) {
+      throw somethingHasGoneTerriblyWrong("it would unexpectedly change the AST", actual, expected);
+    }
   }
 
   private static FormatterException somethingHasGoneTerriblyWrong(
@@ -128,13 +238,21 @@ public final class StringWrapper {
             reason, actual, expected));
   }
 
-  private static TreeRangeMap<Integer, String> getReflowReplacements(
+  private record ReflowResult(
+      TreeRangeMap<Integer, String> replacements,
+      JCTree.JCCompilationUnit unit,
+      Map<Range<Integer>, String> expectedValues,
+      boolean needsFullAstVerification) {}
+
+  private static ReflowResult getReflowReplacements(
       int columnLimit,
       final String input,
       JavaFormatterOptions options,
-      RangeSet<Integer> characterRanges)
+      RangeSet<Integer> characterRanges,
+      JCTree.@Nullable JCCompilationUnit parsedUnit)
       throws FormatterException {
-    return new Reflower(columnLimit, input, options, characterRanges).getReflowReplacements();
+    return new Reflower(columnLimit, input, options, characterRanges, parsedUnit)
+        .getReflowReplacements();
   }
 
   private static class Reflower {
@@ -151,14 +269,15 @@ public final class StringWrapper {
         int columnLimit,
         String input,
         JavaFormatterOptions options,
-        RangeSet<Integer> characterRanges)
+        RangeSet<Integer> characterRanges,
+        JCTree.@Nullable JCCompilationUnit parsedUnit)
         throws FormatterException {
       this.columnLimit = columnLimit;
       this.input = input;
       this.options = options;
       this.characterRanges = characterRanges;
       this.separator = Newlines.guessLineSeparator(input);
-      this.unit = parse(input, /* allowStringFolding= */ false);
+      this.unit = parsedUnit != null ? parsedUnit : parse(input, /* allowStringFolding= */ false);
       this.lineMap = unit.getLineMap();
     }
 
@@ -167,13 +286,15 @@ public final class StringWrapper {
       return options.visualLength(input, lineStart, position);
     }
 
-    TreeRangeMap<Integer, String> getReflowReplacements() {
+    ReflowResult getReflowReplacements() {
       // Paths to string literals that extend past the column limit.
       List<TreePath> longStringLiterals = new ArrayList<>();
       new LongStringsScanner(longStringLiterals).scan(new TreePath(unit), null);
       TreeRangeMap<Integer, String> replacements = TreeRangeMap.create();
-      wrapLongStrings(replacements, longStringLiterals);
-      return replacements;
+      Map<Range<Integer>, String> expectedValues = new LinkedHashMap<>();
+      boolean needsFullAstVerification =
+          wrapLongStrings(replacements, expectedValues, longStringLiterals);
+      return new ReflowResult(replacements, unit, expectedValues, needsFullAstVerification);
     }
 
     private class LongStringsScanner extends TreePathScanner<Void, Void> {
@@ -214,8 +335,11 @@ public final class StringWrapper {
       }
     }
 
-    private void wrapLongStrings(
-        TreeRangeMap<Integer, String> replacements, List<TreePath> longStringLiterals) {
+    private boolean wrapLongStrings(
+        TreeRangeMap<Integer, String> replacements,
+        Map<Range<Integer>, String> expectedValues,
+        List<TreePath> longStringLiterals) {
+      boolean needsFullAstVerification = false;
       for (TreePath path : longStringLiterals) {
         // Find the outermost contiguous enclosing concatenation expression
         TreePath enclosing = path;
@@ -227,9 +351,16 @@ public final class StringWrapper {
         // We need this information to handle continuation indents.
         AtomicBoolean first = new AtomicBoolean(false);
         // Finds the set of string literals in the concat expression that includes the one that
-        // needs
-        // to be wrapped.
+        // needs to be wrapped.
         List<Tree> flat = flatten(input, unit, path, enclosing, first);
+        Range<Integer> replaceRange =
+            Range.closedOpen(getStartPosition(flat.get(0)), getEndPosition(getLast(flat), unit));
+        if (replacements.get(replaceRange.lowerEndpoint()) != null) {
+          continue;
+        }
+        if (!isSafeParentForConcat(enclosing)) {
+          needsFullAstVerification = true;
+        }
         // Zero-indexed start column
         int startColumn = visualColumn(getStartPosition(flat.get(0)));
 
@@ -245,11 +376,51 @@ public final class StringWrapper {
         // Get the original source text of the string literals, excluding `"` and `+`.
         ImmutableList<String> components = stringComponents(input, unit, flat);
         replacements.put(
-            Range.closedOpen(getStartPosition(flat.get(0)), getEndPosition(getLast(flat), unit)),
+            replaceRange,
             reflow(
                 separator, columnLimit, startColumn, trailing, components, first.get(), options));
+        StringBuilder expected = new StringBuilder();
+        for (Tree literal : flat) {
+          expected.append(((LiteralTree) literal).getValue());
+        }
+        expectedValues.put(replaceRange, expected.toString());
       }
+      return needsFullAstVerification;
     }
+  }
+
+  /// Returns true if replacing a string literal (or `+` chain of string literals) with a `+`
+  /// concatenation under `enclosing`'s parent cannot alter surrounding operator precedence.
+  private static boolean isSafeParentForConcat(TreePath enclosing) {
+    TreePath parentPath = enclosing.getParentPath();
+    if (parentPath == null) {
+      return false;
+    }
+    Tree parent = parentPath.getLeaf();
+    if (parent instanceof BinaryTree binaryTree) {
+      return switch (binaryTree.getKind()) {
+        case MULTIPLY, DIVIDE, REMAINDER, MINUS, PLUS -> false;
+        default -> true;
+      };
+    }
+    return parent instanceof VariableTree
+        || parent instanceof AssignmentTree
+        || parent instanceof CompoundAssignmentTree
+        || parent instanceof MethodInvocationTree
+        || (parent instanceof NewClassTree newClassTree
+            && newClassTree.getArguments().contains(enclosing.getLeaf()))
+        || parent instanceof ReturnTree
+        || parent instanceof ExpressionStatementTree
+        || parent instanceof ConditionalExpressionTree
+        || parent instanceof ParenthesizedTree
+        || parent instanceof NewArrayTree
+        || parent instanceof AnnotationTree
+        || parent instanceof CaseTree
+        || parent instanceof YieldTree
+        || parent instanceof ThrowTree
+        || parent instanceof AssertTree
+        || parent instanceof LambdaExpressionTree
+        || parent instanceof SwitchExpressionTree;
   }
 
   /// Returns the source text of the given string literal trees, excluding the leading and trailing
@@ -454,14 +625,42 @@ public final class StringWrapper {
   private static final CharMatcher STRING_CONCAT_DELIMITER =
       CharMatcher.whitespace().or(CharMatcher.anyOf("\"+"));
 
-  /// Returns true if any lines in the given Java source exceed the column limit.
-  private static boolean needWrapping(int columnLimit, String input, JavaFormatterOptions options) {
-    // TODO(cushon): consider adding Newlines.lineIterable?
-    Iterator<String> it = Newlines.lineIterator(input);
-    while (it.hasNext()) {
-      String line = it.next();
-      if (options.visualLength(line) > columnLimit) {
-        return true;
+  /// Returns true if any line in the given Java source exceeds the column limit, contains a double
+  /// quote (so it might contain a string literal), and intersects `characterRanges`.
+  private static boolean needWrapping(
+      int columnLimit,
+      String input,
+      JavaFormatterOptions options,
+      RangeSet<Integer> characterRanges) {
+    int len = input.length();
+    int lineStart = 0;
+    while (lineStart < len) {
+      int lineEnd = lineStart;
+      while (lineEnd < len) {
+        char c = input.charAt(lineEnd);
+        if (c == '\n' || c == '\r') {
+          break;
+        }
+        lineEnd++;
+      }
+      if (options.visualLength(input, lineStart, lineEnd) > columnLimit) {
+        int quoteIdx = input.indexOf('"', lineStart);
+        if (quoteIdx != -1
+            && quoteIdx < lineEnd
+            && characterRanges.intersects(Range.closedOpen(lineStart, lineEnd))) {
+          return true;
+        }
+      }
+      if (lineEnd < len) {
+        if (input.charAt(lineEnd) == '\r'
+            && lineEnd + 1 < len
+            && input.charAt(lineEnd + 1) == '\n') {
+          lineStart = lineEnd + 2;
+        } else {
+          lineStart = lineEnd + 1;
+        }
+      } else {
+        break;
       }
     }
     return false;
