@@ -31,6 +31,7 @@ import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.BrTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.DivOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.EndJavadoc;
 import com.google.googlejavaformat.java.javadoc.Token.FooterJavadocTagStart;
 import com.google.googlejavaformat.java.javadoc.Token.ForcedNewline;
@@ -116,8 +117,9 @@ public final class JavadocFormatter {
         case ListOpenTag t -> output.writeListOpen(t);
         case ListCloseTag t -> output.writeListClose(t);
         case ListItemOpenTag t -> output.writeListItemOpen(t);
-        case HeaderOpenTag t -> output.writeHeaderOpen(t);
+        case HeaderOpenTag t -> output.writeBlockOpen(t);
         case HeaderCloseTag t -> output.writeHeaderClose(t);
+        case DivOpenTag t -> output.writeBlockOpen(t);
         case ParagraphOpenTag t -> output.writeParagraphOpen(standardizePToken(t));
         case BlockQuoteOpenTag t -> output.writeBlockQuoteOpen(t);
         case BlockQuoteCloseTag t -> output.writeBlockQuoteClose(t);

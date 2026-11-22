@@ -69,6 +69,8 @@ sealed interface Token {
 
   record HeaderCloseTag(String value) implements Token {}
 
+  record DivOpenTag(String value) implements Token, StartOfLineToken {}
+
   record ParagraphOpenTag(String value) implements Token, StartOfLineToken {}
 
   record ParagraphCloseTag(String value) implements Token {}

@@ -33,6 +33,7 @@ import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.BrTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.DivOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.EndJavadoc;
 import com.google.googlejavaformat.java.javadoc.Token.FooterJavadocTagStart;
 import com.google.googlejavaformat.java.javadoc.Token.ForcedNewline;
@@ -362,6 +363,8 @@ final class JavadocLexer {
       return HeaderOpenTag::new;
     } else if (input.tryConsumeRegex(HEADER_CLOSE_PATTERN)) {
       return HeaderCloseTag::new;
+    } else if (classicJavadoc && input.tryConsumeRegex(DIV_OPEN_PATTERN)) {
+      return DivOpenTag::new;
     } else if (input.tryConsumeRegex(BR_PATTERN)) {
       return BrTag::new;
     } else if (input.tryConsumeRegex(MOE_BEGIN_STRIP_COMMENT_PATTERN)) {
@@ -700,6 +703,7 @@ final class JavadocLexer {
   private static final Pattern LIST_ITEM_CLOSE_PATTERN = closeTagPattern("li|dt|dd");
   private static final Pattern HEADER_OPEN_PATTERN = openTagPattern("h[1-6]");
   private static final Pattern HEADER_CLOSE_PATTERN = closeTagPattern("h[1-6]");
+  private static final Pattern DIV_OPEN_PATTERN = compile("<div(?:\\s[^>]*)?/?>", CASE_INSENSITIVE);
   private static final Pattern PARAGRAPH_OPEN_PATTERN = openTagPattern("p");
   private static final Pattern PARAGRAPH_CLOSE_PATTERN = closeTagPattern("p");
   private static final Pattern BLOCKQUOTE_OPEN_PATTERN = openTagPattern("blockquote");
