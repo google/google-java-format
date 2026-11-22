@@ -1266,6 +1266,8 @@ public final class JavadocFormattingTest {
          * Following paragraph.
          *
          * <div-custom>Custom element.</div-custom>
+         *
+         * <p><div>Explicit paragraph.</div>
          */
         class Test {}
         """;
@@ -1281,6 +1283,8 @@ public final class JavadocFormattingTest {
          * <p>Following paragraph.
          *
          * <p><div-custom>Custom element.</div-custom>
+         *
+         * <p><div>Explicit paragraph.</div>
          */
         class Test {}
         """;

@@ -69,8 +69,6 @@ sealed interface Token {
 
   record HeaderCloseTag(String value) implements Token {}
 
-  record DivOpenTag(String value) implements Token, StartOfLineToken {}
-
   record ParagraphOpenTag(String value) implements Token, StartOfLineToken {}
 
   record ParagraphCloseTag(String value) implements Token {}
@@ -151,6 +149,8 @@ sealed interface Token {
   /// newlines, asterisks, and tabs and spaces. In the output, it is translated to newlines (with
   /// leading spaces and asterisks) or spaces.
   record Whitespace(String value) implements Token {}
+
+  record BlankLine(String value) implements Token {}
 
   /// A newline in a `<pre>` or `<table>` section. We preserve user formatting in these sections,
   /// including newlines.

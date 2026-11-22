@@ -30,6 +30,7 @@ import com.google.googlejavaformat.java.javadoc.Token.CodeCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.FooterJavadocTagStart;
 import com.google.googlejavaformat.java.javadoc.Token.HeaderCloseTag;
+import com.google.googlejavaformat.java.javadoc.Token.HeaderOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.HtmlComment;
 import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
@@ -240,7 +241,7 @@ final class JavadocWriter {
     indentStack.push(new ListItemIndent(indent));
   }
 
-  void writeBlockOpen(Token token) {
+  void writeHeaderOpen(HeaderOpenTag token) {
     requestBlankLine();
 
     writeToken(token);
@@ -407,7 +408,7 @@ final class JavadocWriter {
     return output.toString();
   }
 
-  private void requestBlankLine() {
+  void requestBlankLine() {
     requestWhitespace(BLANK_LINE);
   }
 

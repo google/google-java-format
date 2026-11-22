@@ -27,13 +27,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.PeekingIterator;
 import com.google.googlejavaformat.java.javadoc.Token.BeginJavadoc;
+import com.google.googlejavaformat.java.javadoc.Token.BlankLine;
 import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteMarker;
 import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.BrTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.CodeOpenTag;
-import com.google.googlejavaformat.java.javadoc.Token.DivOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.EndJavadoc;
 import com.google.googlejavaformat.java.javadoc.Token.FooterJavadocTagStart;
 import com.google.googlejavaformat.java.javadoc.Token.ForcedNewline;
@@ -224,6 +224,14 @@ final class JavadocLexer {
   private Function<String, Token> consumeToken() throws LexException {
     boolean preserveExistingFormatting = preserveExistingFormatting();
 
+    // Preserve the blank line before a div without inferring a paragraph tag.
+    if (classicJavadoc
+        && !preserveExistingFormatting
+        && !contextStack.containsAny(TAG_CONTEXTS)
+        && input.tryConsumeRegex(BLANK_LINE_BEFORE_DIV_PATTERN)) {
+      somethingSinceNewline = false;
+      return BlankLine::new;
+    }
     if (input.tryConsumeRegex(NEWLINE_PATTERN)) {
       somethingSinceNewline = false;
       return preserveExistingFormatting ? ForcedNewline::new : Whitespace::new;
@@ -363,8 +371,6 @@ final class JavadocLexer {
       return HeaderOpenTag::new;
     } else if (input.tryConsumeRegex(HEADER_CLOSE_PATTERN)) {
       return HeaderCloseTag::new;
-    } else if (classicJavadoc && input.tryConsumeRegex(DIV_OPEN_PATTERN)) {
-      return DivOpenTag::new;
     } else if (input.tryConsumeRegex(BR_PATTERN)) {
       return BrTag::new;
     } else if (input.tryConsumeRegex(MOE_BEGIN_STRIP_COMMENT_PATTERN)) {
@@ -679,6 +685,8 @@ final class JavadocLexer {
    * point where this pattern is applied.
    */
   private static final Pattern NEWLINE_PATTERN = compile("[ \t]*\n");
+  private static final Pattern BLANK_LINE_BEFORE_DIV_PATTERN =
+      compile("(?:[ \t]*\n){2}[ \t]*(?=<div(?:\\s[^>]*)?/?>)", CASE_INSENSITIVE);
   private static final Pattern BLOCKQUOTE_MARKER_PATTERN = compile("> ?");
 
   // We ensure elsewhere that we match this only at the beginning of a line.
@@ -703,7 +711,6 @@ final class JavadocLexer {
   private static final Pattern LIST_ITEM_CLOSE_PATTERN = closeTagPattern("li|dt|dd");
   private static final Pattern HEADER_OPEN_PATTERN = openTagPattern("h[1-6]");
   private static final Pattern HEADER_CLOSE_PATTERN = closeTagPattern("h[1-6]");
-  private static final Pattern DIV_OPEN_PATTERN = compile("<div(?:\\s[^>]*)?/?>", CASE_INSENSITIVE);
   private static final Pattern PARAGRAPH_OPEN_PATTERN = openTagPattern("p");
   private static final Pattern PARAGRAPH_CLOSE_PATTERN = closeTagPattern("p");
   private static final Pattern BLOCKQUOTE_OPEN_PATTERN = openTagPattern("blockquote");
