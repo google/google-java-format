@@ -23,6 +23,8 @@ import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanEnd;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanStart;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphOpenTag;
@@ -201,6 +203,113 @@ with tildes
                     "````",
                     "````",
                     "indented code\nwith more than three backticks\n"))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
+  @Test
+  public void codeLinkMultilineInList() {
+    String text = "- See [a][Foo#bar(\n      int)].";
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    // TODO: emit a Literal token for multi-line JEP 467 reference link targets in lists
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(0, new ListOpenTag(""))
+            .put(0, new ListItemOpenTag("- "))
+            .put(text.length(), new ListItemCloseTag(""))
+            .put(text.length(), new ListCloseTag(""))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
+  @Test
+  public void paragraphAfterHtmlComment() {
+    String text =
+        """
+        Paragraph 1.
+        <!-- comment -->
+        Paragraph 2.
+        """;
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    int firstParagraphEnd = text.indexOf('\n');
+    int secondParagraph = text.indexOf("Paragraph 2.");
+    int secondParagraphEnd = text.length() - 1;
+    // TODO: formatting should not insert blank lines around an HTML comment block when none
+    // existed in the input (e.g. MOE directives).
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(0, new ParagraphOpenTag(""))
+            .put(firstParagraphEnd, new ParagraphCloseTag(""))
+            .put(secondParagraph, new ParagraphOpenTag(""))
+            .put(secondParagraphEnd, new ParagraphCloseTag(""))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
+  @Test
+  public void codeLink() {
+    String text = "See [Foo#bar(int, int)] and [`bar`][Foo#bar(int, int)].";
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    int codeSpanStart = text.indexOf("`bar`");
+    int codeSpanEnd = codeSpanStart + "`bar`".length() - 1;
+    // TODO: emit Literal tokens for JEP 467 reference link targets so they are not wrapped (a line
+    // break causes javac's MarkdownTransformer to misclassify shortcut links as @linkplain and fail
+    // to compute reference source spans).
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(0, new ParagraphOpenTag(""))
+            .put(codeSpanStart, new MarkdownCodeSpanStart("`"))
+            .put(codeSpanEnd, new MarkdownCodeSpanEnd("`"))
+            .put(text.length(), new ParagraphCloseTag(""))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
+  @Test
+  public void codeLinkVariantsAndNonMatches() {
+    String text =
+        "See [ImmutableMap<String, Integer>], [Scanner#scan(Tree, VisitorState)][],"
+            + " [Arrays#equals(byte\\[\\], byte\\[\\])], [Foo.bar(a, b)], and [note(with `code`)].";
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    int codeSpanStart = text.indexOf("`code`");
+    int codeSpanEnd = codeSpanStart + "`code`".length() - 1;
+    // TODO: emit Literal tokens for valid JEP 467 reference link variants (parameterized types,
+    // collapsed links, escaped arrays), but not for dotted non-`#` calls or prose containing code.
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(0, new ParagraphOpenTag(""))
+            .put(codeSpanStart, new MarkdownCodeSpanStart("`"))
+            .put(codeSpanEnd, new MarkdownCodeSpanEnd("`"))
+            .put(text.length(), new ParagraphCloseTag(""))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
+  @Test
+  public void paragraphAfterHtmlCommentWithBlankLine() {
+    String text =
+        """
+        Paragraph 1.
+
+        <!-- comment -->
+
+        Paragraph 2.
+        """;
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    int firstParagraphEnd = text.indexOf('\n');
+    int secondParagraph = text.indexOf("Paragraph 2.");
+    int secondParagraphEnd = text.length() - 1;
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(0, new ParagraphOpenTag(""))
+            .put(firstParagraphEnd, new ParagraphCloseTag(""))
+            .put(secondParagraph, new ParagraphOpenTag(""))
+            .put(secondParagraphEnd, new ParagraphCloseTag(""))
             .build();
     assertThat(map).isEqualTo(expected);
   }
