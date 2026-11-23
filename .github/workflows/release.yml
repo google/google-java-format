@@ -101,9 +101,46 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
+          VERSION: ${{ github.event.inputs.version }}
         run: |
           mvn --no-transfer-progress -pl '!eclipse_plugin' -P sonatype-oss-release,oss-exit-gate clean deploy -Dgpg.passphrase="${GPG_PASSPHRASE}"
-          echo '{"publish_all": true}' > manifest.json
+          python3 - "${VERSION}" <<'PY'
+          import collections, json, os, subprocess, sys
+          version = os.environ.get("VERSION") or (sys.argv[1] if len(sys.argv) > 1 else "")
+          if not version:
+            raise SystemExit("ERROR: missing release version for manifest generation")
+          repo = "google-java-fmt--mavencentral"
+          pkgs_out = subprocess.check_output([
+              "gcloud", "artifacts", "packages", "list",
+              "--project=oss-exit-gate-prod", "--location=us",
+              f"--repository={repo}", "--format=value(name)",
+          ], text=True).splitlines()
+          groups = collections.defaultdict(list)
+          for pkg_path in sorted(pkgs_out):
+            pkg_id = pkg_path.strip().split("/")[-1]
+            if ":" not in pkg_id:
+              continue
+            rc = subprocess.run([
+                "gcloud", "artifacts", "versions", "describe", version,
+                f"--package={pkg_id}", "--project=oss-exit-gate-prod",
+                "--location=us", f"--repository={repo}",
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+            if rc == 0:
+              ns, name = pkg_id.split(":", 1)
+              groups[ns].append({"name": name, "version": version})
+          if not groups:
+            raise SystemExit(f"ERROR: No staged Maven packages found in {repo} for version {version}")
+          manifest = {
+              "publish_all": False,
+              "publishing_groups": [
+                  {"namespace": ns, "packages": pkgs}
+                  for ns, pkgs in sorted(groups.items())
+              ],
+          }
+          with open("manifest.json", "w", encoding="utf-8") as fh:
+            json.dump(manifest, fh, indent=2)
+            fh.write("\n")
+          PY
           gcloud storage cp manifest.json "gs://oss-exit-gate-prod-projects-bucket/google-java-fmt/mavencentral/manifests/manifest-${RUN_ID}-${RUN_ATTEMPT}.json"
 
       - name: Build Eclipse plugin
