@@ -2297,6 +2297,180 @@ class Test {}
   }
 
   @Test
+  public void markdownMoeCommentsWithoutBlankLines() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// Summary paragraph.
+        /// <!-- moe:begin_intracomment_strip -->
+        /// Internal-only details.
+        /// <!-- moe:end_intracomment_strip -->
+        /// Follow-up paragraph on the next line.
+        ///
+        /// <!-- A regular HTML comment -->
+        ///
+        /// Paragraph after blank line.
+        ///
+        /// Paragraph before inline HTML comment.
+        /// <!-- A regular HTML comment without blank lines -->
+        /// Paragraph immediately after regular HTML comment.
+        ///
+        /// > Paragraph 1.
+        /// >
+        /// > <!-- moe:begin_intracomment_strip -->
+        /// > Internal.
+        /// > <!-- moe:end_intracomment_strip -->
+        /// >
+        /// > Paragraph 2.
+        /// >
+        /// > <!-- A regular HTML comment in blockquote -->
+        /// >
+        /// > Paragraph 3.
+        class Test {}
+        """
+            .replace("moe", "MOE");
+    String expected =
+        """
+        /// Summary paragraph.
+        /// <!-- moe:begin_intracomment_strip -->
+        /// Internal-only details.
+        /// <!-- moe:end_intracomment_strip -->
+        /// Follow-up paragraph on the next line.
+        ///
+        /// <!-- A regular HTML comment -->
+        ///
+        /// Paragraph after blank line.
+        ///
+        /// Paragraph before inline HTML comment.
+        /// <!-- A regular HTML comment without blank lines -->
+        /// Paragraph immediately after regular HTML comment.
+        ///
+        /// > Paragraph 1.
+        /// >
+        /// > <!-- moe:begin_intracomment_strip -->
+        /// > Internal.
+        /// > <!-- moe:end_intracomment_strip -->
+        /// >
+        /// > Paragraph 2.
+        /// >
+        /// > <!-- A regular HTML comment in blockquote -->
+        /// >
+        /// > Paragraph 3.
+        class Test {}
+        """
+            .replace("moe", "MOE");
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownReferenceLinks() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        /// Therefore we need to make all assertions in the test method itself, where [Scanner#scan(Tree, VisitorState)] is triggered.
+        ///
+        /// Also test formatting of full reference links in prose like [the scan method][Scanner#scan(Tree, VisitorState)] here.
+        ///
+        /// Also test formatting of collapsed reference links in prose right here like [Scanner#scan(Tree, VisitorState)][] ok.
+        ///
+        /// Check line wrapping of escaped array parameter types here [java.util.Arrays#equals(byte\\[\\], byte\\[\\])] ok.
+        ///
+        /// Check line wrapping of varargs method reference link targets like [String#format(Locale, String, Object...)] ok.
+        ///
+        /// Check line wrapping inside a parameterized type reference right here for [ImmutableMap<String, Integer>] ok.
+        ///
+        /// Check line wrapping inside a wildcard parameterized type reference right here for [List<? extends Number>] ok.
+        ///
+        /// Check line wrapping of a full reference link with a generic target [the map][Map<String, Integer>] ok.
+        ///
+        /// Check line wrapping of a method link with generic qualifier like [Map<String, Integer>#put(Object, Object)] ok.
+        ///
+        /// Check line wrapping inside a Unicode identifier method reference right here [Scanner#café(Tree, VisitorState)] ok.
+        ///
+        /// Check line wrapping when there is whitespace before parens like in this [Scanner#scan (Tree, VisitorState)] ok.
+        ///
+        /// - Indented multi-line full reference link [a][Scanner#scan(Tree,
+        ///       VisitorState)] here.
+        ///
+        /// > > Quoted multi-line [Scanner#scan(Tree,
+        /// > > VisitorState)] and [a][Scanner#scan(Tree,
+        /// > > VisitorState)].
+        ///
+        /// Ordinary links with a `code:` URI scheme: [foo](code:bar), [foo](code:123), and [a long link text that should still wrap](code:).
+        ///
+        /// Prose [note(a long remark with `code` inside that should definitely wrap right across column one hundred)] ok.
+        ///
+        /// Dotted non-member call that is not a valid JEP 467 link should wrap right inside [Foo.bar(alpha, beta)] ok.
+        ///
+        /// Inline tags and HTML code: {@code arr[foo(a} and b)] and <code>arr[foo(a</code> and b)].
+        ///
+        /// {@snippet :
+        /// int x = arr[foo(
+        ///     a, b)];
+        /// }
+        class Test {}
+        """;
+    String expected =
+        """
+        /// Therefore we need to make all assertions in the test method itself, where
+        /// [Scanner#scan(Tree, VisitorState)] is triggered.
+        ///
+        /// Also test formatting of full reference links in prose like [the scan
+        /// method][Scanner#scan(Tree, VisitorState)] here.
+        ///
+        /// Also test formatting of collapsed reference links in prose right here like
+        /// [Scanner#scan(Tree, VisitorState)][] ok.
+        ///
+        /// Check line wrapping of escaped array parameter types here
+        /// [java.util.Arrays#equals(byte\\[\\], byte\\[\\])] ok.
+        ///
+        /// Check line wrapping of varargs method reference link targets like
+        /// [String#format(Locale, String, Object...)] ok.
+        ///
+        /// Check line wrapping inside a parameterized type reference right here for
+        /// [ImmutableMap<String, Integer>] ok.
+        ///
+        /// Check line wrapping inside a wildcard parameterized type reference right here for
+        /// [List<? extends Number>] ok.
+        ///
+        /// Check line wrapping of a full reference link with a generic target [the
+        /// map][Map<String, Integer>] ok.
+        ///
+        /// Check line wrapping of a method link with generic qualifier like
+        /// [Map<String, Integer>#put(Object, Object)] ok.
+        ///
+        /// Check line wrapping inside a Unicode identifier method reference right here
+        /// [Scanner#café(Tree, VisitorState)] ok.
+        ///
+        /// Check line wrapping when there is whitespace before parens like in this
+        /// [Scanner#scan (Tree, VisitorState)] ok.
+        ///
+        /// - Indented multi-line full reference link [a][Scanner#scan(Tree, VisitorState)] here.
+        ///
+        /// > > Quoted multi-line [Scanner#scan(Tree, VisitorState)] and
+        /// > > [a][Scanner#scan(Tree, VisitorState)].
+        ///
+        /// Ordinary links with a `code:` URI scheme: [foo](code:bar), [foo](code:123), and [a long link
+        /// text that should still wrap](code:).
+        ///
+        /// Prose [note(a long remark with `code` inside that should definitely wrap right across column one
+        /// hundred)] ok.
+        ///
+        /// Dotted non-member call that is not a valid JEP 467 link should wrap right inside [Foo.bar(alpha,
+        /// beta)] ok.
+        ///
+        /// Inline tags and HTML code: {@code arr[foo(a} and b)] and <code>arr[foo(a</code> and b)].
+        ///
+        /// {@snippet :
+        /// int x = arr[foo(
+        ///     a, b)];
+        /// }
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void markdownAutolinks() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =

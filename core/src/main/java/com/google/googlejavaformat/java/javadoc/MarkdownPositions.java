@@ -25,6 +25,7 @@ import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.Literal;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownBlockQuoteClose;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownBlockQuoteOpen;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanEnd;
@@ -44,7 +45,9 @@ import org.commonmark.node.BulletList;
 import org.commonmark.node.Code;
 import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.node.Heading;
+import org.commonmark.node.HtmlBlock;
 import org.commonmark.node.IndentedCodeBlock;
+import org.commonmark.node.Link;
 import org.commonmark.node.LinkReferenceDefinition;
 import org.commonmark.node.ListItem;
 import org.commonmark.node.Node;
@@ -53,6 +56,8 @@ import org.commonmark.node.Paragraph;
 import org.commonmark.node.ThematicBreak;
 import org.commonmark.parser.IncludeSourceSpans;
 import org.commonmark.parser.Parser;
+import org.commonmark.parser.SourceLines;
+import org.commonmark.parser.beta.LinkResult;
 
 /// Determines the locations in a Markdown string where Markdown constructs occur. For example, if
 /// position 10 in the string looks like `# Heading\n`, the `positionToToken` map will contain an
@@ -95,7 +100,15 @@ final class MarkdownPositions {
       boolean alreadyVisitedChildren = false;
       switch (node) {
         case Heading heading -> visitHeading(heading);
-        case Paragraph paragraph -> addSpan(paragraph, PARAGRAPH_OPEN_TOKEN, PARAGRAPH_CLOSE_TOKEN);
+        case Paragraph paragraph -> {
+          // Do not insert blank lines after HTML comment blocks when the input had none.
+          if (!(paragraph.getPrevious() instanceof HtmlBlock htmlBlock
+              && htmlBlock.getLiteral().stripLeading().startsWith("<!--")
+              && paragraph.getSourceSpans().getFirst().getLineIndex()
+                  == htmlBlock.getSourceSpans().getLast().getLineIndex() + 1)) {
+            addSpan(paragraph, PARAGRAPH_OPEN_TOKEN, PARAGRAPH_CLOSE_TOKEN);
+          }
+        }
         case BulletList bulletList -> addSpan(bulletList, LIST_OPEN_TOKEN, LIST_CLOSE_TOKEN);
         case OrderedList orderedList -> addSpan(orderedList, LIST_OPEN_TOKEN, LIST_CLOSE_TOKEN);
         case ListItem listItem -> alreadyVisitedChildren = visitListItem(listItem);
@@ -105,6 +118,7 @@ final class MarkdownPositions {
           alreadyVisitedChildren = true;
         }
         case Code code -> visitCodeSpan(code);
+        case CodeLink codeLink -> alreadyVisitedChildren = visitCodeLink(codeLink);
         case BlockQuote blockQuote -> alreadyVisitedChildren = visitBlockQuote(blockQuote);
         case IndentedCodeBlock indentedCodeBlock ->
             throw new UnsupportedOperationException("Indented code blocks not supported");
@@ -219,6 +233,26 @@ final class MarkdownPositions {
       positionToToken.get(end - count).addFirst(new MarkdownCodeSpanEnd(backticks));
     }
 
+    // Prevent wrapping inside JEP 467 reference link targets: a line break inside a shortcut link
+    // causes javac's MarkdownTransformer to misclassify it as @linkplain (rendering plain text
+    // instead of code font with the simplified label), and getRefSpan returns NOPOS for both
+    // shortcut and full reference links whose target spans multiple lines.
+    private boolean visitCodeLink(CodeLink link) {
+      if (link.labelStart < 0) {
+        positionToToken.get(startPosition(link)).addLast(new Literal(nodeString(link)));
+        return true;
+      }
+      verify(
+          input.charAt(link.labelStart) == '[',
+          "Expected '[' at label start %s in %s",
+          link.labelStart,
+          nodeString(link));
+      positionToToken
+          .get(link.labelStart)
+          .addLast(new Literal(input.substring(link.labelStart, endPosition(link))));
+      return false;
+    }
+
     /// Visits the given node and the other nodes that are reachable from it via the
     /// [Node#getNext()] references. Does nothing if `node` is null.
     private void visitNodeList(Node node) {
@@ -262,10 +296,42 @@ final class MarkdownPositions {
     return positionToToken.toString();
   }
 
+  private static final class CodeLink extends Link {
+    final int labelStart;
+
+    CodeLink(int labelStart) {
+      this.labelStart = labelStart;
+    }
+  }
+
+  private static final Pattern CODE_REFERENCE_PATTERN =
+      Pattern.compile(
+          "(?:[\\w$]+(?:\\.[\\w$]+)*/)?(?:"
+              + "(?:[\\w$]+(?:\\.[\\w$]+)*(?:<[\\w$.,?<>\\\\\\[\\]\\s]+>)?#[\\w$]+|#[\\w$]+|[\\w$]+)"
+              + "\\s*\\([\\w$.,?<>\\\\\\[\\]\\s]*\\)"
+              + "|[\\w$]+(?:\\.[\\w$]+)*<[\\w$.,?<>\\\\\\[\\]\\s]+>)",
+          Pattern.UNICODE_CHARACTER_CLASS);
+
   private static final Parser PARSER =
       Parser.builder()
           .includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES)
           .extensions(ImmutableList.of(TablesExtension.create()))
+          .linkProcessor((linkInfo, scanner, context) -> {
+            if (linkInfo.destination() == null && linkInfo.marker() == null) {
+              String label = linkInfo.label();
+              String ref = label != null && !label.isEmpty() ? label : linkInfo.text();
+              if (CODE_REFERENCE_PATTERN.matcher(ref).matches()) {
+                int labelStart = -1;
+                if (label != null && !label.isEmpty()) {
+                  SourceLines labelSource =
+                      scanner.getSource(linkInfo.afterTextBracket(), scanner.position());
+                  labelStart = labelSource.getSourceSpans().getFirst().getInputIndex();
+                }
+                return LinkResult.wrapTextIn(new CodeLink(labelStart), scanner.position());
+              }
+            }
+            return LinkResult.none();
+          })
           .build();
 
   private static final HeaderOpenTag HEADER_OPEN_TOKEN = new HeaderOpenTag("");

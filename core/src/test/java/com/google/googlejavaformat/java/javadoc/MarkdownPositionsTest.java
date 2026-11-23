@@ -23,6 +23,9 @@ import com.google.googlejavaformat.java.javadoc.Token.ListCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListItemOpenTag;
 import com.google.googlejavaformat.java.javadoc.Token.ListOpenTag;
+import com.google.googlejavaformat.java.javadoc.Token.Literal;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanEnd;
+import com.google.googlejavaformat.java.javadoc.Token.MarkdownCodeSpanStart;
 import com.google.googlejavaformat.java.javadoc.Token.MarkdownFencedCodeBlock;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.ParagraphOpenTag;
@@ -201,6 +204,114 @@ with tildes
                     "````",
                     "````",
                     "indented code\nwith more than three backticks\n"))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
+  @Test
+  public void codeLinkMultilineInList() {
+    String text = "- See [a][Foo#bar(\n      int)].";
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    int refStart = text.indexOf("[Foo#bar(");
+    int refEnd = text.indexOf(")]") + 2;
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(0, new ListOpenTag(""))
+            .put(0, new ListItemOpenTag("- "))
+            .put(refStart, new Literal(text.substring(refStart, refEnd)))
+            .put(text.length(), new ListItemCloseTag(""))
+            .put(text.length(), new ListCloseTag(""))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
+  @Test
+  public void paragraphAfterHtmlComment() {
+    String text =
+        """
+        Paragraph 1.
+        <!-- comment -->
+        Paragraph 2.
+        """;
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    int firstParagraphEnd = text.indexOf('\n');
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(0, new ParagraphOpenTag(""))
+            .put(firstParagraphEnd, new ParagraphCloseTag(""))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
+  @Test
+  public void codeLink() {
+    String text = "See [Foo#bar(int, int)] and [`bar`][Foo#bar(int, int)].";
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    int firstLink = text.indexOf("[Foo#bar(int, int)]");
+    int codeSpanStart = text.indexOf("`bar`");
+    int codeSpanEnd = codeSpanStart + "`bar`".length() - 1;
+    int secondLinkRef = text.lastIndexOf("[Foo#bar(int, int)]");
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(0, new ParagraphOpenTag(""))
+            .put(firstLink, new Literal("[Foo#bar(int, int)]"))
+            .put(codeSpanStart, new MarkdownCodeSpanStart("`"))
+            .put(codeSpanEnd, new MarkdownCodeSpanEnd("`"))
+            .put(secondLinkRef, new Literal("[Foo#bar(int, int)]"))
+            .put(text.length(), new ParagraphCloseTag(""))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
+  @Test
+  public void codeLinkVariantsAndNonMatches() {
+    String text =
+        "See [ImmutableMap<String, Integer>], [Scanner#scan(Tree, VisitorState)][],"
+            + " [Arrays#equals(byte\\[\\], byte\\[\\])], [Foo.bar(a, b)], and [note(with `code`)].";
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    int mapRef = text.indexOf("[ImmutableMap");
+    int collapsedRef = text.indexOf("[Scanner#scan");
+    int arraysRef = text.indexOf("[Arrays#equals");
+    int codeSpanStart = text.indexOf("`code`");
+    int codeSpanEnd = codeSpanStart + "`code`".length() - 1;
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(0, new ParagraphOpenTag(""))
+            .put(mapRef, new Literal("[ImmutableMap<String, Integer>]"))
+            .put(collapsedRef, new Literal("[Scanner#scan(Tree, VisitorState)][]"))
+            .put(arraysRef, new Literal("[Arrays#equals(byte\\[\\], byte\\[\\])]"))
+            .put(codeSpanStart, new MarkdownCodeSpanStart("`"))
+            .put(codeSpanEnd, new MarkdownCodeSpanEnd("`"))
+            .put(text.length(), new ParagraphCloseTag(""))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
+  @Test
+  public void paragraphAfterHtmlCommentWithBlankLine() {
+    String text =
+        """
+        Paragraph 1.
+
+        <!-- comment -->
+
+        Paragraph 2.
+        """;
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    int firstParagraphEnd = text.indexOf('\n');
+    int secondParagraph = text.indexOf("Paragraph 2.");
+    int secondParagraphEnd = text.length() - 1;
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(0, new ParagraphOpenTag(""))
+            .put(firstParagraphEnd, new ParagraphCloseTag(""))
+            .put(secondParagraph, new ParagraphOpenTag(""))
+            .put(secondParagraphEnd, new ParagraphCloseTag(""))
             .build();
     assertThat(map).isEqualTo(expected);
   }

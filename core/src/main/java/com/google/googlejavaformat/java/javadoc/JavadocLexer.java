@@ -153,10 +153,15 @@ final class JavadocLexer {
         // assumed that there are no other tokens (markdown or otherwise) in a non-empty text span
         // covered by a markdown token.
         for (Token markdownToken : markdownPositions.tokensAt(input.position())) {
+          if (markdownToken instanceof Literal
+              && (preserveExistingFormatting() || contextStack.containsAny(TAG_CONTEXTS))) {
+            continue;
+          }
+          String rawValue = markdownToken.value();
           markdownToken = processMarkdownToken(markdownToken);
           tokens.add(markdownToken);
-          if (!markdownToken.value().isEmpty()) {
-            boolean consumed = input.tryConsume(markdownToken.value());
+          if (!rawValue.isEmpty()) {
+            boolean consumed = input.tryConsume(rawValue);
             verify(consumed, "Did not consume markdown token: %s", markdownToken);
             var unused = input.readAndResetRecorded();
             moreMarkdown = true;
@@ -203,6 +208,14 @@ final class JavadocLexer {
       case MarkdownCodeSpanEnd unused -> {
         contextStack.popUntil(NestingContext.MARKDOWN_CODE_CONTEXT);
         return new Literal(markdownToken.value());
+      }
+      case Literal literal -> {
+        somethingSinceNewline = true;
+        String value = literal.value();
+        if (contextStack.contains(NestingContext.BLOCKQUOTE)) {
+          value = BLOCKQUOTE_LINE_PREFIX_PATTERN.matcher(value).replaceAll(" ");
+        }
+        return new Literal(WHITESPACE_PATTERN.matcher(value).replaceAll(" "));
       }
       case MarkdownBlockQuoteOpen unused -> {
         contextStack.push(NestingContext.BLOCKQUOTE);
@@ -489,8 +502,11 @@ final class JavadocLexer {
 
   private static String consumeAdjacentWhitespace(PeekingIterator<Token> tokens) {
     StringBuilder seenWhitespace = new StringBuilder();
-    while (tokens.peek() instanceof Whitespace) {
-      seenWhitespace.append(tokens.next().value());
+    while (tokens.peek() instanceof Whitespace || tokens.peek() instanceof BlockQuoteMarker) {
+      Token token = tokens.next();
+      if (token instanceof Whitespace) {
+        seenWhitespace.append(token.value());
+      }
     }
     return seenWhitespace.toString();
   }
@@ -685,9 +701,11 @@ final class JavadocLexer {
    * point where this pattern is applied.
    */
   private static final Pattern NEWLINE_PATTERN = compile("[ \t]*\n");
+  private static final Pattern WHITESPACE_PATTERN = compile("\\s+");
   private static final Pattern BLANK_LINE_BEFORE_DIV_PATTERN =
       compile("(?:[ \t]*\n){2}[ \t]*(?=<div(?:\\s[^>]*)?/?>)", CASE_INSENSITIVE);
   private static final Pattern BLOCKQUOTE_MARKER_PATTERN = compile("> ?");
+  private static final Pattern BLOCKQUOTE_LINE_PREFIX_PATTERN = compile("\n(?:[ \t]*>[ \t]?)+");
 
   // We ensure elsewhere that we match this only at the beginning of a line.
   // Only match tags that start with a lowercase letter, to avoid false matches on unescaped
