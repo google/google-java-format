@@ -2653,6 +2653,245 @@ package com.example;
   }
 
   @Test
+  public void markdownHtmlListItemFollowedByParagraph() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Updates:
+          /// <li>A single [Foo]
+          /// <li>One or more [Bar]s
+          ///
+          /// <p>See [Baz] for more details.
+          void m() {}
+
+          /// Updates:
+          /// <li>First item
+          /// <p>Following paragraph without blank line.
+          void n() {}
+        }
+        """;
+    // Baseline: HTML `<li>` pushes 4-space indent, turning `<p>` into an indented code block.
+    String expected =
+        """
+        class T {
+          /// Updates:
+          /// <li>A single [Foo]
+          /// <li>One or more [Bar]s
+          ///
+          ///     <p>See [Baz] for more details.
+          void m() {}
+
+          /// Updates:
+          /// <li>First item
+          ///
+          ///     <p>Following paragraph without blank line.
+          void n() {}
+        }
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownHtmlUnorderedAndDefinitionLists() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Intro:
+          /// <ul>
+          ///   <li class="x">First item
+          ///
+          ///   <p>Second paragraph.
+          ///   <li>Second item
+          /// </ul>
+          /// Following text.
+          ///
+          /// <ul>
+          /// text without li
+          /// </ul>
+          ///
+          /// <dl>
+          ///   <dt>Term
+          ///   <dd>Definition
+          ///
+          ///   <p>More details.
+          /// </dl>
+          void m() {}
+        }
+        """;
+    // Baseline: HTML list tags push 2+4+ spaces of indentation (turning paragraphs into indented
+    // code blocks) and join `<ul>`/`</ul>` onto adjacent lines.
+    String expected =
+        """
+        class T {
+          /// Intro: <ul>
+          ///   <li class="x">First item
+          ///
+          ///                 <p>Second paragraph.
+          ///   <li>Second item </ul> Following text.
+          ///
+          /// <ul>
+          ///   text without li </ul>
+          ///
+          /// <dl>
+          ///   <dt>Term
+          ///   <dd>Definition
+          ///
+          ///       <p>More details. </dl>
+          void m() {}
+        }
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownNestedHtmlLists() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Types:
+          /// <li>
+          /// <ol>
+          ///   <li>First
+          ///   <p>Details for first.
+          ///   <li>Second
+          ///   <p>Details for second.
+          /// </ol>
+          void m() {}
+
+          /// Works only if:
+          /// <li>
+          ///   <ul>First condition
+          ///   <ul>Second condition
+          /// </li>
+          ///
+          /// <p>Features:
+          /// <li>
+          ///   <ul>See [Foo].
+          /// </li>
+          void n() {}
+        }
+        """;
+    // Baseline: nested HTML lists push deep indentation, turning paragraphs into indented code
+    // blocks.
+    String expected =
+        """
+        class T {
+          /// Types:
+          /// <li><ol>
+          ///       <li>First
+          ///
+          ///           <p>Details for first.
+          ///       <li>Second
+          ///
+          ///           <p>Details for second. </ol>
+          void m() {}
+
+          /// Works only if:
+          /// <li><ul>
+          ///       First condition <ul>
+          ///         Second condition
+          ///
+          ///         <p>Features:
+          ///         <li><ul>
+          ///               See [Foo].
+          void n() {}
+        }
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownHtmlListInFooterTag() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Summary.
+          ///
+          /// @param x values:
+          ///   <ul>
+          ///     <li>one
+          ///     <p>more
+          ///   </ul>
+          void m(int x) {}
+        }
+        """;
+    // Baseline: `@param` + `<ul>` + `<li>` pushes 8-space indentation.
+    String expected =
+        """
+        class T {
+          /// Summary.
+          ///
+          /// @param x values: <ul>
+          ///     <li>one
+          ///
+          ///         <p>more </ul>
+          void m(int x) {}
+        }
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownHtmlListInsideMarkdownContainers() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// - Outer item:
+          ///   <ul>
+          ///   <li>HTML item
+          ///   </ul>
+          ///   <li>Bare HTML li
+          ///   </ul>
+          ///
+          ///   Following paragraph in outer item.
+          ///
+          /// > <ul>
+          /// > <li>Quoted HTML item
+          /// >
+          /// > <p>Quoted paragraph
+          /// > </ul>
+          void m() {}
+
+          /// <li>Bare HTML li
+          ///
+          /// - Markdown item 1
+          /// - Markdown item 2
+          void n() {}
+        }
+        """;
+    // Baseline: HTML list tags interfere with Markdown list indentation and turn following blocks
+    // into indented code blocks.
+    String expected =
+        """
+        class T {
+          /// - Outer item: <ul>
+          ///     <li>HTML item </ul>
+          /// <li>Bare HTML li </ul>
+          ///
+          /// Following paragraph in outer item.
+          ///
+          /// > <ul>
+          /// >   <li>Quoted HTML item
+          /// >
+          /// >       <p>Quoted paragraph </ul>
+          void m() {}
+
+          /// <li>Bare HTML li
+          ///
+          ///     - Markdown item 1
+          ///     - Markdown item 2
+          void n() {}
+        }
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void tableInsideMarkdownListItemAfterText() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
