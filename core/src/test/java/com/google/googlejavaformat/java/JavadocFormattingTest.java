@@ -3551,6 +3551,348 @@ package com.example;
     doFormatTest(input, expected);
   }
 
+  @Test
+  public void markdownEmptyListItemBeforeFencedCodeBlock() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Items:
+          ///
+          /// - First item.
+          /// -
+          ///
+          /// ```
+          /// Foo x = new Foo();
+          /// ```
+          void m() {}
+        }
+        """;
+    // Baseline: currently emits an uncommented ``` line (not valid Java, so idempotency fails).
+    String expected =
+        """
+        class T {
+          /// Items:
+          ///
+          /// - First item.
+          /// -
+        ```
+          ///   Foo x = new Foo();
+          ///   ```
+          void m() {}
+        }
+        """;
+    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void markdownEmptyListItemBeforeFencedCodeBlockNoBlankLine() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Items:
+          ///
+          /// - First item.
+          /// -
+          /// ```
+          /// Foo x = new Foo();
+          /// ```
+          void m() {}
+        }
+        """;
+    String expected =
+        """
+        class T {
+          /// Items:
+          ///
+          /// - First item.
+          /// -
+        ```
+          ///   Foo x = new Foo();
+          ///   ```
+          void m() {}
+        }
+        """;
+    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void markdownEmptyListItemBeforeParagraphAndFooterTag() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// - First item.
+          /// -
+          ///
+          /// Paragraph after.
+          ///
+          /// @return value
+          int m() {
+            return 0;
+          }
+        }
+        """;
+    // Baseline: currently splits the comment with an uncommented blank line.
+    String expected =
+        """
+        class T {
+          /// - First item.
+          /// -
+
+          ///
+          ///   Paragraph after.
+          ///
+          /// @return value
+          int m() {
+            return 0;
+          }
+        }
+        """;
+    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void markdownEmptyListItemWithTrailingSpacesAndHtmlBlock() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// - First item.
+          /// -  \s
+          /// <div>After.</div>
+          void m() {}
+        }
+        """;
+    // Baseline: merges the following HTML block onto the empty list item line.
+    String expected =
+        """
+        class T {
+          /// - First item.
+          /// - <div>After.</div>
+          void m() {}
+        }
+        """;
+    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void markdownListItemContentOnNextLine() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// -
+          ///   foo
+          /// -
+          ///   ```
+          ///   bar();
+          ///   ```
+          /// -
+          ///   - nested
+          /// -
+          ///   > quote
+          /// -
+          ///   | a | b |
+          ///   | - | - |
+          ///   | 1 | 2 |
+          /// -\ttabbed
+          void m() {}
+        }
+        """;
+    // Baseline: emits uncommented lines when content starts on the line after `-`.
+    String expected =
+        """
+        class T {
+          /// -
+         foo
+          /// -
+        ```
+          ///   bar();
+          ///   ```
+          ///
+          /// -
+
+          ///   - nested
+          /// -
+        > quote
+          /// -
+        | a | b |
+          ///   | - | - |
+          ///   | 1 | 2 |
+          ///
+          /// -\ttabbed
+          void m() {}
+        }
+        """;
+    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void markdownFencedCodeBlockInFirstListItem() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// - ```
+          ///   foo();
+          ///   ```
+          void m() {}
+        }
+        """;
+    // Baseline: breaks the fenced code block onto a new line with a blank line when on line 1
+    // (and re-formatting splits the comment on the empty `-` item).
+    String expected =
+        """
+        class T {
+          /// -
+          ///
+          ///   ```
+          ///   foo();
+          ///   ```
+          void m() {}
+        }
+        """;
+    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void markdownEmptyBlockQuoteBeforeFencedCodeBlock() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Summary.
+          ///
+          /// >
+          /// ```
+          /// foo();
+          /// ```
+          void m() {}
+        }
+        """;
+    // Baseline: merges the fenced code block opening fence onto the empty `>` line.
+    String expected =
+        """
+        class T {
+          /// Summary.
+          ///
+          /// > ```
+          /// foo();
+          /// ```
+          void m() {}
+        }
+        """;
+    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void markdownUnclosedHtmlTagAcrossNewlines() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// <pre>
+          /// foo();
+          /// </pre
+          ///
+          /// <p>
+          /// After.
+          void m() {}
+        }
+        """;
+    // Baseline: currently emits uncommented <p> outside the comment.
+    String expected =
+        """
+        class T {
+          /// <pre>
+          /// foo();
+          /// </pre
+
+        <p>
+          ///
+          /// After.
+          void m() {}
+        }
+        """;
+    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void markdownUnclosedOpenTagAcrossNewlines() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Summary.
+          ///
+          /// <p
+          ///
+          /// <b>After.</b>
+          void m() {}
+        }
+        """;
+    // Baseline: currently emits uncommented <b>After.</b> outside the comment.
+    String expected =
+        """
+        class T {
+          /// Summary.
+          ///
+          /// <p
+
+        <b>After.</b>
+          void m() {}
+        }
+        """;
+    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
+  public void markdownMultilineFooterTagAndMoeComment() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Summary.
+          ///
+          /// <!--
+          /// moe:begin_intracomment_strip
+          /// -->
+          /// Internal.
+          /// <!--
+          /// moe:end_intracomment_strip
+          /// -->
+          ///
+          /// @param
+          /// <T> description
+          <T> void m() {}
+        }
+        """
+            .replace("moe", "MOE");
+    // Baseline: emits uncommented lines for multiline MOE comments and multiline `@param\n<T>`.
+    String expected =
+        """
+        class T {
+          /// Summary.
+          ///
+          /// <!--
+        moe:begin_intracomment_strip
+        -->
+          /// Internal.
+          /// <!--
+        moe:end_intracomment_strip
+        -->
+          ///
+          /// @param
+        <T> description
+          <T> void m() {}
+        }
+        """
+            .replace("moe", "MOE");
+    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+  }
+
   // TODO: b/346668798 - Test the following Markdown constructs, and make the tests work as needed.
   // We can assume that the CommonMark parser correctly handles Markdown, so the question is whether
   // they are subsequently mishandled by our formatting logic. So for example the CommonMark parser

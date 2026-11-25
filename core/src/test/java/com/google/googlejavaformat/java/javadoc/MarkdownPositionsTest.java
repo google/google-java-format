@@ -316,6 +316,50 @@ with tildes
     assertThat(map).isEqualTo(expected);
   }
 
+  @Test
+  public void emptyListItemBeforeBlankLine() {
+    String text =
+        """
+        -
+
+        foo
+        """;
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    int fooStart = text.indexOf("foo");
+    int fooEnd = fooStart + "foo".length();
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(0, new ListOpenTag(""))
+            .put(0, new ListItemOpenTag("-\n"))
+            .put(1, new ListItemCloseTag(""))
+            .put(1, new ListCloseTag(""))
+            .put(fooStart, new ParagraphOpenTag(""))
+            .put(fooEnd, new ParagraphCloseTag(""))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
+  @Test
+  public void listItemContentOnNextLine() {
+    String text =
+        """
+        -
+          foo
+        """;
+    var positions = MarkdownPositions.parse(text);
+    ImmutableListMultimap<Integer, Token> map = positionToToken(positions, text);
+    int end = text.length() - 1;
+    ImmutableListMultimap<Integer, Token> expected =
+        ImmutableListMultimap.<Integer, Token>builder()
+            .put(0, new ListOpenTag(""))
+            .put(0, new ListItemOpenTag("-\n"))
+            .put(end, new ListItemCloseTag(""))
+            .put(end, new ListCloseTag(""))
+            .build();
+    assertThat(map).isEqualTo(expected);
+  }
+
   private static ImmutableListMultimap<Integer, Token> positionToToken(
       MarkdownPositions positions, String input) {
     return IntStream.rangeClosed(0, input.length())
