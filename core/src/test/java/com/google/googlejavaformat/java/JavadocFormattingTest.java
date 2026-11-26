@@ -2636,13 +2636,13 @@ package com.example;
         """;
     // requestBlankLine() in writeTableOpen() inserts a blank line after <li> before <table> when
     // inside a list item. Also, we might prefer to eliminate the blank lines around the table
-    // element and to indent the table contents and close tag at least as far as the open tag.
+    // element.
     String expected =
         """
         /// <ul>
-        ///   <li>
+        /// <li>
         ///
-        ///       <table>
+        /// <table>
         /// <tr><td>Foo</td></tr>
         /// </table>
         ///
@@ -2671,7 +2671,6 @@ package com.example;
           void n() {}
         }
         """;
-    // Baseline: HTML `<li>` pushes 4-space indent, turning `<p>` into an indented code block.
     String expected =
         """
         class T {
@@ -2679,13 +2678,13 @@ package com.example;
           /// <li>A single [Foo]
           /// <li>One or more [Bar]s
           ///
-          ///     <p>See [Baz] for more details.
+          /// <p>See [Baz] for more details.
           void m() {}
 
           /// Updates:
           /// <li>First item
           ///
-          ///     <p>Following paragraph without blank line.
+          /// <p>Following paragraph without blank line.
           void n() {}
         }
         """;
@@ -2720,25 +2719,28 @@ package com.example;
           void m() {}
         }
         """;
-    // Baseline: HTML list tags push 2+4+ spaces of indentation (turning paragraphs into indented
-    // code blocks) and join `<ul>`/`</ul>` onto adjacent lines.
     String expected =
         """
         class T {
-          /// Intro: <ul>
-          ///   <li class="x">First item
+          /// Intro:
+          /// <ul>
+          /// <li class="x">First item
           ///
-          ///                 <p>Second paragraph.
-          ///   <li>Second item </ul> Following text.
+          /// <p>Second paragraph.
+          /// <li>Second item
+          /// </ul>
+          /// Following text.
           ///
           /// <ul>
-          ///   text without li </ul>
+          /// text without li
+          /// </ul>
           ///
           /// <dl>
-          ///   <dt>Term
-          ///   <dd>Definition
+          /// <dt>Term
+          /// <dd>Definition
           ///
-          ///       <p>More details. </dl>
+          /// <p>More details.
+          /// </dl>
           void m() {}
         }
         """;
@@ -2774,29 +2776,29 @@ package com.example;
           void n() {}
         }
         """;
-    // Baseline: nested HTML lists push deep indentation, turning paragraphs into indented code
-    // blocks.
     String expected =
         """
         class T {
           /// Types:
           /// <li><ol>
-          ///       <li>First
+          /// <li>First
           ///
-          ///           <p>Details for first.
-          ///       <li>Second
+          /// <p>Details for first.
+          /// <li>Second
           ///
-          ///           <p>Details for second. </ol>
+          /// <p>Details for second.
+          /// </ol>
           void m() {}
 
           /// Works only if:
           /// <li><ul>
-          ///       First condition <ul>
-          ///         Second condition
+          /// First condition
+          /// <ul>
+          /// Second condition
           ///
-          ///         <p>Features:
-          ///         <li><ul>
-          ///               See [Foo].
+          /// <p>Features:
+          /// <li><ul>
+          /// See [Foo].
           void n() {}
         }
         """;
@@ -2816,20 +2818,69 @@ package com.example;
           ///     <li>one
           ///     <p>more
           ///   </ul>
-          void m(int x) {}
+          /// @param y values: <ul>
+          ///     <li>one [String]
+          ///     <li>two {@link Object}
+          ///     </ul>
+          void m(int x, int y) {}
         }
         """;
-    // Baseline: `@param` + `<ul>` + `<li>` pushes 8-space indentation.
+    // Note: flattening `<ul>`/`<li>` to the 2-space footer continuation indent prevents indented
+    // code blocks after blank lines (`<p>more`), at the trade-off that `<li>one [String]` starts
+    // a Type 6 HTML block (where `[String]` is literal, while `{@link Object}` still resolves).
     String expected =
         """
         class T {
           /// Summary.
           ///
-          /// @param x values: <ul>
-          ///     <li>one
+          /// @param x values:
+          ///   <ul>
+          ///   <li>one
           ///
-          ///         <p>more </ul>
-          void m(int x) {}
+          ///   <p>more
+          ///   </ul>
+          /// @param y values:
+          ///   <ul>
+          ///   <li>one [String]
+          ///   <li>two {@link Object}
+          ///   </ul>
+          void m(int x, int y) {}
+        }
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownInlineHtmlListAndFollowingMarkdownLink() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Intro <ul><li>a</ul> trailing words.
+          void m() {}
+
+          /// Updates:
+          /// <li>First item
+          ///
+          /// See [String] for more details.
+          void n() {}
+        }
+        """;
+    String expected =
+        """
+        class T {
+          /// Intro
+          /// <ul>
+          /// <li>a
+          /// </ul>
+          /// trailing words.
+          void m() {}
+
+          /// Updates:
+          /// <li>First item
+          ///
+          /// See [String] for more details.
+          void n() {}
         }
         """;
     doFormatTest(input, expected);
@@ -2864,31 +2915,7 @@ package com.example;
           void n() {}
         }
         """;
-    // Baseline: HTML list tags interfere with Markdown list indentation and turn following blocks
-    // into indented code blocks.
-    String expected =
-        """
-        class T {
-          /// - Outer item: <ul>
-          ///     <li>HTML item </ul>
-          /// <li>Bare HTML li </ul>
-          ///
-          /// Following paragraph in outer item.
-          ///
-          /// > <ul>
-          /// >   <li>Quoted HTML item
-          /// >
-          /// >       <p>Quoted paragraph </ul>
-          void m() {}
-
-          /// <li>Bare HTML li
-          ///
-          ///     - Markdown item 1
-          ///     - Markdown item 2
-          void n() {}
-        }
-        """;
-    doFormatTest(input, expected);
+    doFormatTest(input, input);
   }
 
   @Test

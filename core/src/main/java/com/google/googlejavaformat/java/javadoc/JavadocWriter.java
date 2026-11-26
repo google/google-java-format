@@ -203,13 +203,27 @@ final class JavadocWriter {
   }
 
   void writeListOpen(ListOpenTag token) {
+    if (!classicJavadoc && !token.value().isEmpty()) {
+      // In Markdown Javadoc, HTML list tags do not establish a CommonMark container block, so
+      // pushing indentation can reach 4 spaces after a blank line and create indented code blocks.
+      // Note that inside block tags (where continuation indent is 2 spaces), flattening `<li>`
+      // from 4+ spaces to 2 spaces means `<li>` starts a standard Type 6 HTML block rather than a
+      // paragraph continuation line, so Markdown `[link]` syntax inside HTML list items renders
+      // literally (consistent with body text and Markdown list items; `{@link ...}` still works).
+      if (!atStartOfLine) {
+        requestNewline();
+      }
+      writeToken(token);
+      requestNewline();
+      return;
+    }
     if (classicJavadoc) {
       requestBlankLine();
     }
 
     writeToken(token);
     continuingListItemOfInnermostList = false;
-    int indent = token.value().isEmpty() ? 0 : 2; // No indent for Markdown since no explicit open
+    int indent = classicJavadoc ? 2 : 0; // No indent for Markdown since no explicit open
     indentStack.push(new ListIndent(indent));
     postWriteModifiedContinuingListStack.push();
 
@@ -217,6 +231,12 @@ final class JavadocWriter {
   }
 
   void writeListClose(ListCloseTag token) {
+    if (!classicJavadoc && !token.value().isEmpty()) {
+      requestNewline();
+      writeToken(token);
+      requestNewline();
+      return;
+    }
     if (classicJavadoc) {
       requestNewline();
     }
@@ -237,6 +257,11 @@ final class JavadocWriter {
   void writeListItemOpen(ListItemOpenTag token) {
     pendingListItemSpace = false;
     requestNewline();
+
+    if (!classicJavadoc && token.value().startsWith("<")) {
+      writeToken(token);
+      return;
+    }
 
     if (continuingListItemOfInnermostList) {
       // TODO(cpovirk): consider whether we can handle this only with operations on the indent stack
