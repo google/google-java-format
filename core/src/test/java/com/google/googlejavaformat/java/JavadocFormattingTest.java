@@ -3733,7 +3733,7 @@ package com.example;
   }
 
   @Test
-  public void markdownEmptyListItemBeforeFencedCodeBlock() throws Exception {
+  public void markdownEmptyListItemBeforeFencedCodeBlock() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3749,25 +3749,11 @@ package com.example;
           void m() {}
         }
         """;
-    // Baseline: currently emits an uncommented ``` line (not valid Java, so idempotency fails).
-    String expected =
-        """
-        class T {
-          /// Items:
-          ///
-          /// - First item.
-          /// -
-        ```
-          ///   Foo x = new Foo();
-          ///   ```
-          void m() {}
-        }
-        """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, input);
   }
 
   @Test
-  public void markdownEmptyListItemBeforeFencedCodeBlockNoBlankLine() throws Exception {
+  public void markdownEmptyListItemBeforeFencedCodeBlockNoBlankLine() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3789,17 +3775,18 @@ package com.example;
           ///
           /// - First item.
           /// -
-        ```
-          ///   Foo x = new Foo();
-          ///   ```
+          ///
+          /// ```
+          /// Foo x = new Foo();
+          /// ```
           void m() {}
         }
         """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, expected);
   }
 
   @Test
-  public void markdownEmptyListItemBeforeParagraphAndFooterTag() throws Exception {
+  public void markdownEmptyListItemBeforeParagraphAndFooterTag() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3815,27 +3802,11 @@ package com.example;
           }
         }
         """;
-    // Baseline: currently splits the comment with an uncommented blank line.
-    String expected =
-        """
-        class T {
-          /// - First item.
-          /// -
-
-          ///
-          ///   Paragraph after.
-          ///
-          /// @return value
-          int m() {
-            return 0;
-          }
-        }
-        """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, input);
   }
 
   @Test
-  public void markdownEmptyListItemWithTrailingSpacesAndHtmlBlock() throws Exception {
+  public void markdownEmptyListItemWithTrailingSpacesAndHtmlBlock() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3846,20 +3817,20 @@ package com.example;
           void m() {}
         }
         """;
-    // Baseline: merges the following HTML block onto the empty list item line.
     String expected =
         """
         class T {
           /// - First item.
-          /// - <div>After.</div>
+          /// -
+          /// <div>After.</div>
           void m() {}
         }
         """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, expected);
   }
 
   @Test
-  public void markdownListItemContentOnNextLine() throws Exception {
+  public void markdownListItemContentOnNextLine() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3882,36 +3853,33 @@ package com.example;
           void m() {}
         }
         """;
-    // Baseline: emits uncommented lines when content starts on the line after `-`.
+    // TODO: The blank lines after the fenced code block and table come from the pre-existing
+    // requestBlankLine() at the end of writeMarkdownFencedCodeBlock/writeMarkdownTable, which
+    // turns this tight list into a loose list.
     String expected =
         """
         class T {
-          /// -
-         foo
-          /// -
-        ```
+          /// - foo
+          /// - ```
           ///   bar();
           ///   ```
           ///
           /// -
-
           ///   - nested
-          /// -
-        > quote
-          /// -
-        | a | b |
+          /// - > quote
+          /// - | a | b |
           ///   | - | - |
           ///   | 1 | 2 |
           ///
-          /// -\ttabbed
+          /// - tabbed
           void m() {}
         }
         """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, expected);
   }
 
   @Test
-  public void markdownFencedCodeBlockInFirstListItem() throws Exception {
+  public void markdownFencedCodeBlockInFirstListItem() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3922,24 +3890,26 @@ package com.example;
           void m() {}
         }
         """;
-    // Baseline: breaks the fenced code block onto a new line with a blank line when on line 1
-    // (and re-formatting splits the comment on the empty `-` item).
-    String expected =
-        """
-        class T {
-          /// -
-          ///
-          ///   ```
-          ///   foo();
-          ///   ```
-          void m() {}
-        }
-        """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, input);
   }
 
   @Test
-  public void markdownEmptyBlockQuoteBeforeFencedCodeBlock() throws Exception {
+  public void markdownFencedCodeBlockInFirstBlockQuote() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// > ```
+          /// > foo();
+          /// > ```
+          void m() {}
+        }
+        """;
+    doFormatTest(input, input);
+  }
+
+  @Test
+  public void markdownEmptyBlockQuoteBeforeFencedCodeBlock() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3953,23 +3923,67 @@ package com.example;
           void m() {}
         }
         """;
-    // Baseline: merges the fenced code block opening fence onto the empty `>` line.
     String expected =
         """
         class T {
           /// Summary.
           ///
-          /// > ```
+          /// >
+          ///
+          /// ```
           /// foo();
           /// ```
           void m() {}
         }
         """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, expected);
   }
 
   @Test
-  public void markdownUnclosedHtmlTagAcrossNewlines() throws Exception {
+  public void markdownBlockQuoteBeforeHtmlBlock() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// > quote
+          /// <div>After.</div>
+          void m() {}
+        }
+        """;
+    doFormatTest(input, input);
+  }
+
+  @Test
+  public void markdownListItemLineLengthBoundaryAndPreTrailingSpaces() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// - aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbbb
+          ///
+          /// <pre>
+          /// foo  \s
+          /// </pre>
+          void m() {}
+        }
+        """;
+    String expected =
+        """
+        class T {
+          /// - aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          ///   bbbbb
+          ///
+          /// <pre>
+          /// foo
+          /// </pre>
+          void m() {}
+        }
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownUnclosedHtmlTagAcrossNewlines() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3983,25 +3997,24 @@ package com.example;
           void m() {}
         }
         """;
-    // Baseline: currently emits uncommented <p> outside the comment.
     String expected =
         """
         class T {
           /// <pre>
           /// foo();
           /// </pre
-
-        <p>
+          ///
+          /// <p>
           ///
           /// After.
           void m() {}
         }
         """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, expected);
   }
 
   @Test
-  public void markdownUnclosedOpenTagAcrossNewlines() throws Exception {
+  public void markdownUnclosedOpenTagAcrossNewlines() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -4014,23 +4027,66 @@ package com.example;
           void m() {}
         }
         """;
-    // Baseline: currently emits uncommented <b>After.</b> outside the comment.
-    String expected =
-        """
-        class T {
-          /// Summary.
-          ///
-          /// <p
-
-        <b>After.</b>
-          void m() {}
-        }
-        """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, input);
   }
 
   @Test
-  public void markdownMultilineFooterTagAndMoeComment() throws Exception {
+  public void multilineOpenHtmlTag() {
+    String classicInput =
+        """
+        class T {
+          /**
+           * <pre
+           *     class="x">
+           *   foo(   a,   b);
+           *     bar();
+           * </pre>
+           *
+           * <table
+           *     border="1">
+           *   <tr><td>a</td></tr>
+           * </table>
+           */
+          void classic() {}
+        }
+        """;
+    doFormatTest(classicInput, classicInput);
+
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String markdownInput =
+        """
+        class T {
+          /// <pre
+          ///     class="x">
+          ///   foo(   a,   b);
+          ///     bar();
+          /// </pre>
+          ///
+          /// <p
+          ///     class="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">bbbbb ccccc
+          void markdown() {}
+        }
+        """;
+    String markdownExpected =
+        """
+        class T {
+          /// <pre
+          ///     class="x">
+          ///   foo(   a,   b);
+          ///     bar();
+          /// </pre>
+          ///
+          /// <p
+          ///     class="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">bbbbb
+          /// ccccc
+          void markdown() {}
+        }
+        """;
+    doFormatTest(markdownInput, markdownExpected);
+  }
+
+  @Test
+  public void markdownMultilineFooterTagAndMoeComment() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -4051,26 +4107,184 @@ package com.example;
         }
         """
             .replace("moe", "MOE");
-    // Baseline: emits uncommented lines for multiline MOE comments and multiline `@param\n<T>`.
     String expected =
         """
         class T {
           /// Summary.
           ///
-          /// <!--
-        moe:begin_intracomment_strip
-        -->
+          /// <!-- moe:begin_intracomment_strip -->
           /// Internal.
-          /// <!--
-        moe:end_intracomment_strip
-        -->
+          /// <!-- moe:end_intracomment_strip -->
           ///
-          /// @param
-        <T> description
+          /// @param <T> description
           <T> void m() {}
         }
         """
             .replace("moe", "MOE");
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void multilineParamNamedLikeHtmlTag() {
+    String classicInput =
+        """
+        class T {
+          /**
+           * Summary.
+           *
+           * @param
+           *     <P> the proto type
+           */
+          <P> void classic() {}
+        }
+        """;
+    String classicExpected =
+        """
+        class T {
+          /**
+           * Summary.
+           *
+           * @param <P> the proto type
+           */
+          <P> void classic() {}
+        }
+        """;
+    doFormatTest(classicInput, classicExpected);
+
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String markdownInput =
+        """
+        class T {
+          /// Summary.
+          ///
+          /// @param
+          /// <P> the proto type
+          <P> void markdown() {}
+        }
+        """;
+    String markdownExpected =
+        """
+        class T {
+          /// Summary.
+          ///
+          /// @param <P> the proto type
+          <P> void markdown() {}
+        }
+        """;
+    doFormatTest(markdownInput, markdownExpected);
+  }
+
+  @Test
+  public void markdownListItemStartingWithBlockElement() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// - <pre>
+          ///   x   y
+          ///   </pre>
+          /// - # Heading
+          /// - <p>para
+          /// - <table>
+          ///   <tr><td>a</td></tr>
+          ///   </table>
+          /// - <blockquote>
+          ///   quoted
+          ///   </blockquote>
+          /// - {@snippet :
+          ///   code();
+          ///   }
+          /// -
+          /// - </ul>
+          /// - b
+          void m() {}
+
+          /// -
+          ///   @return value
+          int n() {
+            return 0;
+          }
+
+          /// - <!-- moe:end_intracomment_strip -->
+          void o() {}
+        }
+        """
+            .replace("moe", "MOE");
+    // TODO: As in markdownListItemContentOnNextLine, the blank lines after `<pre>`, heading,
+    // `<table>`, `<blockquote>`, and `{@snippet` come from pre-existing `requestBlankLine()`
+    // calls on their closing tokens, which turns this tight list into a loose list.
+    String expected =
+        """
+        class T {
+          /// - <pre>
+          ///   x   y
+          ///   </pre>
+          ///
+          /// - # Heading
+          ///
+          /// - <p>para
+          /// - <table>
+          ///   <tr><td>a</td></tr>
+          ///   </table>
+          ///
+          /// - <blockquote>
+          ///   quoted
+          ///   </blockquote>
+          ///
+          /// - {@snippet :
+          ///   code();
+          ///   }
+          ///
+          /// -
+          /// - </ul>
+          /// - b
+          void m() {}
+
+          /// -
+          ///
+          /// @return value
+          int n() {
+            return 0;
+          }
+
+          /// -
+          /// <!-- moe:end_intracomment_strip -->
+          void o() {}
+        }
+        """
+            .replace("moe", "MOE");
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownListItemInsideCodeTagForcedNewline() throws Exception {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// <code>
+          ///
+          /// -
+          ///   b
+          /// </code>
+          void m() {}
+        }
+        """;
+    // Pre-existing `writeListItemOpen` adds a newline after `ForcedNewline`, so this input is not
+    // idempotent; verify `writeNewlineStart` clears the pending marker space so `b` stays at two
+    // spaces rather than three.
+    String expected =
+        """
+        class T {
+          /// <code>
+          ///
+          ///
+          /// -
+          ///   b
+          /// </code>
+          void m() {}
+        }
+        """;
     assertThat(formatter.formatSource(input)).isEqualTo(expected);
   }
 

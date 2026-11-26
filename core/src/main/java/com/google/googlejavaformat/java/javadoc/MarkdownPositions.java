@@ -162,7 +162,7 @@ final class MarkdownPositions {
         Pattern startPattern,
         Function<String, Token> openTokenFactory,
         Token closeToken) {
-      Matcher matcher = startPattern.matcher(input).region(start, input.length());
+      Matcher matcher = startPattern.matcher(input).region(start, endPosition(node));
       verify(matcher.lookingAt());
       Token openToken = openTokenFactory.apply(matcher.group(1));
       addSpan(node, openToken, closeToken, matcher.start(1));
@@ -346,5 +346,5 @@ final class MarkdownPositions {
   private static final Pattern BLOCKQUOTE_START_PATTERN = Pattern.compile("(> ?)");
 
   private static final Pattern LIST_ITEM_START_PATTERN =
-      Pattern.compile("(([-+*]|[0-9]+[.)])(?:\\s|$))");
+      Pattern.compile("(([-+*]|[0-9]+[.)])[ \\t]?)");
 }

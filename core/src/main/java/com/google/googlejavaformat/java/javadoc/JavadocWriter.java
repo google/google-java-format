@@ -75,6 +75,7 @@ final class JavadocWriter {
   private final NestingStack.Int postWriteModifiedContinuingListStack = new NestingStack.Int();
   private int remainingOnLine;
   private boolean atStartOfLine;
+  private boolean pendingListItemSpace;
   private RequestedWhitespace requestedWhitespace = NONE;
   private Token requestedMoeBeginStripComment;
   private String indentForMoeEndStripComment = "";
@@ -127,6 +128,7 @@ final class JavadocWriter {
     } else {
       output.append("/// ");
       remainingOnLine = maxLineLength - blockIndent - 4;
+      atStartOfLine = true;
     }
   }
 
@@ -148,6 +150,7 @@ final class JavadocWriter {
      * currently know which of those tags are open.
      */
     continuingListItemOfInnermostList = false;
+    pendingListItemSpace = false;
     indentStack.reset();
     /*
      * There's probably no need for this, since its only effect is to disable blank lines in some
@@ -224,16 +227,30 @@ final class JavadocWriter {
 
     if (classicJavadoc) {
       requestBlankLine();
+    } else if (token.value().isEmpty()) {
+      pendingListItemSpace = false;
+      requestNewline();
+      atStartOfLine = false;
     }
   }
 
   void writeListItemOpen(ListItemOpenTag token) {
+    pendingListItemSpace = false;
     requestNewline();
 
     if (continuingListItemOfInnermostList) {
       // TODO(cpovirk): consider whether we can handle this only with operations on the indent stack
       continuingListItemOfInnermostList = false;
       indentStack.popUntil(ListItemIndent.class);
+    }
+    if (!token.value().startsWith("<")) {
+      // Markdown list item marker (as opposed to HTML <li>/<dt>/<dd>).
+      String marker = token.value().stripTrailing();
+      writeToken(new ListItemOpenTag(marker));
+      continuingListItemOfInnermostList = true;
+      indentStack.push(new ListItemIndent(marker.length() + 1));
+      pendingListItemSpace = true;
+      return;
     }
     writeToken(token);
     continuingListItemOfInnermostList = true;
@@ -289,6 +306,8 @@ final class JavadocWriter {
 
   void writeMarkdownBlockQuoteClose() {
     indentStack.popUntil(BlockQuoteIndent.class);
+    requestNewline();
+    atStartOfLine = false;
   }
 
   void writePreOpen(PreOpenTag token) {
@@ -336,15 +355,7 @@ final class JavadocWriter {
 
   void writeHtmlComment(HtmlComment token) {
     requestNewline();
-
-    List<String> lines = token.value().lines().toList();
-    writeToken(new HtmlComment(lines.get(0)));
-    for (String line : lines.subList(1, lines.size())) {
-      writeNewline(AutoIndent.NO_AUTO_INDENT);
-      output.append(line);
-      remainingOnLine -= line.length();
-    }
-
+    writeToken(token);
     requestNewline();
   }
 
@@ -369,10 +380,12 @@ final class JavadocWriter {
 
   void writeMarkdownFencedCodeBlock(MarkdownFencedCodeBlock token) {
     if (!atStartOfLine) {
-      // A reminder that atStartOfLine is still true after `-␣` because it is a StartOfLineToken.
+      // A reminder that atStartOfLine is still true after `> ` or `-` because they are
+      // StartOfLineTokens.
       requestBlankLine();
     }
     flushWhitespace();
+    flushPendingListItemSpace();
     output.append(token.start());
     token
         .literal()
@@ -393,6 +406,7 @@ final class JavadocWriter {
       requestBlankLine();
     }
     flushWhitespace();
+    flushPendingListItemSpace();
     List<String> lines = token.value().lines().toList();
     output.append(lines.get(0));
     for (String line : lines.subList(1, lines.size())) {
@@ -432,7 +446,7 @@ final class JavadocWriter {
       requestNewline();
     }
 
-    if (!wroteAnythingSignificant) {
+    if (!wroteAnythingSignificant || pendingListItemSpace) {
       requestedWhitespace = NONE;
     }
 
@@ -458,8 +472,17 @@ final class JavadocWriter {
     }
   }
 
+  private void flushPendingListItemSpace() {
+    if (pendingListItemSpace) {
+      output.append(" ");
+      remainingOnLine--;
+      pendingListItemSpace = false;
+    }
+  }
+
   private void writeToken(Token token) {
-    if (token.value().isEmpty()) {
+    String value = token.value();
+    if (value.isEmpty()) {
       return;
     }
 
@@ -479,6 +502,8 @@ final class JavadocWriter {
       remainingOnLine--;
     }
 
+    flushPendingListItemSpace();
+
     if (requestedMoeBeginStripComment != null) {
       output.append(requestedMoeBeginStripComment.value());
       requestedMoeBeginStripComment = null;
@@ -489,7 +514,18 @@ final class JavadocWriter {
       return;
     }
 
-    output.append(token.value());
+    int newline = value.indexOf('\n');
+    if (newline == -1) {
+      output.append(value);
+      remainingOnLine -= value.length();
+    } else {
+      output.append(value, 0, newline);
+      for (String line : value.substring(newline + 1).split("\n", -1)) {
+        writeNewline(NO_AUTO_INDENT);
+        output.append(line);
+        remainingOnLine -= line.length();
+      }
+    }
 
     if (!(token instanceof StartOfLineToken)) {
       atStartOfLine = false;
@@ -505,12 +541,12 @@ final class JavadocWriter {
      * Possibly the "width" question has no right answer:
      * http://denisbider.blogspot.com/2015/09/when-monospace-fonts-arent-unicode.html
      */
-    remainingOnLine -= token.length();
     requestedWhitespace = NONE;
     wroteAnythingSignificant = true;
   }
 
   private void writeNewlineStart() {
+    pendingListItemSpace = false;
     output.append("\n");
     appendSpaces(blockIndent + (classicJavadoc ? 1 : 0));
     output.append(classicJavadoc ? "*" : "///");

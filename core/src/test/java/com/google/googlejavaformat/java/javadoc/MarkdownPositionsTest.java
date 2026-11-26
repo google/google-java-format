@@ -331,7 +331,7 @@ with tildes
     ImmutableListMultimap<Integer, Token> expected =
         ImmutableListMultimap.<Integer, Token>builder()
             .put(0, new ListOpenTag(""))
-            .put(0, new ListItemOpenTag("-\n"))
+            .put(0, new ListItemOpenTag("-"))
             .put(1, new ListItemCloseTag(""))
             .put(1, new ListCloseTag(""))
             .put(fooStart, new ParagraphOpenTag(""))
@@ -353,7 +353,7 @@ with tildes
     ImmutableListMultimap<Integer, Token> expected =
         ImmutableListMultimap.<Integer, Token>builder()
             .put(0, new ListOpenTag(""))
-            .put(0, new ListItemOpenTag("-\n"))
+            .put(0, new ListItemOpenTag("-"))
             .put(end, new ListItemCloseTag(""))
             .put(end, new ListCloseTag(""))
             .build();

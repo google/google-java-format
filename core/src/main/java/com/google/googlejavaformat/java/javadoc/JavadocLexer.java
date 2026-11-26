@@ -240,7 +240,9 @@ final class JavadocLexer {
   private Function<String, Token> consumeToken() throws LexException {
     boolean preserveExistingFormatting = preserveExistingFormatting();
 
-    if (input.tryConsumeRegex(NEWLINE_PATTERN)) {
+    if ((classicJavadoc || preserveExistingFormatting)
+        ? input.tryConsumeRegex(NEWLINE_PATTERN)
+        : input.tryConsume("\n")) {
       somethingSinceNewline = false;
       return preserveExistingFormatting ? ForcedNewline::new : Whitespace::new;
     }
@@ -292,7 +294,7 @@ final class JavadocLexer {
     if (!somethingSinceNewline && input.tryConsumeRegex(FOOTER_TAG_PATTERN)) {
       checkMatchingTags();
       somethingSinceNewline = true;
-      return FooterJavadocTagStart::new;
+      return value -> new FooterJavadocTagStart(WHITESPACE_PATTERN.matcher(value).replaceAll(" "));
     }
     somethingSinceNewline = true;
 
@@ -388,9 +390,9 @@ final class JavadocLexer {
     } else if (input.tryConsumeRegex(BR_PATTERN)) {
       return BrTag::new;
     } else if (input.tryConsumeRegex(MOE_BEGIN_STRIP_COMMENT_PATTERN)) {
-      return MoeBeginStripComment::new;
+      return value -> new MoeBeginStripComment(WHITESPACE_PATTERN.matcher(value).replaceAll(" "));
     } else if (input.tryConsumeRegex(MOE_END_STRIP_COMMENT_PATTERN)) {
-      return MoeEndStripComment::new;
+      return value -> new MoeEndStripComment(WHITESPACE_PATTERN.matcher(value).replaceAll(" "));
     } else if (input.tryConsumeRegex(HTML_COMMENT_PATTERN)) {
       return HtmlComment::new;
     } else if (input.tryConsumeRegex(literalPattern())) {
