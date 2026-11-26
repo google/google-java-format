@@ -3154,32 +3154,31 @@ package com.example;
           void f() {}
         }
         """;
-    // TODO(b/587865985): Wrapping before -, +, or * turns the continuation line into a bullet list.
     String expected =
         """
         class T {
-          /// Returns the number of elements in the given range of the array, which is always equal to `end
-          /// - start`.
+          /// Returns the number of elements in the given range of the array, which is always equal to
+          /// `end - start`.
           void a() {}
 
-          /// Implementations can implement any variation of `#transform()` and must override only a single
-          /// - depending on config.
+          /// Implementations can implement any variation of `#transform()` and must override only a
+          /// single - depending on config.
           void b() {}
 
-          /// @param activeCount the 0-based index of the last active id (total active items is `activeCount
-          ///   + 1`)
+          /// @param activeCount the 0-based index of the last active id (total active items is
+          ///   `activeCount + 1`)
           void c(int activeCount) {}
 
-          /// @return a result proto containing all elements for the corresponding namespace and the corpus
-          ///   + keyPrefix
+          /// @return a result proto containing all elements for the corresponding namespace and the
+          ///   corpus + keyPrefix
           void d() {}
 
-          /// Computes the total area of the rectangle, which is always guaranteed to be equal to `widthVal
-          /// * height`.
+          /// Computes the total area of the rectangle, which is always guaranteed to be equal to
+          /// `widthVal * height`.
           void e() {}
 
-          /// - Returns the number of elements in the given range of an array, which is always equal to `end
-          ///   - start`.
+          /// - Returns the number of elements in the given range of an array, which is always equal to
+          ///   `end - start`.
           void f() {}
         }
         """;
@@ -3187,7 +3186,7 @@ package com.example;
   }
 
   @Test
-  public void markdownWrapBeforeBlockQuoteMarker() throws FormatterException {
+  public void markdownWrapBeforeBlockQuoteMarker() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3208,37 +3207,35 @@ package com.example;
           void e() {}
         }
         """;
-    // TODO(b/587865985): Wrapping before > or >= turns the continuation line into a block quote
-    // (and formatting a second time corrupts >= into > = and >` into > `).
     String expected =
         """
         class T {
-          /// Throws an exception if the requested indices are out of bounds for the array, i.e., if `start
-          /// > end`.
+          /// Throws an exception if the requested indices are out of bounds for the array, i.e., if
+          /// `start > end`.
           void a() {}
 
-          /// Throws an exception if the requested indices are out of bounds for the array, i.e., if `start
-          /// >= end`.
+          /// Throws an exception if the requested indices are out of bounds for the array, i.e., if
+          /// `start >= end`.
           void b() {}
 
-          /// Throws an exception if the requested indices are out of bounds for the array, i.e., if `start
-          /// >` end.
+          /// Throws an exception if the requested indices are out of bounds for the array, i.e., if
+          /// `start >` end.
           void c() {}
 
-          /// @throws IndexOutOfBoundsException if `fromIndex < 0`, `toIndex > array.length`, or `fromIndex
-          ///   > toIndex`
+          /// @throws IndexOutOfBoundsException if `fromIndex < 0`, `toIndex > array.length`, or
+          ///   `fromIndex > toIndex`
           void d() {}
 
-          /// > Throws an exception if the requested indices are out of bounds for an array, i.e., if `start
-          /// > > end`.
+          /// > Throws an exception if the requested indices are out of bounds for an array, i.e., if
+          /// > `start > end`.
           void e() {}
         }
         """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, expected);
   }
 
   @Test
-  public void markdownWrapBeforeHeadingAndOrderedListMarkers() throws FormatterException {
+  public void markdownWrapBeforeHeadingAndOrderedListMarkers() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3259,37 +3256,35 @@ package com.example;
           void e() {}
         }
         """;
-    // TODO(b/587865985): Wrapping before #, ###, 1., 1), or 01. turns the continuation line into a
-    // heading or ordered list (and is not even idempotent for headings).
     String expected =
         """
         class T {
-          /// Returns the formatted identifier for the element, which is always prefixed by the section mark
-          /// # 1 in output.
+          /// Returns the formatted identifier for the element, which is always prefixed by the section
+          /// mark # 1 in output.
           void a() {}
 
-          /// Returns the formatted identifier for the element, which is always prefixed by the heading tag
-          /// ### title here.
+          /// Returns the formatted identifier for the element, which is always prefixed by the heading
+          /// tag ### title here.
           void b() {}
 
-          /// When validating the configured options in order, the processor always checks the first option
-          /// 1. first here.
+          /// When validating the configured options in order, the processor always checks the first
+          /// option 1. first here.
           void c() {}
 
-          /// When validating the configured options in order, the processor always checks the first option
-          /// 1) first here.
+          /// When validating the configured options in order, the processor always checks the first
+          /// option 1) first here.
           void d() {}
 
-          /// When validating the configured options in order, the processor always checks the first item
-          /// 01. first here.
+          /// When validating the configured options in order, the processor always checks the first
+          /// item 01. first here.
           void e() {}
         }
         """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, expected);
   }
 
   @Test
-  public void markdownWrapBeforeSetextHeadingAndThematicBreakMarkers() throws FormatterException {
+  public void markdownWrapBeforeSetextHeadingAndThematicBreakMarkers() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3311,44 +3306,56 @@ package com.example;
 
           /// Separates a header | column from a body section using a standard marker token sequence pattern |-|
           void f() {}
+
+          /// Separates a header | column from a body section using a standard marker token sequence pattern | --- |
+          void g() {}
+
+          /// Separates a header | column from a body section using a standard marker token sequence pattern :-- |
+          void h() {}
         }
         """;
-    // TODO(b/587865985): Wrapping before =, ==, ---, ***, ___, or |-| turns the line into a setext
-    // heading underline, thematic break, or GFM table separator.
     String expected =
         """
         class T {
-          /// Returns true if the computed value of the first argument equals the second argument when value
-          /// =
+          /// Returns true if the computed value of the first argument equals the second argument when
+          /// value =
           void a() {}
 
-          /// Returns true if the computed value of the first argument equals the second argument when val
-          /// ==
+          /// Returns true if the computed value of the first argument equals the second argument when
+          /// val ==
           /// veryLongIdentifierNameThatExceedsTheRemainingLineLengthAndWrapsOntoItsOwnLineForTestingCase12345
           void b() {}
 
-          /// Separates the header section from the body section using a standard marker token sequence mark
-          /// ---
+          /// Separates the header section from the body section using a standard marker token sequence
+          /// mark ---
           void c() {}
 
-          /// Separates the header section from the body section using a standard marker token sequence mark
-          /// ***
+          /// Separates the header section from the body section using a standard marker token sequence
+          /// mark ***
           void d() {}
 
-          /// Separates the header section from the body section using a standard marker token sequence mark
-          /// ___
+          /// Separates the header section from the body section using a standard marker token sequence
+          /// mark ___
           void e() {}
 
-          /// Separates a header | column from a body section using a standard marker token sequence pattern
-          /// |-|
+          /// Separates a header | column from a body section using a standard marker token sequence
+          /// pattern |-|
           void f() {}
+
+          /// Separates a header | column from a body section using a standard marker token sequence
+          /// pattern | --- |
+          void g() {}
+
+          /// Separates a header | column from a body section using a standard marker token sequence
+          /// pattern :-- |
+          void h() {}
         }
         """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, expected);
   }
 
   @Test
-  public void markdownWrapBeforeFencedCodeAndHtmlBlockMarkers() throws FormatterException {
+  public void markdownWrapBeforeFencedCodeAndHtmlBlockMarkers() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3373,43 +3380,69 @@ package com.example;
 
           /// Use this helper method when rendering an inline element rather than a full standalone block <div> element.
           void g() {}
+
+          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz value </div>`.
+          void h() {}
+
+          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz value <div class="x">`.
+          void i() {}
+
+          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz value <script>x</script>`.
+          void j() {}
+
+          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz value <!DOCTYPE html>`.
+          void k() {}
         }
         """;
-    // TODO(b/587865985): Wrapping before ~~~, ```, ````, <div>, <p>, or <!-- starts a fenced code
-    // block or HTML block.
     String expected =
         """
         class T {
-          /// Returns the delimiter string used for separating fenced sections in the output, such as `a val
-          /// ~~~ b`.
+          /// Returns the delimiter string used for separating fenced sections in the output, such as `a
+          /// val ~~~ b`.
           void a() {}
 
-          /// Returns the delimiter string used for separating fenced sections in the output, such as ````a
-          /// ``` b````.
+          /// Returns the delimiter string used for separating fenced sections in the output, such
+          /// as ````a ``` b````.
           void b() {}
 
-          /// Returns a formatted snippet showing the nested backtick syntax inside a code span: ```` `foo`
-          /// ````.
+          /// Returns a formatted snippet showing the nested backtick syntax inside a code span: ````
+          /// `foo` ````.
           void c() {}
 
-          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz value
-          /// <div>bar</div>`.
+          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz
+          /// value <div>bar</div>`.
           void d() {}
 
-          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz value
-          /// <p>bar</p>`.
+          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz
+          /// value <p>bar</p>`.
           void e() {}
 
-          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz value
-          /// <!-- comment -->`.
+          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz
+          /// value <!-- comment -->`.
           void f() {}
 
-          /// Use this helper method when rendering an inline element rather than a full standalone block
-          /// <div> element.
+          /// Use this helper method when rendering an inline element rather than a full standalone
+          /// block <div> element.
           void g() {}
+
+          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz
+          /// value </div>`.
+          void h() {}
+
+          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz
+          /// value <div class="x">`.
+          void i() {}
+
+          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz
+          /// value <script>x</script>`.
+          void j() {}
+
+          /// Returns an HTML fragment representing the rendered widget content, such as `foo bar baz
+          /// value <!DOCTYPE html>`.
+          void k() {}
         }
         """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, expected);
   }
 
   @Test
@@ -3422,12 +3455,11 @@ package com.example;
           void a() {}
         }
         """;
-    // TODO(b/587865985): Wrapping before - after </code> turns the continuation line into a list.
     String expected =
         """
         class T {
-          /// Returns the number of elements in the full range of an array, always equal to <code>end</code>
-          /// - <code>start</code>.
+          /// Returns the number of elements in the full range of an array, always equal to
+          /// <code>end</code> - <code>start</code>.
           void a() {}
         }
         """;
@@ -3435,7 +3467,7 @@ package com.example;
   }
 
   @Test
-  public void markdownWrapMultipleConsecutiveBlockMarkers() throws FormatterException {
+  public void markdownWrapMultipleConsecutiveBlockMarkers() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
         """
@@ -3444,17 +3476,15 @@ package com.example;
           void a() {}
         }
         """;
-    // TODO(b/587865985): None of the consecutive block markers should start a wrapped line (and
-    // formatting a second time splits - and + into nested lists).
     String expected =
         """
         class T {
-          /// Returns the combined result of evaluating the sequence of operators in the given expression `a
-          /// - + > b`.
+          /// Returns the combined result of evaluating the sequence of operators in the given expression
+          /// `a - + > b`.
           void a() {}
         }
         """;
-    assertThat(formatter.formatSource(input)).isEqualTo(expected);
+    doFormatTest(input, expected);
   }
 
   @Test
@@ -3486,6 +3516,12 @@ package com.example;
 
           /// Returns the formatted output containing an escaped hyphen marker written explicitly with char \\- in the prose.
           void h() {}
+
+          /// Returns the bitwise union produced by combining the first flag mask with the second flag id `a | b`.
+          void i() {}
+
+          /// Returns the mapping between the input key and its corresponding computed output value labeled : value.
+          void j() {}
         }
         """;
     String expected =
@@ -3522,6 +3558,151 @@ package com.example;
           /// Returns the formatted output containing an escaped hyphen marker written explicitly with char
           /// \\- in the prose.
           void h() {}
+
+          /// Returns the bitwise union produced by combining the first flag mask with the second flag id `a
+          /// | b`.
+          void i() {}
+
+          /// Returns the mapping between the input key and its corresponding computed output value labeled
+          /// : value.
+          void j() {}
+        }
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownCodeSpanInsideBlockQuoteAndBeforeBlockTag() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// > `> foo`
+          void a() {}
+
+          /// > `foo
+          /// > ` > bar
+          void b() {}
+
+          /// `foo
+          /// ` @param bar
+          void c() {}
+
+          /// > `first
+          /// > start > end`
+          void d() {}
+        }
+        """;
+    String expected =
+        """
+        class T {
+          /// > `> foo`
+          void a() {}
+
+          /// > `foo ` > bar
+          void b() {}
+
+          /// `foo ` @param bar
+          void c() {}
+
+          /// > `first start > end`
+          void d() {}
+        }
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownWrapBeforeBlockMarkerAfterFooterTag() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Summary.
+          ///
+          /// @return >veryLongIdentifierNameThatExceedsTheRemainingLineLengthAndWrapsOntoItsOwnLineForTestingCase12345
+          void a() {}
+
+          /// Summary.
+          ///
+          /// @return ~~~veryLongIdentifierNameThatExceedsTheRemainingLineLengthAndWrapsOntoItsOwnLineForTestingCase12345
+          void b() {}
+
+          /// Summary.
+          ///
+          /// @param <VeryLongTypeParameterNameThatAlmostFillsTheEntireOneHundredColumnLineLimitForJavadoc> - description
+          <VeryLongTypeParameterNameThatAlmostFillsTheEntireOneHundredColumnLineLimitForJavadoc> void c() {}
+        }
+        """;
+    String expected =
+        """
+        class T {
+          /// Summary.
+          ///
+          /// @return >veryLongIdentifierNameThatExceedsTheRemainingLineLengthAndWrapsOntoItsOwnLineForTestingCase12345
+          void a() {}
+
+          /// Summary.
+          ///
+          /// @return ~~~veryLongIdentifierNameThatExceedsTheRemainingLineLengthAndWrapsOntoItsOwnLineForTestingCase12345
+          void b() {}
+
+          /// Summary.
+          ///
+          /// @param <VeryLongTypeParameterNameThatAlmostFillsTheEntireOneHundredColumnLineLimitForJavadoc> -
+          ///   description
+          <VeryLongTypeParameterNameThatAlmostFillsTheEntireOneHundredColumnLineLimitForJavadoc> void c() {}
+        }
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownWrapBlockMarkerAcrossBlockQuoteLines() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// > Throws an exception if the requested indices are out of bounds for an array, i.e., if `start
+          /// > +
+          /// > end`.
+          void a() {}
+
+          /// > Separates a header | column from a body section using a standard marker token sequence word |
+          /// > :-:
+          void b() {}
+
+          /// > First paragraph in a block quote
+          /// >
+          /// > =
+          void c() {}
+
+          /// > <div>foo</div>
+          /// >
+          /// > <div>bar</div>
+          void d() {}
+        }
+        """;
+    String expected =
+        """
+        class T {
+          /// > Throws an exception if the requested indices are out of bounds for an array, i.e., if
+          /// > `start + end`.
+          void a() {}
+
+          /// > Separates a header | column from a body section using a standard marker token sequence
+          /// > word | :-:
+          void b() {}
+
+          /// > First paragraph in a block quote
+          /// >
+          /// > =
+          void c() {}
+
+          /// > <div>foo</div>
+          /// >
+          /// > <div>bar</div>
+          void d() {}
         }
         """;
     doFormatTest(input, expected);

@@ -19,6 +19,7 @@ import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.Iterators.peekingIterator;
 import static java.lang.String.format;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
+import static java.util.regex.Pattern.COMMENTS;
 import static java.util.regex.Pattern.DOTALL;
 import static java.util.regex.Pattern.compile;
 
@@ -186,6 +187,7 @@ final class JavadocLexer {
 
     ImmutableList<Token> result = tokens.build();
     result = joinAdjacentLiteralsAndAdjacentWhitespace(result);
+    result = joinLiteralsAcrossWhitespace(result, classicJavadoc);
     if (classicJavadoc) {
       result = inferParagraphTags(result);
     }
@@ -202,10 +204,12 @@ final class JavadocLexer {
     switch (markdownToken) {
       case MarkdownCodeSpanStart unused -> {
         contextStack.push(NestingContext.MARKDOWN_CODE_CONTEXT);
+        somethingSinceNewline = true;
         return new Literal(markdownToken.value());
       }
       case MarkdownCodeSpanEnd unused -> {
         contextStack.popUntil(NestingContext.MARKDOWN_CODE_CONTEXT);
+        somethingSinceNewline = true;
         return new Literal(markdownToken.value());
       }
       case Literal literal -> {
@@ -264,6 +268,7 @@ final class JavadocLexer {
       //
       // Backslash has no special meaning inside `...` so this code precedes the backslash code.
       verify(input.tryConsumeRegex(WORD_IN_CODE_SPAN_PATTERN));
+      somethingSinceNewline = true;
       return Literal::new;
     }
     if (!classicJavadoc) {
@@ -334,12 +339,17 @@ final class JavadocLexer {
       return preserveExistingFormatting() ? Literal::new : PreCloseTag::new;
     }
 
+    // In Markdown Javadoc, emit `<code>`/`</code>` as literals (while still tracking
+    // HTML_CODE_CONTEXT) so they coalesce with adjacent literals and `joinLiteralsAcrossWhitespace`
+    // can pin following block markers (e.g., `<code>end</code> -`) onto them. Classic Javadoc keeps
+    // `CodeOpenTag`/`CodeCloseTag` because `inferParagraphTags` only inserts `<p>` between
+    // `Literal` tokens.
     if (input.tryConsumeRegex(CODE_OPEN_PATTERN)) {
       contextStack.push(NestingContext.HTML_CODE_CONTEXT);
-      return preserveExistingFormatting ? Literal::new : CodeOpenTag::new;
+      return (!classicJavadoc || preserveExistingFormatting) ? Literal::new : CodeOpenTag::new;
     } else if (input.tryConsumeRegex(CODE_CLOSE_PATTERN)) {
       contextStack.popUntil(NestingContext.HTML_CODE_CONTEXT);
-      return preserveExistingFormatting() ? Literal::new : CodeCloseTag::new;
+      return (!classicJavadoc || preserveExistingFormatting()) ? Literal::new : CodeCloseTag::new;
     }
 
     if (input.tryConsumeRegex(TABLE_OPEN_PATTERN)) {
@@ -426,52 +436,125 @@ final class JavadocLexer {
         continue;
       }
 
-      /*
-       * IF we have accumulated some literals to join together (say, "foo<b>bar</b>"), and IF we'll
-       * next see whitespace followed by a "@" literal, we need to join that together with the
-       * previous literals. That ensures that we won't insert a line break before the "@," turning
-       * it into a tag.
-       */
+      if (!accumulated.isEmpty()) {
+        output.add(new Literal(accumulated.toString()));
+        accumulated.setLength(0);
+      }
+
+      if (tokens.peek() instanceof Whitespace) {
+        output.add(new Whitespace(consumeAdjacentWhitespace(tokens)));
+      } else {
+        output.add(tokens.next());
+      }
+    }
+
+    return output.build();
+  }
+
+  /// Join literal tokens separated by whitespace when breaking between them would change the
+  /// meaning of the comment (for example, placing `@` or a Markdown block marker at the start of a
+  /// wrapped line) or when joining a hyphenated word broken across a line.
+  ///
+  /// This method must be called after [#joinAdjacentLiteralsAndAdjacentWhitespace], as it assumes
+  /// that adjacent literal tokens and adjacent whitespace tokens (including ignored
+  /// [BlockQuoteMarker] tokens) have already been merged.
+  private static ImmutableList<Token> joinLiteralsAcrossWhitespace(
+      List<Token> input, boolean classicJavadoc) {
+    ImmutableList.Builder<Token> output = ImmutableList.builder();
+    StringBuilder accumulated = new StringBuilder();
+
+    for (int i = 0; i < input.size(); ) {
+      Token token = input.get(i);
+      if (token instanceof Literal) {
+        accumulated.append(token.value());
+        i++;
+        continue;
+      }
 
       if (accumulated.isEmpty()) {
-        if (tokens.peek() instanceof Whitespace) {
-          output.add(new Whitespace(consumeAdjacentWhitespace(tokens)));
-        } else {
-          output.add(tokens.next());
+        if (!classicJavadoc && token instanceof FooterJavadocTagStart) {
+          StringBuilder tagText = new StringBuilder(token.value());
+          i++;
+          while (isSameParagraphWhitespace(input.get(i))
+              && input.get(i + 1) instanceof Literal next
+              && couldStartMarkdownBlock(input, i + 1)) {
+            tagText.append(" ").append(next.value());
+            i += 2;
+          }
+          output.add(new FooterJavadocTagStart(tagText.toString()));
+          continue;
         }
+        output.add(token);
+        i++;
         continue;
       }
 
-      String seenWhitespace = consumeAdjacentWhitespace(tokens);
-
-      if (tokens.peek() instanceof Literal literal && literal.value().startsWith("@")) {
-        // OK, we're in the case described above.
-        accumulated.append(" ");
-        accumulated.append(tokens.next().value());
-        continue;
-      }
-
-      if (seenWhitespace.contains("\n")
-          && !hasMultipleNewlines(seenWhitespace)
-          && isHyphenatedWordEnd(accumulated)
-          && tokens.peek() instanceof Literal literal
-          && isWordStart(literal.value())
-          && !isSuspendedHyphenConjunction(literal.value())) {
-        accumulated.append(tokens.next().value());
-        continue;
+      if (isSameParagraphWhitespace(token) && input.get(i + 1) instanceof Literal next) {
+        String nextValue = next.value();
+        if (nextValue.startsWith("@")) {
+          /*
+           * If we see whitespace followed by a "@" literal, join it onto the previous literal so
+           * we won't insert a line break before "@", turning it into a tag.
+           */
+          accumulated.append(" ").append(nextValue);
+          i += 2;
+          continue;
+        }
+        if (token.value().contains("\n")
+            && isHyphenatedWordEnd(accumulated)
+            && isWordStart(nextValue)
+            && !isSuspendedHyphenConjunction(nextValue)) {
+          accumulated.append(nextValue);
+          i += 2;
+          continue;
+        }
+        if (!classicJavadoc && couldStartMarkdownBlock(input, i + 1)) {
+          /*
+           * In Markdown Javadoc, joining a block-marker literal onto the preceding literal
+           * prevents line wrapping from placing the marker at the start of a continuation line,
+           * where CommonMark would parse it as a list, block quote, heading, code fence,
+           * thematic break, table separator, or HTML block.
+           */
+          accumulated.append(" ").append(nextValue);
+          i += 2;
+          continue;
+        }
       }
 
       output.add(new Literal(accumulated.toString()));
       accumulated.setLength(0);
-
-      if (!seenWhitespace.isEmpty()) {
-        output.add(new Whitespace(seenWhitespace));
-      }
-
-      // We have another token coming. Leave it for the next iteration.
+      output.add(token);
+      i++;
     }
 
     return output.build();
+  }
+
+  private static boolean isSameParagraphWhitespace(Token token) {
+    return token instanceof Whitespace whitespace && !hasMultipleNewlines(whitespace.value());
+  }
+
+  private static boolean couldStartMarkdownBlock(List<Token> input, int index) {
+    String s = input.get(index).value();
+    return switch (s.charAt(0)) {
+      case '>' -> true;
+      case '+' -> s.equals("+");
+      case '~' -> s.startsWith("~~~");
+      case '<' -> MARKDOWN_HTML_BLOCK_START_PATTERN.matcher(s).lookingAt();
+      case '-', ':' -> MARKDOWN_TABLE_SEPARATOR_PATTERN.matcher(s).matches();
+      case '|' ->
+          s.equals("|")
+              ? isFollowedByTableSeparator(input, index)
+              : MARKDOWN_TABLE_SEPARATOR_PATTERN.matcher(s).matches();
+      case '*', '_', '=', '#', '0', '1', '`' -> MARKDOWN_BLOCK_MARKER_PATTERN.matcher(s).matches();
+      default -> false;
+    };
+  }
+
+  private static boolean isFollowedByTableSeparator(List<Token> input, int pipeIndex) {
+    return isSameParagraphWhitespace(input.get(pipeIndex + 1))
+        && input.get(pipeIndex + 2) instanceof Literal next
+        && MARKDOWN_TABLE_SEPARATOR_PATTERN.matcher(next.value()).matches();
   }
 
   private static boolean isHyphenatedWordEnd(CharSequence cs) {
@@ -728,6 +811,46 @@ final class JavadocLexer {
   private static final Pattern WORD_IN_CODE_SPAN_PATTERN = compile(".[^ \t\n`]*");
   private static final Pattern MARKDOWN_HARD_LINE_BREAK_PATTERN = compile("\\\\[ \t]*\n");
   private static final Pattern BACKSLASH_PLUS_CHARACTER_PATTERN = compile("\\\\.");
+
+  // Bullet list `-`, setext heading underlines (`-`, `--`), thematic breaks (`---`), and GFM table
+  // separator tokens (`|-|`, `|---`, `:--`, `--:`, etc.).
+  private static final Pattern MARKDOWN_TABLE_SEPARATOR_PATTERN = compile("[:|-]*-[:|-]*");
+
+  // Whole whitespace-delimited tokens that CommonMark may parse as a block start if placed at the
+  // start of a wrapped line:
+  // - `*+`, `_+`, `=+`: bullet list `*`, thematic breaks, setext heading underlines
+  // - `#{1,6}`: ATX headings
+  // - `0{0,8}1[.)]`: ordered list items (only start number 1 can interrupt a paragraph)
+  // - `` `{3,}[^`]* ``: backtick code fence openers (no subsequent backtick on the same token)
+  private static final Pattern MARKDOWN_BLOCK_MARKER_PATTERN =
+      compile("\\*+|_+|=+|#{1,6}|0{0,8}1[.)]|`{3,}[^`]*");
+
+  // CommonMark HTML block types 1-6, which can interrupt a paragraph (type 7 cannot).
+  private static final Pattern MARKDOWN_HTML_BLOCK_START_PATTERN =
+      compile(
+          """
+          <(?:script|pre|style|textarea)(?:>|$)
+          |<!--
+          |<\\?
+          |<![a-z]
+          |<!\\[CDATA\\[
+          |</?(?:address|article|aside
+            |base|basefont|blockquote|body
+            |caption|center|col|colgroup
+            |dd|details|dialog|dir|div|dl|dt
+            |fieldset|figcaption|figure|footer|form|frame|frameset
+            |h1|h2|h3|h4|h5|h6|head|header|hr|html
+            |iframe
+            |legend|li|link
+            |main|menu|menuitem
+            |nav|noframes
+            |ol|optgroup|option
+            |p|param
+            |search|section|summary
+            |table|tbody|td|tfoot|th|thead|title|tr|track
+            |ul)(?:/?>|$)
+          """,
+          CASE_INSENSITIVE | COMMENTS);
 
   /*
    * We exclude < so that we don't swallow following HTML tags. This lets us fix up "foo<p>" (~400
