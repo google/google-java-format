@@ -1253,6 +1253,45 @@ public final class JavadocFormattingTest {
   }
 
   @Test
+  public void divAfterBlankLine() {
+    String input =
+        """
+        /**
+         * Intro.
+         *
+         * <span>Another paragraph.</span>
+         *
+         * <DIV class="notice">Block content.</DIV>
+         *
+         * Following paragraph.
+         *
+         * <div-custom>Custom element.</div-custom>
+         *
+         * <p><div>Explicit paragraph.</div>
+         */
+        class Test {}
+        """;
+    String expected =
+        """
+        /**
+         * Intro.
+         *
+         * <p><span>Another paragraph.</span>
+         *
+         * <DIV class="notice">Block content.</DIV>
+         *
+         * <p>Following paragraph.
+         *
+         * <p><div-custom>Custom element.</div-custom>
+         *
+         * <p><div>Explicit paragraph.</div>
+         */
+        class Test {}
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void inferParagraphTags() {
     String input =
         """

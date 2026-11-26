@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.PeekingIterator;
 import com.google.googlejavaformat.java.javadoc.Token.BeginJavadoc;
+import com.google.googlejavaformat.java.javadoc.Token.BlankLine;
 import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteMarker;
 import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteOpenTag;
@@ -240,6 +241,14 @@ final class JavadocLexer {
   private Function<String, Token> consumeToken() throws LexException {
     boolean preserveExistingFormatting = preserveExistingFormatting();
 
+    // Preserve the blank line before a div without inferring a paragraph tag.
+    if (classicJavadoc
+        && !preserveExistingFormatting
+        && !contextStack.containsAny(TAG_CONTEXTS)
+        && input.tryConsumeRegex(BLANK_LINE_BEFORE_DIV_PATTERN)) {
+      somethingSinceNewline = false;
+      return BlankLine::new;
+    }
     if (input.tryConsumeRegex(NEWLINE_PATTERN)) {
       somethingSinceNewline = false;
       return preserveExistingFormatting ? ForcedNewline::new : Whitespace::new;
@@ -776,6 +785,8 @@ final class JavadocLexer {
    */
   private static final Pattern NEWLINE_PATTERN = compile("[ \t]*\n");
   private static final Pattern WHITESPACE_PATTERN = compile("\\s+");
+  private static final Pattern BLANK_LINE_BEFORE_DIV_PATTERN =
+      compile("(?:[ \t]*\n){2}[ \t]*(?=<div(?:\\s[^>]*)?/?>)", CASE_INSENSITIVE);
   private static final Pattern BLOCKQUOTE_MARKER_PATTERN = compile("> ?");
   private static final Pattern BLOCKQUOTE_LINE_PREFIX_PATTERN = compile("\n(?:[ \t]*>[ \t]?)+");
 

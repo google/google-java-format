@@ -150,6 +150,8 @@ sealed interface Token {
   /// leading spaces and asterisks) or spaces.
   record Whitespace(String value) implements Token {}
 
+  record BlankLine(String value) implements Token {}
+
   /// A newline in a `<pre>` or `<table>` section. We preserve user formatting in these sections,
   /// including newlines.
   record ForcedNewline(String value) implements Token {}

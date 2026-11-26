@@ -25,6 +25,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.java.javadoc.JavadocLexer.LexException;
 import com.google.googlejavaformat.java.javadoc.Token.BeginJavadoc;
+import com.google.googlejavaformat.java.javadoc.Token.BlankLine;
 import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteCloseTag;
 import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteMarker;
 import com.google.googlejavaformat.java.javadoc.Token.BlockQuoteOpenTag;
@@ -134,6 +135,7 @@ public final class JavadocFormatter {
         case HtmlComment t -> output.writeHtmlComment(t);
         case BrTag t -> output.writeBr(standardizeBrToken(t));
         case Whitespace t -> output.requestWhitespaceOrBlankLine(t);
+        case BlankLine unused -> output.requestBlankLine();
         case ForcedNewline unused -> output.writeLineBreakNoAutoIndent();
         case MarkdownHardLineBreak unused -> output.writeMarkdownHardLineBreak();
         case Literal t -> output.writeLiteral(t);

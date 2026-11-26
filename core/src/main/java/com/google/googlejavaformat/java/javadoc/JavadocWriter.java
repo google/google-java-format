@@ -408,7 +408,7 @@ final class JavadocWriter {
     return output.toString();
   }
 
-  private void requestBlankLine() {
+  void requestBlankLine() {
     requestWhitespace(BLANK_LINE);
   }
 
