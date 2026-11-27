@@ -193,7 +193,32 @@ final class JavadocLexer {
     }
     result = optionalizeSpacesAfterLinks(result);
     result = deindentPreCodeBlocks(result);
+    if (classicJavadoc) {
+      result = removeTrailingEmptyParagraphTag(result);
+    }
     return result;
+  }
+
+  private static ImmutableList<Token> removeTrailingEmptyParagraphTag(List<Token> input) {
+    int end = input.size() - 1;
+
+    if (end >= 0 && input.get(end) instanceof EndJavadoc) {
+      end--;
+    }
+
+    while (end >= 0 && input.get(end) instanceof Whitespace) {
+      end--;
+    }
+
+    if (end < 0 || !(input.get(end) instanceof ParagraphOpenTag)) {
+      return ImmutableList.copyOf(input);
+    }
+
+    ImmutableList.Builder<Token> result = ImmutableList.builder();
+    result.addAll(input.subList(0, end));
+    result.addAll(input.subList(input.size() - 1, input.size()));
+
+    return result.build();
   }
 
   private Token processMarkdownToken(Token markdownToken) {
