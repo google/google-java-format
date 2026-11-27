@@ -48,6 +48,9 @@ final class JavaCommentsHelper implements CommentsHelper {
       return tok.getOriginalText();
     }
     String text = tok.getOriginalText();
+    if (isShebang(tok)) {
+      return CharMatcher.whitespace().trimTrailingFrom(text);
+    }
     if (tok.isJavadocComment() && options.formatJavadoc()) {
       if (text.startsWith("///")) {
         if (markdownJavadocPositions.contains(tok.getPosition())) {
@@ -129,6 +132,15 @@ final class JavaCommentsHelper implements CommentsHelper {
   // contain leading spaces.
   private static final Pattern LINE_COMMENT_NO_SPACE_PREFIX =
       Pattern.compile("^//+(noinspection|\\$NON-NLS-\\d+\\$)");
+
+  // Preserve leading `///usr/bin/env ...` shebang comments (such as JBang scripts) on line 1.
+  private static boolean isShebang(Tok tok) {
+    if (tok.getPosition() != 0) {
+      return false;
+    }
+    String text = tok.getOriginalText();
+    return text.startsWith("///usr/bin/env ") && !Newlines.containsBreaks(text);
+  }
 
   private List<String> wrapLineComments(Tok tok, List<String> lines, int column0) {
     if (markdownJavadocPositions.contains(tok.getPosition())) {

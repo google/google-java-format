@@ -1370,6 +1370,32 @@ class T {
   }
 
   @Test
+  public void shebangCommentLong() throws Exception {
+    String input =
+        """
+        ///usr/bin/env jbang --java 25 --deps com.example.group:example-long-artifact-name:1.0.0 --fresh "$0" "$@" ; exit $?
+
+        public class Hello {}
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(input);
+  }
+
+  @Test
+  public void leadingMarkdownJavadocWithoutSpace() throws Exception {
+    String input =
+        """
+        ///Package javadoc.
+        package p;
+        """;
+    String expected =
+        """
+        /// Package javadoc.
+        package p;
+        """;
+    assertThat(new Formatter().formatSource(input)).isEqualTo(expected);
+  }
+
+  @Test
   public void shebangComment() throws Exception {
     String input =
         """
@@ -1383,7 +1409,7 @@ class T {
         """;
     String expected =
         """
-        /// usr/bin/env jbang "$0" "$@" ; exit $?
+        ///usr/bin/env jbang "$0" "$@" ; exit $?
 
         public class hello {
           public static void main(String... args) {
