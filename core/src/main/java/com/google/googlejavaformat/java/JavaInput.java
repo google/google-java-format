@@ -263,9 +263,14 @@ final class JavaInput extends Input {
   /// @param text the input text
   /// @throws FormatterException if the input cannot be parsed
   JavaInput(String text) throws FormatterException {
+    this(text, buildToks(text, ImmutableSet.of()));
+  }
+
+  JavaInput(String text, ImmutableList<Tok> toks) {
     this.text = checkNotNull(text);
     setLines(ImmutableList.copyOf(Newlines.lineIterator(text)));
-    ImmutableList<Tok> toks = buildToks(text);
+    this.kN = getLast(toks).getIndex();
+    computeRanges(toks);
     positionToColumnMap = makePositionToColumnMap(toks);
     tokens = buildTokens(toks);
     ImmutableRangeMap.Builder<Integer, Token> tokenLocations = ImmutableRangeMap.builder();
@@ -317,14 +322,6 @@ final class JavaInput extends Input {
   @Override
   public ImmutableMap<Integer, Integer> getPositionToColumnMap() {
     return positionToColumnMap;
-  }
-
-  /// Lex the input and build the list of toks.
-  private ImmutableList<Tok> buildToks(String text) throws FormatterException {
-    ImmutableList<Tok> toks = buildToks(text, ImmutableSet.of());
-    kN = getLast(toks).getIndex();
-    computeRanges(toks);
-    return toks;
   }
 
   /// Lex the input and build the list of toks.

@@ -26,6 +26,7 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeRangeSet;
 import com.google.googlejavaformat.java.JavaFormatterOptions.Style;
+import com.google.googlejavaformat.java.JavaInput.Tok;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 import java.util.ArrayList;
@@ -43,11 +44,14 @@ import org.jspecify.annotations.Nullable;
 final class Cleanups {
 
   /// The cleaned contents, the requested character ranges remapped onto them (plus any modified
-  /// regions), and the javac unit for `contents` if it can be reused for formatting.
+  /// regions), and the javac unit, lexed tokens, and [JavaInput] for `contents` if they can be
+  /// reused for formatting.
   record Result(
       String contents,
       Collection<Range<Integer>> characterRanges,
-      @Nullable JCCompilationUnit unit) {}
+      @Nullable JCCompilationUnit unit,
+      @Nullable ImmutableList<Tok> toks,
+      @Nullable JavaInput javaInput) {}
 
   private record Parsed(Context context, JCCompilationUnit unit) {}
 
@@ -78,7 +82,7 @@ final class Cleanups {
       throws FormatterException {
     JavaInput.validateRanges(characterRanges, contents.length());
     if (passes.isEmpty()) {
-      return new Result(contents, characterRanges, null);
+      return new Result(contents, characterRanges, null, null, null);
     }
     RangeSet<Integer> normalized = TreeRangeSet.create();
     for (Range<Integer> range : characterRanges) {
@@ -98,12 +102,18 @@ final class Cleanups {
             ? ImmutableList.of(Range.closedOpen(0, 0))
             : cleanups.ranges.asRanges();
     return new Result(
-        cleanups.contents, resultRanges, cleanups.parsed == null ? null : cleanups.parsed.unit());
+        cleanups.contents,
+        resultRanges,
+        cleanups.parsed == null ? null : cleanups.parsed.unit(),
+        cleanups.toks,
+        cleanups.javaInput);
   }
 
   private String contents;
   private ImmutableRangeSet<Integer> ranges;
   private @Nullable Parsed parsed;
+  private @Nullable ImmutableList<Tok> toks;
+  private @Nullable JavaInput javaInput;
   private final Style style;
 
   private Cleanups(String contents, ImmutableRangeSet<Integer> ranges, Style style) {
@@ -148,6 +158,24 @@ final class Cleanups {
     return parsed().context();
   }
 
+  ImmutableList<Tok> toks() throws FormatterException {
+    if (toks == null) {
+      toks = JavaInput.buildToks(contents, ImmutableSet.of());
+    }
+    return toks;
+  }
+
+  @Nullable ImmutableList<Tok> cachedToks() {
+    return toks;
+  }
+
+  JavaInput javaInput() throws FormatterException {
+    if (javaInput == null) {
+      javaInput = new JavaInput(contents, toks());
+    }
+    return javaInput;
+  }
+
   /// Applies a pass's replacements to the current contents, remapping requested ranges and adding
   /// modified regions.
   private void applyReplacements(List<Replacement> replacements) {
@@ -166,6 +194,8 @@ final class Cleanups {
     this.contents = edit.contents();
     this.ranges = ImmutableRangeSet.copyOf(newRanges);
     this.parsed = null;
+    this.toks = null;
+    this.javaInput = null;
   }
 
   /// Returns the range to reformat for the given span.
