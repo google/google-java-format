@@ -52,6 +52,15 @@ class LambdaHug {
     item.of(() -> Streams.concat(Stream.of("a"), Stream.of("b"), Stream.empty(), Stream.of("c", "d")).spliterator()).expect("a", "b", "c", "d");
     task(event -> { handle(event); handleAgain(event); handleOnceMore(event); }).handleFailure(failure);
     task(() -> Streams.concat(Stream.of("a"), Stream.of("b"), Stream.empty(), Stream.of("c", "d")).spliterator()).expect("a");
+    SomeVeryLongClassNameThatIsVeryLongAndForcesABreakBeforeMethod.someVeryLongStaticMethodNameThatWraps(x -> { handle(x); handleAgain(x); }).thenAccept(y -> { handle(y); handleAgain(y); });
+    com.google.very.lengthy.pkg.name.that.is.extremely.wide.and.forces.a.wrap.somewhere.before.MyClass.computeItems(x -> { handle(x); handleAgain(x); }).thenAccept(y -> { handle(y); handleAgain(y); });
+    new Receiver() { void f() {} }.computeItems(x -> { handle(x); handleAgain(x); }).stream().toList();
+    new Foo(() -> Streams.concat(Stream.of("a"), Stream.of("b"), Stream.empty(), Stream.of("c", "d")).spliterator()).expect("a");
+    MyClass.computeItems(x -> { handle(x); handleAgain(x); }).stream();
+    MyClass.computeItems(x -> Streams.concat(Stream.of("a"), Stream.of("b"), Stream.empty(), Stream.of("c", "d")).spliterator()).stream();
+    item.<VeryLongTypeArgumentOne, VeryLongTypeArgumentTwo, VeryLongTypeArgumentThree, VeryLongTypeArgumentFour>of(x -> { handle(x); handleAgain(x); }).register();
+    doAnswer(invocation -> { handle(invocation); return null; }).when(mock).run();
+    return trapExceptions(() -> { compute(); computeAgain(); }).then(x -> { handle(x); handleAgain(x); }).peek(cleanup);
   }
 
   void conditions() {
@@ -69,6 +78,8 @@ class LambdaHug {
     do { process(); } while (anyMatch(c -> { return true; }));
     if (anyMatch(c -> check(x -> { handle(x); handleAgain(x); }))) { return; }
     if (anyMatch(param -> param.someLongMethodName(argumentNumberOne, argumentNumberTwo, argumentNumberThree))) { return; }
+    if (trapExceptions(() -> { compute(); return true; }).isOk()) { process(); }
+    if (other && trapExceptions(() -> { compute(); return true; }).isOk()) { process(); }
   }
 
   void nested() {

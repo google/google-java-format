@@ -66,7 +66,6 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
-import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.collect.TreeRangeSet;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -698,6 +697,11 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
   @Override
   public Void visitNewClass(NewClassTree node, Void unused) {
+    visitNewClass(node, ZERO);
+    return null;
+  }
+
+  private void visitNewClass(NewClassTree node, Indent huggedPlusIndent) {
     sync(node);
     builder.open(ZERO);
     if (node.getEnclosingExpression() != null) {
@@ -713,16 +717,18 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           visitModifiers(
               node.getClassBody().getModifiers(), Direction.HORIZONTAL, Optional.empty());
       visitAnnotations(annotations, BreakOrNot.NO, BreakOrNot.YES);
-      doNotHug(node);
     }
     scan(node.getIdentifier(), null);
-    addArguments(node.getArguments(), plusFour);
+    addArguments(
+        node.getArguments(),
+        plusFour,
+        huggedPlusIndent,
+        /* allowBlockLambdaHug= */ node.getClassBody() == null);
     builder.close();
     if (node.getClassBody() != null) {
       addBodyDeclarations(
           node.getClassBody().getMembers(), BracesOrNot.YES, FirstDeclarationsOrNot.YES);
     }
-    return null;
   }
 
   @Override
@@ -826,10 +832,11 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       builder.guessToken("(");
       builder.guessToken(")");
     } else {
-      if (init.getClassBody() != null) {
-        doNotHug(init);
-      }
-      addArguments(init.getArguments(), plusFour);
+      addArguments(
+          init.getArguments(),
+          plusFour,
+          ZERO,
+          /* allowBlockLambdaHug= */ init.getClassBody() == null);
     }
     if (init.getClassBody() != null) {
       addBodyDeclarations(
@@ -3083,10 +3090,15 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         token(".");
       } else {
         builder.open(plusFour);
-        if (!stack.isEmpty()) {
-          doNotHug(node);
+        ExpressionTree base = getArrayBase(node);
+        if (!stack.isEmpty() && base instanceof NewClassTree newClass) {
+          // Constructor calls starting a chain with trailing dereferences (e.g.
+          // `new Thread(() -> { ... }).start()`) stay on the first line, so indent a hugged
+          // lambda argument by an extra +4 to distinguish it from the trailing dereferences.
+          visitNewClass(newClass, plusFour);
+        } else {
+          scan(base, null);
         }
-        scan(getArrayBase(node), null);
         builder.breakOp();
         needDot = true;
       }
@@ -3187,18 +3199,14 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         token(".");
         length++;
       }
-      if (!hasBroken && i < items.size() - 1) {
-        doNotHug(e);
-      }
       if (!fillFirstArgument(e, items, trailingDereferences ? ZERO : minusFour)) {
         BreakTag tyargTag = genSym();
         dotExpressionUpToArgs(e, Optional.of(tyargTag));
-        Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
         // Calls that stay on the first line of the chain indent hugged arguments by an extra +4,
         // to distinguish them from the trailing dereferences.
         dotExpressionArgsAndParen(
             e,
-            tyargIndent,
+            tyargTag,
             (trailingDereferences || needDot) ? plusFour : ZERO,
             (!hasBroken && i < items.size() - 1) ? plusFour : ZERO);
       }
@@ -3232,8 +3240,8 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         || name.length() > 4
         || !methodInvocation.getTypeArguments().isEmpty()
         || methodInvocation.getArguments().size() != 1
-        // Huggable arguments are handled by addArguments, see canHugOnlyArgument.
-        || isHuggable(getOnlyElement(methodInvocation.getArguments()))) {
+        // Huggable arguments are handled by addArguments.
+        || canHugOnlyArgument(methodInvocation.getArguments(), /* allowBlockLambdaHug= */ true)) {
       return false;
     }
     builder.open(ZERO);
@@ -3270,15 +3278,10 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
 
     Deque<Integer> unconsumedPrefixes = new ArrayDeque<>(ImmutableSortedSet.copyOf(prefixes));
-    boolean needDot0 = needDot;
-    BreakTag nameTag = genSym();
+    Indent beforeFirstBreak = needDot ? ZERO : plusFour;
     for (int i = 0; i < items.size(); i++) {
       ExpressionTree e = items.get(i);
-      // Don't hug a block lambda if its call stays on the first line of the chain and has trailing
-      // dereferences.
-      if (!needDot0 && (i == 0 || prefixes.contains(i)) && i < items.size() - 1) {
-        doNotHug(e);
-      }
+      Indent argsIndent = trailingDereferences ? plusFour : ZERO;
       if (needDot) {
         FillMode fillMode;
         if (!unconsumedPrefixes.isEmpty() && i <= unconsumedPrefixes.peekFirst()) {
@@ -3287,8 +3290,16 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
           fillMode = FillMode.UNIFIED;
         }
 
+        BreakTag nameTag = genSym();
         builder.breakOp(fillMode, "", ZERO, Optional.of(nameTag));
         token(".");
+        if (!trailingDereferences) {
+          argsIndent = Indent.If.make(nameTag, plusFour, ZERO);
+        }
+        if (beforeFirstBreak != ZERO) {
+          beforeFirstBreak =
+              unconsumedPrefixes.isEmpty() ? ZERO : Indent.If.make(nameTag, ZERO, beforeFirstBreak);
+        }
       }
       BreakTag tyargTag = genSym();
       dotExpressionUpToArgs(e, Optional.of(tyargTag));
@@ -3297,11 +3308,8 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         unconsumedPrefixes.removeFirst();
       }
 
-      Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
-      Indent argsIndent = Indent.If.make(nameTag, plusFour, trailingDereferences ? plusFour : ZERO);
-      Indent huggedArgsIndent =
-          Indent.If.make(nameTag, ZERO, trailingDereferences ? plusFour : ZERO);
-      dotExpressionArgsAndParen(e, tyargIndent, argsIndent, huggedArgsIndent);
+      dotExpressionArgsAndParen(
+          e, tyargTag, argsIndent, i < items.size() - 1 ? beforeFirstBreak : ZERO);
 
       needDot = true;
     }
@@ -3374,14 +3382,21 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   }
 
   private void dotExpressionArgsAndParen(
-      ExpressionTree expression, Indent tyargIndent, Indent indent, Indent huggedIndent) {
+      ExpressionTree expression, BreakTag tyargTag, Indent indent, Indent huggedIndent) {
     Deque<ExpressionTree> indices = getArrayIndices(expression);
     expression = getArrayBase(expression);
     switch (expression.getKind()) {
       case METHOD_INVOCATION -> {
+        Indent tyargIndent = Indent.If.make(tyargTag, plusFour, ZERO);
+        Indent huggedArgsIndent =
+            huggedIndent == ZERO ? ZERO : Indent.If.make(tyargTag, ZERO, huggedIndent);
         builder.open(tyargIndent);
         MethodInvocationTree methodInvocation = (MethodInvocationTree) expression;
-        addArguments(methodInvocation.getArguments(), indent, huggedIndent);
+        addArguments(
+            methodInvocation.getArguments(),
+            indent,
+            huggedArgsIndent,
+            /* allowBlockLambdaHug= */ true);
         builder.close();
       }
       default -> {}
@@ -3436,28 +3451,26 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token(">");
   }
 
-  private void addArguments(List<? extends ExpressionTree> arguments, Indent plusIndent) {
-    addArguments(arguments, plusIndent, ZERO);
-  }
-
   /// Add arguments to a method invocation, etc. The arguments indented `plusFour`, filled, from the
   /// current indent. The arguments may be output two at a time if they seem to be arguments to a
   /// map constructor, etc.
   ///
   /// @param arguments the arguments
   /// @param plusIndent the extra indent for the arguments
-  /// @param huggedPlusIndent the extra indent when a single expression lambda argument is hugged
+  /// @param huggedPlusIndent the extra indent when a single lambda argument is hugged
+  /// @param allowBlockLambdaHug whether a single block lambda argument may be hugged (false when a
+  ///   class body immediately follows the argument list)
   private void addArguments(
-      List<? extends ExpressionTree> arguments, Indent plusIndent, Indent huggedPlusIndent) {
+      List<? extends ExpressionTree> arguments,
+      Indent plusIndent,
+      Indent huggedPlusIndent,
+      boolean allowBlockLambdaHug) {
     boolean tabular = arguments.size() % 2 == 0 && argumentsAreTabular(arguments) == 2;
-    boolean hug = canHugOnlyArgument(arguments);
+    boolean hug = canHugOnlyArgument(arguments, allowBlockLambdaHug);
     if (hug) {
       ExpressionTree argument = getOnlyElement(arguments);
       builder.openHuggable(
-          plusIndent,
-          hasHuggedBlockLambda(arguments) ? ZERO : huggedPlusIndent,
-          hugPoint(argument),
-          /* fallbackIfFlatOnNextLine= */ true);
+          plusIndent, huggedPlusIndent, hugPoint(argument), /* fallbackIfFlatOnNextLine= */ true);
     } else {
       builder.open(plusIndent);
     }
@@ -3521,57 +3534,17 @@ class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
   }
 
-  /**
-   * Returns true for constructs that may be hugged, i.e. laid out starting on the line of the
-   * preceding content: lambdas.
-   */
-  private static boolean isHuggable(ExpressionTree tree) {
-    return tree instanceof LambdaExpressionTree;
-  }
-
-  /**
-   * Returns true if the argument list is a single argument that may be hugged, e.g. {@code f(x -> {
-   * ... })}. Lambdas preceded by other arguments aren't hugged: the preceding arguments would share
-   * a line with the lambda's head, and wouldn't line up with the lambda's body.
-   */
-  private boolean canHugOnlyArgument(List<? extends ExpressionTree> arguments) {
-    return arguments.size() == 1
-        && isHuggable(getOnlyElement(arguments))
-        && !notHuggable.contains(getOnlyElement(arguments));
-  }
-
-  /**
-   * Constructs that may not be hugged even though {@link #isHuggable} is true for them; see {@link
-   * #doNotHug}.
-   */
-  private final Set<Tree> notHuggable = Sets.newIdentityHashSet();
-
-  /**
-   * Prevents hugging a block lambda argument of {@code call}. Used in two cases:
-   *
-   * <ul>
-   *   <li>a call on the first line of a dereference chain with more dereferences after it (e.g.
-   *       {@code new Thread(() -> { ... }).start()})
-   *   <li>a constructor or enum constant call with a class body (e.g. {@code new Thread(() -> { ...
-   *       }) { ... }})
-   * </ul>
-   */
-  private void doNotHug(ExpressionTree call) {
-    List<? extends ExpressionTree> arguments =
-        switch (getArrayBase(call)) {
-          case MethodInvocationTree invocation -> invocation.getArguments();
-          case NewClassTree newClass -> newClass.getArguments();
-          default -> ImmutableList.of();
-        };
-    if (hasHuggedBlockLambda(arguments)) {
-      notHuggable.add(getOnlyElement(arguments));
+  /// Returns true if the argument list is a single argument that may be hugged, e.g. `f(x -> { ...
+  /// })`. Lambdas preceded by other arguments aren't hugged: the preceding arguments would share a
+  /// line with the lambda's head, and wouldn't line up with the lambda's body.
+  private static boolean canHugOnlyArgument(
+      List<? extends ExpressionTree> arguments, boolean allowBlockLambdaHug) {
+    if (arguments.size() != 1) {
+      return false;
     }
-  }
-
-  private static boolean hasHuggedBlockLambda(List<? extends ExpressionTree> arguments) {
-    return arguments.size() == 1
-        && getOnlyElement(arguments) instanceof LambdaExpressionTree lambda
-        && lambda.getBodyKind() == LambdaExpressionTree.BodyKind.STATEMENT;
+    ExpressionTree argument = getOnlyElement(arguments);
+    return argument instanceof LambdaExpressionTree lambda
+        && (allowBlockLambdaHug || lambda.getBodyKind() != LambdaExpressionTree.BodyKind.STATEMENT);
   }
 
   private void argList(List<? extends ExpressionTree> arguments) {
