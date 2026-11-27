@@ -23,6 +23,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
@@ -59,10 +60,25 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
   static ImmutableList<Replacement> scan(
       JCCompilationUnit unit, String contents, Collection<Range<Integer>> ranges)
       throws FormatterException {
+    return scan(
+        unit,
+        contents,
+        JavaInput.buildToks(contents, ImmutableSet.of()),
+        ranges,
+        ImmutableRangeSet.of());
+  }
+
+  static ImmutableList<Replacement> scan(
+      JCCompilationUnit unit,
+      String contents,
+      ImmutableList<Tok> toks,
+      Collection<Range<Integer>> ranges,
+      RangeSet<Integer> preExistingDeletions)
+      throws FormatterException {
     RangeSet<Integer> targetRanges = TreeRangeSet.create(ranges);
-    ImmutableList<Tok> toks = JavaInput.buildToks(contents, ImmutableSet.of());
     RangeSet<Integer> activeDeletions = TreeRangeSet.create();
-    new CleanupScanner(contents, unit, toks, targetRanges, activeDeletions).scan(unit, null);
+    new CleanupScanner(contents, unit, toks, targetRanges, activeDeletions, preExistingDeletions)
+        .scan(unit, null);
     if (activeDeletions.isEmpty()) {
       return ImmutableList.of();
     }
@@ -122,18 +138,21 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
   private final ImmutableList<Tok> toks;
   private final RangeSet<Integer> targetRanges;
   private final RangeSet<Integer> activeDeletions;
+  private final RangeSet<Integer> preExistingDeletions;
 
   CleanupScanner(
       String contents,
       JCCompilationUnit unit,
       ImmutableList<Tok> toks,
       RangeSet<Integer> targetRanges,
-      RangeSet<Integer> activeDeletions) {
+      RangeSet<Integer> activeDeletions,
+      RangeSet<Integer> preExistingDeletions) {
     this.contents = contents;
     this.unit = unit;
     this.toks = toks;
     this.targetRanges = targetRanges;
     this.activeDeletions = activeDeletions;
+    this.preExistingDeletions = preExistingDeletions;
   }
 
   private boolean inRange(int startPos, int endPos) {
@@ -142,7 +161,9 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
 
   private void deleteRedundantSemicolon(int semiPos) {
     int start = semiPos;
-    while (start > 0 && isHorizontalWhitespace(contents.charAt(start - 1))) {
+    while (start > 0
+        && isHorizontalWhitespace(contents.charAt(start - 1))
+        && !preExistingDeletions.contains(start - 1)) {
       start--;
     }
     int lineBegin = start;
@@ -153,8 +174,7 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
     while (end < contents.length() && isHorizontalWhitespace(contents.charAt(end))) {
       end++;
     }
-    boolean nothingBeforeOnLine =
-        start == lineBegin || activeDeletions.encloses(Range.closedOpen(lineBegin, start));
+    boolean nothingBeforeOnLine = start == lineBegin || isDeletedRange(lineBegin, start);
     if (nothingBeforeOnLine && end < contents.length()) {
       if (contents.charAt(end) == '\r') {
         end++;
@@ -166,6 +186,19 @@ final class CleanupScanner extends TreePathScanner<@Nullable Void, @Nullable Voi
       }
     }
     activeDeletions.add(Range.closedOpen(start, end));
+  }
+
+  private boolean isDeletedRange(int start, int end) {
+    Range<Integer> range = Range.closedOpen(start, end);
+    if (activeDeletions.encloses(range)) {
+      return true;
+    }
+    if (preExistingDeletions.isEmpty()) {
+      return false;
+    }
+    RangeSet<Integer> combined = TreeRangeSet.create(activeDeletions.subRangeSet(range));
+    combined.addAll(preExistingDeletions.subRangeSet(range));
+    return combined.encloses(range);
   }
 
   private static boolean isHorizontalWhitespace(char c) {

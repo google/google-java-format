@@ -607,11 +607,12 @@ public class CleanupsTest {
             ImmutableList.of(Range.closedOpen(0, input.length())),
             Style.GOOGLE,
             Cleanups.enabledPasses(
-                /* cleanup= */ false,
+                /* cleanup= */ true,
                 /* removeUnusedImports= */ true,
-                /* reorderModifiers= */ false,
-                /* sortImports= */ false));
+                /* reorderModifiers= */ true,
+                /* sortImports= */ true));
     assertThat(result.unit()).isNotNull();
+    assertThat(result.javaInput()).isNotNull();
     assertThat(result.contents()).isEqualTo(input);
   }
 
@@ -634,6 +635,7 @@ public class CleanupsTest {
                 /* reorderModifiers= */ true,
                 /* sortImports= */ false));
     assertThat(result.unit()).isNull();
+    assertThat(result.javaInput()).isNull();
     assertThat(result.contents()).contains("public static int x;");
   }
 
@@ -671,12 +673,12 @@ public class CleanupsTest {
   }
 
   @Test
-  public void parseReusedWhenLaterPassParsesAfterEarlierEdits() throws Exception {
+  public void fusedAstPassesInvalidateUnitOnEditAndReuseJavaInputInLaterPass() throws Exception {
     String input =
         """
         package test;
 
-        import java.util.ArrayList;
+        import java.util.ArrayList;;
 
         class Test {
           void f(boolean a) {
@@ -694,10 +696,15 @@ public class CleanupsTest {
             Cleanups.enabledPasses(
                 /* cleanup= */ true,
                 /* removeUnusedImports= */ true,
-                /* reorderModifiers= */ false,
-                /* sortImports= */ false));
-    assertThat(result.unit()).isNotNull();
+                /* reorderModifiers= */ true,
+                /* sortImports= */ true));
+    // REMOVE_UNUSED_IMPORTS and AST_CLEANUPS ran on a single shared parse and removed both the
+    // unused import and its redundant semicolon, invalidating the parsed unit; REORDER_MODIFIERS
+    // then lexed once with no edits so javaInput is cached for Formatter.
+    assertThat(result.unit()).isNull();
+    assertThat(result.javaInput()).isNotNull();
     assertThat(result.contents()).doesNotContain("ArrayList");
+    assertThat(result.contents()).doesNotContain(";;");
     assertThat(result.contents()).contains("if (a) {");
   }
 

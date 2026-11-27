@@ -76,6 +76,12 @@ public class ImportOrderer {
   static ImmutableList<Replacement> findReplacements(String text, Style style)
       throws FormatterException {
     ImmutableList<Tok> toks = JavaInput.buildToks(text, CLASS_START);
+    return findReplacements(text, toks, style);
+  }
+
+  /// Variant of [#findReplacements(String, Style)] that reuses an already-lexed token stream.
+  static ImmutableList<Replacement> findReplacements(
+      String text, ImmutableList<Tok> toks, Style style) throws FormatterException {
     return new ImportOrderer(text, toks, style).findReplacements();
   }
 

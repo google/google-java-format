@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeTrue;
 
 import com.google.common.collect.ImmutableRangeSet;
@@ -251,5 +252,41 @@ public class ReproBug {
                       + " to interrupt";
             }
             """);
+  }
+
+  @Test
+  public void wrap_typeCastParentFallsBackToFullAstCheck() {
+    String input =
+        """
+        class T {
+          Object o =
+              (Object)
+                  "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt";
+        }
+        """;
+    // Splitting a cast string literal changes precedence from `(Object) (a + b)` to
+    // `((Object) a) + b`; the full-AST fallback must catch this and abort.
+    FormatterException e =
+        assertThrows(
+            FormatterException.class, () -> StringWrapper.wrap(100, input, new Formatter()));
+    assertThat(e).hasMessageThat().contains("unexpectedly change the AST");
+  }
+
+  @Test
+  public void wrap_newClassEnclosingExpressionFallsBackToFullAstCheck() {
+    String input =
+        """
+        class T {
+          Object o =
+              "one long incredibly unbroken sentence moving from topic to topic so that no one had a chance to interrupt"
+                  .new Inner();
+        }
+        """;
+    // Splitting the enclosing expression of `.new Inner()` changes precedence from
+    // `(a + b).new Inner()` to `a + (b.new Inner())`; the full-AST fallback must catch this.
+    FormatterException e =
+        assertThrows(
+            FormatterException.class, () -> StringWrapper.wrap(100, input, new Formatter()));
+    assertThat(e).hasMessageThat().contains("unexpectedly change the AST");
   }
 }

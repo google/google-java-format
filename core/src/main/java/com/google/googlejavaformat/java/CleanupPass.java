@@ -15,6 +15,7 @@
 package com.google.googlejavaformat.java;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableRangeSet;
 
 /// Standard cleanup passes applied before formatting.
 enum CleanupPass {
@@ -30,22 +31,31 @@ enum CleanupPass {
   AST_CLEANUPS {
     @Override
     ImmutableList<Replacement> findReplacements(Cleanups cleanups) throws FormatterException {
-      return CleanupScanner.scan(cleanups.unit(), cleanups.contents(), cleanups.ranges());
-    }
-  },
-  /// Reorders modifiers into JLS order.
-  REORDER_MODIFIERS {
-    @Override
-    ImmutableList<Replacement> findReplacements(Cleanups cleanups) throws FormatterException {
-      JavaInput javaInput = new JavaInput(cleanups.contents());
-      return ModifierOrderer.findModifierReplacements(javaInput, cleanups.ranges());
+      return CleanupScanner.scan(
+          cleanups.unit(),
+          cleanups.contents(),
+          cleanups.javaInput().getToks(),
+          cleanups.ranges(),
+          ImmutableRangeSet.of());
     }
   },
   /// Reorders imports into canonical style order.
   SORT_IMPORTS {
     @Override
     ImmutableList<Replacement> findReplacements(Cleanups cleanups) throws FormatterException {
+      JavaInput cached = cleanups.cachedJavaInput();
+      if (cached != null) {
+        return ImportOrderer.findReplacements(
+            cleanups.contents(), cached.getToks(), cleanups.style());
+      }
       return ImportOrderer.findReplacements(cleanups.contents(), cleanups.style());
+    }
+  },
+  /// Reorders modifiers into JLS order.
+  REORDER_MODIFIERS {
+    @Override
+    ImmutableList<Replacement> findReplacements(Cleanups cleanups) throws FormatterException {
+      return ModifierOrderer.findModifierReplacements(cleanups.javaInput(), cleanups.ranges());
     }
   };
 

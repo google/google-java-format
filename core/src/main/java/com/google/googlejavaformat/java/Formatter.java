@@ -193,14 +193,24 @@ public final class Formatter {
         Edit.apply(
             cleaned.contents(),
             getFormatReplacements(
-                cleaned.contents(), cleaned.characterRanges(), options.cleanup(), cleaned.unit()));
+                cleaned.contents(),
+                cleaned.characterRanges(),
+                options.cleanup(),
+                cleaned.unit(),
+                cleaned.javaInput()));
     if (reflowLongStrings) {
       // Only reflow long strings in the requested ranges, mapped onto the formatted output.
+      boolean wholeFile =
+          characterRanges.size() == 1
+              && characterRanges.iterator().next().equals(Range.closedOpen(0, input.length()));
+      JCCompilationUnit reusableUnit = formatted.spans().isEmpty() ? cleaned.unit() : null;
       return StringWrapper.wrap(
           options.maxLineLength(),
           formatted.contents(),
           this,
-          formatted.mapRanges(cleaned.characterRanges()));
+          formatted.mapRanges(cleaned.characterRanges()),
+          reusableUnit,
+          wholeFile);
     }
     return formatted.contents();
   }
@@ -265,7 +275,8 @@ public final class Formatter {
   ImmutableList<Replacement> getFormatReplacements(
       String input, Collection<Range<Integer>> characterRanges, boolean reindent)
       throws FormatterException {
-    return getFormatReplacements(input, characterRanges, reindent, /* unit= */ null);
+    return getFormatReplacements(
+        input, characterRanges, reindent, /* unit= */ null, /* cachedJavaInput= */ null);
   }
 
   ImmutableList<Replacement> getFormatReplacements(
@@ -274,7 +285,18 @@ public final class Formatter {
       boolean reindent,
       @Nullable JCCompilationUnit unit)
       throws FormatterException {
-    JavaInput javaInput = new JavaInput(input);
+    return getFormatReplacements(
+        input, characterRanges, reindent, unit, /* cachedJavaInput= */ null);
+  }
+
+  ImmutableList<Replacement> getFormatReplacements(
+      String input,
+      Collection<Range<Integer>> characterRanges,
+      boolean reindent,
+      @Nullable JCCompilationUnit unit,
+      @Nullable JavaInput cachedJavaInput)
+      throws FormatterException {
+    JavaInput javaInput = cachedJavaInput != null ? cachedJavaInput : new JavaInput(input);
     if (unit != null) {
       javaInput.setCompilationUnit(unit);
     }
