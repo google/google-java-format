@@ -14,9 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-
 import com.google.common.collect.ImmutableList;
 import com.sun.tools.javac.parser.JavaTokenizer;
 import com.sun.tools.javac.parser.Scanner;
@@ -35,7 +32,7 @@ final class JavacTokens {
 
   /// The lexer eats terminal comments, so feed it one we don't care about.
   // TODO(b/33103797): fix javac and remove the work-around
-  private static final CharSequence EOF_COMMENT = "\n//EOF";
+  private static final String EOF_COMMENT = "\n//EOF";
 
   /// An unprocessed input token, including whitespace and comments.
   ///
@@ -51,22 +48,27 @@ final class JavacTokens {
       return ImmutableList.of();
     }
     ScannerFactory fac = ScannerFactory.instance(context);
-    char[] buffer = (source + EOF_COMMENT).toCharArray();
+    int sourceLength = source.length();
+    char[] buffer = new char[sourceLength + EOF_COMMENT.length()];
+    source.getChars(0, sourceLength, buffer, 0);
+    EOF_COMMENT.getChars(0, EOF_COMMENT.length(), buffer, sourceLength);
     CommentSavingTokenizer tokenizer = new CommentSavingTokenizer(fac, buffer, buffer.length);
     Scanner scanner = new AccessibleScanner(fac, tokenizer);
     ImmutableList.Builder<RawTok> tokens = ImmutableList.builder();
-    int end = source.length();
+    int end = sourceLength;
     int last = 0;
     do {
       scanner.nextToken();
       Token t = scanner.token();
       if (t.comments != null) {
-        for (CommentWithTextAndPosition c : getComments(t, tokenizer.comments())) {
-          if (last < c.getSourcePos(0)) {
-            tokens.add(new RawTok(null, last, c.getSourcePos(0)));
+        // javac stores the comments in reverse declaration order
+        for (Comment comment : t.comments.reverse()) {
+          RawTok c = tokenizer.comments().get(comment);
+          if (last < c.pos()) {
+            tokens.add(new RawTok(null, last, c.pos()));
           }
-          tokens.add(new RawTok(null, c.getSourcePos(0), c.getSourcePos(0) + c.text().length()));
-          last = c.getSourcePos(0) + c.text().length();
+          tokens.add(c);
+          last = c.endPos();
         }
       }
       if (stopTokens.contains(t.kind)) {
@@ -87,75 +89,24 @@ final class JavacTokens {
     return tokens.build();
   }
 
-  private static ImmutableList<CommentWithTextAndPosition> getComments(
-      Token token, Map<Comment, CommentWithTextAndPosition> comments) {
-    if (token.comments == null) {
-      return ImmutableList.of();
-    }
-    // javac stores the comments in reverse declaration order
-    return token.comments.stream().map(comments::get).collect(toImmutableList()).reverse();
-  }
-
-  /// A [JavaTokenizer] that saves comments.
+  /// A [JavaTokenizer] that saves comments' source ranges.
   private static class CommentSavingTokenizer extends JavaTokenizer {
 
-    private final Map<Comment, CommentWithTextAndPosition> comments = new HashMap<>();
+    private final Map<Comment, RawTok> comments = new HashMap<>();
 
     CommentSavingTokenizer(ScannerFactory fac, char[] buffer, int length) {
       super(fac, buffer, length);
     }
 
-    Map<Comment, CommentWithTextAndPosition> comments() {
+    Map<Comment, RawTok> comments() {
       return comments;
     }
 
     @Override
     protected Comment processComment(int pos, int endPos, CommentStyle style) {
-      char[] buf = getRawCharactersReflectively(pos, endPos);
       Comment comment = super.processComment(pos, endPos, style);
-      CommentWithTextAndPosition commentWithTextAndPosition =
-          new CommentWithTextAndPosition(pos, endPos, new String(buf));
-      comments.put(comment, commentWithTextAndPosition);
+      comments.put(comment, new RawTok(null, pos, endPos));
       return comment;
-    }
-
-    private char[] getRawCharactersReflectively(int beginIndex, int endIndex) {
-      Object instance;
-      try {
-        instance = JavaTokenizer.class.getDeclaredField("reader").get(this);
-      } catch (ReflectiveOperationException e) {
-        instance = this;
-      }
-      try {
-        return (char[])
-            instance
-                .getClass()
-                .getMethod("getRawCharacters", int.class, int.class)
-                .invoke(instance, beginIndex, endIndex);
-      } catch (ReflectiveOperationException e) {
-        throw new LinkageError(e.getMessage(), e);
-      }
-    }
-  }
-
-  /// A [Comment] that saves its text and start position.
-  private record CommentWithTextAndPosition(int pos, int endPos, String text) {
-    /// Returns the source position of the character at index `index` in the comment text.
-    ///
-    /// The handling of javadoc comments in javac has more logic to skip over leading whitespace and
-    /// '*' characters when indexing into doc comments, but we don't need any of that.
-    int getSourcePos(int index) {
-      checkArgument(
-          0 <= index && index < (endPos - pos),
-          "Expected %s in the range [0, %s)",
-          index,
-          endPos - pos);
-      return pos + index;
-    }
-
-    @Override
-    public String toString() {
-      return String.format("Comment: '%s'", text());
     }
   }
 

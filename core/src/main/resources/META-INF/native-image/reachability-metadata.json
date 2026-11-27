@@ -1,9 +1,6 @@
 {
   "reflection": [
     {
-      "type": "com.google.googlejavaformat.java.JavacTokens$CommentSavingTokenizer"
-    },
-    {
       "type": "com.sun.source.tree.CaseTree"
     },
     {
@@ -16,9 +13,6 @@
       ]
     },
     {
-      "type": "com.sun.tools.javac.parser.JavaTokenizer"
-    },
-    {
       "type": "com.sun.tools.javac.parser.ParserFactory",
       "methods": [
         {
@@ -28,18 +22,6 @@
             "boolean",
             "boolean",
             "boolean"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "com.sun.tools.javac.parser.UnicodeReader",
-      "methods": [
-        {
-          "name": "getRawCharacters",
-          "parameterTypes": [
-            "int",
-            "int"
           ]
         }
       ]
