@@ -3599,6 +3599,210 @@ package com.example;
   }
 
   @Test
+  public void markdownWrapBeforeEndParaTriggers() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Command for local testing: `bazel test --test_strategy=local --nocache_test_results --test_arg='--env=QA' //foo/bar:BazTest`
+          void a() {}
+
+          /// Records failure summary artifacts when pre-run setup (such as `workspace_setup_cli
+          /// --mode=prepare`) throws `cause`.
+          void b() {}
+
+          /// Produces a query of the form (**OR** (**EQ** search_term *id*) (**Q_SUBSTRING** search_term *name*)).
+          void c() {}
+
+          /// Returns the normalized status value when the input record matches a known condition or **nothing** otherwise.
+          void d() {}
+
+          /// Returns the formatted identifier for the element matching the requested search key against _name_ below.
+          void e() {}
+
+          /// Returns the internal sentinel key reserved by the runtime for tracking generated metadata _internal_id here.
+          void f() {}
+
+          /// Evaluates the spreadsheet cell formula expression represented by the canonical example text =A1+B1 here.
+          void g() {}
+
+          /// Returns the broad category of attribute type (e.g., bool, unique enum, repeatable enum, url, ...).
+          void h() {}
+
+          /// Generates the certificate chain by interleaving ordered entries `[prod_0, dev_0, prod_1, ...]`.
+          void i() {}
+
+          /// Convenience helper for `ServiceRegistry.getDefaultInstanceForTesting() .useDefaultAuthentication(policy)`.
+          void j() {}
+
+          /// Summary.
+          ///
+          /// @deprecated Use the replacement option configured via the command line flag --replacement_flag_name instead.
+          @Deprecated
+          void k() {}
+
+          /// Summary.
+          ///
+          /// @deprecated --very_long_flag_name_that_exceeds_the_remaining_line_length_and_would_otherwise_wrap_onto_line_two
+          @Deprecated
+          void l() {}
+
+          /// > Produces a query of the form (**OR** (**EQ** search_term *id*) (**Q_SUBSTRING** search_term
+          /// > *name*)).
+          void m() {}
+        }
+        """;
+    String expected =
+        """
+        class T {
+          /// Command for local testing: `bazel test --test_strategy=local --nocache_test_results
+          /// --test_arg='--env=QA' //foo/bar:BazTest`
+          void a() {}
+
+          /// Records failure summary artifacts when pre-run setup (such as `workspace_setup_cli
+          /// --mode=prepare`) throws `cause`.
+          void b() {}
+
+          /// Produces a query of the form (**OR** (**EQ** search_term *id*) (**Q_SUBSTRING** search_term
+          /// *name*)).
+          void c() {}
+
+          /// Returns the normalized status value when the input record matches a known condition or
+          /// **nothing** otherwise.
+          void d() {}
+
+          /// Returns the formatted identifier for the element matching the requested search key against
+          /// _name_ below.
+          void e() {}
+
+          /// Returns the internal sentinel key reserved by the runtime for tracking generated metadata
+          /// _internal_id here.
+          void f() {}
+
+          /// Evaluates the spreadsheet cell formula expression represented by the canonical example text
+          /// =A1+B1 here.
+          void g() {}
+
+          /// Returns the broad category of attribute type (e.g., bool, unique enum, repeatable enum, url,
+          /// ...).
+          void h() {}
+
+          /// Generates the certificate chain by interleaving ordered entries `[prod_0, dev_0, prod_1,
+          /// ...]`.
+          void i() {}
+
+          /// Convenience helper for `ServiceRegistry.getDefaultInstanceForTesting()
+          /// .useDefaultAuthentication(policy)`.
+          void j() {}
+
+          /// Summary.
+          ///
+          /// @deprecated Use the replacement option configured via the command line flag
+          ///   --replacement_flag_name instead.
+          @Deprecated
+          void k() {}
+
+          /// Summary.
+          ///
+          /// @deprecated
+          ///   --very_long_flag_name_that_exceeds_the_remaining_line_length_and_would_otherwise_wrap_onto_line_two
+          @Deprecated
+          void l() {}
+
+          /// > Produces a query of the form (**OR** (**EQ** search_term *id*) (**Q_SUBSTRING** search_term
+          /// > *name*)).
+          void m() {}
+        }
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
+  public void markdownWrapAllowsNonEndParaTokens() {
+    assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
+    String input =
+        """
+        class T {
+          /// Returns the configured option value when the user explicitly supplies the command line flag `--flag` here.
+          void a() {}
+
+          /// Returns the formatted output containing an escaped emphasis marker written explicitly as \\*name\\* here.
+          void b() {}
+
+          /// Returns the formatted output containing an escaped underscore marker written explicitly as \\_name\\_ here.
+          void c() {}
+
+          /// Returns the formatted output containing an escaped leading period written explicitly as \\.proto here.
+          void d() {}
+
+          /// First paragraph.
+          ///
+          /// *name* starts the second paragraph.
+          void e() {}
+
+          /**
+           * Command for local testing: {@code bazel test --test_strategy=local --nocache_test_results --test_arg='--env=QA' //foo/bar:BazTest}
+           */
+          void f() {}
+
+          /**
+           * Returns the formatted identifier for the element matching the requested search key against *name* below.
+           */
+          void g() {}
+
+          /**
+           * Convenience helper for {@code ServiceRegistry.getDefaultInstanceForTesting() .useDefaultAuthentication(policy)}.
+           */
+          void h() {}
+        }
+        """;
+    String expected =
+        """
+        class T {
+          /// Returns the configured option value when the user explicitly supplies the command line flag
+          /// `--flag` here.
+          void a() {}
+
+          /// Returns the formatted output containing an escaped emphasis marker written explicitly as
+          /// \\*name\\* here.
+          void b() {}
+
+          /// Returns the formatted output containing an escaped underscore marker written explicitly as
+          /// \\_name\\_ here.
+          void c() {}
+
+          /// Returns the formatted output containing an escaped leading period written explicitly as
+          /// \\.proto here.
+          void d() {}
+
+          /// First paragraph.
+          ///
+          /// *name* starts the second paragraph.
+          void e() {}
+
+          /**
+           * Command for local testing: {@code bazel test --test_strategy=local --nocache_test_results
+           * --test_arg='--env=QA' //foo/bar:BazTest}
+           */
+          void f() {}
+
+          /**
+           * Returns the formatted identifier for the element matching the requested search key against
+           * *name* below.
+           */
+          void g() {}
+
+          /**
+           * Convenience helper for {@code ServiceRegistry.getDefaultInstanceForTesting()
+           * .useDefaultAuthentication(policy)}.
+           */
+          void h() {}
+        }
+        """;
+    doFormatTest(input, expected);
+  }
+
+  @Test
   public void markdownCodeSpanInsideBlockQuoteAndBeforeBlockTag() {
     assume().that(MARKDOWN_JAVADOC_SUPPORTED).isTrue();
     String input =
